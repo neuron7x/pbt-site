@@ -1,0 +1,31 @@
+{
+  "_": "Спільний контракт валідації заявки: сервер (tests/test_api.py) і клієнт (web/js/site.js → tests/test_site.py). Один корпус — одна істина.",
+  "vectors": [
+    {"type": "rent", "field": "contact", "method": "phone", "value": "067 123 45 67", "valid": true, "normalized": "+380671234567"},
+    {"type": "rent", "field": "contact", "method": "phone", "value": "+380 (97) 863-77-77", "valid": true, "normalized": "+380978637777"},
+    {"type": "rent", "field": "contact", "method": "phone", "value": "380958637777", "valid": true, "normalized": "+380958637777"},
+    {"type": "rent", "field": "contact", "method": "phone", "value": "+380 0978637777", "valid": true, "normalized": "+380978637777"},
+    {"type": "rent", "field": "contact", "method": "phone", "value": "12345", "valid": false},
+    {"type": "rent", "field": "contact", "method": "phone", "value": "+38097863777", "valid": false},
+    {"type": "rent", "field": "contact", "method": "telegram", "value": "@pbt_poltava", "valid": true, "normalized": "@pbt_poltava"},
+    {"type": "rent", "field": "contact", "method": "telegram", "value": "@ab", "valid": false},
+    {"type": "rent", "field": "contact", "method": "viber", "value": "095 863 77 77", "valid": true, "normalized": "+380958637777"},
+    {"type": "rent", "field": "hours", "value": "1", "valid": true},
+    {"type": "rent", "field": "hours", "value": "5000", "valid": true},
+    {"type": "rent", "field": "hours", "value": "0", "valid": false},
+    {"type": "rent", "field": "hours", "value": "5001", "valid": false},
+    {"type": "rent", "field": "hours", "value": "8.5", "valid": false},
+    {"type": "rent", "field": "hours", "value": "", "valid": true},
+    {"type": "rent", "field": "km", "value": "0", "valid": true},
+    {"type": "rent", "field": "km", "value": "3000", "valid": true},
+    {"type": "rent", "field": "km", "value": "3001", "valid": false},
+    {"type": "rent", "field": "date", "value": "", "valid": true},
+    {"type": "rent", "field": "date", "value": "2099-01-15", "valid": true},
+    {"type": "rent", "field": "date", "value": "2020-01-15", "valid": false},
+    {"type": "rent", "field": "date", "value": "15.01.2099", "valid": false},
+    {"type": "material", "field": "subject", "value": "Щебінь 5×20, 40 т", "valid": true},
+    {"type": "material", "field": "subject", "value": "щ", "valid": false},
+    {"type": "transport", "field": "subject", "value": "Екскаватор 22 т, Полтава → Кременчук", "valid": true},
+    {"type": "transport", "field": "subject", "value": "", "valid": false}
+  ]
+}

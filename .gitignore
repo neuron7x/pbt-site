@@ -1,0 +1,9 @@
+__pycache__/
+.pytest_cache/
+artifacts/
+dist/
+references/
+data/*.db*
+data/backups/
+data/.ip_salt
+*.pyc

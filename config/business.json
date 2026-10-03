@@ -1,0 +1,26 @@
+{
+  "_status": "Джерело: публічний сайт pbt-spectehnika.com.ua (знято 03.10.2026) + ЄДРПОУ з конфігурації 1С. Поля зі значенням null — заповнює/підтверджує власник.",
+  "brand": { "name": "ПБТ", "nameUk": "ПолтаваБудТехніка", "alternateName": "PBT Spectehnika" },
+  "legalName": "ТОВ «ПолтаваБудТехніка»",
+  "edrpou": "45383082",
+  "city": "Полтава",
+  "region": "Полтавська область",
+  "address": "36002, м. Полтава, вул. Довженка, 2А",
+  "url": "https://pbt-spectehnika.com.ua",
+  "logo": "/media/logo/pbt-mark.png",
+  "contacts": {
+    "phone": "+380978637777",
+    "phone2": "+380958637777",
+    "email": null,
+    "telegram": null,
+    "viber": "+380978637777",
+    "whatsapp": null,
+    "instagram": "https://www.instagram.com/pbtspectehnika",
+    "tiktok": "https://www.tiktok.com/@poltavabudtehnika",
+    "facebook": "https://www.facebook.com/profile.php?id=61563404525960",
+    "youtube": "https://www.youtube.com/channel/UCvSkE5UV_uavxC7fwAU9Ssg"
+  },
+  "responsiblePerson": null,
+  "hours": { "mo-fr": "09:00–18:00", "sa": "09:00–15:00", "su": "вихідний", "dispatch": "техніка працює цілодобово" },
+  "regions": ["Полтавська", "Черкаська", "Дніпропетровська", "Харківська", "Запорізька", "Київська", "Кіровоградська", "Чернігівська", "Житомирська"]
+}

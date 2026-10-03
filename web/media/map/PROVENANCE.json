@@ -1,0 +1,18 @@
+{
+ "source": "https://github.com/wmgeolab/geoBoundaries/raw/9469f09/releaseData/gbOpen/UKR/ADM1/geoBoundaries-UKR-ADM1_simplified.geojson",
+ "license": "Open Data Commons Open Database License 1.0",
+ "year": "2017",
+ "projection": "equirectangular, cos(49°)",
+ "served": [
+  "Житомирська",
+  "Київська",
+  "Чернігівська",
+  "Харківська",
+  "Запорізька",
+  "Черкаська",
+  "Полтавська",
+  "Дніпропетровська",
+  "Кіровоградська",
+  "Київська"
+ ]
+}

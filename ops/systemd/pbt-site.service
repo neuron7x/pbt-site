@@ -1,0 +1,24 @@
+# ПБТ · ПолтаваБудТехніка — сайт + API заявок. Встановлення: ops/install.sh
+[Unit]
+Description=ПБТ site + lead API (127.0.0.1:4180)
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=20
+
+[Service]
+Type=simple
+WorkingDirectory=%h/projects/pbt-site
+ExecStart=/usr/bin/python3 server/app.py
+# за локальним реверс-проксі (Tailscale Funnel): довіряти X-Forwarded-For/-Proto від loopback (у коді за замовчуванням — ні)
+Environment=TRUST_PROXY=1
+Restart=always
+RestartSec=2
+TimeoutStopSec=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+MemoryMax=512M
+TasksMax=256
+UMask=0077
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,8 @@
+# Сторож: /api/health (БД читається/пишеться, є місце) з таймаутом 5 с; збій або зависання → перезапуск сервісу
+[Unit]
+Description=ПБТ health watchdog
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/projects/pbt-site
+ExecStart=/bin/sh -c '/usr/bin/python3 ops/health.py || /usr/bin/systemctl --user restart pbt-site.service'
