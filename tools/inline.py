@@ -53,6 +53,7 @@ keep = re.findall(r'<title>.*?</title>|<meta (?:name|property)="(?:description|o
 early = re.search(r'<script>\s*/\* Профіль.*?</script>', head, re.S).group(0)
 frag = '\n'.join(keep) + '\n' + early + '\n' + body
 frag = frag.replace('<body class="home">', '')
+frag = re.sub(r'<title>.*?</title>', '<title>ПБТ · ПолтаваБудТехніка</title>', frag, count=1)   # ім'я артефакту — назва, не опис
 (DIST / 'pbt-site.artifact.html').write_text(frag, encoding='utf-8')
 for f in ('pbt-site.html', 'pbt-site.artifact.html'):
     print(f, round((DIST / f).stat().st_size / 1048576, 2), 'MB')
