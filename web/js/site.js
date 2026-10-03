@@ -69,6 +69,7 @@
       word.style.transform = `translate3d(0,${(-p * 16).toFixed(2)}vh,0) scale(${(1 - .34 * wp).toFixed(4)})`;
       word.style.opacity = (1 - seg(p, .22, .62)).toFixed(3);
       win.style.transform = mobileLayout() ? `scale(${(1 + .06 * p).toFixed(4)})` : `translate3d(0,-50%,0) translate3d(0,${(-p * 8).toFixed(2)}vh,0) scale(${(1 + .04 * p).toFixed(4)})`;
+      win.style.opacity = (1 - seg(p, .72, .92)).toFixed(3);              /* вікно тоне разом із героєм — наприкінці лише вода */
       const cp = seg(p, .76, .96);
       copy.style.opacity = (1 - cp).toFixed(3); copy.style.transform = `translate3d(0,${(-cp * 24).toFixed(1)}px,0)`;
       water.style.setProperty('--wl', (seg(p, .5, .985) * 1.04).toFixed(4));
