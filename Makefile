@@ -14,8 +14,8 @@ test-api:       ## лише API/безпека
 test-site:      ## лише браузерні тести
 	$(PY) -m pytest -q -p no:cacheprovider tests/test_site.py
 
-hero:           ## кадри героя з канонічного кліпу (references/hero.mp4 → web/media/hero), детерміновано
-	$(PY) tools/hero_frames.py
+media:          ## відео героя/робіт/доказу з канонічних кліпів клієнта (references/*.mp4 → web/media/video), детерміновано, ffmpeg
+	$(PY) tools/media.py
 
 shots:          ## знімки екранів у artifacts/shots (сервер має працювати)
 	$(PY) tools/shots.py http://127.0.0.1:$(PORT)
@@ -34,4 +34,4 @@ ops-install:    ## systemd --user: сервіс + сторож здоров'я +
 
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/ —/'
-.PHONY: run test test-api test-site hero shots bundle gate clean ops-install help
+.PHONY: run test test-api test-site media shots bundle gate clean ops-install help

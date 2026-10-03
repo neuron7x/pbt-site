@@ -1,4 +1,4 @@
-/* Дані інтерфейсу ПБТ. Джерела: прайс і парк — pbt-spectehnika.com.ua (03.10.2026); реквізити — config/business.json; кадри — TikTok @poltavabudtehnika (власні кадри клієнта). */
+/* Дані інтерфейсу ПБТ. Джерела: прайс і парк — pbt-spectehnika.com.ua (03.10.2026); реквізити — config/business.json; відео — монтаж із TikTok @poltavabudtehnika (власна зйомка клієнта), tools/media.py. */
 window.PBT = {
  "business": {
   "brand": {
@@ -700,7 +700,8 @@ window.PBT = {
    ],
    "img": "media/svc/u-4.webp",
    "req": "rent",
-   "subject": "Екскаватор-амфібія"
+   "subject": "Екскаватор-амфібія",
+   "video": "job-voda"
   },
   {
    "id": "zemlia",
@@ -713,7 +714,8 @@ window.PBT = {
    ],
    "img": "media/svc/u-1.webp",
    "req": "rent",
-   "subject": "Гусеничний екскаватор 22 т"
+   "subject": "Гусеничний екскаватор 22 т",
+   "video": "job-zemlia"
   },
   {
    "id": "trans",
@@ -726,7 +728,8 @@ window.PBT = {
    ],
    "img": "media/svc/u-2.webp",
    "req": "transport",
-   "subject": "Перевезення техніки тралом"
+   "subject": "Перевезення техніки тралом",
+   "video": "job-trans"
   },
   {
    "id": "lis",
@@ -739,7 +742,8 @@ window.PBT = {
    ],
    "img": "media/svc/u-3.webp",
    "req": "rent",
-   "subject": "Мульчер"
+   "subject": "Мульчер",
+   "video": "job-lis"
   },
   {
    "id": "demont",
@@ -752,27 +756,52 @@ window.PBT = {
    ],
    "img": "media/svc/u-5.webp",
    "req": "rent",
-   "subject": "Демонтаж: екскаватор з гідромолотом"
+   "subject": "Демонтаж: екскаватор з гідромолотом",
+   "video": "job-demont"
   }
  ],
  "proof": [
   {
-   "img": "media/proof/amph.webp",
+   "video": "proof-amph",
+   "poster": "media/video/proof-amph.webp",
    "t": "Екскаватор-амфібія",
-   "s": "очищення водойми, Полтавщина",
+   "s": "очищення заболоченої ділянки, Полтавщина",
    "url": "https://www.tiktok.com/@poltavabudtehnika/video/7625991020492098837"
   },
   {
-   "img": "media/proof/long.webp",
+   "video": "proof-long",
+   "poster": "media/video/proof-long.webp",
    "t": "Довгорукий екскаватор",
    "s": "«тут вода знову стане прозорою»",
    "url": "https://www.tiktok.com/@poltavabudtehnika/video/7579201889854606604"
   },
   {
-   "img": "media/proof/trailer.webp",
-   "t": "Трал із JCB JS260",
-   "s": "доставка на об'єкт",
+   "video": "proof-sunset",
+   "poster": "media/video/proof-sunset.webp",
+   "t": "Hyundai на тралі",
+   "s": "доставка амфібії на об'єкт",
+   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7688658909661334805"
+  },
+  {
+   "video": "proof-trailer",
+   "poster": "media/video/proof-trailer.webp",
+   "t": "MAN + трал 60 т",
+   "s": "JCB JS260 їде на об'єкт",
    "url": "https://www.tiktok.com/@poltavabudtehnika/video/7638993833958722837"
+  },
+  {
+   "video": "proof-night",
+   "poster": "media/video/proof-night.webp",
+   "t": "Нічна зміна",
+   "s": "техніка працює 24/7",
+   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7600714811185401108"
+  },
+  {
+   "video": "proof-winter",
+   "poster": "media/video/proof-winter.webp",
+   "t": "Зима — не пауза",
+   "s": "розчищення взимку",
+   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7588156683126459659"
   }
  ],
  "partners": [
@@ -804,5 +833,6 @@ window.PBT = {
   "Кіровоградська",
   "Чернігівська",
   "Житомирська"
- ]
+ ],
+ "video": "media/video/"
 };

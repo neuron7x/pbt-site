@@ -44,8 +44,7 @@ def test_calculator_matches_price_list(page_factory):
     pg.fill('#cKmN', '20'); pg.dispatch_event('#cKmN', 'input')
     expected = 10 * u['price'] + 20 * 100
     assert pg.evaluate('document.getElementById("cOut").dataset.total') == str(expected)
-    digits = re.sub(r'\D', '', pg.inner_text('#cTotal'))
-    assert digits == str(expected)
+    pg.wait_for_function(f'() => document.getElementById("cTotal").textContent.replace(/\\D/g, "") === "{expected}"', timeout=4000)   # сума дотвінюється за 520 мс
     assert pg.evaluate(f'window.PBTcalc("{u["id"]}", 10, 20)') == expected
     crane = next(x for x in priced if x['cat'] == 'crane')               # автокран їде сам: подача не рахується за км
     pg.select_option('#cMachine', crane['id'])
@@ -88,25 +87,60 @@ def test_lead_form_shows_field_errors_before_sending(page_factory):
     assert pg.locator('#done.is-on').count() == 0
 
 
-def test_hero_scene_scrubs_frames_on_desktop(page_factory):
+def test_hero_video_plays_and_scene_dives(page_factory):
     pg = page_factory()
-    poster = pg.get_attribute('#heroSeq', 'src')
-    assert poster.endswith('poster.webp') or poster.endswith('f_001.webp')   # перший декодований кадр уже міг підмінити постер
-    pg.evaluate('scrollTo({top: innerHeight * 1.4, behavior: "instant"})')
-    pg.wait_for_function('document.getElementById("heroSeq").src.includes("/media/hero/f_")', timeout=10000)
+    assert pg.get_attribute('#heroVideo', 'poster').endswith('hero-wide.webp')
+    pg.wait_for_function('(() => { const v = document.getElementById("heroVideo"); return v.currentSrc && v.currentSrc.includes("hero-wide") && v.readyState >= 2 && !v.paused; })()', timeout=15000)
+    assert pg.evaluate('document.querySelector("#hero").classList.contains("is-lit")')
+    assert pg.locator('#heroTitle .w').count() >= 6                       # слова заголовка — окремі спани появи
+    pg.evaluate('scrollTo({top: innerHeight * 1.1, behavior: "instant"})'); pg.wait_for_timeout(300)
     wl = float(pg.evaluate('getComputedStyle(document.getElementById("heroWater")).getPropertyValue("--wl")') or 0)
-    assert 0 <= wl < 1
-    pg.evaluate('scrollTo({top: innerHeight * 2.25, behavior: "instant"})'); pg.wait_for_timeout(300)   # html має scroll-behavior:smooth — тест скролить миттєво
+    assert 0 < wl < 1, wl
+    pg.evaluate('scrollTo({top: innerHeight * 1.65, behavior: "instant"})'); pg.wait_for_timeout(300)
     wl2 = float(pg.evaluate('getComputedStyle(document.getElementById("heroWater")).getPropertyValue("--wl")'))
-    assert wl2 > 0.9, wl2                                                 # наприкінці герой затоплений — перехід у синю секцію
+    assert wl2 > 0.9, wl2
+    assert pg.evaluate('document.getElementById("heroVideo").paused') is True   # поза кадром відео не крутиться
     assert pg.evaluate('document.getElementById("gauge").classList.contains("is-on")')
+
+
+def test_mobile_hero_takes_portrait_cut(page_factory):
+    pg = page_factory(390, 844, mobile=True)
+    pg.wait_for_function('() => document.getElementById("heroVideo").currentSrc.includes("hero-tall")', timeout=15000)
+
+
+def test_sections_reveal_and_counters_finish(page_factory):
+    pg = page_factory()
+    for sel in ('#roboty', '#jobs', '#dokaz', '#reel', '#partners', '#geo', '#geoList'):
+        pg.evaluate(f'document.querySelector("{sel}").scrollIntoView({{behavior: "instant", block: "center"}})'); pg.wait_for_timeout(450)
+    pg.wait_for_timeout(1700)
+    assert pg.evaluate('[...document.querySelectorAll("#roboty .rv, #dokaz .rv")].every(e => e.classList.contains("is-in"))')
+    assert pg.evaluate('[...document.querySelectorAll("#roboty .rv")].every(e => getComputedStyle(e).opacity === "1")')
+    nums = pg.evaluate('[...document.querySelectorAll("#dokaz [data-count]")].map(e => e.textContent)')
+    assert nums == ['32', '9', '70 м'], nums
+    assert pg.locator('#geoMap .route').count() == 8 and pg.locator('#geoMap .beacon').count() == 1   # 8 маршрутів з Полтави
+    assert pg.evaluate('document.getElementById("partners").children.length') == len(DATA['partners']) * 2  # стрічка подвоєна
+
+
+def test_job_and_proof_videos_play_in_view(page_factory, server):
+    import urllib.request
+    pg = page_factory()
+    pg.evaluate('document.querySelector("#jobs").scrollIntoView({behavior: "instant", block: "center"})')
+    pg.wait_for_function('() => document.querySelectorAll("#jobs .job.is-playing").length >= 3', timeout=15000)
+    pg.evaluate('document.querySelector("#reel").scrollIntoView({behavior: "instant", block: "center"})')
+    pg.wait_for_function('() => document.querySelectorAll("#reel a.is-playing").length >= 3', timeout=15000)
+    assert pg.locator('#reel a').count() == len(DATA['proof']) == 6
+    for name in ['hero-wide', 'hero-tall'] + [j['video'] for j in DATA['jobs']] + [p['video'] for p in DATA['proof']]:
+        for ext in ('mp4', 'webm', 'webp'):
+            r = urllib.request.urlopen(server['base'] + f'/media/video/{name}.{ext}')
+            assert r.status == 200 and int(r.headers['Content-Length']) > 5000, (name, ext)
 
 
 def test_reduced_motion_is_static_but_complete(page_factory):
     pg = page_factory(reduced=True)
     assert pg.evaluate('document.documentElement.dataset.quality') == 'static'
-    assert pg.get_attribute('#heroSeq', 'src').endswith('poster.webp')
+    assert pg.evaluate('!document.getElementById("heroVideo").currentSrc')          # без руху — лише постер
     assert pg.locator('h1').is_visible() and pg.locator('#park .unit').count() == 32
+    assert pg.evaluate('[...document.querySelectorAll(".rv")].every(e => getComputedStyle(e).opacity === "1")')   # усе видно одразу
 
 
 def test_mobile_menu_opens_and_closes(page_factory):

@@ -1,4 +1,4 @@
-/* ПБТ · ПолтаваБудТехніка — сцени, стани, інтерактив. Без залежностей; все — функція прогресу скролу.
+/* ПБТ · ПолтаваБудТехніка — сцени, стани, інтерактив. Без залежностей; рух — функція прогресу скролу й видимості.
    Контракт валідації заявки спільний із сервером: tests/contracts/lead_vectors.json (window.PBTv — чиста функція для тестів). */
 (function () {
   'use strict';
@@ -8,21 +8,50 @@
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const quality = () => doc.dataset.quality || 'full';
+  const motion = () => quality() !== 'static' && !reduced;
+  const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const seg = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
   const ease = t => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-  const pad = n => String(n).padStart(3, '0');
   const mobileLayout = () => innerWidth < 1024;
   const phoneHuman = p => (p || '').replace(/^\+38(0\d{2})(\d{3})(\d{2})(\d{2})$/, '$1 $2 $3 $4');
+  const V_BASE = D.video || 'media/video/';
+  const vsrc = (name, ext) => (D.videoData && D.videoData[name + '.' + ext]) || (V_BASE + name + '.' + ext);
 
-  /* ───── профіль за можливостями (голова документа ставить ранній; тут — оновлення на resize) ───── */
+  /* ───── профіль за можливостями ───── */
   function profile() {
     const m = q => matchMedia(q).matches, w = innerWidth, h = innerHeight;
     const coarse = m('(pointer:coarse)') && !m('(any-pointer:fine)');
     doc.dataset.profile = (!coarse && w >= 1024 && w / h >= 1.05) ? 'wide-fine' : ((coarse && (w < 760 || h > w)) || w < 600) ? 'compact-touch' : 'medium-hybrid';
   }
+
+  /* ───── відео: джерела підставляються лише з JS, грають лише у кадрі ───── */
+  function attachVideo(video, name, { tall } = {}) {
+    if (!video || video.dataset.ready) return;
+    video.dataset.ready = '1';
+    video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
+    const n = tall && mobileLayout() ? name.replace('-wide', '-tall') : name;
+    if (D.videoData || !document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
+      video.src = vsrc(n, 'mp4');
+    } else {
+      const s1 = document.createElement('source'); s1.src = vsrc(n, 'webm'); s1.type = 'video/webm';
+      const s2 = document.createElement('source'); s2.src = vsrc(n, 'mp4'); s2.type = 'video/mp4';
+      video.append(s1, s2);
+    }
+  }
+  const playing = new Set();
+  const vio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    const v = e.target.querySelector('video'); if (!v) return;
+    if (e.isIntersecting && motion()) {
+      if (!v.dataset.ready) attachVideo(v, v.dataset.video);
+      v.preload = 'auto';
+      const p = v.play(); if (p && p.catch) p.catch(() => {});
+      e.target.classList.add('is-playing'); playing.add(v);
+    } else { v.pause(); e.target.classList.remove('is-playing'); playing.delete(v); }
+  }), { threshold: .45 }) : null;
+  const watchVideo = el => { if (vio) vio.observe(el); };
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu');
@@ -35,79 +64,51 @@
   $$('a', menu).forEach(a => a.addEventListener('click', () => openMenu(false)));
   addEventListener('keydown', e => { if (e.key === 'Escape' && !menu.hidden) openMenu(false); });
 
-  /* ───── ГЕРОЙ: поверхня → занурення ───── */
-  const sHero = $('.s-hero'), hero = $('#hero'), word = $('#heroWord span'), win = $('#heroWin'), seqImg = $('#heroSeq'),
-    copy = $('#heroCopy'), water = $('#heroWater'), bgImg = $('#heroBgImg'), canvas = $('#caustics');
-  const FRAMES = D.heroFrames || Array.from({ length: 40 }, (_, k) => `media/hero/f_${pad(k + 1)}.webp`);
-  const N = FRAMES.length, frames = new Array(N).fill(null);
-  let cur = -1, wantIdx = 0, preloading = false;
-  function preload() {
-    if (preloading || quality() === 'static') return;
-    preloading = true;
-    let i = 0, active = 0;
-    const next = () => {
-      while (active < 3 && i < N) {
-        const k = i++; const im = new Image(); active++;
-        im.onload = im.onerror = () => { active--; frames[k] = im.naturalWidth ? im : false; if (k <= wantIdx) scrub(); next(); };
-        im.src = FRAMES[k];
-      }
-    };
-    next();
-  }
-  function scrub() {
-    let k = wantIdx;
-    while (k >= 0 && !frames[k]) k--;            /* найближчий декодований кадр не далі за бажаний — без порожнього кадру */
-    if (k < 0 || k === cur) return;
-    cur = k; seqImg.src = frames[k].src;
-  }
-  let heroTop = 0, heroTotal = 1;
+  /* ───── ГЕРОЙ ───── */
+  const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
+  $$('#heroTitle .line').forEach(line => {       /* слова — окремі спани для появи */
+    line.innerHTML = line.textContent.trim().split(/\s+/).map((w, i) => `<span class="w" style="transition-delay:${.45 + i * .07}s">${esc(w)}</span>`).join(' ');
+  });
+  let heroTop = 0, heroTotal = 1, heroP = 0;
   function heroRender(y) {
     const p = clamp((y - heroTop) / heroTotal, 0, 1);
-    if (quality() !== 'static') {
-      wantIdx = Math.round(seg(p, 0, .72) * (N - 1)); scrub();
-      const wp = ease(seg(p, 0, .6));
-      word.style.transform = `translate3d(0,${(-p * 16).toFixed(2)}vh,0) scale(${(1 - .34 * wp).toFixed(4)})`;
-      word.style.opacity = (1 - seg(p, .22, .62)).toFixed(3);
-      win.style.transform = mobileLayout() ? `scale(${(1 + .06 * p).toFixed(4)})` : `translate3d(0,-50%,0) translate3d(0,${(-p * 8).toFixed(2)}vh,0) scale(${(1 + .04 * p).toFixed(4)})`;
-      win.style.opacity = (1 - seg(p, .72, .92)).toFixed(3);              /* вікно тоне разом із героєм — наприкінці лише вода */
-      const cp = seg(p, .76, .96);
-      copy.style.opacity = (1 - cp).toFixed(3); copy.style.transform = `translate3d(0,${(-cp * 24).toFixed(1)}px,0)`;
-      water.style.setProperty('--wl', (seg(p, .5, .985) * 1.04).toFixed(4));
-      if (bgImg) bgImg.style.opacity = (1 - .55 * seg(p, .3, .9)).toFixed(3);
+    if (motion()) {
+      if (hVideo) hVideo.style.transform = `scale(${(1 + .14 * p).toFixed(4)}) translate3d(0,${(p * 6).toFixed(2)}%,0)`;
+      const cp = seg(p, .35, .8);
+      hCenter.style.opacity = (1 - cp).toFixed(3);
+      hCenter.style.transform = `translate3d(0,calc(-52% - ${(cp * 90).toFixed(1)}px),0) scale(${(1 - .06 * cp).toFixed(4)})`;
+      water.style.setProperty('--wl', (seg(p, .45, .985) * 1.04).toFixed(4));
+      if (p >= 1 && hVideo && !hVideo.paused) hVideo.pause();
+      else if (p < 1 && hVideo && hVideo.paused && hVideo.dataset.ready && !document.hidden) { const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
     }
     return p;
   }
-
-  /* каустика: світло на воді (лише повна якість, без reduced-motion, лише поки герой у кадрі) */
-  let ctx = null, cW = 0, cH = 0, cLast = 0, heroP = 0;
-  function causticsSize() {
-    if (!canvas) return;
+  /* блиски на воді — canvas, лише повна якість і лише поки герой у кадрі */
+  let ctx = null, cW = 0, cH = 0, cLast = 0, dots = [];
+  function sparkSize() {
+    if (!spark) return;
     const dpr = Math.min(devicePixelRatio || 1, 1.5);
-    cW = canvas.clientWidth; cH = canvas.clientHeight;
-    canvas.width = Math.round(cW * dpr); canvas.height = Math.round(cH * dpr);
-    ctx = canvas.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cW = spark.clientWidth; cH = spark.clientHeight;
+    spark.width = Math.round(cW * dpr); spark.height = Math.round(cH * dpr);
+    ctx = spark.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dots = Array.from({ length: mobileLayout() ? 28 : 60 }, () => ({ x: Math.random() * cW, y: Math.random() * cH, r: .6 + Math.random() * 1.8, s: .15 + Math.random() * .45, ph: Math.random() * 6.28 }));
   }
-  function caustics(t) {
-    if (!ctx || quality() !== 'full' || reduced || mobileLayout() || heroP >= 1 || document.hidden) { requestAnimationFrame(caustics); return; }
-    if (t - cLast < 40) { requestAnimationFrame(caustics); return; }        /* ≤25 к/с — це атмосфера, не сюжет */
+  function sparkLoop(t) {
+    requestAnimationFrame(sparkLoop);
+    if (!ctx || quality() !== 'full' || reduced || heroP >= 1 || document.hidden || t - cLast < 33) return;
     cLast = t;
     ctx.clearRect(0, 0, cW, cH);
-    const s = t / 1000, lines = 11;
-    ctx.lineWidth = 1.1;
-    for (let i = 0; i < lines; i++) {
-      const yBase = cH * (.18 + i / lines * .82), f = .0042 + i * .00035, ph = i * 1.7;
-      ctx.beginPath();
-      for (let x = 0; x <= cW; x += 10) {
-        const y = yBase + Math.sin(x * f + s * .9 + ph) * 12 + Math.sin(x * f * 2.3 - s * 1.3 + ph) * 6;
-        x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-      }
-      const a = .05 + .05 * (.5 + .5 * Math.sin(s * .7 + i));
-      ctx.strokeStyle = `rgba(191,227,255,${a.toFixed(3)})`; ctx.stroke();
+    const s = t / 1000;
+    for (const d of dots) {
+      d.y -= d.s; d.x += Math.sin(s * .6 + d.ph) * .18;
+      if (d.y < -4) { d.y = cH + 4; d.x = Math.random() * cW; }
+      const a = .25 + .55 * (.5 + .5 * Math.sin(s * 1.7 + d.ph));
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283);
+      ctx.fillStyle = `rgba(253,220,80,${a.toFixed(3)})`; ctx.fill();
     }
-    requestAnimationFrame(caustics);
   }
 
-  /* ───── ГЛИБИНОМІР + активна секція ───── */
+  /* ───── ГЛИБИНОМІР, АКТИВНА СЕКЦІЯ, ПРОГРЕС ───── */
   const gauge = $('#gauge'), gFloat = $('.gauge__float'), gOut = $('.gauge__m'), gStops = $$('.gauge__stops a'), navLinks = $$('.nav__links a');
   const sections = $$('main section[id]');
   let docMax = 1, secTops = [];
@@ -116,16 +117,17 @@
     docMax = Math.max(1, doc.scrollHeight - innerHeight);
     secTops = sections.map(s => ({ id: s.id, top: s.offsetTop }));
     $$('.gauge__stops li').forEach((li, i) => { const s = secTops[i]; if (s) li.style.top = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; });
-    causticsSize();
+    sparkSize();
   }
   function gaugeRender(y) {
     const p = clamp(y / docMax, 0, 1);
+    nav.style.setProperty('--sp', p.toFixed(4));
     gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
     let active = secTops[0] ? secTops[0].id : '';
     for (const s of secTops) if (s.top <= y + innerHeight * .42) active = s.id;
-    gStops.forEach(a => { const id = a.getAttribute('href').slice(1); a.classList.toggle('is-on', id === active); a.classList.toggle('is-past', secTops.findIndex(s => s.id === id) < secTops.findIndex(s => s.id === active)); });
+    gStops.forEach(a => a.classList.toggle('is-on', a.getAttribute('href').slice(1) === active));
     navLinks.forEach(a => a.classList.toggle('is-on', a.getAttribute('href') === '#' + active));
   }
 
@@ -136,7 +138,7 @@
     const y = scrollY;
     heroP = heroRender(y);
     gaugeRender(y);
-    nav.classList.toggle('is-solid', y > 24);
+    nav.classList.toggle('is-solid', y > 40);
     const dy = y - lastY;
     if (menu.hidden) {
       if (dy > 2 && y > 160 && !navHidden) { navHidden = true; nav.classList.add('is-hidden'); }
@@ -149,6 +151,25 @@
   let rT;
   addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { profile(); measure(); render(); }, 120); });
 
+  /* ───── ПОЯВА СЕКЦІЙ, ЛІЧИЛЬНИКИ, МАРШРУТИ ───── */
+  const rio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add('is-in'); rio.unobserve(e.target);
+    $$('[data-count]', e.target).forEach(countUp);
+    if (e.target.dataset.count !== undefined) countUp(e.target);
+  }), { threshold: .18, rootMargin: '0px 0px -8% 0px' }) : null;
+  function reveal(root) {
+    $$('.rv', root || document).forEach(el => { if (!rio || !motion()) el.classList.add('is-in'); else rio.observe(el); });
+    $$('[data-count]', root || document).forEach(el => { if (el.closest('.rv')) return; if (!rio || !motion()) countUp(el); else rio.observe(el); });   /* лічильники поза .rv (герой) */
+  }
+  function countUp(el) {
+    if (el.dataset.done) return; el.dataset.done = '1';
+    const to = parseFloat(el.dataset.count), suf = el.dataset.suffix || '', dur = 1400, t0 = performance.now();
+    if (!motion()) { el.textContent = fmt(to) + suf; return; }
+    const step = t => { const k = ease(clamp((t - t0) / dur, 0, 1)); el.textContent = fmt(to * k) + suf; if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+
   /* ───── ПАРК ───── */
   const catName = id => (D.cats.find(c => c.id === id) || {}).name || '';
   function renderPark() {
@@ -157,31 +178,54 @@
     D.fleet.forEach(u => counts[u.cat] = (counts[u.cat] || 0) + 1);
     chips.innerHTML = [`<button class="chip" type="button" data-cat="all" aria-pressed="true">Уся техніка <span class="num">${D.fleet.length}</span></button>`]
       .concat(D.cats.map(c => `<button class="chip" type="button" data-cat="${c.id}" aria-pressed="false">${esc(c.name)} <span class="num">${counts[c.id] || 0}</span></button>`)).join('');
-    grid.innerHTML = D.fleet.map(u => `
-      <article class="unit" data-cat="${u.cat}" data-id="${u.id}">
+    grid.innerHTML = D.fleet.map((u, i) => `
+      <article class="unit rv rv--scale" style="--d:${(i % 8) * 60}ms" data-cat="${u.cat}" data-id="${u.id}">
         <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__cat">${esc(catName(u.cat))}</span></figure>
         <div class="unit__body"><h3>${esc(u.name)}</h3>
           <dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl></div>
         <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
-          <button class="btn btn--ghost btn--sm" type="button" data-req="rent" data-subject="${esc(u.name)}">У заявку</button></div>
+          <button class="btn btn--sm" type="button" data-req="rent" data-subject="${esc(u.name)}">У заявку</button></div>
       </article>`).join('');
     chips.addEventListener('click', e => {
       const b = e.target.closest('.chip'); if (!b) return;
       $$('.chip', chips).forEach(c => c.setAttribute('aria-pressed', String(c === b)));
       const cat = b.dataset.cat;
-      $$('.unit', grid).forEach(u => u.hidden = !(cat === 'all' || u.dataset.cat === cat));
+      $$('.unit', grid).forEach((u, i) => { u.hidden = !(cat === 'all' || u.dataset.cat === cat); if (!u.hidden) { u.classList.remove('is-in'); u.style.setProperty('--d', `${(i % 8) * 50}ms`); requestAnimationFrame(() => requestAnimationFrame(() => u.classList.add('is-in'))); } });
       measure();
+    });
+    if (finePointer && motion()) grid.addEventListener('pointermove', e => {         /* нахил картки за вказівником */
+      const u = e.target.closest('.unit'); if (!u) return;
+      const r = u.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+      u.style.setProperty('--ry', `${(x * 7).toFixed(2)}deg`); u.style.setProperty('--rx', `${(-y * 7).toFixed(2)}deg`);
+    });
+    grid.addEventListener('pointerleave', e => { $$('.unit', grid).forEach(u => { u.style.removeProperty('--rx'); u.style.removeProperty('--ry'); }); }, true);
+    grid.addEventListener('pointerout', e => { const u = e.target.closest('.unit'); if (u && !u.contains(e.relatedTarget)) { u.style.removeProperty('--rx'); u.style.removeProperty('--ry'); } });
+  }
+
+  /* ───── РОБОТИ: відео на картках ───── */
+  function renderJobs() {
+    $$('#jobs .job').forEach((job, i) => {
+      job.classList.add('rv'); job.style.setProperty('--d', `${i * 90}ms`);
+      const v = $('video', job); if (v) watchVideo(job);
     });
   }
 
   /* ───── КАЛЬКУЛЯТОР ЗМІНИ ───── */
   const weightOf = u => { const s = (u.specs.find(x => /Вага|Вантажопідйомність/.test(x.k)) || {}).v || ''; const m = s.match(/(\d+(?:[.,]\d+)?)\s*т/); return m ? parseFloat(m[1].replace(',', '.')) : null; };
-  const trailerFor = u => { const w = weightOf(u); const t = D.trailers.find(t => (w == null ? 22 : w) <= t.maxT) || D.trailers[D.trailers.length - 1]; return t; };
+  const trailerFor = u => { const w = weightOf(u); return D.trailers.find(t => (w == null ? 22 : w) <= t.maxT) || D.trailers[D.trailers.length - 1]; };
+  let totalShown = 0, totalAnim = 0;
+  function tweenTotal(el, to) {
+    const from = totalShown, t0 = performance.now(), id = ++totalAnim;
+    if (!motion()) { totalShown = to; el.innerHTML = `${fmt(to)}<small>грн</small>`; return; }
+    const step = t => { if (id !== totalAnim) return; const k = ease(clamp((t - t0) / 520, 0, 1)); totalShown = from + (to - from) * k; el.innerHTML = `${fmt(totalShown)}<small>грн</small>`; if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
   function renderCalc() {
     const sel = $('#cMachine'), hr = $('#cHours'), hrN = $('#cHoursN'), km = $('#cKm'), kmN = $('#cKmN');
     const priced = D.fleet.filter(u => u.price && u.unit === 'год');
     sel.innerHTML = priced.map(u => `<option value="${u.id}">${esc(u.name)} — ${fmt(u.price)} грн/год</option>`).join('');
-    const sync = (a, b) => { a.addEventListener('input', () => { b.value = a.value; calc(); }); };
+    const fill = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min) * 100).toFixed(1)}%`);
+    const sync = (a, b) => a.addEventListener('input', () => { b.value = a.value; fill(hr); fill(km); calc(); });
     sync(hr, hrN); sync(hrN, hr); sync(km, kmN); sync(kmN, km);
     sel.addEventListener('change', calc);
     function calc() {
@@ -189,7 +233,7 @@
       const hours = clamp(parseInt(hrN.value, 10) || 0, 1, 5000), kmv = clamp(parseInt(kmN.value, 10) || 0, 0, 3000);
       const crane = u.cat === 'crane', tr = trailerFor(u);
       const rent = hours * u.price, deliv = crane ? 0 : kmv * tr.rate, total = rent + deliv;
-      $('#cTotal').innerHTML = `${fmt(total)}<small>грн</small>`;
+      tweenTotal($('#cTotal'), total);
       $('#cLines').innerHTML = `<div><span>Оренда: ${hours} год × ${fmt(u.price)} грн</span><b>${fmt(rent)} грн</b></div>` +
         (crane ? `<div><span>Подача автокрана</span><b>уточнюється</b></div>` : `<div><span>Подача ${esc(tr.name).toLowerCase()}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`) +
         `<div><span>Разом, орієнтовно</span><b>${fmt(total)} грн</b></div>`;
@@ -197,28 +241,50 @@
       $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км`}`;
       $('#cOut').dataset.total = String(total);
     }
-    calc();
+    fill(hr); fill(km); calc();
     window.PBTcalc = (id, hours, kmv) => { const u = priced.find(x => x.id === id); if (!u) return null; const crane = u.cat === 'crane'; return hours * u.price + (crane ? 0 : kmv * trailerFor(u).rate); };
   }
 
   /* ───── МАТЕРІАЛИ, ДОКАЗ, ГЕОГРАФІЯ ───── */
   function renderMats() {
-    /* одна сітка на всі 8 позицій (4×2 на десктопі — без порожніх клітинок); група — підпис у плитці */
-    $('#mats').innerHTML = `<div class="tiles">${D.materials.map(m => `
-      <article class="tile"><img src="${m.img}" alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async">
-        <div class="tile__body"><p class="tile__group">${esc(m.group)}</p><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)}<small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p></div></article>`).join('')}</div>`;
+    $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
+      <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}" alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
+        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)}<small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p></div></article>`).join('')}</div>`;
   }
   function renderProof() {
-    $('#reel').innerHTML = D.proof.map(p => `<a href="${p.url}" target="_blank" rel="noopener"><img src="${p.img}" alt="${esc(p.t)}: ${esc(p.s)}" width="576" height="324" loading="lazy" decoding="async"><i aria-hidden="true"></i><figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></a>`).join('');
-    $('#partners').innerHTML = D.partners.map((p, i) => `<li><img src="${p}" alt="Логотип партнера ${i + 1}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
+    $('#reel').innerHTML = D.proof.map((p, i) => `<a class="rv" style="--d:${(i % 3) * 90}ms" href="${p.url}" target="_blank" rel="noopener" aria-label="${esc(p.t)}: ${esc(p.s)} — відкрити відео">
+      <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
+      <i aria-hidden="true"></i><figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></a>`).join('');
+    $$('#reel a').forEach(watchVideo);
+    const logos = D.partners.map((p, i) => `<li><img src="${p}" alt="Логотип партнера ${i + 1}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
+    $('#partners').innerHTML = logos + logos;      /* подвоєння — для нескінченної стрічки */
   }
   function renderGeo() {
-    const home = 'Полтавська';
-    $$('#geoMap .obl').forEach(p => { if (p.dataset.ua === home) p.classList.add('home'); });
-    $('#geoList').innerHTML = D.regions.map(r => `<li class="${r === home ? 'home' : ''}"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : 'виїзд'}</span></li>`).join('');
+    const home = 'Полтавська', svg = $('#geoMap svg');
+    const list = $('#geoList');
+    list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : 'виїзд'}</span></li>`).join('');
+    if (!svg) return;
+    $$('.obl', svg).forEach(p => { if (p.dataset.ua === home) p.classList.add('home'); });
+    /* маршрути з Полтави до кожної області — криві по центрах контурів, малюються при появі секції */
+    const center = p => { const b = p.getBBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
+    const homeP = $$('.obl', svg).find(p => p.dataset.ua === home); if (!homeP) return;
+    const [hx, hy] = center(homeP);
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'routes');
+    const served = $$('.obl.served', svg).filter(p => p.dataset.ua && p.dataset.ua !== home && p.dataset.name !== 'Kyiv');
+    served.forEach((p, i) => {
+      const [x, y] = center(p); const mx = (hx + x) / 2, my = (hy + y) / 2 - Math.abs(x - hx) * .18 - 14;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${hx.toFixed(1)},${hy.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`);
+      path.setAttribute('class', 'route'); g.appendChild(path);
+      const len = path.getTotalLength ? path.getTotalLength() : 400; path.style.setProperty('--len', len.toFixed(1)); path.style.setProperty('--d', `${.2 + i * .12}s`);
+    });
+    const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); ring.setAttribute('class', 'beacon-ring'); ring.setAttribute('cx', hx); ring.setAttribute('cy', hy); ring.setAttribute('r', 9);
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dot.setAttribute('class', 'beacon'); dot.setAttribute('cx', hx); dot.setAttribute('cy', hy); dot.setAttribute('r', 6);
+    g.append(ring, dot); svg.appendChild(g);
+    $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
-    $('#geoMap').addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
-    $('#geoMap').addEventListener('pointerout', () => { hov.textContent = ''; });
+    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
+    svg.addEventListener('pointerout', () => { hov.textContent = ''; });
   }
 
   /* ───── КОНФІГУРАЦІЯ БІЗНЕСУ: /api/config → канали, підвал (fallback — вбудовані дані) ───── */
@@ -264,13 +330,12 @@
     date(v) {
       v = (v || '').trim(); if (!v) return '';
       const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return null;
-      const d = new Date(+m[1], +m[2] - 1, +m[3]);                       /* локальна дата, без зсуву часового поясу */
+      const d = new Date(+m[1], +m[2] - 1, +m[3]);
       if (d.getFullYear() !== +m[1] || d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) return null;
       const today = new Date(); today.setHours(0, 0, 0, 0);
       return d >= today ? v : null;
     }
   };
-  /* чиста функція для тестів: чи валідне значення поля в контексті типу запиту */
   window.PBTv = (field, value, type, method) => {
     if (field === 'contact') return V.contact(method || 'phone', value) !== null;
     if (field === 'hours') return V.int(value, 1, 5000) !== null;
@@ -314,7 +379,7 @@
     msg.classList.remove('is-on');
     if (Object.keys(err).length) { const first = form.querySelector('.is-err input, .is-err textarea'); if (first) first.focus(); return; }
     const h = JSON.stringify(p);
-    if (h !== idemHash) { idemHash = h; idemKey = uuid(); }     /* один ключ на логічну відправку: повтор після обриву — та сама заявка */
+    if (h !== idemHash) { idemHash = h; idemKey = uuid(); }
     const btn = $('#send'); btn.disabled = true; btn.textContent = 'Надсилаю…';
     try {
       if (window.PBT_BUNDLE) throw new Error('bundle');
@@ -338,7 +403,6 @@
   });
   $('#again').addEventListener('click', () => { done.classList.remove('is-on'); form.hidden = false; form.reset(); idemHash = ''; $('#subject').focus(); });
 
-  /* кнопки «У заявку» / «Замовити» — тип + предмет у форму */
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-req]'); if (!b) return;
     const t = b.dataset.req, s = b.dataset.subject;
@@ -348,13 +412,25 @@
     setTimeout(() => $('#subject').focus({ preventScroll: true }), 700);
   });
 
+  /* ───── курсорне світло ───── */
+  const glow = $('#glow');
+  if (glow && finePointer && motion()) {
+    let gx = 0, gy = 0, tx = 0, ty = 0, on = false;
+    addEventListener('pointermove', e => { tx = e.clientX; ty = e.clientY; if (!on) { on = true; glow.classList.add('is-on'); } }, { passive: true });
+    const loop = () => { gx += (tx - gx) * .12; gy += (ty - gy) * .12; glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`; requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+  }
+
   /* ───── СТАРТ ───── */
   function start() {
     profile();
-    renderPark(); renderCalc(); renderMats(); renderProof(); renderGeo(); loadBusiness();
+    renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderGeo(); loadBusiness();
+    reveal();
     measure(); render();
-    hero.classList.add('is-lit');
-    if (quality() !== 'static') { preload(); requestAnimationFrame(caustics); }
+    if (motion() && hVideo) { attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto'; const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
+    requestAnimationFrame(() => hero.classList.add('is-lit'));
+    if (motion()) requestAnimationFrame(sparkLoop);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (motion()) { if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
   }
