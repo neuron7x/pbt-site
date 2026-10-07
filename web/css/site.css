@@ -47,6 +47,9 @@ h2 span{display:block}
 h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 .eyebrow{display:flex;align-items:center;justify-content:center;gap:16px;font:600 12px/1 var(--f-m);letter-spacing:.24em;text-transform:uppercase;color:var(--ink-2)}
 .eyebrow::before,.eyebrow::after{content:"";width:34px;height:2px;background:var(--gold);border-radius:1px}
+/* вузький екран: eyebrow — один рядок (було: «24/7» на окремому рядку при 390 px) */
+@media (max-width:440px){.eyebrow{white-space:nowrap;letter-spacing:.14em;gap:10px}.eyebrow::before,.eyebrow::after{width:18px}}
+@media (max-width:360px){.eyebrow{letter-spacing:.1em}.eyebrow::before,.eyebrow::after{display:none}}
 .on-deep .eyebrow{color:var(--white)}
 .lead{font-size:clamp(16px,1.15vw,19px);line-height:1.55;color:var(--ink-2);max-width:66ch;margin-inline:auto}
 .on-deep .lead{color:#F2F9FF}
@@ -123,7 +126,7 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 /* ═══ S01 ГЕРОЙ: небо, золото, власні кадри ═══ */
 .s-hero{position:relative;height:260vh;color:var(--white)}
 .hero{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;isolation:isolate;background:var(--sky-800)}
-.hero__video{position:absolute;inset:-2%;width:104%;height:104%;object-fit:cover;object-position:50% 45%;will-change:transform;filter:saturate(1.08)}
+.hero__video{position:absolute;inset:-2%;width:104%;height:104%;max-width:none;object-fit:cover;object-position:50% 45%;will-change:transform;filter:saturate(1.08)}
 .hero__sky{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(13,106,224,.78) 0%,rgba(26,135,245,.5) 40%,rgba(51,157,253,.42) 70%,rgba(118,202,252,.75) 100%);mix-blend-mode:multiply;pointer-events:none}
 .hero__sky2{position:absolute;inset:0;z-index:1;background:radial-gradient(60% 50% at 50% 30%,rgba(255,255,255,.14),transparent 70%),linear-gradient(180deg,rgba(6,43,92,.42),transparent 30%,transparent 60%,rgba(6,43,92,.35) 100%);pointer-events:none}
 .hero__beams{position:absolute;inset:-20% -10%;z-index:1;pointer-events:none;opacity:.5;background:conic-gradient(from 160deg at 70% -10%,transparent 0 12deg,rgba(255,255,255,.08) 14deg 18deg,transparent 20deg 34deg,rgba(255,255,255,.06) 36deg 40deg,transparent 42deg 360deg);animation:beams 14s linear infinite alternate;mix-blend-mode:screen}
@@ -142,7 +145,9 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 .hero__center h1 span{display:block;color:var(--gold-2)}
 .js .hero__center h1 .w{display:inline-block;opacity:0;transform:translateY(.6em);transition:opacity .7s var(--ease),transform .7s var(--spring)}
 .js .hero.is-lit h1 .w{opacity:1;transform:none}
-.hero__lead{color:#EAF6FF;max-width:62ch;font-size:clamp(15px,1.1vw,18px);text-shadow:0 1px 14px rgba(6,43,92,.5)}
+.hero__lead{color:#EAF6FF;max-width:62ch;font-size:clamp(15px,1.1vw,18px);text-shadow:0 1px 14px rgba(6,43,92,.5);position:relative;isolation:isolate}
+/* скрим іде за самим підзаголовком (будь-який в'юпорт): ≥4.5:1 на кожному кадрі монтажу — tests/test_site.py */
+.hero__lead::before{content:"";position:absolute;inset:-45% -14%;z-index:-1;pointer-events:none;background:radial-gradient(closest-side,rgba(6,43,92,.8),rgba(6,43,92,.62) 60%,rgba(6,43,92,0))}
 .hero__stats{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(14px,3vw,48px);margin-top:clamp(6px,1.5vh,16px)}
 .hero__stats li{display:grid;justify-items:center;gap:4px;min-width:84px}
 .hero__stats b{font:800 clamp(26px,3vw,44px)/1 var(--f-d);color:var(--gold-2);text-shadow:0 2px 16px rgba(6,43,92,.45);font-variant-numeric:tabular-nums}

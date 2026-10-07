@@ -198,3 +198,53 @@ def test_reveal_does_not_ghost_content_on_normal_scroll(page_factory, w, h, mobi
     r = pg.evaluate(GHOST_JS, 1200)
     assert r['n'] >= 60, r                                          # вимір справді пройшов по блоках, а не по порожньому списку
     assert r['p95'] < 400 and r['total'] < 20000, r
+
+
+@pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
+def test_hero_video_covers_hero_edge_to_edge(page_factory, w, h, mobile):
+    """`img,video{max-width:100%}` різав .hero__video (inset −2 %, width 104 %) до 100 % → праворуч смуга 2 % без відео (29 px на 1440)."""
+    pg = page_factory(w, h, mobile=mobile)
+    v, hero = pg.evaluate("""() => ['#heroVideo', '#hero'].map(s => { const b = document.querySelector(s).getBoundingClientRect(); return [b.left, b.right] })""")
+    assert v[0] <= hero[0] and v[1] >= hero[1], (v, hero)
+
+
+def _lum(px):
+    lin = lambda c: c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (lin(v / 255) for v in px[:3])
+    return .2126 * r + .7152 * g + .0722 * b
+
+
+@pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
+def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile):
+    """Підзаголовок героя (#EAF6FF, 15–18 px) лежить на монтажі. Було 2.2:1 на кадрі з білим MAN (4 з 10 кадрів < 4.5).
+    10 точок монтажу, текст сховано, 90-й перцентиль яскравості фону під ним → ≥ 4.5:1."""
+    import io
+    from PIL import Image
+    pg = page_factory(w, h, mobile=mobile)
+    pg.wait_for_timeout(1500)                                         # слова заголовка й підзаголовок з'являються по черзі
+    fg = _lum([float(x) for x in re.findall(r'[\d.]+', pg.evaluate("getComputedStyle(document.querySelector('.hero__lead')).color"))[:3]])
+    pg.add_style_tag(content='.hero__lead{color:transparent!important;text-shadow:none!important}')
+    worst = []
+    for k in range(10):
+        pg.evaluate(f"""async () => {{ const v = document.getElementById('heroVideo'), to = ms => new Promise(r => setTimeout(r, ms));
+            if (v.readyState < 1) await Promise.race([new Promise(r => v.addEventListener('loadedmetadata', r, {{once: true}})), to(4000)]);
+            v.pause(); v.currentTime = v.duration * {k} / 10 + 0.2;
+            await Promise.race([new Promise(r => v.addEventListener('seeked', r, {{once: true}})), to(3000)]) }}""")
+        pg.wait_for_timeout(250)
+        im = Image.open(io.BytesIO(pg.screenshot(clip=pg.locator('.hero__lead').bounding_box()))).convert('RGB').resize((80, 16))
+        ls = sorted(_lum(px) for px in im.getdata()); bg = ls[int(len(ls) * .9)]
+        worst.append(round((max(fg, bg) + .05) / (min(fg, bg) + .05), 2))
+    assert pg.evaluate("document.getElementById('heroVideo').currentTime") > 0, 'seek не спрацював — вимір по одному кадру'
+    assert min(worst) >= 4.5, worst
+
+
+@pytest.mark.parametrize('w', [320, 390])
+def test_eyebrows_stay_on_one_line_on_phones(page_factory, w):
+    """Було: на 390 px «Полтава · 9 областей · 24/7» переносилось («24/7» окремим рядком), на 320 — і «Орієнтовна вартість»."""
+    pg = page_factory(w, 800, mobile=True)
+    r = pg.evaluate("""() => [...document.querySelectorAll('.eyebrow')].filter(e => e.offsetParent).map(e => {
+        const b = e.getBoundingClientRect(), fs = parseFloat(getComputedStyle(e).fontSize);
+        return {t: e.textContent.trim(), lines: Math.round(b.height / fs), inside: b.left >= -0.5 && b.right <= innerWidth + 0.5} })""")
+    assert len(r) >= 8, r
+    bad = [x for x in r if x['lines'] > 1 or not x['inside']]
+    assert not bad, bad
