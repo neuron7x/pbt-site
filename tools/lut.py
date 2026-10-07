@@ -8,6 +8,7 @@
   • м'який відкат світлих вище 0.88 — небо без пластикового кліпу.
 Запуск: python3 tools/lut.py → config/pbt-look.cube. tools/stock.py і tools/media.py застосовують його через lut3d."""
 import colorsys
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -67,8 +68,9 @@ def main():
     res = look(grid)
     lines = ['TITLE "PBT sky-and-gold"', f'LUT_3D_SIZE {N}', 'DOMAIN_MIN 0 0 0', 'DOMAIN_MAX 1 1 1']
     lines += [f'{x:.6f} {y:.6f} {z:.6f}' for x, y, z in res]
-    OUT.write_text('\n'.join(lines) + '\n', encoding='ascii')
-    print(OUT, N ** 3, 'вузлів')
+    out = Path(sys.argv[1]) if sys.argv[1:] else OUT              # тест пише в tmp — не перезаписує відстежуваний файл
+    out.write_text('\n'.join(lines) + '\n', encoding='ascii')
+    print(out, N ** 3, 'вузлів')
 
 
 if __name__ == '__main__':

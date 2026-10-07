@@ -42,7 +42,7 @@
 
 Знайдені, але **не використані** (придатні для заміни фону, якщо власник не хоче CC BY-SA):
 Mixkit 49193 «Excavator trying to refloat a boat», 23407, 46059, 49188 (ліцензія Mixkit, без атрибуції; 720p) — `scratchpad/media/mixkit`;
-Coverr «Bulldozer on the construction site» 1920×1012; Commons webm «Excavator digging land and loading truck» 1080p CC BY-SA 4.0.
+Coverr «Bulldozer on the construction site» 1920×1012. (Commons «Excavator digging land and loading truck» відтоді використано — розділ `vantazh`, нижче.)
 Pexels і Pixabay блокують пряме завантаження без API-ключа — не використано.
 
 ## Ілюстративна зйомка — секція «Масштаб» (`#masshtab`)

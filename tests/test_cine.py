@@ -1,7 +1,7 @@
 """Секція «Масштаб»: ілюстративна зйомка з Wikimedia Commons.
 Інваріанти: ліцензія кожного джерела вільна; атрибуція (автор, назва, ліцензія з посиланнями) біля КОЖНОГО кадру;
 сторінка прямо каже, що це не техніка ПБТ; web/js/cine.js не розходиться з config/stock.json; кожен кліп існує в обох профілях."""
-import io, json, re, subprocess, sys
+import hashlib, io, json, re, subprocess, sys
 from pathlib import Path
 import pytest
 
@@ -55,6 +55,20 @@ def test_stock_tool_fails_closed_on_forbidden_license(tmp_path):
     assert not (root / 'web' / 'js' / 'cine.js').exists()
 
 
+
+def test_stock_tool_fails_closed_on_hash_mismatch(tmp_path):
+    """Мутант даних: підмінений оригінал (байти ≠ sha256 маніфесту) → падіння до будь-якого запису."""
+    root = tmp_path / 'r'; (root / 'config').mkdir(parents=True); (root / 'tools').mkdir(); (root / 'web' / 'js').mkdir(parents=True)
+    (root / 'references' / 'stock').mkdir(parents=True)
+    for s in CFG['sources'].values():
+        (root / 'references' / 'stock' / s['file']).write_bytes(b'not the original')
+    (root / 'config' / 'stock.json').write_text(json.dumps(CFG), encoding='utf-8')
+    (root / 'tools' / 'stock.py').write_text((ROOT / 'tools' / 'stock.py').read_text(encoding='utf-8'), encoding='utf-8')
+    r = subprocess.run([sys.executable, str(root / 'tools' / 'stock.py'), '--emit'], capture_output=True, text=True)
+    assert r.returncode != 0 and r.stderr.count('sha256 не збігається') == len(CFG['sources']), r.stderr
+    assert not (root / 'web' / 'js' / 'cine.js').exists()
+
+
 def _credits(pg):
     return pg.evaluate("""[...document.querySelectorAll('#cine .cine__ch')].map(li => ({
         links: [...li.querySelectorAll('.cine__cr a')].map(a => a.href), text: li.querySelector('.cine__cr').textContent}))""")
@@ -69,9 +83,12 @@ def test_page_attributes_every_frame_and_disclaims_fleet(page_factory):
         assert s['page'] in c['links'], (s['page'], c['links'])
         assert s['license_url'] in c['links'], c
         assert s['author'] in c['text'] and s['license'] in c['text'], c
+        assert 'обрізано й кольорокориговано' in c['text'], c          # CC BY §3(a)(1)(B): позначка змін
     note = pg.locator('#masshtab .cine__note')
     assert note.is_visible() and 'не техніка ПБТ' in note.text_content()
     assert 'Wikimedia Commons' in pg.locator('.foot__legal').text_content()
+    ph = page_factory(390, 844, mobile=True)                       # застереження не може зникати на телефоні
+    assert ph.locator('#masshtab .cine__note').is_visible() and 'не техніка ПБТ' in ph.locator('#masshtab .cine__note').text_content()
 
 
 def test_stage_plays_and_switches_clip_on_scroll(page_factory):
@@ -145,7 +162,7 @@ def test_reduced_motion_is_static_poster_grid(page_factory):
     assert pg.evaluate("document.querySelector('#cine figure img').naturalWidth") > 0
 
 
-def test_look_lut_is_valid_and_wired():
+def test_look_lut_is_valid_and_wired(tmp_path):
     """config/pbt-look.cube: 33³, у [0,1], сіра вісь монотонна (S-крива без інверсій), чорне/біле не зрізані;
     LUT детермінований (tools/lut.py відтворює файл байт-у-байт) і підключений в обидва конвеєри."""
     import numpy as np
@@ -156,7 +173,9 @@ def test_look_lut_is_valid_and_wired():
     grey = np.array([v[i, i, i] for i in range(33)]) @ [0.2126, 0.7152, 0.0722]
     assert np.all(np.diff(grey) > 0), 'сіра вісь немонотонна'
     assert grey[0] < 0.03 and grey[-1] > 0.95, (grey[0], grey[-1])
-    r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'lut.py')], capture_output=True, text=True)
-    assert r.returncode == 0 and (ROOT / 'config' / 'pbt-look.cube').read_text(encoding='ascii') == cube, 'LUT не відтворюється з формул'
+    out = tmp_path / 'look.cube'                                   # не в ROOT: мутант формул не «лікує» гейт перезаписом файлу
+    r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'lut.py'), str(out)], capture_output=True, text=True)
+    sha = lambda b: hashlib.sha256(b).hexdigest()                  # sha, не рядки: diff 36 тис. рядків вішав pytest на 13+ хв
+    assert r.returncode == 0 and sha(out.read_bytes()) == sha(cube.encode('ascii')), 'LUT не відтворюється з формул'
     for tool in ('stock.py', 'media.py'):
         assert "lut3d=file={LUT}" in (ROOT / 'tools' / tool).read_text(encoding='utf-8'), tool

@@ -253,3 +253,45 @@ def test_media_range_unsatisfiable_and_fallbacks(srv):
     assert st == 206 and body == b'' and h['Content-Length'] == '10'
     st, _, _ = _get(s.base, '/media/cine/nemaye.mp4', {'Range': 'bytes=0-9'})
     assert st == 404
+
+
+def test_media_range_rfc_edges(srv):
+    """Аудит 2c9d850 (D4–D6): одиниця нечутлива до регістру; 5-3 → ігнор (200), не 416; If-Modified-Since ДО Range → 304;
+    IMS порівнюється як дата; /media/../js/… не отримує тижневий кеш; HEAD 404 — без тіла."""
+    s = srv(); full = (ROOT / 'web' / MEDIA.lstrip('/')).read_bytes()
+    st, _, body = _get(s.base, MEDIA, {'Range': 'Bytes=0-9'})
+    assert (st, body) == (206, full[:10])
+    st, _, body = _get(s.base, MEDIA, {'Range': 'bytes=5-3'})
+    assert (st, body) == (200, full)
+    _, h, _ = _get(s.base, MEDIA); lm = h['Last-Modified']
+    st, _, body = _get(s.base, MEDIA, {'Range': 'bytes=0-9', 'If-Modified-Since': lm})
+    assert (st, body) == (304, b'')
+    st, _, _ = _get(s.base, MEDIA, {'If-Modified-Since': 'Fri, 01 Jan 2100 00:00:00 GMT'})      # пізніша дата — теж 304
+    assert st == 304
+    st, _, body = _get(s.base, MEDIA, {'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT'})   # раніша — тіло
+    assert (st, body) == (200, full)
+    st, _, body = _get(s.base, MEDIA, {'If-Modified-Since': 'not-a-date'})
+    assert (st, body) == (200, full)
+    st, h, _ = _get(s.base, '/media/../js/site.js')
+    assert st == 200 and 'max-age' not in (h['Cache-Control'] or '') and h['Accept-Ranges'] is None
+    host, port = s.base.split('//')[1].split(':')                  # HEAD — сирим сокетом: urllib на HEAD тіло не читає й не бачить
+    with socket.create_connection((host, int(port)), timeout=5) as c:
+        c.sendall(b'HEAD /nemaye-takoi-storinky HTTP/1.0\r\nHost: x\r\n\r\n'); raw = b''
+        while (chunk := c.recv(65536)):
+            raw += chunk
+    head, _, tail = raw.partition(b'\r\n\r\n')
+    assert head.startswith(b'HTTP/1.0 404') and tail == b'', (head[:40], len(tail))
+
+
+def test_media_symlink_out_of_web_is_404(srv, tmp_path):
+    """Мутант аудиту M1: гілка /media/ перед in_web → symlink у web/media назовні віддавав файл. Тепер 404 (GET, HEAD, Range)."""
+    s = srv(); secret = tmp_path / 'outside.mp4'; secret.write_bytes(b'TOP-SECRET-MEDIA' * 64)
+    link = ROOT / 'web' / 'media' / 'cine' / 'zz_probe_out.mp4'
+    try:
+        link.symlink_to(secret)
+        for hdr in ({}, {'Range': 'bytes=0-15'}):
+            for method in ('GET', 'HEAD'):
+                st, _, body = _get(s.base, '/media/cine/zz_probe_out.mp4', hdr, method=method)
+                assert st == 404 and b'SECRET' not in body, (hdr, method, st)
+    finally:
+        link.unlink(missing_ok=True)

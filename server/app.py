@@ -6,7 +6,7 @@
 Безпека (OWASP Input Validation / CSRF): JSON-only, ліміт тіла, allowlist для
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
-import hashlib, hmac, io, json, logging, os, re, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
+import email.utils, hashlib, hmac, io, json, logging, os, posixpath, re, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -512,11 +512,26 @@ class Handler(SimpleHTTPRequestHandler):
         if not in_web(self.translate_path(self.path)):
             self.send_error(404)
             return None
-        if self.path.split('?')[0].startswith('/media/'):
+        if self.url_path().startswith('/media/'):
             return self.send_media()
         return super().send_head()
 
-    RANGE = re.compile(r'bytes=(\d*)-(\d*)$')
+    RANGE = re.compile(r'bytes=(\d*)-(\d*)$', re.I)            # одиниця діапазону нечутлива до регістру (RFC 9110 §14.1)
+
+    def url_path(self):
+        """Нормалізований шлях запиту (як його бачить translate_path): /media/../js/x.js → /js/x.js. Гілки статики й кешу — лише за ним."""
+        p = posixpath.normpath(urllib.parse.unquote((getattr(self, 'path', None) or '').split('?', 1)[0].split('#', 1)[0]))
+        return '/' if p in ('.', '//') else p
+
+    def not_modified(self, mtime):
+        """If-Modified-Since як ДАТА (RFC 9110 §13.1.3); нерозбірна — ігнорується."""
+        ims = self.headers.get('If-Modified-Since')
+        if not ims or self.headers.get('If-None-Match'):
+            return False
+        try:
+            return int(mtime) <= email.utils.parsedate_to_datetime(ims).timestamp()
+        except (TypeError, ValueError, IndexError, OverflowError):
+            return False
 
     def send_media(self):
         """P14: медіа з HTTP Range (RFC 9110 §14). Safari/iOS не відтворює mp4 без 206; Chromium без нього не перемотує
@@ -530,8 +545,7 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             st = os.fstat(f.fileno()); size = st.st_size
             lm = self.date_time_string(int(st.st_mtime))
-            ims = self.headers.get('If-Modified-Since')
-            if ims and ims == lm and not self.headers.get('Range'):
+            if self.not_modified(st.st_mtime):                   # §13.2.2: If-Modified-Since перевіряється ДО Range
                 f.close(); self.send_response(304); self.send_header('Last-Modified', lm); self.end_headers(); return None
             m = self.RANGE.match((self.headers.get('Range') or '').strip())
             if_range = self.headers.get('If-Range')
@@ -541,10 +555,13 @@ class Handler(SimpleHTTPRequestHandler):
                     start, end = int(a), min(int(b), size - 1) if b else size - 1
                 else:                                           # суфікс: останні N байтів
                     start, end = max(size - int(b), 0), size - 1
-                if start >= size or start > end:
+                if a and b and int(b) < int(a):                 # синтаксично невалідний (5-3) → ігнорувати Range, увесь файл
+                    start, end = None, None
+                elif start >= size or start > end:
                     f.close()
                     self.send_response(416); self.send_header('Content-Range', f'bytes */{size}')
                     self.send_header('Content-Length', '0'); self.end_headers(); return None
+            if m and (m.group(1) or m.group(2)) and (not if_range or if_range == lm) and start is not None:
                 f.seek(start)
                 self.send_response(206)
                 self.send_header('Content-Range', f'bytes {start}-{end}/{size}')
@@ -591,7 +608,7 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header(k, v)
         if getattr(self, 'headers', None) and self.behind_trusted_proxy() and self.headers.get('X-Forwarded-Proto') == 'https':   # S6: HSTS лише коли запит прийшов по HTTPS
             self.send_header('Strict-Transport-Security', 'max-age=15552000')
-        p = (getattr(self, 'path', None) or '').split('?')[0]   # SEC-2: помилка розбору — path/headers ще не присвоєні
+        p = self.url_path()   # SEC-2: помилка розбору — path ще не присвоєно (url_path терпить); нормалізовано — /media/../js не кешується тиждень
         if p.startswith(('/media/', '/fonts/')) and getattr(self, '_status', None) in (200, 206, 304):   # SEC-3: 404 не кешується тиждень
             self.send_header('Cache-Control', 'public, max-age=604800')
         elif not p.startswith('/api/'):
@@ -616,7 +633,8 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.send_header('Content-Length', str(len(raw)))
             self.end_headers()
-            self.wfile.write(raw)
+            if getattr(self, 'command', None) != 'HEAD':   # HEAD — без тіла (RFC 9110 §9.3.2)
+                self.wfile.write(raw)
             return
         super().send_error(code, message, explain)
 
