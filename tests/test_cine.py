@@ -95,6 +95,17 @@ def test_phone_takes_portrait_cut(page_factory):
     pg.wait_for_function("() => { const v = document.querySelector('#masshtab .cine__v.is-on'); return v && /voda-m\\.(webm|mp4)$/.test(v.currentSrc) }", timeout=8000)
 
 
+
+def test_credit_is_readable_on_any_frame(page_factory):
+    """Атрибуція лежить на відео; світлий кадр (кар'єр) з'їдав її на телефоні. Підкладка ≥ .55 альфи тримає текст на будь-якому кадрі."""
+    pg = page_factory(390, 844, mobile=True)
+    pg.evaluate("document.getElementById('cine-karier').scrollIntoView({block: 'center'})")
+    pg.wait_for_function("() => document.querySelector('#cine-karier.is-cur')", timeout=8000)
+    a = pg.evaluate("""() => { const m = getComputedStyle(document.querySelector('#cine-karier .cine__cr')).backgroundColor.match(/rgba?\\(([^)]+)\\)/);
+                              const p = m[1].split(',').map(Number); return p.length === 4 ? p[3] : 1 }""")
+    assert a >= 0.55, f'підкладка атрибуції прозора: alpha={a}'
+
+
 def test_reduced_motion_is_static_poster_grid(page_factory):
     pg = page_factory(reduced=True)
     assert not pg.evaluate("document.getElementById('masshtab').classList.contains('is-pinned')")
