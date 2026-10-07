@@ -33,7 +33,7 @@
     video.dataset.ready = '1';
     video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
     const n = tall && mobileLayout() ? name.replace('-wide', '-tall') : name;
-    if (D.videoData || !document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
+    if (D.videoData || D.mp4Only || !document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
       video.src = vsrc(n, 'mp4');
     } else {
       const s1 = document.createElement('source'); s1.src = vsrc(n, 'webm'); s1.type = 'video/webm';
@@ -421,10 +421,64 @@
     requestAnimationFrame(loop);
   }
 
+  /* ───── МАСШТАБ: кіно-сцена з ілюстративної зйомки (window.PBT_CINE ← config/stock.json) ───── */
+  const C_BASE = D.cine || 'media/cine/';
+  const cposter = id => (D.cinePosters && D.cinePosters[id]) || C_BASE + id + '-w.webp';   /* бандл: постери як data:URI, відео немає */
+  function renderCine() {
+    const sec = $('#masshtab'), list = $('#cine'), rail = $('#cineRail'), C = window.PBT_CINE;
+    if (!sec || !list || !C || !C.chapters) return;
+    const chs = C.chapters, total = String(chs.length).padStart(2, '0');
+    list.innerHTML = chs.map((c, i) => `<li class="cine__ch" id="cine-${esc(c.id)}" data-i="${i}">
+      <figure><img src="${cposter(c.id)}" alt="${esc(c.word)}: ${esc(c.line)}" width="1920" height="1080" loading="lazy" decoding="async"></figure>
+      <p class="cine__n num">${String(i + 1).padStart(2, '0')} / ${total}</p>
+      <h3 class="cine__w">${esc(c.word)}</h3>
+      <p class="cine__l">${esc(c.line)}</p>
+      <p class="cine__cr">Кадр: <a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; обрізано й кольорокориговано</p>
+    </li>`).join('');
+    if (!motion() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
+    sec.classList.add('is-pinned');
+    rail.innerHTML = chs.map(c => `<a href="#cine-${esc(c.id)}"><span>${esc(c.word)}</span></a>`).join('');
+    const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), dots = $$('a', rail);
+    let cur = -1, front = 0, inView = false;
+    const prof = () => (mobileLayout() && innerHeight > innerWidth ? 'm' : 'w');
+    function load(v, id) {
+      const n = id + '-' + prof();
+      if (v.dataset.clip === n) return;
+      v.dataset.clip = n; v.removeAttribute('src'); v.innerHTML = '';
+      v.poster = C_BASE + n + '.webp';
+      if (!D.mp4Only && document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
+        const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = 'video/webm'; v.append(a);
+      }
+      const b = document.createElement('source'); b.src = C_BASE + n + '.mp4'; b.type = 'video/mp4'; v.append(b);
+      v.load();
+    }
+    function show(i) {
+      if (i === cur) return;
+      cur = i;
+      items.forEach((el, k) => el.classList.toggle('is-cur', k === i));
+      dots.forEach((el, k) => el.classList.toggle('is-on', k === i));
+      const next = layers[1 - front], prev = layers[front];
+      load(next, chs[i].id);
+      next.classList.add('is-on'); prev.classList.remove('is-on');
+      if (inView) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      setTimeout(() => { if (!prev.classList.contains('is-on')) prev.pause(); }, 1200);
+      front = 1 - front;
+      const after = chs[i + 1]; if (after) setTimeout(() => { const spare = layers[1 - front]; if (!spare.classList.contains('is-on')) { load(spare, after.id); spare.preload = 'auto'; } }, 1400);
+      sec.dataset.cur = chs[i].id;
+    }
+    const cio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) show(+e.target.dataset.i); }), { rootMargin: '-45% 0px -45% 0px' });
+    items.forEach(el => cio.observe(el));
+    new IntersectionObserver(es => es.forEach(e => {
+      inView = e.isIntersecting;
+      if (inView) { if (cur < 0) show(0); const v = layers[front]; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); playing.add(v); }   /* front — видимий шар */
+      else layers.forEach(x => { x.pause(); playing.delete(x); });
+    }), { threshold: 0 }).observe(sec);
+  }
+
   /* ───── СТАРТ ───── */
   function start() {
     profile();
-    renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderGeo(); loadBusiness();
+    renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
     reveal();
     measure(); render();
     if (motion() && hVideo) { attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto'; const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }

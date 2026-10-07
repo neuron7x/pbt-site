@@ -117,6 +117,22 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
   </div>
 </section>
 
+<!-- ═══ S02b МАСШТАБ: ілюстративна зйомка (Wikimedia Commons, вільні ліцензії; config/stock.json) ═══ -->
+<section class="s-cine" id="masshtab" aria-labelledby="cineTitle">
+  <div class="cine__stage" aria-hidden="true">
+    <video class="cine__v" muted playsinline loop preload="none" tabindex="-1"></video>
+    <video class="cine__v" muted playsinline loop preload="none" tabindex="-1"></video>
+    <div class="cine__veil"></div>
+  </div>
+  <div class="cine__head">
+    <p class="eyebrow">Масштаб робіт</p>
+    <h2 id="cineTitle">Шість задач —<span>одна зміна</span></h2>
+    <p class="cine__note">Ілюстративна зйомка з Wikimedia Commons, не техніка ПБТ. Наші машини — у розділі «Кадри з об'єктів».</p>
+  </div>
+  <ol class="cine__chs" id="cine"></ol>
+  <nav class="cine__rail" aria-label="Розділи масштабу" id="cineRail"></nav>
+</section>
+
 <!-- ═══ S03 ПАРК ═══ -->
 <section class="sec on-deep s-park" id="tekhnika">
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#0A57C2" d="M0,60 C240,100 480,10 720,40 C960,70 1200,90 1440,30 L1440,90 L0,90 Z"/></svg>
@@ -296,11 +312,12 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
   </div>
   <div class="foot__legal">
     <span>© 2026 ТОВ «ПолтаваБудТехніка». Ціни орієнтовні, не є публічною офертою.</span>
-    <span>Відео й фото — власна зйомка ПБТ; карта — <a href="https://www.geoboundaries.org" target="_blank" rel="noopener">geoBoundaries, ODbL</a>.</span>
+    <span>Відео й фото — власна зйомка ПБТ, крім розділу «Масштаб»: там ілюстративні кадри з <a href="#masshtab">Wikimedia Commons</a> (вільні ліцензії, автори біля кадрів); карта — <a href="https://www.geoboundaries.org" target="_blank" rel="noopener">geoBoundaries, ODbL</a>.</span>
   </div>
 </footer>
 
 <script src="js/data.js"></script>
+<script src="js/cine.js"></script>
 <script src="js/site.js"></script>
 </body>
 </html>

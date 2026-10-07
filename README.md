@@ -22,6 +22,7 @@ make gate           # тести + одно-файлова збірка; дер�
 ## Збірка й огляд
 ```bash
 make media          # відео з references/*.mp4 (кліпи клієнта; детерміновано; джерела — docs/PROVENANCE.md)
+make stock          # секція «Масштаб»: ілюстративні кліпи з Wikimedia Commons (ліцензії й sha256 — config/stock.json)
 make shots          # знімки екранів → artifacts/shots/
 make bundle         # dist/pbt-site.html (один файл, без сервера) + dist/pbt-site.artifact.html (для Artifact)
 ```

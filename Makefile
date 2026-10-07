@@ -17,6 +17,9 @@ test-site:      ## лише браузерні тести
 media:          ## відео героя/робіт/доказу з канонічних кліпів клієнта (references/*.mp4 → web/media/video), детерміновано, ffmpeg
 	$(PY) tools/media.py
 
+stock:          ## секція «Масштаб»: кліпи Wikimedia Commons (config/stock.json → web/media/cine + web/js/cine.js), ліцензія й sha256 — fail-closed
+	$(PY) tools/stock.py
+
 shots:          ## знімки екранів у artifacts/shots (сервер має працювати)
 	$(PY) tools/shots.py http://127.0.0.1:$(PORT)
 
@@ -34,4 +37,4 @@ ops-install:    ## systemd --user: сервіс + сторож здоров'я +
 
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/ —/'
-.PHONY: run test test-api test-site media shots bundle gate clean ops-install help
+.PHONY: run test test-api test-site media stock shots bundle gate clean ops-install help

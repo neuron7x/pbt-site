@@ -1,0 +1,123 @@
+{
+  "_": "Ілюстративна зйомка з Wikimedia Commons для секції «Масштаб». Лише вільні ліцензії; атрибуція — на сайті біля кожного кадру. Файли — references/stock/ (не версіюються), sha256 звіряється перед нарізкою (tools/stock.py). Похідні кліпи з CC BY-SA поширюються під тією ж ліцензією.",
+  "allowed_licenses": [
+    "CC0",
+    "Public domain",
+    "CC BY 3.0",
+    "CC BY 4.0",
+    "CC BY-SA 3.0",
+    "CC BY-SA 4.0"
+  ],
+  "sources": {
+    "kanagawa-excavators": {
+      "file": "s02.webm",
+      "sha256": "f5934dae66644f2e563598b6f9fc55126cbd7acc301163d1ab1a9fe170036c26",
+      "title": "Excavators - Kanagawa - 2026 Jan 16",
+      "author": "Nesnad",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Excavators_-_Kanagawa_-_2026_Jan_16.webm"
+    },
+    "kanagawa-dumptruck": {
+      "file": "s03.webm",
+      "sha256": "6eabfe55b0688518d5932aef8e5bf524ae3e4f4abeeb7296ab8a81f62ec6fd82",
+      "title": "Dumptruck - Kanagawa - 2024 Jan 26",
+      "author": "Nesnad",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Dumptruck_-_Kanagawa_-_2024_Jan_26.webm"
+    },
+    "articulated-hauler": {
+      "file": "s07.webm",
+      "sha256": "02cd483d8818b6d083d41224da0b89f2a4605db185f3e90c100bde433563f569",
+      "title": "Articulated hauler dump truck",
+      "author": "Wikideas1",
+      "license": "CC0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Articulated_hauler_dump_truck.webm"
+    },
+    "excavator-loading": {
+      "file": "s08.webm",
+      "sha256": "40b48f4a0a29f58416023ecd32453060b361b707c62c782887845217c99c4d8f",
+      "title": "Excavator digging land and loading truck",
+      "author": "KEmel49",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Excavator_digging_land_and_loading_truck.webm"
+    },
+    "werbach-quarry": {
+      "file": "s10.webm",
+      "sha256": "197b235a0872eb1328363bc9298bee76c7f4789002f37464221fdc8a0dd78931",
+      "title": "2025-06-12 Steinbruch Werbach - Arbeiten mit Planierraupe",
+      "author": "Triplec85",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:2025-06-12_Steinbruch_Werbach_-_Arbeiten_mit_Planierraupe.webm"
+    },
+    "cologne-demolition": {
+      "file": "s13.webm",
+      "sha256": "ffc9a6fd2961c0a0dc1d981d1f2977ea80af4ce2bfbb7f04f83bb52791682e67",
+      "title": "Neugestaltung östliche Domumgebung - Bagger mit Abbruchzange",
+      "author": "Raimond Spekking",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "page": "https://commons.wikimedia.org/wiki/File:Neugestaltung_%C3%B6stliche_Domumgebung_-_Bagger_mit_Abbruchzange.webm"
+    }
+  },
+  "chapters": [
+    {
+      "id": "karier",
+      "source": "werbach-quarry",
+      "from": 0.0,
+      "to": 7.0,
+      "focus": 0.62,
+      "word": "Кар'єр",
+      "line": "Пісок і щебінь — з кар'єру на об'єкт без посередників."
+    },
+    {
+      "id": "zemlia",
+      "source": "kanagawa-excavators",
+      "from": 0.5,
+      "to": 7.5,
+      "focus": 0.55,
+      "word": "Земля",
+      "line": "Котлован, траншея, відвал — два екскаватори в одну зміну."
+    },
+    {
+      "id": "vantazh",
+      "source": "excavator-loading",
+      "from": 4.0,
+      "to": 10.0,
+      "focus": 0.5,
+      "word": "Вантаж",
+      "line": "Ковш за ковшем у самоскид — без простою машин."
+    },
+    {
+      "id": "voda",
+      "source": "kanagawa-dumptruck",
+      "from": 9.0,
+      "to": 17.0,
+      "focus": 0.55,
+      "word": "Вода",
+      "line": "Гусениця йде там, де колесо застрягне."
+    },
+    {
+      "id": "vyviz",
+      "source": "articulated-hauler",
+      "from": 6.0,
+      "to": 14.0,
+      "focus": 0.45,
+      "word": "Вивіз",
+      "line": "Розвантаження за хвилину — і знову в рейс."
+    },
+    {
+      "id": "demont",
+      "source": "cologne-demolition",
+      "from": 10.0,
+      "to": 18.0,
+      "focus": 0.45,
+      "word": "Демонтаж",
+      "line": "Гідроножиці розбирають бетон шар за шаром."
+    }
+  ]
+}

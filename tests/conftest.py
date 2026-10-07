@@ -55,7 +55,7 @@ def page_factory(browser, server):
         pg.on('pageerror', lambda e: pg.errors.append(f'pageerror: {e}'))
         pg.on('console', lambda m: pg.errors.append(f'console: {m.text}') if m.type == 'error' else None)
         pg.on('response', lambda r: pg.errors.append(f'{r.status} {r.url}') if r.status >= 400 and '/api/lead' not in r.url else None)
-        pg.on('requestfailed', lambda r: pg.errors.append(f'failed {r.url}') if 'media/video' not in r.url else None)
+        pg.on('requestfailed', lambda r: pg.errors.append(f'failed {r.url}') if 'media/video' not in r.url and 'media/cine' not in r.url else None)   # скасоване завантаження петлі при зміні кадру — норма
         pg.goto(server['base'] + path, wait_until='networkidle')
         pg.wait_for_timeout(600)
         return pg

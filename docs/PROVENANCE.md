@@ -45,6 +45,30 @@ Mixkit 49193 «Excavator trying to refloat a boat», 23407, 46059, 49188 (ліц
 Coverr «Bulldozer on the construction site» 1920×1012; Commons webm «Excavator digging land and loading truck» 1080p CC BY-SA 4.0.
 Pexels і Pixabay блокують пряме завантаження без API-ключа — не використано.
 
+## Ілюстративна зйомка — секція «Масштаб» (`#masshtab`)
+
+Джерело правди — `config/stock.json`; `tools/stock.py` (`make stock`) звіряє ліцензію з білим списком і sha256 оригіналу,
+потім ріже, грейдить у палітру «Небо і золото» й генерує `web/js/cine.js` (атрибуція на сторінці). Оригінали —
+`references/stock/` (не версіюються; завантажено з Wikimedia Commons 07.10.2026).
+
+| Вихід `web/media/` | Джерело | Автор | Ліцензія | Фрагмент | sha256 оригіналу |
+|---|---|---|---|---|---|
+| `cine/karier-{w,m}` | [2025-06-12 Steinbruch Werbach - Arbeiten mit Planierraupe](https://commons.wikimedia.org/wiki/File:2025-06-12_Steinbruch_Werbach_-_Arbeiten_mit_Planierraupe.webm) | Triplec85 | CC BY-SA 4.0 | 0.0–7.0 с; портретний кроп focus=0.62 | `197b235a0872eb13…` |
+| `cine/zemlia-{w,m}` | [Excavators - Kanagawa - 2026 Jan 16](https://commons.wikimedia.org/wiki/File:Excavators_-_Kanagawa_-_2026_Jan_16.webm) | Nesnad | CC BY 4.0 | 0.5–7.5 с; портретний кроп focus=0.55 | `f5934dae66644f2e…` |
+| `cine/vantazh-{w,m}` | [Excavator digging land and loading truck](https://commons.wikimedia.org/wiki/File:Excavator_digging_land_and_loading_truck.webm) | KEmel49 | CC BY-SA 4.0 | 4.0–10.0 с; портретний кроп focus=0.5 | `40b48f4a0a29f584…` |
+| `cine/voda-{w,m}` | [Dumptruck - Kanagawa - 2024 Jan 26](https://commons.wikimedia.org/wiki/File:Dumptruck_-_Kanagawa_-_2024_Jan_26.webm) | Nesnad | CC BY-SA 4.0 | 9.0–17.0 с; портретний кроп focus=0.55 | `6eabfe55b0688518…` |
+| `cine/vyviz-{w,m}` | [Articulated hauler dump truck](https://commons.wikimedia.org/wiki/File:Articulated_hauler_dump_truck.webm) | Wikideas1 | CC0 | 6.0–14.0 с; портретний кроп focus=0.45 | `02cd483d8818b6d0…` |
+| `cine/demont-{w,m}` | [Neugestaltung östliche Domumgebung - Bagger mit Abbruchzange](https://commons.wikimedia.org/wiki/File:Neugestaltung_%C3%B6stliche_Domumgebung_-_Bagger_mit_Abbruchzange.webm) | Raimond Spekking | CC BY-SA 3.0 | 10.0–18.0 с; портретний кроп focus=0.45 | `ffc9a6fd2961c0a0…` |
+
+Обробка всіх кліпів: обрізка, масштаб 1920×1080 і 720×1280 (кроп 9:16), кольорокорекція, віньєтка, затемнення 0,35 с на межах.
+Похідні від CC BY-SA поширюються під тією ж ліцензією; автор, назва й ліцензія з посиланнями — біля кожного кадру на сторінці.
+
+**Межа:** це не техніка ПБТ. Сторінка каже це прямо (`.cine__note`, підвал); секція «Кадри з об'єктів» лишається лише власною
+зйомкою. Ролики виробників із YouTube (Liebherr, Volvo, JCB, Mercedes, Goldhofer тощо) **не використано**: прав на комерційне
+використання немає, а техніка чужих брендів на сайті ПБТ вводила б клієнта в оману щодо парку.
+Відкинуто на перегляді: Hyundai V1/V2 (захаращена вулиця), Unterbalbach (техніка дрібна в кадрі), Spijksedijk (крана не видно),
+Bombo Headland (узбережжя без техніки), skid-steer NYC (огорожа перекриває машину); воєнні й політично чутливі кадри виключено.
+
 ## Шрифти
 
 Google Fonts, OFL 1.1: Tektur (змінний, 400–900), IBM Plex Sans 400/500/600, IBM Plex Mono 400/500 — підмножини cyrillic/cyrillic-ext/latin/latin-ext, локально в `web/fonts/` (24 woff2, 560 КБ), без зовнішніх запитів.
