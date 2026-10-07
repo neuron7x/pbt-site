@@ -200,6 +200,10 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 /* ═══ S03 ПАРК ═══ */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 4px 12px;margin:0 auto 30px;justify-content:safe center;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .chips::-webkit-scrollbar{display:none}
+/* ≥820 px: усі 9 фільтрів видно (було: обрізаний останній на 1440, 4 з 9 на 820 — прихована прокрутка без підказки).
+   Телефон: прокрутка з затуханням країв (видно, що є ще) і прилипанням до чипа. */
+@media (min-width:820px){.chips{flex-wrap:wrap;overflow:visible;max-width:770px}}   /* 5 + 4, не 7 + 2 */
+@media (max-width:819.98px){.chips{justify-content:flex-start;scroll-snap-type:x proximity;scroll-padding-inline:16px;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 42px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 18px,#000 calc(100% - 42px),transparent);margin-inline:calc(var(--gut) * -1);padding-inline:var(--gut)}.chip{scroll-snap-align:start}}
 .chip{flex:none;display:inline-flex;align-items:center;gap:8px;padding:11px 16px;border-radius:999px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px var(--line-w);color:var(--white);font:600 13.5px/1 var(--f-b);
   transition:background .3s,box-shadow .3s,color .3s,transform .3s var(--spring)}
 .chip .num{font-size:11px;opacity:.75}

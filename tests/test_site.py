@@ -248,3 +248,23 @@ def test_eyebrows_stay_on_one_line_on_phones(page_factory, w):
     assert len(r) >= 8, r
     bad = [x for x in r if x['lines'] > 1 or not x['inside']]
     assert not bad, bad
+
+
+CHIPS_JS = """() => { const c = document.getElementById('chips'), cb = c.getBoundingClientRect(), ch = [...c.querySelectorAll('.chip')], rows = {};
+  ch.forEach(x => { const t = Math.round(x.getBoundingClientRect().top); rows[t] = (rows[t] || 0) + 1 });
+  return {rows: Object.values(rows), clipped: ch.filter(x => { const b = x.getBoundingClientRect(); return b.left < cb.left - .5 || b.right > cb.right + .5 }).length,
+          scroll: c.scrollWidth > c.clientWidth + 1, mask: getComputedStyle(c).maskImage !== 'none' || (getComputedStyle(c).webkitMaskImage || 'none') !== 'none'} }"""
+
+
+@pytest.mark.parametrize('w', [1920, 1440, 1024, 820])
+def test_fleet_filters_all_visible_and_balanced(page_factory, w):
+    """Було: прихована прокрутка без підказки — обрізаний останній фільтр на 1440, 4 з 9 на 820. Тепер ≥ 820 px: усі видно, 5 + 4."""
+    r = page_factory(w, 900).evaluate(CHIPS_JS)
+    assert r['clipped'] == 0 and r['rows'] == [5, 4], r
+
+
+@pytest.mark.parametrize('w', [819, 390])
+def test_fleet_filters_scroll_with_edge_fade_on_narrow(page_factory, w):
+    """< 820 px фільтри прокручуються — край має затухати, щоб було видно, що є ще."""
+    r = page_factory(w, 900, mobile=w < 700).evaluate(CHIPS_JS)
+    assert r['scroll'] and r['mask'] and r['rows'] == [9], r
