@@ -114,7 +114,8 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 
 /* ── поява секцій (стаггер); без JS або в статичній якості усе видно одразу ── */
 .rv{--d:0ms}
-.js .rv{opacity:0;transform:translateY(26px);transition:opacity .9s var(--ease) var(--d),transform .9s var(--ease) var(--d)}
+/* поява стартує ще під краєм екрана (site.js: rootMargin +20%) — на звичайному скролі блок не «примара» в кадрі; затримка стаггера ≤ 160 мс */
+.js .rv{opacity:0;transform:translateY(18px);transition:opacity .38s cubic-bezier(.2,.75,.25,1) min(var(--d),160ms),transform .8s var(--spring) min(var(--d),160ms)}   /* непрозорість швидко, рух — довше: рух видно вже на щільному блоці */
 .js .rv--scale{transform:translateY(18px) scale(.96)}
 .js .rv.is-in,.js[data-quality=static] .rv{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}}

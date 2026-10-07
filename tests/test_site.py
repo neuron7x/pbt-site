@@ -175,3 +175,26 @@ def test_axe_wcag22aa_no_serious_violations(page_factory, w, h, mobile):
     res = pg.evaluate('axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag22aa"]}})')
     bad = [(v['id'], v['impact'], [n['target'] for n in v['nodes']][:3]) for v in res['violations'] if v['impact'] in ('serious', 'critical')]
     assert not bad, bad
+
+
+GHOST_JS = """async (speed) => {
+  const els = [...document.querySelectorAll('.rv')].filter(e => !e.closest('#masshtab')), g = new Map(els.map(e => [e, 0]));
+  const H = document.scrollingElement.scrollHeight - innerHeight; const t0 = performance.now(); let last = t0;
+  while (true) { const now = performance.now(), dt = now - last; last = now; const y = Math.min(H, (now - t0) / 1000 * speed);
+    scrollTo({top: y, behavior: 'instant'}); await new Promise(r => requestAnimationFrame(r));
+    for (const e of els) { if (e.hidden) continue; const b = e.getBoundingClientRect(); const vis = Math.min(b.bottom, innerHeight) - Math.max(b.top, 0);
+      if (vis > Math.min(40, b.height / 2) && parseFloat(getComputedStyle(e).opacity) < 0.9) g.set(e, g.get(e) + dt); }
+    if (y >= H) break; }
+  const v = [...g.values()].sort((a, b) => a - b);
+  return {n: v.length, p50: v[v.length >> 1], p95: v[Math.floor(v.length * .95)], total: v.reduce((a, b) => a + b, 0)}; }"""
+
+
+@pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
+def test_reveal_does_not_ghost_content_on_normal_scroll(page_factory, w, h, mobile):
+    """Поява секцій не має показувати напівпрозорий вміст на звичайному скролі (1200 px/с, `behavior: instant` —
+    `scroll-behavior: smooth` інакше гасить сам скрол). «Примара» = блок помітно в кадрі з opacity < 0.9.
+    Було (threshold .18, −8 %, 0.9 с з повільним стартом): p50 801 мс, p95 1029 мс, разом 61 с на сторінку. Стало ≈ 157 / 215 мс."""
+    pg = page_factory(w, h, mobile=mobile)
+    r = pg.evaluate(GHOST_JS, 1200)
+    assert r['n'] >= 60, r                                          # вимір справді пройшов по блоках, а не по порожньому списку
+    assert r['p95'] < 400 and r['total'] < 20000, r
