@@ -193,11 +193,11 @@ GHOST_JS = """async (speed) => {
 def test_reveal_does_not_ghost_content_on_normal_scroll(page_factory, w, h, mobile):
     """Поява секцій не має показувати напівпрозорий вміст на звичайному скролі (1200 px/с, `behavior: instant` —
     `scroll-behavior: smooth` інакше гасить сам скрол). «Примара» = блок помітно в кадрі з opacity < 0.9.
-    Було (threshold .18, −8 %, 0.9 с з повільним стартом): p50 801 мс, p95 1029 мс, разом 61 с на сторінку. Стало ≈ 157 / 215 мс."""
+    Було (threshold .18, −8 %, 0.9 с з повільним стартом): p50 801 мс, p95 1029 мс, разом 61 с на сторінку. Стало ≈ 157 / 215 мс, разом ≈ 8.9 с."""
     pg = page_factory(w, h, mobile=mobile)
     r = pg.evaluate(GHOST_JS, 1200)
     assert r['n'] >= 60, r                                          # вимір справді пройшов по блоках, а не по порожньому списку
-    assert r['p95'] < 400 and r['total'] < 20000, r
+    assert r['p95'] < 300 and r['total'] < 12000, r              # HEAD ≈ 215 / 8.9k; мутанти аудиту ≈ 350 / 20k
 
 
 @pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
@@ -224,17 +224,19 @@ def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile):
     pg.wait_for_timeout(1500)                                         # слова заголовка й підзаголовок з'являються по черзі
     fg = _lum([float(x) for x in re.findall(r'[\d.]+', pg.evaluate("getComputedStyle(document.querySelector('.hero__lead')).color"))[:3]])
     pg.add_style_tag(content='.hero__lead{color:transparent!important;text-shadow:none!important}')
-    worst = []
+    worst, seeks = [], []
     for k in range(10):
-        pg.evaluate(f"""async () => {{ const v = document.getElementById('heroVideo'), to = ms => new Promise(r => setTimeout(r, ms));
+        ok = pg.evaluate(f"""async () => {{ const v = document.getElementById('heroVideo'), to = ms => new Promise(r => setTimeout(r, ms));
             if (v.readyState < 1) await Promise.race([new Promise(r => v.addEventListener('loadedmetadata', r, {{once: true}})), to(4000)]);
             v.pause(); v.currentTime = v.duration * {k} / 10 + 0.2;
-            await Promise.race([new Promise(r => v.addEventListener('seeked', r, {{once: true}})), to(3000)]) }}""")
+            return await Promise.race([new Promise(r => v.addEventListener('seeked', () => r(1), {{once: true}})), to(3000).then(() => 0)]) }}""")
+        seeks.append(ok)
         pg.wait_for_timeout(250)
         im = Image.open(io.BytesIO(pg.screenshot(clip=pg.locator('.hero__lead').bounding_box()))).convert('RGB').resize((80, 16))
         ls = sorted(_lum(px) for px in im.getdata()); bg = ls[int(len(ls) * .9)]
         worst.append(round((max(fg, bg) + .05) / (min(fg, bg) + .05), 2))
-    assert pg.evaluate("document.getElementById('heroVideo').currentTime") > 0, 'seek не спрацював — вимір по одному кадру'
+    assert sum(seeks) == 10, f'seeked прийшов {sum(seeks)}/10 — вимір не по різних кадрах'   # сетер currentTime повертає записане й без seek
+    assert len(set(worst)) >= 5, worst                              # різні кадри → різний фон
     assert min(worst) >= 4.5, worst
 
 
@@ -268,3 +270,16 @@ def test_fleet_filters_scroll_with_edge_fade_on_narrow(page_factory, w):
     """< 820 px фільтри прокручуються — край має затухати, щоб було видно, що є ще."""
     r = page_factory(w, 900, mobile=w < 700).evaluate(CHIPS_JS)
     assert r['scroll'] and r['mask'] and r['rows'] == [9], r
+
+
+def test_keyboard_focus_brings_filter_into_view_on_phone(page_factory):
+    """Аудит a5951a5: Tab до останнього фільтра на 390 px лишав його на 107 px за краєм (і в зоні затухання маски)."""
+    pg = page_factory(390, 844, mobile=True)
+    pg.evaluate("document.getElementById('chips').scrollIntoView({block: 'center', behavior: 'instant'})")
+    pg.focus('#chips .chip:first-child')
+    for _ in range(8):
+        pg.keyboard.press('Tab')
+    pg.wait_for_timeout(700)                                          # плавна прокрутка до фокуса
+    r = pg.evaluate("""() => { const a = document.activeElement, b = a.getBoundingClientRect(); return {cat: a.dataset.cat, l: b.left, r: b.right, w: innerWidth} }""")
+    assert r['cat'] == 'trans', r                                   # останній фільтр
+    assert r['l'] >= 18 and r['r'] <= r['w'] - 42, r                # поза зонами затухання маски (18 / 42 px)

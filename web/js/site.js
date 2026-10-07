@@ -186,8 +186,11 @@
         <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
           <button class="btn btn--sm" type="button" data-req="rent" data-subject="${esc(u.name)}">У заявку</button></div>
       </article>`).join('');
+    const reveal1 = b => { if (chips.scrollWidth > chips.clientWidth + 1) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: motion() ? 'smooth' : 'auto' }); };
+    chips.addEventListener('focusin', e => { const b = e.target.closest('.chip'); if (b) reveal1(b); });   // Tab не лишає фокус за краєм (аудит a5951a5: 107 px поза контейнером на 390)
     chips.addEventListener('click', e => {
       const b = e.target.closest('.chip'); if (!b) return;
+      reveal1(b);
       $$('.chip', chips).forEach(c => c.setAttribute('aria-pressed', String(c === b)));
       const cat = b.dataset.cat;
       $$('.unit', grid).forEach((u, i) => { u.hidden = !(cat === 'all' || u.dataset.cat === cat); if (!u.hidden) { u.classList.remove('is-in'); u.style.setProperty('--d', `${(i % 8) * 50}ms`); requestAnimationFrame(() => requestAnimationFrame(() => u.classList.add('is-in'))); } });
