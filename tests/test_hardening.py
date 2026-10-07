@@ -207,3 +207,49 @@ def test_xff_trusted_only_from_loopback_peer(srv):
     assert lead('203.0.113.7', 'k-n4-00000001', '127.0.0.2') == 201
     assert lead('198.51.100.9', 'k-n4-00000002', '127.0.0.2') == 429     # інший XFF, той самий не-loopback пір → та сама ідентичність
     assert lead('198.51.100.9', 'k-n4-00000003', '127.0.0.1') == 201     # від loopback-проксі XFF діє: новий клієнт
+
+
+# ─── P14: HTTP Range для медіа (Safari/iOS без 206 не грає mp4; Chromium не перемотує) ──────────
+def _get(base, path, extra=None, method='GET'):
+    req = urllib.request.Request(base + path, headers=extra or {}, method=method)
+    try:
+        with urllib.request.urlopen(req) as r:
+            return r.status, r.headers, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.headers, e.read()
+
+
+MEDIA = '/media/cine/karier-m.mp4'
+
+
+def test_media_range_returns_exact_slice(srv):
+    s = srv(); full = (ROOT / 'web' / MEDIA.lstrip('/')).read_bytes(); n = len(full)
+    st, h, body = _get(s.base, MEDIA, {'Range': 'bytes=100-1099'})
+    assert st == 206 and h['Content-Range'] == f'bytes 100-1099/{n}' and body == full[100:1100]
+    assert h['Content-Length'] == '1000' and h['Accept-Ranges'] == 'bytes' and h['Content-Type'] == 'video/mp4'
+    assert 'max-age=604800' in h['Cache-Control']
+    st, h, body = _get(s.base, MEDIA, {'Range': 'bytes=-500'})                     # суфікс
+    assert st == 206 and body == full[-500:] and h['Content-Range'] == f'bytes {n - 500}-{n - 1}/{n}'
+    st, h, body = _get(s.base, MEDIA, {'Range': f'bytes={n - 10}-'})               # відкритий кінець
+    assert st == 206 and body == full[-10:]
+    st, h, body = _get(s.base, MEDIA, {'Range': f'bytes=0-{n + 999}'})            # кінець за файлом → обрізати
+    assert st == 206 and body == full
+
+
+def test_media_range_unsatisfiable_and_fallbacks(srv):
+    s = srv(); full = (ROOT / 'web' / MEDIA.lstrip('/')).read_bytes(); n = len(full)
+    st, h, body = _get(s.base, MEDIA, {'Range': f'bytes={n}-'})
+    assert st == 416 and h['Content-Range'] == f'bytes */{n}' and body == b''
+    for bad in ('bytes=0-1,5-9', 'items=0-9', 'bytes=-', 'bytes=9-1x'):              # кілька/чужі/зламані → увесь файл
+        st, h, body = _get(s.base, MEDIA, {'Range': bad})
+        assert (st, body) == (200, full), bad
+    st, h, body = _get(s.base, MEDIA, {'Range': 'bytes=0-9', 'If-Range': 'Wed, 01 Jan 2020 00:00:00 GMT'})   # інша версія
+    assert (st, body) == (200, full)
+    st, h, _ = _get(s.base, MEDIA)
+    lm = h['Last-Modified']
+    st, h, body = _get(s.base, MEDIA, {'Range': 'bytes=0-9', 'If-Range': lm})
+    assert (st, body) == (206, full[:10])
+    st, h, body = _get(s.base, MEDIA, {'Range': 'bytes=0-9'}, method='HEAD')
+    assert st == 206 and body == b'' and h['Content-Length'] == '10'
+    st, _, _ = _get(s.base, '/media/cine/nemaye.mp4', {'Range': 'bytes=0-9'})
+    assert st == 404

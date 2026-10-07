@@ -1,7 +1,7 @@
 """Секція «Масштаб»: ілюстративна зйомка з Wikimedia Commons.
 Інваріанти: ліцензія кожного джерела вільна; атрибуція (автор, назва, ліцензія з посиланнями) біля КОЖНОГО кадру;
 сторінка прямо каже, що це не техніка ПБТ; web/js/cine.js не розходиться з config/stock.json; кожен кліп існує в обох профілях."""
-import json, re, subprocess, sys
+import io, json, re, subprocess, sys
 from pathlib import Path
 import pytest
 
@@ -104,6 +104,35 @@ def test_credit_is_readable_on_any_frame(page_factory):
     a = pg.evaluate("""() => { const m = getComputedStyle(document.querySelector('#cine-karier .cine__cr')).backgroundColor.match(/rgba?\\(([^)]+)\\)/);
                               const p = m[1].split(',').map(Number); return p.length === 4 ? p[3] : 1 }""")
     assert a >= 0.55, f'підкладка атрибуції прозора: alpha={a}'
+
+
+
+def _rel_lum(px):
+    lin = lambda c: c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (lin(v / 255) for v in px[:3])
+    return .2126 * r + .7152 * g + .0722 * b
+
+
+@pytest.mark.parametrize('w,h', [(1440, 900), (390, 844)], ids=['desktop', 'phone'])
+def test_chapter_line_contrast_on_real_frames(page_factory, w, h):
+    """Підпис розділу (білий, 16–21 px) лежить на відео. Вимір на справжніх пікселях: кадр зупинено посередині кліпу,
+    текст сховано, 90-й перцентиль яскравості фону під ним → контраст із білим ≥ 4.5:1 (WCAG AA). axe відео не бачить."""
+    from PIL import Image
+    pg = page_factory(w, h, mobile=w < 700)
+    worst = {}
+    for c in CFG['chapters']:
+        cid = c['id']
+        pg.evaluate(f"document.getElementById('cine-{cid}').scrollIntoView({{block: 'center', behavior: 'instant'}})")
+        pg.wait_for_function(f"() => document.querySelector('#cine-{cid}.is-cur') && document.querySelector('#masshtab .cine__v.is-on')", timeout=8000)
+        pg.evaluate("""async () => { const v = document.querySelector('#masshtab .cine__v.is-on');
+            if (v.readyState < 1) await new Promise(r => v.addEventListener('loadedmetadata', r, {once: true}));
+            v.pause(); v.currentTime = v.duration / 2; await new Promise(r => v.addEventListener('seeked', r, {once: true})) }""")
+        pg.wait_for_timeout(1300)                                   # перехрестя шарів .cine__v — 1.1 с
+        pg.add_style_tag(content=f'#cine-{cid} .cine__l{{color:transparent!important;text-shadow:none!important}}')
+        im = Image.open(io.BytesIO(pg.screenshot(clip=pg.locator(f'#cine-{cid} .cine__l').bounding_box()))).convert('RGB')
+        ls = sorted(_rel_lum(px) for px in im.resize((60, 12)).getdata())
+        worst[cid] = round(1.05 / (ls[int(len(ls) * .9)] + .05), 2)
+    assert min(worst.values()) >= 4.5, worst
 
 
 def test_reduced_motion_is_static_poster_grid(page_factory):

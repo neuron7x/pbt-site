@@ -435,6 +435,25 @@ class _HeaderDeadlineReader(io.RawIOBase):
         return n
 
 
+class _Slice(io.RawIOBase):
+    """Читає не більше n байтів із відкритого файлу — тіло 206 для copyfile()."""
+    def __init__(self, f, n):
+        self.f, self.left = f, n
+
+    def readable(self):
+        return True
+
+    def read(self, size=-1):
+        if self.left <= 0:
+            return b''
+        size = self.left if size is None or size < 0 else min(size, self.left)
+        b = self.f.read(size); self.left -= len(b)
+        return b
+
+    def close(self):
+        self.f.close(); super().close()
+
+
 class Handler(SimpleHTTPRequestHandler):
     server_version = 'pbt'
     sys_version = ''
@@ -493,7 +512,55 @@ class Handler(SimpleHTTPRequestHandler):
         if not in_web(self.translate_path(self.path)):
             self.send_error(404)
             return None
+        if self.path.split('?')[0].startswith('/media/'):
+            return self.send_media()
         return super().send_head()
+
+    RANGE = re.compile(r'bytes=(\d*)-(\d*)$')
+
+    def send_media(self):
+        """P14: медіа з HTTP Range (RFC 9110 §14). Safari/iOS не відтворює mp4 без 206; Chromium без нього не перемотує
+        (кліп після seek скидається на 0). Один діапазон; кілька, зламаний або If-Range від іншої версії → увесь файл 200;
+        за межами файлу → 416. Тіло — зріз файлу без читання в пам'ять."""
+        path = self.translate_path(self.path)
+        if not os.path.isfile(path):
+            self.send_error(404)
+            return None
+        f = open(path, 'rb')
+        try:
+            st = os.fstat(f.fileno()); size = st.st_size
+            lm = self.date_time_string(int(st.st_mtime))
+            ims = self.headers.get('If-Modified-Since')
+            if ims and ims == lm and not self.headers.get('Range'):
+                f.close(); self.send_response(304); self.send_header('Last-Modified', lm); self.end_headers(); return None
+            m = self.RANGE.match((self.headers.get('Range') or '').strip())
+            if_range = self.headers.get('If-Range')
+            if m and (m.group(1) or m.group(2)) and (not if_range or if_range == lm):
+                a, b = m.group(1), m.group(2)
+                if a:
+                    start, end = int(a), min(int(b), size - 1) if b else size - 1
+                else:                                           # суфікс: останні N байтів
+                    start, end = max(size - int(b), 0), size - 1
+                if start >= size or start > end:
+                    f.close()
+                    self.send_response(416); self.send_header('Content-Range', f'bytes */{size}')
+                    self.send_header('Content-Length', '0'); self.end_headers(); return None
+                f.seek(start)
+                self.send_response(206)
+                self.send_header('Content-Range', f'bytes {start}-{end}/{size}')
+                length = end - start + 1
+            else:
+                self.send_response(200)
+                length = size
+            self.send_header('Content-Type', self.guess_type(path))
+            self.send_header('Content-Length', str(length))
+            self.send_header('Accept-Ranges', 'bytes')
+            self.send_header('Last-Modified', lm)
+            self.end_headers()
+            return _Slice(f, length)
+        except Exception:
+            f.close()
+            raise
 
     def list_directory(self, path):   # S4: без лістингу каталогів (/media/ тощо)
         self.send_error(404)
@@ -525,7 +592,7 @@ class Handler(SimpleHTTPRequestHandler):
         if getattr(self, 'headers', None) and self.behind_trusted_proxy() and self.headers.get('X-Forwarded-Proto') == 'https':   # S6: HSTS лише коли запит прийшов по HTTPS
             self.send_header('Strict-Transport-Security', 'max-age=15552000')
         p = (getattr(self, 'path', None) or '').split('?')[0]   # SEC-2: помилка розбору — path/headers ще не присвоєні
-        if p.startswith(('/media/', '/fonts/')) and getattr(self, '_status', None) in (200, 304):   # SEC-3: 404 не кешується тиждень
+        if p.startswith(('/media/', '/fonts/')) and getattr(self, '_status', None) in (200, 206, 304):   # SEC-3: 404 не кешується тиждень
             self.send_header('Cache-Control', 'public, max-age=604800')
         elif not p.startswith('/api/'):
             self.send_header('Cache-Control', 'no-cache')
