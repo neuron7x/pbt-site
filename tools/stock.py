@@ -10,9 +10,10 @@ ROOT = Path(__file__).resolve().parent.parent
 CFG = json.loads((ROOT / 'config' / 'stock.json').read_text(encoding='utf-8'))
 REF = ROOT / 'references' / 'stock'
 OUT = ROOT / 'web' / 'media' / 'cine'
-GRADE = ('eq=contrast=1.07:saturation=1.12:gamma=0.97,'
-         'colorbalance=rs=-0.03:gs=-0.01:bs=0.05:rh=0.04:gh=0.02:bh=-0.04,'
-         'vignette=angle=PI/5,unsharp=5:5:0.35')
+LUT = ROOT / 'config' / 'pbt-look.cube'   # tools/lut.py: look «Небо і золото» (S-крива, тонування чорнило/золото, вібранс, небо/фарба)
+GRADE = ('normalize=blackpt=black:whitept=white:smoothing=24:independence=0:strength=0.5,'   # вирівняти експозицію й баланс різних камер
+         f'lut3d=file={LUT}:interp=tetrahedral,'
+         'hqdn3d=1.2:1.2:2.5:2.5,cas=0.35,vignette=angle=PI/6')                              # шум геть до стиснення → менше бітів на зерно
 X264 = ['-c:v', 'libx264', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', '-r', '30']
 VP9 = ['-c:v', 'libvpx-vp9', '-row-mt', '1', '-tile-columns', '2', '-an', '-r', '30']   # -threads 4: машина спільна з CRM, 16 потоків → OOM (137)
 FADE = 0.35   # з/до чорного на межі петлі — шов не видно

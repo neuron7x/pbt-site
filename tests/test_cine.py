@@ -103,3 +103,20 @@ def test_reduced_motion_is_static_poster_grid(page_factory):
     assert imgs.count() == len(CFG['chapters'])
     imgs.first.scroll_into_view_if_needed(); pg.wait_for_timeout(300)
     assert pg.evaluate("document.querySelector('#cine figure img').naturalWidth") > 0
+
+
+def test_look_lut_is_valid_and_wired():
+    """config/pbt-look.cube: 33³, у [0,1], сіра вісь монотонна (S-крива без інверсій), чорне/біле не зрізані;
+    LUT детермінований (tools/lut.py відтворює файл байт-у-байт) і підключений в обидва конвеєри."""
+    import numpy as np
+    cube = (ROOT / 'config' / 'pbt-look.cube').read_text(encoding='ascii')
+    assert 'LUT_3D_SIZE 33' in cube
+    v = np.loadtxt(cube.splitlines()[4:]).reshape(33, 33, 33, 3)
+    assert v.min() >= 0 and v.max() <= 1
+    grey = np.array([v[i, i, i] for i in range(33)]) @ [0.2126, 0.7152, 0.0722]
+    assert np.all(np.diff(grey) > 0), 'сіра вісь немонотонна'
+    assert grey[0] < 0.03 and grey[-1] > 0.95, (grey[0], grey[-1])
+    r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'lut.py')], capture_output=True, text=True)
+    assert r.returncode == 0 and (ROOT / 'config' / 'pbt-look.cube').read_text(encoding='ascii') == cube, 'LUT не відтворюється з формул'
+    for tool in ('stock.py', 'media.py'):
+        assert "lut3d=file={LUT}" in (ROOT / 'tools' / tool).read_text(encoding='utf-8'), tool

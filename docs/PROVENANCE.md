@@ -60,7 +60,9 @@ Pexels і Pixabay блокують пряме завантаження без AP
 | `cine/vyviz-{w,m}` | [Articulated hauler dump truck](https://commons.wikimedia.org/wiki/File:Articulated_hauler_dump_truck.webm) | Wikideas1 | CC0 | 6.0–14.0 с; портретний кроп focus=0.45 | `02cd483d8818b6d0…` |
 | `cine/demont-{w,m}` | [Neugestaltung östliche Domumgebung - Bagger mit Abbruchzange](https://commons.wikimedia.org/wiki/File:Neugestaltung_%C3%B6stliche_Domumgebung_-_Bagger_mit_Abbruchzange.webm) | Raimond Spekking | CC BY-SA 3.0 | 10.0–18.0 с; портретний кроп focus=0.45 | `ffc9a6fd2961c0a0…` |
 
-Обробка всіх кліпів: обрізка, масштаб 1920×1080 і 720×1280 (кроп 9:16), кольорокорекція, віньєтка, затемнення 0,35 с на межах.
+Обробка всіх кліпів: обрізка, масштаб 1920×1080 і 720×1280 (кроп 9:16), вирівнювання експозиції (`normalize`, 50 %), look-LUT
+`config/pbt-look.cube` (`tools/lut.py`, 100 %), шумозаглушення, адаптивна різкість, віньєтка, затемнення 0,35 с на межах.
+Кадри клієнта (`tools/media.py`) проходять той самий LUT на 75 % — одна колірна мова для всього сайту.
 Похідні від CC BY-SA поширюються під тією ж ліцензією; автор, назва й ліцензія з посиланнями — біля кожного кадру на сторінці.
 
 **Межа:** це не техніка ПБТ. Сторінка каже це прямо (`.cine__note`, підвал); секція «Кадри з об'єктів» лишається лише власною

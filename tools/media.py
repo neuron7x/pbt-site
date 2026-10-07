@@ -23,8 +23,14 @@ def src(name):
     return str(p)
 
 
+LUT = ROOT / 'config' / 'pbt-look.cube'   # tools/lut.py; кадри клієнта — 75 % look, щоб не перегріти телефонну зйомку
+GRADE = ('normalize=blackpt=black:whitept=white:smoothing=24:independence=0:strength=0.5,split[a][b];'
+         f'[b]lut3d=file={LUT}:interp=tetrahedral[g];[a][g]blend=all_mode=normal:all_opacity=0.75,hqdn3d=1.5:1.5:3:3,cas=0.3')
+
+
 def seg(name, ss, to, vf, out):
-    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-ss', str(ss), '-to', str(to), '-i', src(name), '-vf', vf, *X264, '-crf', '18', str(out)], check=True)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-threads', '4', '-ss', str(ss), '-to', str(to), '-i', src(name),
+                    '-filter_complex', f'{vf},{GRADE}', *X264, '-crf', '18', str(out)], check=True)
 
 
 def build(name, parts, scale):
