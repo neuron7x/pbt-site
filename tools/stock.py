@@ -13,7 +13,7 @@ OUT = ROOT / 'web' / 'media' / 'cine'
 LUT = ROOT / 'config' / 'pbt-look.cube'   # tools/lut.py: look «Небо і золото» (S-крива, тонування чорнило/золото, вібранс, небо/фарба)
 GRADE = ('normalize=blackpt=black:whitept=white:smoothing=24:independence=0:strength=0.5,'   # вирівняти експозицію й баланс різних камер
          f'lut3d=file={LUT}:interp=tetrahedral,'
-         'hqdn3d=1.2:1.2:2.5:2.5,cas=0.35,vignette=angle=PI/6')                              # шум геть до стиснення → менше бітів на зерно
+         'hqdn3d=1.2:1.2:2.5:2.5,unsharp=13:13:0.30:5:5:0,cas=0.35,vignette=angle=PI/6')                              # шум геть до стиснення → менше бітів на зерно
 X264 = ['-c:v', 'libx264', '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', '-r', '30']
 VP9 = ['-c:v', 'libvpx-vp9', '-row-mt', '1', '-tile-columns', '2', '-an', '-r', '30']   # -threads 4: машина спільна з CRM, 16 потоків → OOM (137)
 FADE = 0.35   # з/до чорного на межі петлі — шов не видно
