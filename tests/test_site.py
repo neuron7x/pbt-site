@@ -103,6 +103,14 @@ def test_hero_video_plays_and_scene_dives(page_factory):
     assert pg.evaluate('document.getElementById("gauge").classList.contains("is-on")')
 
 
+@pytest.mark.parametrize('dpr,variant', [(1, 'hero-wide-720.'), (2, 'hero-wide.')])
+def test_hero_rendition_follows_screen(page_factory, dpr, variant):
+    """1440 css px × dpr 1 = 1440 фізичних < 1600 → легка 720; × dpr 2 = 2880 → 1920. Вантажимо те, що екран покаже."""
+    pg = page_factory(dpr=dpr)
+    pg.wait_for_function('() => document.getElementById("heroVideo").currentSrc', timeout=15000)
+    assert variant in pg.evaluate('document.getElementById("heroVideo").currentSrc')
+
+
 def test_mobile_hero_takes_portrait_cut(page_factory):
     pg = page_factory(390, 844, mobile=True)
     pg.wait_for_function('() => document.getElementById("heroVideo").currentSrc.includes("hero-tall")', timeout=15000)

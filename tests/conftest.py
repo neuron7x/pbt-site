@@ -46,9 +46,9 @@ def browser(pw):
 def page_factory(browser, server):
     ctxs = []
 
-    def make(w=1440, h=900, mobile=False, reduced=False, path='/', bypass_csp=False):
+    def make(w=1440, h=900, mobile=False, reduced=False, path='/', bypass_csp=False, dpr=None):
         c = browser.new_context(viewport={'width': w, 'height': h}, is_mobile=mobile, has_touch=mobile, bypass_csp=bypass_csp,
-                                device_scale_factor=2 if mobile else 1, reduced_motion='reduce' if reduced else 'no-preference')
+                                device_scale_factor=dpr or (2 if mobile else 1), reduced_motion='reduce' if reduced else 'no-preference')
         ctxs.append(c)
         pg = c.new_page()
         pg.errors = []

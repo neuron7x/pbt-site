@@ -28,11 +28,17 @@
   }
 
   /* ───── відео: джерела підставляються лише з JS, грають лише у кадрі ───── */
+  function heroHD() {
+    const c = navigator.connection || {};
+    if (D.videoData || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
+    return innerWidth * (devicePixelRatio || 1) >= 1600;
+  }
   function attachVideo(video, name, { tall } = {}) {
     if (!video || video.dataset.ready) return;
     video.dataset.ready = '1';
     video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
-    const n = tall && mobileLayout() ? name.replace('-wide', '-tall') : name;
+    let n = tall && mobileLayout() ? name.replace('-wide', '-tall') : name;
+    if (n === 'hero-wide' && !heroHD()) n = 'hero-wide-720';          // 1920 — лише коли екран його покаже й мережа витягне
     if (D.videoData || D.mp4Only || !document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
       video.src = vsrc(n, 'mp4');
     } else {

@@ -66,6 +66,7 @@ W = '576:324:0:350'            # ландшафтна смуга з портре
 HERO = [('compilation', 3.0, 5.8, None), ('compilation', 36.0, 39.5, None), ('compilation', 27.0, 29.0, None), ('compilation', 12.0, 14.5, None),
         ('sunset', 6.0, 9.0, None), ('hyundai', 4.0, 7.0, None)]
 build('hero-wide', [(s, a, b, W if s != 'hyundai' else '576:324:0:330') for s, a, b, _ in HERO], '1920:1080', 4.5)
+build('hero-wide-720', [(s, a, b, W if s != 'hyundai' else '576:324:0:330') for s, a, b, _ in HERO], '1280:720', 2.2)   # легка версія: звичайні екрани, повільна мережа, однофайлова збірка
 build('hero-tall', [(s, a, b, '576:1024:0:0' if s != 'hyundai' else '576:776:0:64') for s, a, b, _ in HERO], '720:1280', 3)
 
 JOB, J = '960:540', 1.6

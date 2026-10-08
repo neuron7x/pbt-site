@@ -40,7 +40,7 @@ def assemble(videos):
     return h
 
 
-ALL = ['hero-tall', 'hero-wide', 'job-voda', 'job-zemlia', 'job-trans', 'job-lis', 'job-demont', 'proof-amph', 'proof-long', 'proof-sunset', 'proof-trailer', 'proof-night', 'proof-winter']
+ALL = ['hero-tall', 'hero-wide-720', 'job-voda', 'job-zemlia', 'job-trans', 'job-lis', 'job-demont', 'proof-amph', 'proof-long', 'proof-sunset', 'proof-trailer', 'proof-night', 'proof-winter']
 videos = list(ALL)
 page = assemble(videos)
 while len(page.encode()) > LIMIT and len(videos) > 2:

@@ -14,7 +14,7 @@ def dims(p):
     return s['width'], s['height']
 
 
-@pytest.mark.parametrize('name,wh', [('hero-wide', (1920, 1080)), ('hero-tall', (720, 1280))])
+@pytest.mark.parametrize('name,wh', [('hero-wide', (1920, 1080)), ('hero-wide-720', (1280, 720)), ('hero-tall', (720, 1280))])
 def test_hero_resolution(name, wh):
     for ext in ('mp4', 'webm'):
         assert dims(V / f'{name}.{ext}') == wh, f'{name}.{ext}'
