@@ -77,9 +77,9 @@ build('job-lis', [('compilation', 12.0, 14.5, W), ('compilation', 16.0, 18.0, W)
 build('job-demont', [('compilation', 3.0, 9.0, '576:324:0:300')], JOB, J)
 
 build('proof-amph', [('amph3', 0.5, 6.5, '552:310:12:340')], JOB, J)
-build('proof-long', [('longreach', 2.0, 8.0, '480:270:48:322')], JOB, J)
+build('proof-long', [('longreach', 2.0, 8.0, '480:270:48:350')], JOB, J)     # летербокс джерела до y=348
 build('proof-trailer', [('trailer', 2.0, 8.0, '576:324:0:180')], JOB, J)
 build('proof-night', [('night', 2.0, 8.0, '480:270:48:352')], JOB, J)
-build('proof-winter', [('winter', 1.0, 7.0, '480:270:48:268')], JOB, J)
+build('proof-winter', [('winter', 1.0, 7.0, '480:270:48:352')], JOB, J)   # летербокс джерела до y=348 на 1–7 с
 build('proof-sunset', [('sunset', 2.0, 8.0, '576:324:0:330')], JOB, J)
 print('→', OUT, 'разом КБ:', round(sum(f.stat().st_size for f in OUT.iterdir()) / 1024))

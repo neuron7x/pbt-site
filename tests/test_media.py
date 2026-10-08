@@ -25,3 +25,19 @@ def test_cards_are_960():
     assert len(clips) == 11
     bad = {p.stem: dims(p) for p in clips if dims(p) != (960, 540)}
     assert not bad, bad
+
+
+def test_no_letterbox_bands_on_cards():
+    """Огляд 08.10: кроп proof-long/proof-winter захоплював чорний летербокс джерела — смуга зверху картки.
+    Сторож: перші й останні 6 рядків кожного постера картки не чорні (max яскравості > 12)."""
+    from PIL import Image
+    import numpy as np
+    bad = {}
+    for p in sorted(V.glob('*.webp')):
+        if not p.stem.startswith(('job-', 'proof-')):
+            continue
+        g = np.asarray(Image.open(p).convert('L'))
+        top, bot = g[:6].max(), g[-6:].max()
+        if top <= 12 or bot <= 12:
+            bad[p.stem] = (int(top), int(bot))
+    assert not bad, bad
