@@ -291,3 +291,14 @@ def test_keyboard_focus_brings_filter_into_view_on_phone(page_factory):
     r = pg.evaluate("""() => { const a = document.activeElement, b = a.getBoundingClientRect(); return {cat: a.dataset.cat, l: b.left, r: b.right, w: innerWidth} }""")
     assert r['cat'] == 'trans', r                                   # останній фільтр
     assert r['l'] >= 18 and r['r'] <= r['w'] - 42, r                # поза зонами затухання маски (18 / 42 px)
+
+
+def test_material_photos_sharp_on_retina_phone(page_factory):
+    """Телефон dpr 3: картка матеріалу ≈350 css px = 1050 фізичних > 639 оригіналу ⇒ має прийти @2x (1278 px)."""
+    pg = page_factory(390, 844, mobile=True, dpr=3)
+    pg.evaluate('document.getElementById("materialy").scrollIntoView()')
+    pg.wait_for_function('() => [...document.querySelectorAll("#materialy img")].some(i => i.complete && i.naturalWidth)', timeout=10000)
+    imgs = pg.evaluate('[...document.querySelectorAll("#materialy img")].filter(i => i.currentSrc).map(i => i.currentSrc)')
+    assert imgs and all('@2x.webp' in s for s in imgs), imgs   # naturalWidth тут у css px (1278/2), тому міряємо джерело
+    from PIL import Image
+    assert Image.open(ROOT / 'web' / 'media' / 'mat' / 'mat-1@2x.webp').size == (1278, 792)

@@ -255,9 +255,10 @@
   }
 
   /* ───── МАТЕРІАЛИ, ДОКАЗ, ГЕОГРАФІЯ ───── */
+  const x2 = src => /^media\/.+\.webp$/.test(src) ? ` srcset="${src} 1x, ${src.replace(/\.webp$/, '@2x.webp')} 2x"` : '';   // data:URI однофайлової збірки — без srcset
   function renderMats() {
     $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
-      <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}" alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
+      <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
         <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)}<small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p></div></article>`).join('')}</div>`;
   }
   function renderProof() {

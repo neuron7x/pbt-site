@@ -101,7 +101,27 @@ def upscale(name, denoise=0.5, batch=2):
     print(name, f'{w}×{h} → {w * 2}×{h * 2}', n, 'кадрів')
 
 
+@torch.inference_mode()
+def upscale_image(path, denoise=0.5):
+    """Фото з сайту клієнта → <name>@2x.webp (×4 → area ×2). Для srcset: телефон dpr 3 просить ×1.64 від 639 px."""
+    from PIL import Image
+    src = Path(path).resolve()
+    im = np.asarray(Image.open(src).convert('RGB'))
+    h, w = im.shape[:2]
+    x = torch.from_numpy(im.copy()).cuda().permute(2, 0, 1)[None].half() / 255
+    y = F.interpolate(load(denoise)(x).float(), size=(h * 2, w * 2), mode='area')
+    y = (y.clamp(0, 1) * 255).round().byte()[0].permute(1, 2, 0).cpu().numpy()
+    dst = src.with_name(src.stem + '@2x.webp')
+    Image.fromarray(y).save(dst, 'WEBP', quality=82, method=6)
+    print(dst.relative_to(ROOT), f'{w}×{h} → {w * 2}×{h * 2}', round(dst.stat().st_size / 1024), 'КБ')
+
+
 if __name__ == '__main__':
+    if sys.argv[1:2] == ['--img']:
+        for p in sys.argv[2:]:
+            if '@2x' not in p:
+                upscale_image(p)
+        sys.exit(0)
     names = sys.argv[1:] or sorted(p.stem for p in REF.glob('*.mp4'))
     for nm in names:
         upscale(nm)
