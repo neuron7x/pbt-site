@@ -35,7 +35,7 @@ def k_crop(crop, k):
 
 LUT = ROOT / 'config' / 'pbt-look.cube'   # tools/lut.py; після SR кадри чисті — look на 90 % (було 75 % через блоковий шум)
 GRADE = ('normalize=blackpt=black:whitept=white:smoothing=24:independence=0:strength=0.5,split[a][b];'
-         f'[b]lut3d=file={LUT}:interp=tetrahedral[g];[a][g]blend=all_mode=normal:all_opacity=0.9,hqdn3d=0.8:0.8:2:2,unsharp=13:13:0.30:5:5:0,cas=0.25')
+         f'[b]lut3d=file={LUT}:interp=tetrahedral[g];[a][g]blend=all_mode=normal:all_opacity=0.9,hqdn3d=0.8:0.8:2:2,unsharp=13:13:0.18:5:5:0')   # SR вже дає край; cas + clarity 0.30 давали ореоли й «акварель» (огляд 08.10)
 
 
 def seg(name, ss, to, vf, out):
