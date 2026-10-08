@@ -491,7 +491,19 @@
     renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
     reveal();
     measure(); render();
-    if (motion() && hVideo) { attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto'; const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
+    if (motion() && hVideo) {
+      attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
+      /* WebKit (Safari) відхиляє ранні play() з NotAllowedError навіть для muted-відео (виміряно 08.10: відмови до ~1.46 с,
+         play() о 1.5 с проходить). Точну умову не встановлено ⇒ повтор із наростаючою паузою, до 8 спроб, лише поки герой у кадрі. */
+      let tries = 0;
+      const go = () => {
+        if (!hVideo.paused || scrollY >= innerHeight || document.hidden) return;
+        const pr = hVideo.play();
+        if (pr && pr.catch) pr.catch(() => { if (++tries < 8) setTimeout(go, 200 * tries); });
+      };
+      go();
+      hVideo.addEventListener('canplay', go, { once: true });
+    }
     requestAnimationFrame(() => hero.classList.add('is-lit'));
     if (motion()) requestAnimationFrame(sparkLoop);
     document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (motion()) { if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });

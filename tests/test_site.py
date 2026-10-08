@@ -302,3 +302,18 @@ def test_material_photos_sharp_on_retina_phone(page_factory):
     assert imgs and all('@2x.webp' in s for s in imgs), imgs   # naturalWidth тут у css px (1278/2), тому міряємо джерело
     from PIL import Image
     assert Image.open(ROOT / 'web' / 'media' / 'mat' / 'mat-1@2x.webp').size == (1278, 792)
+
+
+def test_hero_autoplays_in_webkit(pw, server):
+    """Safari (WebKit) мовчки ігнорує play(), викликаний одразу після підстановки <source>; Chromium — ні.
+    08.10: у WebKit герой стояв на паузі (currentTime 0 через 4 с), картки й «Масштаб» грали — їм play() кличе IntersectionObserver пізніше."""
+    try:
+        b = pw.webkit.launch()
+    except Exception as e:                                   # рушій не встановлено — це «не запускалось», не «пройшло»
+        pytest.skip(f'webkit недоступний: {e}')
+    try:
+        pg = b.new_page(viewport={'width': 1440, 'height': 900})
+        pg.goto(server['base'] + '/')
+        pg.wait_for_function('() => { const v = document.getElementById("heroVideo"); return v && !v.paused && v.currentTime > 0.5; }', timeout=8000)
+    finally:
+        b.close()
