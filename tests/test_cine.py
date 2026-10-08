@@ -147,7 +147,7 @@ def test_chapter_line_contrast_on_real_frames(page_factory, w, h):
         pg.wait_for_timeout(1300)                                   # перехрестя шарів .cine__v — 1.1 с
         pg.add_style_tag(content=f'#cine-{cid} .cine__l{{color:transparent!important;text-shadow:none!important}}')
         im = Image.open(io.BytesIO(pg.screenshot(clip=pg.locator(f'#cine-{cid} .cine__l').bounding_box()))).convert('RGB')
-        ls = sorted(_rel_lum(px) for px in im.resize((60, 12)).getdata())
+        ls = sorted(_rel_lum(px) for px in im.resize((60, 12)).get_flattened_data())
         worst[cid] = round(1.05 / (ls[int(len(ls) * .9)] + .05), 2)
     assert min(worst.values()) >= 4.5, worst
 

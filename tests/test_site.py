@@ -233,7 +233,7 @@ def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile):
         seeks.append(ok)
         pg.wait_for_timeout(250)
         im = Image.open(io.BytesIO(pg.screenshot(clip=pg.locator('.hero__lead').bounding_box()))).convert('RGB').resize((80, 16))
-        ls = sorted(_lum(px) for px in im.getdata()); bg = ls[int(len(ls) * .9)]
+        ls = sorted(_lum(px) for px in im.get_flattened_data()); bg = ls[int(len(ls) * .9)]
         worst.append(round((max(fg, bg) + .05) / (min(fg, bg) + .05), 2))
     assert sum(seeks) == 10, f'seeked прийшов {sum(seeks)}/10 — вимір не по різних кадрах'   # сетер currentTime повертає записане й без seek
     assert len(set(worst)) >= 5, worst                              # різні кадри → різний фон
