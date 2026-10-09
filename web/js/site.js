@@ -99,9 +99,14 @@
     ctx = spark.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     dots = Array.from({ length: mobileLayout() ? 28 : 60 }, () => ({ x: Math.random() * cW, y: Math.random() * cH, r: .6 + Math.random() * 1.8, s: .15 + Math.random() * .45, ph: Math.random() * 6.28 }));
   }
+  /* цикл іскор засинає, коли герой поза кадром або вкладка прихована (раніше rAF крутився вічно: Lighthouse devtools 09.10
+     — сторінка не ставала «тихою»); прокидає його sparkWake() зі скролу й visibilitychange */
+  let sparkOn = false;
+  const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroP < 1 && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
   function sparkLoop(t) {
+    if (!ctx || quality() !== 'full' || reduced || heroP >= 1 || document.hidden) { sparkOn = false; return; }
     requestAnimationFrame(sparkLoop);
-    if (!ctx || quality() !== 'full' || reduced || heroP >= 1 || document.hidden || t - cLast < 33) return;
+    if (t - cLast < 33) return;
     cLast = t;
     ctx.clearRect(0, 0, cW, cH);
     const s = t / 1000;
@@ -142,7 +147,7 @@
   function render() {
     ticking = false;
     const y = scrollY;
-    heroP = heroRender(y);
+    heroP = heroRender(y); sparkWake();
     gaugeRender(y);
     nav.classList.toggle('is-solid', y > 40);
     const dy = y - lastY;
@@ -278,19 +283,31 @@
     /* маршрути з Полтави до кожної області — криві по центрах контурів, малюються при появі секції */
     const center = p => { const b = p.getBBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
     const homeP = $$('.obl', svg).find(p => p.dataset.ua === home); if (!homeP) return;
+    /* спершу всі читання геометрії, потім записи: getBBox/getTotalLength між appendChild змушували перераховувати розкладку
+       на кожній ітерації (Lighthouse 09.10: renderGeo 344 мс при CPU ×4). Довжину кривої Безьє — аналітично, без DOM. */
+    const build = () => {
     const [hx, hy] = center(homeP);
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'routes');
     const served = $$('.obl.served', svg).filter(p => p.dataset.ua && p.dataset.ua !== home && p.dataset.name !== 'Kyiv');
-    served.forEach((p, i) => {
-      const [x, y] = center(p); const mx = (hx + x) / 2, my = (hy + y) / 2 - Math.abs(x - hx) * .18 - 14;
+    const ends = served.map(center);
+    const qlen = (x0, y0, x1, y1, x2, y2) => { let L = 0, px = x0, py = y0; for (let k = 1; k <= 24; k++) { const t = k / 24, u = 1 - t, x = u * u * x0 + 2 * u * t * x1 + t * t * x2, y = u * u * y0 + 2 * u * t * y1 + t * t * y2; L += Math.hypot(x - px, y - py); px = x; py = y; } return L; };
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'routes');
+    ends.forEach(([x, y], i) => {
+      const mx = (hx + x) / 2, my = (hy + y) / 2 - Math.abs(x - hx) * .18 - 14;
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', `M${hx.toFixed(1)},${hy.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`);
-      path.setAttribute('class', 'route'); g.appendChild(path);
-      const len = path.getTotalLength ? path.getTotalLength() : 400; path.style.setProperty('--len', len.toFixed(1)); path.style.setProperty('--d', `${.2 + i * .12}s`);
+      path.setAttribute('class', 'route');
+      path.style.setProperty('--len', qlen(hx, hy, mx, my, x, y).toFixed(1)); path.style.setProperty('--d', `${.2 + i * .12}s`);
+      g.appendChild(path);
     });
     const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); ring.setAttribute('class', 'beacon-ring'); ring.setAttribute('cx', hx); ring.setAttribute('cy', hy); ring.setAttribute('r', 9);
     const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dot.setAttribute('class', 'beacon'); dot.setAttribute('cx', hx); dot.setAttribute('cy', hy); dot.setAttribute('r', 6);
     g.append(ring, dot); svg.appendChild(g);
+    };
+    /* маршрути — коли карта за ~1.5 екрана від кадру: getBBox на старті змушував розкласти всю сторінку */
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); build(); } }, { rootMargin: '150% 0px' });
+      io.observe($('#geoMap'));
+    } else build();
     $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
     svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
@@ -427,8 +444,10 @@
   if (glow && finePointer && motion()) {
     let gx = 0, gy = 0, tx = 0, ty = 0, on = false;
     addEventListener('pointermove', e => { tx = e.clientX; ty = e.clientY; if (!on) { on = true; glow.classList.add('is-on'); } }, { passive: true });
-    const loop = () => { gx += (tx - gx) * .12; gy += (ty - gy) * .12; glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`; requestAnimationFrame(loop); };
-    requestAnimationFrame(loop);
+    let run = false;                                   // цикл живе, лише поки світло доганяє курсор
+    const loop = () => { gx += (tx - gx) * .12; gy += (ty - gy) * .12; glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
+      if (Math.abs(tx - gx) + Math.abs(ty - gy) > .5) requestAnimationFrame(loop); else run = false; };
+    addEventListener('pointermove', () => { if (!run) { run = true; requestAnimationFrame(loop); } }, { passive: true });
   }
 
   /* ───── МАСШТАБ: кіно-сцена з ілюстративної зйомки (window.PBT_CINE ← config/stock.json) ───── */
@@ -491,7 +510,10 @@
     renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
     reveal();
     measure(); render();
-    if (motion() && hVideo) {
+    /* відео героя — після load і першого простою: до того кадр тримає постер, а 3–5 МБ не конкурують зі шрифтами й скриптами */
+    const afterLoad = fn => { const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 800 }) : setTimeout(fn, 1));
+      document.readyState === 'complete' ? idle() : addEventListener('load', idle, { once: true }); };
+    if (motion() && hVideo) afterLoad(() => {
       attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
       /* WebKit (Safari) відхиляє ранні play() з NotAllowedError навіть для muted-відео (виміряно 08.10: відмови до ~1.46 с,
          play() о 1.5 с проходить). Точну умову не встановлено ⇒ повтор із наростаючою паузою, до 8 спроб, лише поки герой у кадрі. */
@@ -503,10 +525,10 @@
       };
       go();
       hVideo.addEventListener('canplay', go, { once: true });
-    }
+    });
     requestAnimationFrame(() => hero.classList.add('is-lit'));
-    if (motion()) requestAnimationFrame(sparkLoop);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (motion()) { if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
+    sparkWake();
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (motion()) { sparkWake(); if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
   }

@@ -140,7 +140,7 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 @keyframes shimmer{0%{background-position:0% 0%}50%{background-position:100% 100%}100%{background-position:0% 0%}}
 .js .hero.is-lit .wordmark span{animation:shimmer 7s linear infinite,rise 1.1s var(--spring) both}
 .js .hero.is-lit .wordmark span:nth-child(2){animation-delay:-2s,.12s}.js .hero.is-lit .wordmark span:nth-child(3){animation-delay:-4s,.24s}
-@keyframes rise{from{opacity:0;transform:translateY(.35em) rotateX(40deg)}to{opacity:1;transform:none}}
+@keyframes rise{from{transform:translateY(.35em) rotateX(40deg)}to{transform:none}}   /* без opacity: логотип видно з першого кадру — LCP не чекає кінця анімації (Lighthouse 09.10: LCP 7.5 с) */
 .hero__center h1{font-weight:800;font-size:clamp(26px,3.6vw,56px);line-height:1.04;max-width:18ch;text-shadow:0 2px 24px rgba(6,43,92,.45)}
 .hero__center h1 span{display:block;color:var(--gold-2)}
 .js .hero__center h1 .w{display:inline-block;opacity:0;transform:translateY(.6em);transition:opacity .7s var(--ease),transform .7s var(--spring)}
