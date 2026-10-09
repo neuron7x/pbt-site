@@ -66,7 +66,7 @@ def test_lead_form_submits_to_server_and_is_stored(page_factory, server):
     pg = page_factory(390, 844, mobile=True)
     pg.click('#park .unit[data-id="pe-1"] [data-req]')                   # «У заявку» → тип і предмет заповнені
     pg.wait_for_timeout(900)
-    assert pg.input_value('#subject').startswith('Плаваючий екскаватор-амфібія')
+    assert pg.input_value('#subject').startswith('Плавучий екскаватор-амфібія')
     pg.fill('#hours', '16'); pg.fill('#km', '40'); pg.fill('#place', 'Полтава, Левада'); pg.fill('#name', 'Тест'); pg.fill('#contact', '097 863 77 77')
     pg.click('#send')
     pg.wait_for_selector('#done.is-on', timeout=5000)
@@ -75,7 +75,7 @@ def test_lead_form_submits_to_server_and_is_stored(page_factory, server):
     row = sqlite3.connect(server['db']).execute('select payload from leads order by id desc limit 1').fetchone()
     d = json.loads(row[0])
     assert d['type'] == 'rent' and d['hours'] == 16 and d['km'] == 40 and d['contact'] == '+380978637777'
-    assert d['subject'].startswith('Плаваючий екскаватор-амфібія')
+    assert d['subject'].startswith('Плавучий екскаватор-амфібія')
 
 
 def test_lead_form_shows_field_errors_before_sending(page_factory):
@@ -345,3 +345,20 @@ def test_brand_logo_static_in_webkit(pw, server):
         assert pg.evaluate('document.querySelector(".logo-hero__img").naturalWidth') == 960
     finally:
         b.close()
+
+
+def test_copy_typography_is_normalized(page_factory):
+    """Коректура 09.10: дані пройшли tools/copyedit.py; у видимому тексті — апостроф ’, нерозривний пробіл між числом і одиницею,
+    звернення на «ви», жодних ієрогліфів (CJK) — ні в тексті, ні в атрибутах."""
+    import subprocess, sys
+    r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'copyedit.py'), '--check'], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout
+    pg = page_factory()
+    pg.evaluate('(async () => { for (let y = 0; y < document.body.scrollHeight; y += 700) { scrollTo(0, y); await new Promise(r => setTimeout(r, 30)); } })()')
+    pg.wait_for_timeout(1500)
+    t = pg.evaluate("document.body.innerText + ' ' + [...document.querySelectorAll('[alt],[placeholder],[aria-label]')].map(e => (e.alt || '') + ' ' + (e.placeholder || '') + ' ' + (e.getAttribute('aria-label') || '')).join(' ')")
+    assert not re.findall(r"[А-ЯІЇЄҐа-яіїєґ]'[А-ЯІЇЄҐа-яіїєґ]", t), 'ASCII-апостроф у тексті'
+    glued = re.findall(r'\d(?:т|л|м|км|грн)\b', t)
+    assert not glued, glued
+    assert not re.findall(r'[⺀-鿿가-힯]', t), 'ієрогліфи на сторінці'
+    assert not re.findall(r'\b(?:Обери|Заповни|натисни|подзвони|Гортай|Вкажи|Перевір|до тебе)\b', t, re.I), 'звернення на «ти»'

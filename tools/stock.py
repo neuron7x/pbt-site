@@ -62,7 +62,10 @@ def main():
         check(); emit(); return
     check()
     OUT.mkdir(parents=True, exist_ok=True)
+    only = set(sys.argv[1:])                                                    # python3 tools/stock.py zemlia — лише ці розділи
     for c in CFG['chapters']:
+        if only and c['id'] not in only:
+            continue
         src = REF / CFG['sources'][c['source']]['file']
         w = OUT / f'{c["id"]}-w'
         encode(src, c['from'], c['to'], 'scale=1920:1080:flags=lanczos,setsar=1', w, 23, 33, 3.5)

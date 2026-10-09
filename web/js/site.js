@@ -230,8 +230,8 @@
   let totalShown = 0, totalAnim = 0;
   function tweenTotal(el, to) {
     const from = totalShown, t0 = performance.now(), id = ++totalAnim;
-    if (!motion()) { totalShown = to; el.innerHTML = `${fmt(to)}<small>грн</small>`; return; }
-    const step = t => { if (id !== totalAnim) return; const k = ease(clamp((t - t0) / 520, 0, 1)); totalShown = from + (to - from) * k; el.innerHTML = `${fmt(totalShown)}<small>грн</small>`; if (k < 1) requestAnimationFrame(step); };
+    if (!motion()) { totalShown = to; el.innerHTML = `${fmt(to)} <small>грн</small>`; return; }
+    const step = t => { if (id !== totalAnim) return; const k = ease(clamp((t - t0) / 520, 0, 1)); totalShown = from + (to - from) * k; el.innerHTML = `${fmt(totalShown)} <small>грн</small>`; if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
   function renderCalc() {
@@ -249,7 +249,7 @@
       const rent = hours * u.price, deliv = crane ? 0 : kmv * tr.rate, total = rent + deliv;
       tweenTotal($('#cTotal'), total);
       $('#cLines').innerHTML = `<div><span>Оренда: ${hours} год × ${fmt(u.price)} грн</span><b>${fmt(rent)} грн</b></div>` +
-        (crane ? `<div><span>Подача автокрана</span><b>уточнюється</b></div>` : `<div><span>Подача ${esc(tr.name).toLowerCase()}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`) +
+        (crane ? `<div><span>Подача автокрана</span><b>уточнюється</b></div>` : `<div><span>Подача тралом ${esc(tr.name.replace(/^Трал\s*/, ''))}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`) +
         `<div><span>Разом, орієнтовно</span><b>${fmt(total)} грн</b></div>`;
       km.disabled = kmN.disabled = crane;
       $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км`}`;
@@ -264,7 +264,7 @@
   function renderMats() {
     $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
       <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
-        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)}<small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p></div></article>`).join('')}</div>`;
+        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p></div></article>`).join('')}</div>`;
   }
   function renderProof() {
     $('#reel').innerHTML = D.proof.map((p, i) => `<a class="rv" style="--d:${(i % 3) * 90}ms" href="${p.url}" target="_blank" rel="noopener" aria-label="${esc(p.t)}: ${esc(p.s)} — відкрити відео">
@@ -369,8 +369,8 @@
   };
 
   /* ───── ЗАЯВКА ───── */
-  const MSG = { subject: { rent: 'Вкажи, яка техніка потрібна.', material: 'Вкажи матеріал і фракцію.', transport: 'Вкажи, що й куди перевезти.' },
-    hours: 'Ціле число від 1 до 5000.', km: 'Ціле число від 0 до 3000.', date: 'Дата не раніше сьогодні.', contact: 'Перевір контакт: 0XX XXX XX XX або @нік у Telegram.', comment: 'Опиши задачу кількома словами.' };
+  const MSG = { subject: { rent: 'Вкажіть, яка техніка потрібна.', material: 'Вкажіть матеріал і фракцію.', transport: 'Вкажіть, що й куди перевезти.' },
+    hours: 'Ціле число від 1 до 5000.', km: 'Ціле число від 0 до 3000.', date: 'Дата — не раніше за сьогоднішню.', contact: 'Перевірте контакт: 0XX XXX XX XX або @нік у Telegram.', comment: 'Опишіть завдання кількома словами.' };
   const form = $('#lead'), done = $('#done'), fallback = $('#fallback'), msg = $('#formMsg');
   let idemKey = null, idemHash = '';
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''));
@@ -392,8 +392,8 @@
   }
   const typeLabel = { rent: 'Оренда техніки', material: 'Сипучі матеріали', transport: 'Перевезення', other: 'Інше' };
   function humanText(p) {
-    return [`Заявка · ${typeLabel[p.type] || p.type}`, p.subject && `Що: ${p.subject}`, p.hours && `Обсяг: ${p.hours}`, p.km && `Подача: ${p.km} км`, p.place && `Об'єкт: ${p.place}`,
-      p.date && `Дата: ${p.date}`, p.name && `Ім'я: ${p.name}`, `Зв'язок: ${p.method} ${p.contact}`, p.comment && `Коментар: ${p.comment}`].filter(Boolean).join('\n');
+    return [`Заявка · ${typeLabel[p.type] || p.type}`, p.subject && `Що: ${p.subject}`, p.hours && `Обсяг: ${p.hours}`, p.km && `Подача: ${p.km} км`, p.place && `Об’єкт: ${p.place}`,
+      p.date && `Дата: ${p.date}`, p.name && `Ім’я: ${p.name}`, `Зв’язок: ${p.method} ${p.contact}`, p.comment && `Коментар: ${p.comment}`].filter(Boolean).join('\n');
   }
   form.addEventListener('submit', async e => {
     e.preventDefault();
@@ -412,9 +412,9 @@
         form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = j.ref; done.focus();
       } else if (r.status === 422 && j.fields) {
         Object.entries(j.fields).forEach(([k, v]) => setErr(k, v));
-        msg.textContent = 'Перевір позначені поля.'; msg.classList.add('is-on');
-      } else if (r.status === 429) { msg.textContent = j.message || 'Забагато запитів. Спробуй за 10 хвилин або зателефонуй.'; msg.classList.add('is-on'); }
-      else { msg.textContent = 'Сервер не прийняв заявку. Спробуй ще раз або зателефонуй — номери поруч.'; msg.classList.add('is-on'); }
+        msg.textContent = 'Перевірте позначені поля.'; msg.classList.add('is-on');
+      } else if (r.status === 429) { msg.textContent = j.message || 'Забагато запитів. Спробуйте через 10 хвилин або зателефонуйте.'; msg.classList.add('is-on'); }
+      else { msg.textContent = 'Сервер не прийняв заявку. Спробуйте ще раз або зателефонуйте — номери поруч.'; msg.classList.add('is-on'); }
     } catch (_) {
       form.hidden = true; fallback.classList.add('is-on'); $('#fbText').textContent = humanText(p);
     } finally { btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
@@ -458,7 +458,7 @@
       <p class="cine__n num">${String(i + 1).padStart(2, '0')} / ${total}</p>
       <h3 class="cine__w">${esc(c.word)}</h3>
       <p class="cine__l">${esc(c.line)}</p>
-      <p class="cine__cr">Кадр: <a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; обрізано й кольорокориговано</p>
+      <p class="cine__cr">Кадр: <a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; кадровано, виконано колірну корекцію</p>
     </li>`).join('');
     if (!motion() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
     sec.classList.add('is-pinned');

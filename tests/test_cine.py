@@ -83,7 +83,7 @@ def test_page_attributes_every_frame_and_disclaims_fleet(page_factory):
         assert s['page'] in c['links'], (s['page'], c['links'])
         assert s['license_url'] in c['links'], c
         assert s['author'] in c['text'] and s['license'] in c['text'], c
-        assert 'обрізано й кольорокориговано' in c['text'], c          # CC BY §3(a)(1)(B): позначка змін
+        assert 'кадровано, виконано колірну корекцію' in c['text'], c          # CC BY §3(a)(1)(B): позначка змін
     note = pg.locator('#masshtab .cine__note')
     assert note.is_visible() and 'не техніка ПБТ' in note.text_content()
     assert 'Wikimedia Commons' in pg.locator('.foot__legal').text_content()

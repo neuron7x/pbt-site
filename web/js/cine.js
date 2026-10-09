@@ -3,8 +3,8 @@ window.PBT_CINE = {
  "chapters": [
   {
    "id": "karier",
-   "word": "Кар'єр",
-   "line": "Пісок і щебінь — з кар'єру на об'єкт без посередників.",
+   "word": "Кар’єр",
+   "line": "Пісок і щебінь — з кар’єру на об’єкт без посередників.",
    "credit": {
     "title": "2025-06-12 Steinbruch Werbach - Arbeiten mit Planierraupe",
     "author": "Triplec85",
@@ -16,7 +16,7 @@ window.PBT_CINE = {
   {
    "id": "zemlia",
    "word": "Земля",
-   "line": "Котлован, траншея, відвал — два екскаватори в одну зміну.",
+   "line": "Котлован, траншея, відвал — за одну зміну, з оператором.",
    "credit": {
     "title": "Excavators - Kanagawa - 2026 Jan 16",
     "author": "Nesnad",
