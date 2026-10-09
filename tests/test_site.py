@@ -322,3 +322,26 @@ def test_hero_autoplays_in_webkit(pw, server):
         pg.wait_for_function('() => { const v = document.getElementById("heroVideo"); return v && !v.paused && v.currentTime > 0.5; }', timeout=8000)
     finally:
         b.close()
+
+
+def test_brand_logo_animates_once_then_rests(page_factory):
+    """Логотип власника (tools/logo.py): статичний кадр одразу (LCP), VP9-анімація з альфою грає раз і віддає місце статичному."""
+    pg = page_factory()
+    assert pg.evaluate('document.querySelector(".logo-hero__img").complete && document.querySelector(".logo-hero__img").naturalWidth') == 960
+    pg.wait_for_function('() => document.querySelector(".logo-hero").classList.contains("is-anim")', timeout=8000)
+    pg.wait_for_function('() => document.getElementById("logoAnim").ended && !document.querySelector(".logo-hero").classList.contains("is-anim")', timeout=12000)
+    assert pg.evaluate('document.querySelectorAll(".brand__logo").length') == 2           # шапка й підвал
+
+
+def test_brand_logo_static_in_webkit(pw, server):
+    """Safari не показує альфу VP9 (замість прозорості — чорне тло) ⇒ у WebKit анімація не підставляється, лишається статичний кадр."""
+    try:
+        b = pw.webkit.launch()
+    except Exception as e:
+        pytest.skip(f'webkit недоступний: {e}')
+    try:
+        pg = b.new_page(viewport={'width': 1440, 'height': 900}); pg.goto(server['base'] + '/'); pg.wait_for_timeout(3000)
+        assert pg.evaluate('document.getElementById("logoAnim").currentSrc') == ''
+        assert pg.evaluate('document.querySelector(".logo-hero__img").naturalWidth') == 960
+    finally:
+        b.close()

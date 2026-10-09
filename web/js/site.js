@@ -509,6 +509,16 @@
     /* відео героя — після load і першого простою: до того кадр тримає постер, а 3–5 МБ не конкурують зі шрифтами й скриптами */
     const afterLoad = fn => { const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 800 }) : setTimeout(fn, 1));
       document.readyState === 'complete' ? idle() : addEventListener('load', idle, { once: true }); };
+    /* анімація логотипа: один раз, після load. VP9 з альфою — Chrome/Edge/Firefox/Android; Safari альфу VP9 не показує
+       (замість прозорості — чорне тло), тому там і в однофайловій збірці лишається статичний кадр. Перший кадр анімації = статичний. */
+    const logo = $('.logo-hero'), lv = $('#logoAnim');
+    const ua = navigator.userAgent, appleWebKit = /AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg|CriOS|FxiOS|Android/.test(ua);
+    if (logo && lv && motion() && !D.videoData && !appleWebKit && lv.canPlayType('video/webm; codecs="vp9"')) afterLoad(() => {
+      lv.src = 'media/logo/pbt-logo.webm';
+      lv.addEventListener('playing', () => logo.classList.add('is-anim'), { once: true });
+      lv.addEventListener('ended', () => logo.classList.remove('is-anim'), { once: true });   // останній кадр = статичний
+      const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
+    });
     if (motion() && hVideo) afterLoad(() => {
       attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
       /* WebKit (Safari) відхиляє ранні play() з NotAllowedError навіть для muted-відео (виміряно 08.10: відмови до ~1.46 с,

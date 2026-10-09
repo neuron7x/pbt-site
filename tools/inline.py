@@ -76,7 +76,7 @@ MULTI.mkdir(parents=True)
 (MULTI / 'index.html').write_text('<title>ПБТ · ПолтаваБудТехніка</title>\n' + '\n'.join(mkeep) + '\n' + mearly + '\n' + mbody, encoding='utf-8')
 n = 0
 for f in sorted((WEB / 'media').rglob('*')):
-    if f.is_file() and f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg'):
+    if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'pbt-logo.webm'):   # логотип — лише webm (альфа)
         t = MULTI / f.relative_to(WEB); t.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(f, t); n += 1
 tot = sum(p.stat().st_size for p in MULTI.rglob('*') if p.is_file())
 print('artifact/', n + 1, 'файлів,', round(tot / 1048576, 1), 'MB')

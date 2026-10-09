@@ -8,11 +8,15 @@
 <meta name="theme-color" content="#0D6AE0">
 <meta property="og:title" content="ПБТ · ПолтаваБудТехніка">
 <meta property="og:description" content="Техніка, що працює там, де інші не доїдуть. Полтава і ще 8 областей.">
-<meta property="og:image" content="media/video/hero-wide.webp">
+<meta property="og:image" content="media/logo/og-pbt.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="uk_UA">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="media/logo/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="media/logo/apple-touch-icon.png">
+<link rel="preload" href="media/logo/pbt-logo.webp" as="image" fetchpriority="high">
 <link rel="preload" href="fonts/Tektur-var-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/Tektur-var-latin.woff2" as="font" type="font/woff2" crossorigin>
 <script>
@@ -41,7 +45,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
 
 <!-- ═══ НАВІГАЦІЯ ═══ -->
 <header class="nav" id="nav">
-  <a class="brand" href="#top" aria-label="ПБТ · ПолтаваБудТехніка — на початок"><span class="brand__mark" aria-hidden="true">ПБТ</span><span class="brand__name"><b>ПолтаваБудТехніка</b><span>оренда спецтехніки</span></span></a>
+  <a class="brand" href="#top" aria-label="ПБТ · ПолтаваБудТехніка — на початок"><img class="brand__logo" src="media/logo/pbt-logo-nav.webp" width="84" height="31" alt="" aria-hidden="true"><span class="brand__name"><b>ПолтаваБудТехніка</b><span>оренда спецтехніки</span></span></a>
   <nav class="nav__links" aria-label="Розділи">
     <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Ціна</a><a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a>
   </nav>
@@ -81,7 +85,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
     <canvas id="spark" class="hero__spark" aria-hidden="true"></canvas>
     <div class="hero__center" id="heroCenter">
       <p class="eyebrow">Полтава · 9 областей · 24/7</p>
-      <p class="wordmark" role="img" aria-label="ПБТ"><span aria-hidden="true">П</span><span aria-hidden="true">Б</span><span aria-hidden="true">Т</span></p>
+      <div class="logo-hero" role="img" aria-label="ПБТ · ПолтаваБудТехніка"><img class="logo-hero__img" src="media/logo/pbt-logo.webp" width="960" height="352" alt="" fetchpriority="high" decoding="async"><video class="logo-hero__anim" id="logoAnim" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video></div>
       <h1 id="heroTitle"><span class="line">Техніка, що працює там,</span> <span class="line" style="display:block;color:var(--gold-2)">де інші не доїдуть</span></h1>
       <p class="hero__lead">Екскаватори-амфібії для водойм, автокрани до 120 т, трали до 60 т, бульдозери, дробарки. Пісок і щебінь із паспортом якості. З оператором і пальним.</p>
       <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Порахувати зміну</a></div>
@@ -305,7 +309,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
 <!-- ═══ ПІДВАЛ ═══ -->
 <footer class="foot">
   <div class="foot__grid">
-    <div><a class="brand" href="#top"><span class="brand__mark" aria-hidden="true">ПБТ</span><span class="brand__name"><b>ПолтаваБудТехніка</b><span>оренда спецтехніки</span></span></a><p style="margin-top:16px"><span data-legal>ТОВ «ПолтаваБудТехніка»</span><br><span class="num" data-edrpou>ЄДРПОУ 45383082</span><br><span data-address>36002, м. Полтава, вул. Довженка, 2А</span></p></div>
+    <div><a class="brand" href="#top"><img class="brand__logo" src="media/logo/pbt-logo-nav.webp" width="84" height="31" alt="" aria-hidden="true"><span class="brand__name"><b>ПолтаваБудТехніка</b><span>оренда спецтехніки</span></span></a><p style="margin-top:16px"><span data-legal>ТОВ «ПолтаваБудТехніка»</span><br><span class="num" data-edrpou>ЄДРПОУ 45383082</span><br><span data-address>36002, м. Полтава, вул. Довженка, 2А</span></p></div>
     <div><h4>Зв'язок</h4><ul><li><a class="num" href="#zapyt" data-phone>097 863 77 77</a></li><li><a class="num" href="#zapyt" data-phone2>095 863 77 77</a></li><li data-hours>Пн–Пт 09:00–18:00 · Сб 09:00–15:00</li></ul></div>
     <div><h4>Соцмережі</h4><ul data-social></ul></div>
     <div><h4>Розділи</h4><ul><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Ціна зміни</a></li><li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Де працюємо</a></li><li><a href="#zapyt">Заявка</a></li></ul></div>
