@@ -458,8 +458,11 @@
       <p class="cine__n num">${String(i + 1).padStart(2, '0')} / ${total}</p>
       <h3 class="cine__w">${esc(c.word)}</h3>
       <p class="cine__l">${esc(c.line)}</p>
-      <p class="cine__cr">Кадр: <a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; кадровано, виконано колірну корекцію</p>
     </li>`).join('');
+    /* атрибуція CC BY / BY-SA — одним списком у підвалі, не поверх кадрів (ліцензія дозволяє «будь-яким розумним способом») */
+    const cr = $('#cineCredits');
+    if (cr) cr.innerHTML = `<details class="credits"><summary>Джерела ілюстративних кадрів «Масштабу»</summary><ul>${chs.map(c =>
+      `<li><a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; кадровано, виконано колірну корекцію</li>`).join('')}</ul></details>`;
     if (!motion() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
     sec.classList.add('is-pinned');
     rail.innerHTML = chs.map(c => `<a href="#cine-${esc(c.id)}"><span>${esc(c.word)}</span></a>`).join('');

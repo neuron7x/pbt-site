@@ -70,11 +70,12 @@ def test_stock_tool_fails_closed_on_hash_mismatch(tmp_path):
 
 
 def _credits(pg):
-    return pg.evaluate("""[...document.querySelectorAll('#cine .cine__ch')].map(li => ({
-        links: [...li.querySelectorAll('.cine__cr a')].map(a => a.href), text: li.querySelector('.cine__cr').textContent}))""")
+    """Атрибуція — у підвалі (#cineCredits), по рядку на кадр; поверх кадрів підписів немає (09.10, вимога власника: «шум»)."""
+    return pg.evaluate("""[...document.querySelectorAll('#cineCredits li')].map(li => ({
+        links: [...li.querySelectorAll('a')].map(a => a.href), text: li.textContent}))""")
 
 
-def test_page_attributes_every_frame_and_disclaims_fleet(page_factory):
+def test_footer_attributes_every_frame_and_page_disclaims_fleet(page_factory):
     pg = page_factory()
     cr = _credits(pg)
     assert len(cr) == len(CFG['chapters'])
@@ -87,6 +88,7 @@ def test_page_attributes_every_frame_and_disclaims_fleet(page_factory):
     note = pg.locator('#masshtab .cine__note')
     assert note.is_visible() and 'не техніка ПБТ' in note.text_content()
     assert 'Wikimedia Commons' in pg.locator('.foot__legal').text_content()
+    assert pg.evaluate("document.querySelectorAll('#cine .cine__ch a, #cine .cine__cr').length") == 0, 'підписи поверх кадрів'
     ph = page_factory(390, 844, mobile=True)                       # застереження не може зникати на телефоні
     assert ph.locator('#masshtab .cine__note').is_visible() and 'не техніка ПБТ' in ph.locator('#masshtab .cine__note').text_content()
 
@@ -110,17 +112,6 @@ def test_phone_takes_portrait_cut(page_factory):
     pg = page_factory(390, 844, mobile=True)
     pg.evaluate("document.getElementById('cine-voda').scrollIntoView({block: 'center'})")
     pg.wait_for_function("() => { const v = document.querySelector('#masshtab .cine__v.is-on'); return v && /voda-m\\.(webm|mp4)$/.test(v.currentSrc) }", timeout=8000)
-
-
-
-def test_credit_is_readable_on_any_frame(page_factory):
-    """Атрибуція лежить на відео; світлий кадр (кар'єр) з'їдав її на телефоні. Підкладка ≥ .55 альфи тримає текст на будь-якому кадрі."""
-    pg = page_factory(390, 844, mobile=True)
-    pg.evaluate("document.getElementById('cine-karier').scrollIntoView({block: 'center'})")
-    pg.wait_for_function("() => document.querySelector('#cine-karier.is-cur')", timeout=8000)
-    a = pg.evaluate("""() => { const m = getComputedStyle(document.querySelector('#cine-karier .cine__cr')).backgroundColor.match(/rgba?\\(([^)]+)\\)/);
-                              const p = m[1].split(',').map(Number); return p.length === 4 ? p[3] : 1 }""")
-    assert a >= 0.55, f'підкладка атрибуції прозора: alpha={a}'
 
 
 

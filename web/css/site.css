@@ -386,6 +386,14 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 .foot .num{color:var(--white)}
 .foot a{display:inline-block;padding:4px 0;min-height:24px}
 .foot a:hover{color:var(--gold)}
+.foot__credits{max-width:var(--wrap);margin:28px auto 0;font:400 12px/1.6 var(--f-m);color:rgba(255,255,255,.62)}
+.credits summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:8px;padding:4px 0}
+.credits summary::-webkit-details-marker{display:none}
+.credits summary::after{content:"+";font-weight:600;color:var(--gold)}
+.credits[open] summary::after{content:"−"}
+.credits ul{display:grid;gap:4px;margin-top:8px}
+.credits a{text-decoration:underline;text-underline-offset:2px}
+.credits a:hover{color:var(--gold)}
 .foot__legal{max-width:var(--wrap);margin:40px auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;font-size:12px;color:#7FA3CF}
 .foot__legal a{text-decoration:underline;text-underline-offset:3px;display:inline-block;padding:4px 0}
 
@@ -456,9 +464,6 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 .cine__n{font:600 12px/1 var(--f-m);letter-spacing:.24em;color:var(--gold)}
 .cine__w{font:800 clamp(44px,9vw,148px)/.9 var(--f-d);text-transform:uppercase;letter-spacing:.01em;background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent;text-wrap:balance}
 .cine__l{font-size:clamp(16px,1.3vw,21px);line-height:1.45;color:#F2F9FF;max-width:40ch}
-.cine__cr{font:400 11.5px/1.5 var(--f-m);color:#B9D6F5;max-width:70ch}
-.cine__cr a{text-decoration:underline;text-underline-offset:2px}
-.cine__cr a:hover{color:var(--gold)}
 .cine__rail{display:none}
 @media (min-width:700px){.cine__chs:not(.is-pinned){grid-template-columns:repeat(2,minmax(0,1fr))}}
 
@@ -469,10 +474,8 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 .s-cine.is-pinned .cine__ch > *{opacity:.0;transform:translateY(28px);transition:opacity .7s var(--ease),transform .9s var(--spring)}
 .s-cine.is-pinned .cine__ch.is-cur > *{opacity:1;transform:none}
 .s-cine.is-pinned .cine__ch.is-cur .cine__l{transition-delay:.12s}
-.s-cine.is-pinned .cine__ch.is-cur .cine__cr{transition-delay:.24s}
 .s-cine.is-pinned .cine__w{text-shadow:none;filter:drop-shadow(0 6px 30px rgba(4,31,69,.65))}
 .s-cine.is-pinned .cine__l{text-shadow:0 2px 18px rgba(4,31,69,.9)}
-.s-cine.is-pinned .cine__cr{text-shadow:none;background:rgba(4,31,69,.68);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:6px 12px;border-radius:8px;color:#D6E9FF}   /* атрибуцію ліцензії має бути видно на будь-якому кадрі (світлий кар'єр на телефоні) */
 .s-cine.is-pinned .cine__ch{position:relative}
 .s-cine.is-pinned .cine__rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:50%;float:right;margin:-100svh var(--gut) 0 0;transform:translateY(-50%);z-index:2}
 .cine__rail a{display:flex;align-items:center;justify-content:flex-end;gap:10px;min-height:28px;min-width:48px;font:600 11px/1 var(--f-m);letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55)}
