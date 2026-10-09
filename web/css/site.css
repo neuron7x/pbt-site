@@ -145,9 +145,9 @@ h3{font-weight:700;font-size:clamp(20px,1.5vw,24px);line-height:1.1}
 .hero__center h1 span{display:block;color:var(--gold-2)}
 .js .hero__center h1 .w{display:inline-block;opacity:0;transform:translateY(.6em);transition:opacity .7s var(--ease),transform .7s var(--spring)}
 .js .hero.is-lit h1 .w{opacity:1;transform:none}
-.hero__lead{color:#EAF6FF;max-width:62ch;font-size:clamp(14px,min(1.1vw,2.4svh),18px);text-shadow:0 1px 14px rgba(6,43,92,.5);position:relative;isolation:isolate}
+.hero__lead{color:#EAF6FF;max-width:62ch;font-size:clamp(15px,min(1.1vw,2.4svh),18px);text-shadow:0 1px 14px rgba(6,43,92,.5);position:relative;isolation:isolate}
 /* скрим іде за самим підзаголовком (будь-який в'юпорт): ≥4.5:1 на кожному кадрі монтажу — tests/test_site.py */
-.hero__lead::before{content:"";position:absolute;inset:-45% -14%;z-index:-1;pointer-events:none;background:radial-gradient(closest-side,rgba(6,43,92,.8),rgba(6,43,92,.62) 60%,rgba(6,43,92,0))}
+.hero__lead::before{content:"";position:absolute;inset:-45% -14%;z-index:-1;pointer-events:none;background:radial-gradient(closest-side,rgba(6,43,92,.86),rgba(6,43,92,.74) 60%,rgba(6,43,92,0))}   /* 09.10: після зсуву центру кадр під текстом світліший — 3.84:1 на телефоні */
 .hero__stats{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(14px,3vw,48px);margin-top:clamp(2px,1.2svh,16px)}
 .hero__stats li{display:grid;justify-items:center;gap:4px;min-width:84px}
 .hero__stats b{font:800 clamp(22px,min(3vw,5svh),44px)/1 var(--f-d);color:var(--gold-2);text-shadow:0 2px 16px rgba(6,43,92,.45);font-variant-numeric:tabular-nums}
