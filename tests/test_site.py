@@ -186,26 +186,31 @@ def test_axe_wcag22aa_no_serious_violations(page_factory, w, h, mobile):
 
 
 GHOST_JS = """async (speed) => {
+  const STEP = 1000 / 60, raf = () => new Promise(r => requestAnimationFrame(r));
   const els = [...document.querySelectorAll('.rv')].filter(e => !e.closest('#masshtab')), g = new Map(els.map(e => [e, 0]));
-  const H = document.scrollingElement.scrollHeight - innerHeight; const t0 = performance.now(); let last = t0;
-  while (true) { const now = performance.now(), dt = now - last; last = now; const y = Math.min(H, (now - t0) / 1000 * speed);
-    scrollTo({top: y, behavior: 'instant'}); await new Promise(r => requestAnimationFrame(r));
+  const H = document.scrollingElement.scrollHeight - innerHeight; let t = 0;
+  document.getAnimations().forEach(a => a.pause());
+  while (true) { t += STEP; const y = Math.min(H, t / 1000 * speed);
+    scrollTo({top: y, behavior: 'instant'}); await raf(); await raf();          // IntersectionObserver доставлено
+    document.getAnimations().forEach(a => { a.pause(); a.currentTime = (a.currentTime || 0) + STEP; });
     for (const e of els) { if (e.hidden) continue; const b = e.getBoundingClientRect(); const vis = Math.min(b.bottom, innerHeight) - Math.max(b.top, 0);
-      if (vis > Math.min(40, b.height / 2) && parseFloat(getComputedStyle(e).opacity) < 0.9) g.set(e, g.get(e) + dt); }
+      if (vis > Math.min(40, b.height / 2) && parseFloat(getComputedStyle(e).opacity) < 0.9) g.set(e, g.get(e) + STEP); }
     if (y >= H) break; }
   const v = [...g.values()].sort((a, b) => a - b);
-  return {n: v.length, p50: v[v.length >> 1], p95: v[Math.floor(v.length * .95)], total: v.reduce((a, b) => a + b, 0)}; }"""
+  return {n: v.length, p50: Math.round(v[v.length >> 1]), p95: Math.round(v[Math.floor(v.length * .95)]), total: Math.round(v.reduce((a, b) => a + b, 0))}; }"""
 
 
 @pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
 def test_reveal_does_not_ghost_content_on_normal_scroll(page_factory, w, h, mobile):
-    """Поява секцій не має показувати напівпрозорий вміст на звичайному скролі (1200 px/с, `behavior: instant` —
-    `scroll-behavior: smooth` інакше гасить сам скрол). «Примара» = блок помітно в кадрі з opacity < 0.9.
-    Було (threshold .18, −8 %, 0.9 с з повільним стартом): p50 801 мс, p95 1029 мс, разом 61 с на сторінку. Стало ≈ 157 / 215 мс, разом ≈ 8.9 с."""
+    """Поява секцій не має показувати напівпрозорий вміст на звичайному скролі (1200 px/с). «Примара» = блок помітно в кадрі з opacity < 0.9.
+    Вимір у ВІРТУАЛЬНОМУ часі: скрол — кроками 1/60 с, CSS-переходи на паузі й просуваються на той самий крок (Web Animations API).
+    Настінний варіант (до 09.10) накопичував реальну тривалість кадрів і червонів від чужого CI на машині (load 3–5 валив і main cee9963).
+    Калібрування 09.10 (детерміновано, однакове при load 4.9): HEAD p95 150 / сума 5.9–6.4k;
+    мутанти: старий rootMargin (.18, −8 %) 400–417 / 22–24k; старий перехід (0.9 с, повільний старт) 633 / 41k; обидва 883–900 / 55–59k."""
     pg = page_factory(w, h, mobile=mobile)
     r = pg.evaluate(GHOST_JS, 1200)
     assert r['n'] >= 60, r                                          # вимір справді пройшов по блоках, а не по порожньому списку
-    assert r['p95'] < 300 and r['total'] < 12000, r              # HEAD ≈ 215 / 8.9k; мутанти аудиту ≈ 350 / 20k
+    assert r['p95'] < 250 and r['total'] < 12000, r
 
 
 @pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
