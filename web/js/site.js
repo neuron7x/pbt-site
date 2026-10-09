@@ -303,11 +303,7 @@
     const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dot.setAttribute('class', 'beacon'); dot.setAttribute('cx', hx); dot.setAttribute('cy', hy); dot.setAttribute('r', 6);
     g.append(ring, dot); svg.appendChild(g);
     };
-    /* маршрути — коли карта за ~1.5 екрана від кадру: getBBox на старті змушував розкласти всю сторінку */
-    if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); build(); } }, { rootMargin: '150% 0px' });
-      io.observe($('#geoMap'));
-    } else build();
+    build();   // на старті, не ліниво: getBBox посеред скролу давав ривок і «примар» (A/B 09.10, p95 951 → 387 мс)
     $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
     svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
