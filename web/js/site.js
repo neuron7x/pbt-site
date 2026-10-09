@@ -82,7 +82,7 @@
       if (hVideo) hVideo.style.transform = `scale(${(1 + .14 * p).toFixed(4)}) translate3d(0,${(p * 6).toFixed(2)}%,0)`;
       const cp = seg(p, .35, .8);
       hCenter.style.opacity = (1 - cp).toFixed(3);
-      hCenter.style.transform = `translate3d(0,calc(-52% - ${(cp * 90).toFixed(1)}px),0) scale(${(1 - .06 * cp).toFixed(4)})`;
+      hCenter.style.transform = `translate3d(0,calc(-50% - ${(cp * 90).toFixed(1)}px),0) scale(${(1 - .06 * cp).toFixed(4)})`;
       water.style.setProperty('--wl', (seg(p, .45, .985) * 1.04).toFixed(4));
       if (p >= 1 && hVideo && !hVideo.paused) hVideo.pause();
       else if (p < 1 && hVideo && hVideo.paused && hVideo.dataset.ready && !document.hidden) { const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }

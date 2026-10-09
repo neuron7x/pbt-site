@@ -362,3 +362,18 @@ def test_copy_typography_is_normalized(page_factory):
     assert not glued, glued
     assert not re.findall(r'[⺀-鿿가-힯]', t), 'ієрогліфи на сторінці'
     assert not re.findall(r'\b(?:Обери|Заповни|натисни|подзвони|Гортай|Вкажи|Перевір|до тебе)\b', t, re.I), 'звернення на «ти»'
+
+
+@pytest.mark.parametrize('w,h,mobile', [(1366, 650, False), (1280, 600, False), (1920, 700, False), (1024, 768, False), (360, 640, True), (390, 664, True)],
+                         ids=lambda v: str(v))
+def test_hero_content_fits_between_nav_and_bottom(page_factory, w, h, mobile):
+    """09.10, скрін власника: на 1366×650 підзаголовок «Полтава · 9 областей · 24/7» заїжджав під меню — тексти накладались
+    у «ієрогліфи». Вміст героя має стояти нижче шапки й вище низу екрана (або підказки «Гортайте», якщо вона видима);
+    цифри — в один ряд."""
+    pg = page_factory(w, h, mobile=mobile)
+    pg.wait_for_timeout(1500)
+    r = pg.evaluate("""(() => { const g = s => document.querySelector(s).getBoundingClientRect(), hint = document.querySelector('.hero__hint');
+      const hv = getComputedStyle(hint).display !== 'none', st = [...document.querySelectorAll('.hero__stats li')].map(li => Math.round(li.getBoundingClientRect().top));
+      return {nav: g('#nav').bottom, top: g('#heroCenter .eyebrow').top, bottom: g('.hero__stats').bottom, limit: hv ? g('.hero__hint').top : innerHeight - 6, rows: new Set(st).size}; })()""")
+    assert r['top'] >= r['nav'] + 6 and r['bottom'] <= r['limit'] - 6, r
+    assert r['rows'] == 1, r
