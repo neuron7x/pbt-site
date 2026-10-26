@@ -291,6 +291,11 @@ def test_S14_deployment_unit_opts_in():
     assert 'Environment=TRUST_PROXY=1' in (ROOT / 'ops' / 'systemd' / 'pbt-site.service').read_text(encoding='utf-8')
 
 
+def test_power_guard_marker_suppresses_the_health_watchdog():
+    unit = (ROOT / 'ops' / 'systemd' / 'pbt-site-health.service').read_text(encoding='utf-8')
+    assert 'ConditionPathExists=!%h/.local/state/pbt-power-guard/stopped.json' in unit
+
+
 def test_timeout_reset_and_408_are_transient(srv):
     """Таймаут, обрив з'єднання (RST) і 408 — тимчасові: повтор до успіху, лічильник спроб і стан — у БД."""
     st = Stub(['hang', 'reset', 408])

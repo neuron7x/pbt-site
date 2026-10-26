@@ -1,6 +1,10 @@
 # Сторож: /api/health (БД читається/пишеться, є місце) з таймаутом 5 с; збій або зависання → перезапуск сервісу
 [Unit]
 Description=ПБТ health watchdog
+# PBT CRM power guard writes this durable marker before stopping the site.
+# A scheduled health probe must not interpret that deliberate stop as a crash
+# and restart the site while the machine is preserving battery.
+ConditionPathExists=!%h/.local/state/pbt-power-guard/stopped.json
 
 [Service]
 Type=oneshot

@@ -1,0 +1,26 @@
+default:
+  image: python:3.12-bookworm@sha256:14a4933e6cef421424f7a66d89a3f4eafcbd0d90e0a822251f298e05132dc735
+  interruptible: true
+  timeout: 20m
+
+stages:
+  - verify
+
+release-gate:
+  stage: verify
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    PLAYWRIGHT_BROWSERS_PATH: "$CI_PROJECT_DIR/.cache/ms-playwright"
+  cache:
+    key:
+      files:
+        - requirements.txt
+    paths:
+      - .cache/pip
+      - .cache/ms-playwright
+  before_script:
+    - python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt
+    - apt-get update && apt-get install -y --no-install-recommends ffmpeg
+    - python -m playwright install --with-deps chromium webkit
+  script:
+    - make gate

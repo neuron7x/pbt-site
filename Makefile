@@ -27,7 +27,7 @@ bundle:         ## одно-файлова версія (артефакт / пе
 	$(PY) tools/inline.py
 
 gate: test bundle ## релізний гейт: тести + збірка; дерево після гейта чисте
-	@git status --porcelain | grep -q . && { echo "дерево брудне після гейта"; exit 1; } || echo "GATE PASS"
+	@status="$$(git status --porcelain)"; test -z "$$status" || { echo "дерево брудне після гейта"; printf '%s\n' "$$status"; exit 1; }; echo "GATE PASS"
 
 clean:
 	rm -rf artifacts dist tests/__pycache__ server/__pycache__ tools/__pycache__

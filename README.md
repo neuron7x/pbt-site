@@ -12,7 +12,7 @@ SQLite-outbox із повторами доставки в Telegram/вебхук,
 
 ## Тести
 ```bash
-python3 -m pip install pytest playwright pillow && python3 -m playwright install chromium
+python3 -m pip install --require-hashes -r requirements.txt && python3 -m playwright install chromium
 make test-api       # API, ідемпотентність, безпека
 make test-site      # 3 в'юпорти, відео-герой і сцена, поява секцій, лічильники, маршрути на карті, парк, калькулятор, форма → БД, спільні вектори, WCAG 2.2 AA (axe)
 make test           # усе
