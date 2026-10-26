@@ -1,0 +1,23 @@
+default:
+  image: python:3.12-bookworm
+  interruptible: true
+  timeout: 20m
+
+stages:
+  - verify
+
+release-gate:
+  stage: verify
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key:
+      files:
+        - requirements.txt
+    paths:
+      - .cache/pip
+  before_script:
+    - python -m pip install --disable-pip-version-check -r requirements.txt
+    - python -m playwright install --with-deps chromium
+  script:
+    - make gate
