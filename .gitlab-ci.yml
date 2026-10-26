@@ -20,6 +20,7 @@ release-gate:
       - .cache/ms-playwright
   before_script:
     - python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt
-    - python -m playwright install --with-deps chromium
+    - apt-get update && apt-get install -y --no-install-recommends ffmpeg
+    - python -m playwright install --with-deps chromium webkit
   script:
     - make gate
