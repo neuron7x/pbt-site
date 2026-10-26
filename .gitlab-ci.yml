@@ -17,7 +17,7 @@ release-gate:
     paths:
       - .cache/pip
   before_script:
-    - python -m pip install --disable-pip-version-check -r requirements.txt
+    - python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt
     - python -m playwright install --with-deps chromium
   script:
     - make gate
