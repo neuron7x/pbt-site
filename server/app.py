@@ -6,7 +6,7 @@
 Безпека (OWASP Input Validation / CSRF): JSON-only, ліміт тіла, allowlist для
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
-import base64, email.utils, hashlib, hmac, io, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
+import base64, email.utils, hashlib, hmac, io, ipaddress, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -344,6 +344,34 @@ _DELIVERY_CHILD_ENV = {
 }
 
 
+def _safe_outbound_url(url):
+    """Never transmit accepted lead PII or Telegram tokens over remote plaintext.
+
+    Local synthetic and same-host adapters may use loopback HTTP. All other
+    endpoints require TLS and cannot carry embedded URI credentials.
+    """
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme not in ('http', 'https') or not parsed.hostname:
+            return False
+        if parsed.username is not None or parsed.password is not None:
+            return False
+        _ = parsed.port  # Reject malformed numeric ports.
+        if parsed.scheme == 'https':
+            return True
+        if parsed.hostname == 'localhost':
+            return True
+        return ipaddress.ip_address(parsed.hostname).is_loopback
+    except (ValueError, TypeError):
+        return False
+
+
+# Invalid external endpoints are a startup error, not silently omitted delivery.
+for _url in (ENV('LEAD_WEBHOOK_URL'), ENV('TELEGRAM_API_BASE')):
+    if _url and not _safe_outbound_url(_url):
+        raise ValueError('insecure outbound delivery URL: remote HTTPS required')
+
+
 def send(channel, lead_id, data):
     """One *absolute-deadline* outbound attempt; no unkillable socket threads.
 
@@ -365,9 +393,8 @@ def send(channel, lead_id, data):
     else:
         raise PermanentDeliveryError(f'unknown channel {channel}')
 
-    parsed = urllib.parse.urlsplit(url)
-    if parsed.scheme not in ('http', 'https') or not parsed.netloc:
-        raise PermanentDeliveryError('invalid delivery URL scheme')
+    if not _safe_outbound_url(url):
+        raise PermanentDeliveryError('insecure outbound delivery URL')
 
     wire = json.dumps({
         'url': url, 'body_b64': base64.b64encode(body).decode('ascii'),

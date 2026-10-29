@@ -238,3 +238,40 @@ def test_sigkill_parent_kills_inflight_delivery_child(srv):
         receiver.shutdown()
         receiver.server_close()
         thread.join(timeout=3)
+
+
+@pytest.mark.parametrize(('key', 'url'), [
+    ('LEAD_WEBHOOK_URL', 'http://192.0.2.19/hook'),
+    ('LEAD_WEBHOOK_URL', 'http://example.invalid/hook'),
+    ('LEAD_WEBHOOK_URL', 'https://user:password@example.invalid/hook'),
+    ('TELEGRAM_API_BASE', 'http://198.51.100.9/api'),
+    ('TELEGRAM_API_BASE', 'file:///tmp/unsafe'),
+])
+def test_remote_plaintext_or_uri_credentials_fail_at_startup(tmp_path, key, url):
+    """HMAC integrity never substitutes for confidentiality of lead contact data."""
+    env = dict(os.environ, HOST='127.0.0.1', PORT='0',
+               LEAD_DB=str(tmp_path / 'leads.db'), PYTHONDONTWRITEBYTECODE='1')
+    env[key] = url
+    p = subprocess.run([sys.executable, str(ROOT / 'server' / 'app.py')],
+                       capture_output=True, timeout=4, env=env, check=False)
+    assert p.returncode != 0, (key, url)
+    assert b'insecure outbound delivery URL' in p.stderr
+
+
+@pytest.mark.parametrize('url', [
+    'http://192.0.2.19/hook', 'http://example.invalid/hook',
+    'file:///tmp/unsafe', 'https://token:password@example.invalid/api',
+])
+def test_child_fails_closed_without_contacting_plaintext_remote(url):
+    """Defense in depth: a direct child invocation also refuses insecure URLs."""
+    import base64
+    envelope = json.dumps({
+        'url': url, 'headers': {'Content-Type': 'application/json'},
+        'body_b64': base64.b64encode(b'{"id":1}').decode(),
+        'socket_timeout_s': 1,
+    }).encode()
+    env = dict(os.environ, PBT_PARENT_PID=str(os.getpid()))
+    p = subprocess.run([sys.executable, str(CHILD)], input=envelope,
+                       capture_output=True, timeout=3, env=env, check=False)
+    assert p.returncode == 12, (url, p.stdout, p.stderr)
+    assert not p.stdout and not p.stderr

@@ -8,6 +8,7 @@ Exit 0=2xx, 10=permanent HTTP 4xx, 11=transient, 12=protocol failure.
 """
 import base64
 import ctypes
+import ipaddress
 import json
 import math
 import os
@@ -35,6 +36,23 @@ def parent_death_guard():
         return False
 
 
+def safe_outbound_url(url):
+    try:
+        parsed = urlsplit(url)
+        if parsed.scheme not in ('http', 'https') or not parsed.hostname:
+            return False
+        if parsed.username is not None or parsed.password is not None:
+            return False
+        _ = parsed.port
+        if parsed.scheme == 'https':
+            return True
+        if parsed.hostname == 'localhost':
+            return True
+        return ipaddress.ip_address(parsed.hostname).is_loopback
+    except (ValueError, TypeError):
+        return False
+
+
 class RejectRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None  # Never forward HMAC headers or Telegram credentials.
@@ -53,8 +71,7 @@ def main():
         timeout = request['socket_timeout_s']
         if not isinstance(url, str) or not isinstance(headers, dict):
             return 12
-        parsed = urlsplit(url)
-        if parsed.scheme not in ('http', 'https') or not parsed.netloc:
+        if not safe_outbound_url(url):
             return 12
         if not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or not 0.1 <= timeout <= 120:
             return 12

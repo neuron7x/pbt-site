@@ -55,3 +55,22 @@ the documented six-hour exponential retry-backoff ceiling are unchanged.
 `tests/test_delivery_deadline.py` includes negative fault-injection vectors for
 `nan`, infinities, negative deadlines, zero polling and unbounded retry counts.
 The HTTP security and full make gates run these cases on the source HEAD.
+
+
+## Remote transport confidentiality (fail closed)
+
+HMAC-SHA256 authenticates webhook request **bytes**, not their secrecy.
+An HTTP URL on a remote host could disclose contact details and permit replay
+by anyone observing plaintext traffic. Both the parent server and isolated
+delivery child therefore reject remote `http://`, unsupported schemes, or
+credentials embedded in URLs. Only `https://` is permitted for remote
+Telegram/webhook endpoints. Local integration adapters may explicitly use
+literal loopback IPv4/IPv6 or `localhost` with HTTP; this is not a claim
+that loopback HTTP is safe when bridged to another host.
+
+The check is a startup error for configured endpoints. The operator must
+supply a certificate-validated TLS destination (or a local TLS terminator)
+rather than disabling signature verification or silently omitting delivery.
+This is a **source-level configuration policy**, not evidence that an actual
+production destination currently uses plaintext or that production TLS has
+been externally measured.
