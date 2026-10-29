@@ -59,3 +59,19 @@ def test_single_runtime_dependency_is_in_every_build():
     assert html.index(loader) < html.index('<script src="js/site.js"></script>')
     assert "quote = (WEB / 'js' / 'quote.js').read_text" in build
     assert build.count("'<script>' + quote + '</script>'") == 2
+
+
+def test_invalid_quote_never_leaks_previous_displayed_total(page_factory):
+    page = page_factory(reduced=True)
+    page.select_option("#cMachine", "e-1")
+    assert page.get_attribute("#cOut", "data-estimate") == "with-delivery"
+    assert page.evaluate("document.getElementById('cTotal').textContent") != "—"
+
+    # Те саме посилання на об'єкт з каталогу: дані тарифу стають невалідні.
+    page.evaluate("window.PBT.fleet.find(u => u.id === 'e-1').price = null")
+    page.dispatch_event("#cHoursN", "input")
+    assert page.get_attribute("#cOut", "data-estimate") == "invalid"
+    assert page.get_attribute("#cOut", "data-total") == ""
+    assert page.inner_text("#cTotal").strip() == "—"
+    assert page.locator("#cOrder").is_disabled()
+    assert "недоступний" in page.inner_text("#cLines")

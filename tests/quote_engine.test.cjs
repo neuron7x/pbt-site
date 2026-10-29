@@ -80,3 +80,13 @@ test('independent exhaustive oracle: every mass around both trailer bounds', () 
     }
   }
 });
+
+test('integer overflow and malformed unused tariffs fail closed', () => {
+  const huge=unit(22,'exc',Number.MAX_SAFE_INTEGER);
+  assert.equal(Q.quote(huge,trucks,5000,0),null);
+  const corrupted=[trucks[0],{name:'Недійсний тариф',maxT:70,rate:null}];
+  const partial=Q.quote(unit(22),corrupted,2,20);
+  assert.equal(partial.reason,'tariff-invalid');
+  assert.equal(partial.total,null);
+  assert.equal(partial.delivery,null);
+});

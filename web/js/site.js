@@ -313,6 +313,11 @@
       const hours = clamp(parseInt(hrN.value, 10) || 0, 1, 5000), kmv = clamp(parseInt(kmN.value, 10) || 0, 0, 3000);
       const estimate = quoteModel.quote(u, D.trailers, hours, kmv);
       if (!estimate) {
+        // Невалідна модель скасовує tween і стирає ПОПЕРЕДНЮ суму.
+        // Інакше стара цифра лишалась видимою при коректному fail-closed.
+        totalAnim += 1;
+        totalShown = 0;
+        $('#cTotal').textContent = '—';
         $('#cLines').textContent = 'Розрахунок тимчасово недоступний. Уточніть вартість подачі.';
         $('#cOut').dataset.total = '';
         $('#cOut').dataset.estimate = 'invalid';
