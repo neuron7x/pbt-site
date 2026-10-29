@@ -225,8 +225,18 @@
   }
 
   /* ───── КАЛЬКУЛЯТОР ЗМІНИ ───── */
-  const weightOf = u => { const s = (u.specs.find(x => /Вага|Вантажопідйомність/.test(x.k)) || {}).v || ''; const m = s.match(/(\d+(?:[.,]\d+)?)\s*т/); return m ? parseFloat(m[1].replace(',', '.')) : null; };
-  const trailerFor = u => { const w = weightOf(u); return D.trailers.find(t => (w == null ? 22 : w) <= t.maxT) || D.trailers[D.trailers.length - 1]; };
+  /* Трал підбираємо лише за фактичною МАСОЮ, не за вантажопідйомністю.
+     Без маси або за перевищення 60 т вартість подачі НЕ вигадуємо. */
+  const weightOf = u => {
+    const spec = (u.specs || []).find(s => /^(?:Маса|Вага)(?:\s|$)/i.test(s.k));
+    const m = spec && String(spec.v).match(/^\s*(\d+(?:[.,]\d+)?)\s*т(?:\s|$)/i);
+    const w = m ? Number(m[1].replace(',', '.')) : null;
+    return w !== null && Number.isFinite(w) && w > 0 ? w : null;
+  };
+  const trailerFor = u => {
+    const w = weightOf(u);
+    return w === null ? null : (D.trailers.find(t => w <= t.maxT) || null);
+  };
   let totalShown = 0, totalAnim = 0;
   function tweenTotal(el, to) {
     const from = totalShown, t0 = performance.now(), id = ++totalAnim;
@@ -245,18 +255,34 @@
     function calc() {
       const u = priced.find(x => x.id === sel.value) || priced[0];
       const hours = clamp(parseInt(hrN.value, 10) || 0, 1, 5000), kmv = clamp(parseInt(kmN.value, 10) || 0, 0, 3000);
-      const crane = u.cat === 'crane', tr = trailerFor(u);
-      const rent = hours * u.price, deliv = crane ? 0 : kmv * tr.rate, total = rent + deliv;
+      const crane = u.cat === 'crane', needsTrailer = !crane && kmv > 0;
+      const tr = needsTrailer ? trailerFor(u) : null;
+      const transportKnown = !needsTrailer || tr !== null;
+      const rent = hours * u.price, deliv = tr ? kmv * tr.rate : 0, total = rent + deliv;
       tweenTotal($('#cTotal'), total);
+      const deliveryLine = crane
+        ? '<div><span>Подача автокрана</span><b>уточнюється</b></div>'
+        : !needsTrailer
+          ? '<div><span>Подача тралом</span><b>не заявлена</b></div>'
+          : tr
+            ? `<div><span>Подача тралом ${esc(tr.name.replace(/^Трал\s*/, ''))}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`
+            : '<div><span>Подача тралом: маса невідома або поза діапазоном</span><b>уточнюється</b></div>';
       $('#cLines').innerHTML = `<div><span>Оренда: ${hours} год × ${fmt(u.price)} грн</span><b>${fmt(rent)} грн</b></div>` +
-        (crane ? `<div><span>Подача автокрана</span><b>уточнюється</b></div>` : `<div><span>Подача тралом ${esc(tr.name.replace(/^Трал\s*/, ''))}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`) +
-        `<div><span>Разом, орієнтовно</span><b>${fmt(total)} грн</b></div>`;
+        deliveryLine +
+        `<div><span>${transportKnown ? 'Разом, орієнтовно' : 'Оренда без подачі'}</span><b>${fmt(total)} грн</b></div>`;
       km.disabled = kmN.disabled = crane;
-      $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км`}`;
-      $('#cOut').dataset.total = String(total);
+      $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км${transportKnown ? '' : ' (ціну уточнити)'}`}`;
+      $('#cOut').dataset.total = transportKnown ? String(total) : '';
+      $('#cOut').dataset.estimate = transportKnown ? 'with-delivery' : 'rent-only';
     }
     fill(hr); fill(km); calc();
-    window.PBTcalc = (id, hours, kmv) => { const u = priced.find(x => x.id === id); if (!u) return null; const crane = u.cat === 'crane'; return hours * u.price + (crane ? 0 : kmv * trailerFor(u).rate); };
+    window.PBTcalc = (id, hours, kmv) => {
+      const u = priced.find(x => x.id === id);
+      if (!u || !Number.isInteger(hours) || hours < 1 || hours > 5000 || !Number.isInteger(kmv) || kmv < 0 || kmv > 3000) return null;
+      if (u.cat === 'crane' || kmv === 0) return hours * u.price;
+      const tr = trailerFor(u);
+      return tr ? hours * u.price + kmv * tr.rate : null;
+    };
   }
 
   /* ───── МАТЕРІАЛИ, ДОКАЗ, ГЕОГРАФІЯ ───── */
