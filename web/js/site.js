@@ -92,7 +92,7 @@
   /* блиски на воді — canvas, лише повна якість і лише поки герой у кадрі */
   let ctx = null, cW = 0, cH = 0, cLast = 0, dots = [];
   function sparkSize() {
-    if (!spark) return;
+    if (!spark || getComputedStyle(spark).display === 'none') { ctx = null; dots = []; return; }
     const dpr = Math.min(devicePixelRatio || 1, 1.5);
     cW = spark.clientWidth; cH = spark.clientHeight;
     spark.width = Math.round(cW * dpr); spark.height = Math.round(cH * dpr);
@@ -437,7 +437,7 @@
 
   /* ───── курсорне світло ───── */
   const glow = $('#glow');
-  if (glow && finePointer && motion()) {
+  if (glow && finePointer && motion() && getComputedStyle(glow).display !== 'none') {
     let gx = 0, gy = 0, tx = 0, ty = 0, on = false;
     addEventListener('pointermove', e => { tx = e.clientX; ty = e.clientY; if (!on) { on = true; glow.classList.add('is-on'); } }, { passive: true });
     let run = false;                                   // цикл живе, лише поки світло доганяє курсор
