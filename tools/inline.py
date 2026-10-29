@@ -6,7 +6,7 @@
 import base64, mimetypes, re
 from pathlib import Path
 
-from bundle_contract import inline_css
+from bundle_contract import emit_fragment, inline_css
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
@@ -56,7 +56,7 @@ head = re.search(r'<head>(.*?)</head>', page, re.S).group(1)
 body = re.search(r'<body[^>]*>(.*?)</body>', page, re.S).group(1)
 keep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', head, re.S)
 early = re.search(r'<script>\s*/\* Профіль.*?</script>', head, re.S).group(0)
-frag = '<title>ПБТ · ПолтаваБудТехніка</title>\n' + '\n'.join(keep) + '\n' + early + '\n' + body
+frag = emit_fragment('ПБТ · ПолтаваБудТехніка', keep, early, body)
 (DIST / 'pbt-site.artifact.html').write_text(frag, encoding='utf-8')
 for f in ('pbt-site.html', 'pbt-site.artifact.html'):
     print(f, round((DIST / f).stat().st_size / 1048576, 2), 'MB', '| відео у бандлі:', len(videos), '/', len(ALL))
@@ -76,7 +76,7 @@ mbody = re.search(r'<body[^>]*>(.*?)</body>', h, re.S).group(1)
 mkeep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', mhead, re.S)
 mearly = re.search(r'<script>\s*/\* Профіль.*?</script>', mhead, re.S).group(0)
 MULTI.mkdir(parents=True)
-(MULTI / 'index.html').write_text('<title>ПБТ · ПолтаваБудТехніка</title>\n' + '\n'.join(mkeep) + '\n' + mearly + '\n' + mbody, encoding='utf-8')
+(MULTI / 'index.html').write_text(emit_fragment('ПБТ · ПолтаваБудТехніка', mkeep, mearly, mbody), encoding='utf-8')
 n = 0
 for f in sorted((WEB / 'media').rglob('*')):
     if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'pbt-logo.webm'):   # логотип — лише webm (альфа)

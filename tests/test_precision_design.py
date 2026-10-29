@@ -94,4 +94,22 @@ def test_sky_hero_logo_preserves_original_desktop_footprint(page_factory):
     logo = page.locator(".logo-hero")
     assert 500 <= logo.bounding_box()["width"] <= 550
     page.locator('[data-theme-choice="precision"]').click()
-    assert 220 <= logo.bounding_box()["width"] <= 265
+    # Updating a root CSS custom property can leave getComputedStyle(width)
+    # stale within the same task in Chromium, even though the token changed.
+    # Verify the committed layout frame; retain the exact size acceptance band.
+    page.wait_for_function(
+        "() => { const w = document.querySelector('.logo-hero').getBoundingClientRect().width; "
+        "return w >= 220 && w <= 265; }",
+        timeout=1500,
+    )
+    diagnostic = page.evaluate("""() => ({
+      theme: document.documentElement.dataset.theme,
+      token: getComputedStyle(document.documentElement).getPropertyValue('--t-logo-width').trim(),
+      inheritedToken: getComputedStyle(document.querySelector('.logo-hero')).getPropertyValue('--t-logo-width').trim(),
+      minWidth: getComputedStyle(document.querySelector('.logo-hero')).minWidth,
+      maxWidth: getComputedStyle(document.querySelector('.logo-hero')).maxWidth,
+      computed: getComputedStyle(document.querySelector('.logo-hero')).width,
+      box: document.querySelector('.logo-hero').getBoundingClientRect().width
+    })""")
+    assert diagnostic["theme"] == "precision", diagnostic
+    assert 220 <= diagnostic["box"] <= 265, diagnostic

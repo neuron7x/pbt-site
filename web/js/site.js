@@ -9,7 +9,9 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const quality = () => doc.dataset.quality || 'full';
   const motion = () => quality() !== 'static' && !reduced;
-  const videoAllowed = () => quality() === 'full' && !reduced;  // Save-Data / 2 ядра: лише постери
+  // Явна згода Save-Data/reduced-motion має пріоритет над CPU-евристикою:
+  // hardwareConcurrency ненадійна ознака реальної продуктивності (зокрема у CI).
+  const videoAllowed = () => motion() && !(navigator.connection && navigator.connection.saveData);
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -121,7 +123,7 @@
     if (menu.hidden) return;
     if (e.key === 'Escape') { e.preventDefault(); openMenu(false); return; }
     if (e.key !== 'Tab') return;
-    const focusable = $('button:not([disabled]), a[href]', menu).filter(el => el.getClientRects().length);
+    const focusable = Array.from(menu.querySelectorAll('button:not([disabled]), a[href]')).filter(el => el.getClientRects().length);
     if (!focusable.length) { e.preventDefault(); return; }
     if (e.shiftKey && document.activeElement === focusable[0]) {
       e.preventDefault(); focusable[focusable.length - 1].focus();

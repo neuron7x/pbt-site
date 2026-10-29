@@ -19,3 +19,17 @@ def inline_css(html: str, sources: tuple[tuple[str, str], ...]) -> str:
     if re.search(r"<link\b[^>]*\brel=[\"']stylesheet[\"']", html, re.I):
         raise ValueError("У збірці лишилося зовнішнє CSS-посилання")
     return html
+
+
+def emit_fragment(title: str, head_items: list[str], prepaint: str, body: str) -> str:
+    """Keep theme restoration ahead of CSS in both portable HTML fragments."""
+    if not prepaint.lstrip().startswith("<script>") or "dataset.theme" not in prepaint:
+        raise ValueError("Missing prepaint theme bootstrap")
+    if any("<link" in item and "stylesheet" in item for item in head_items):
+        raise ValueError("Portable fragment cannot depend on external stylesheets")
+    return (
+        f"<title>{title}</title>\n"
+        + prepaint + "\n"
+        + "\n".join(head_items) + "\n"
+        + body
+    )
