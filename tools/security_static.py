@@ -33,6 +33,14 @@ def scan_source(content, name):
     except (SyntaxError, ValueError):
         return [{'file': name, 'line': 0, 'rule': 'unparseable_python'}]
     findings = []
+    # urllib.request.build_opener().open(...) is an outbound HTTP path too.
+    # Without this dataflow edge the bounded transport child would bypass
+    # the explicit-timeout static rule merely by using a custom opener.
+    opener_names = set()
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign) and isinstance(node.value, ast.Call)
+                and qualified(node.value.func) in ('urllib.request.build_opener', 'build_opener')):
+            opener_names.update(target.id for target in node.targets if isinstance(target, ast.Name))
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -44,7 +52,8 @@ def scan_source(content, name):
                 keyword.arg == 'shell' and isinstance(keyword.value, ast.Constant)
                 and keyword.value.value is True for keyword in node.keywords):
             rule = 'shell_execution'
-        elif call in HTTP_CALLS and not any(kw.arg == 'timeout' for kw in node.keywords):
+        elif (call in HTTP_CALLS or call in {name + '.open' for name in opener_names}) and not any(
+                kw.arg == 'timeout' for kw in node.keywords):
             rule = 'network_without_timeout'
         if rule:
             findings.append({'file': name, 'line': node.lineno, 'rule': rule})

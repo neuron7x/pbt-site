@@ -331,8 +331,8 @@ class TransientDeliveryError(Exception):
 _DELIVERY_CHILD = ROOT / 'server' / 'delivery_transport.py'
 _DELIVERY_CHILD_ENV = {
     'PATH', 'SSL_CERT_FILE', 'SSL_CERT_DIR',
-    'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY',
-    'http_proxy', 'https_proxy', 'no_proxy',
+    'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY',
+    'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy',
 }
 
 

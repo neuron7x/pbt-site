@@ -21,6 +21,8 @@ def test_mutant_eval_subprocess_pickle_and_unbounded_webhook_are_rejected():
         "import pickle\npickle.loads(b'bad')\n",
         "import urllib.request\nurllib.request.urlopen('https://example.invalid')\n",
         "import requests\nrequests.post('https://example.invalid')\n",
+        "import urllib.request\nopener = urllib.request.build_opener()\nopener.open('https://example.invalid')\n",
+        "from urllib.request import build_opener\nclient = build_opener()\nclient.open('https://example.invalid')\n",
         "def func(:\n",
     ]
     for code in cases:
@@ -36,3 +38,13 @@ def retrieve(url):
         return response.status
 """
     assert guard.scan_source(code, 'safe.py') == []
+
+
+def test_custom_opener_is_allowed_only_with_explicit_socket_timeout():
+    source = """
+import urllib.request
+opener = urllib.request.build_opener()
+with opener.open('https://example.invalid', timeout=3) as response:
+    print(response.status)
+"""
+    assert guard.scan_source(source, 'bounded_custom_opener.py') == []
