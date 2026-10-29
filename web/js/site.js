@@ -9,6 +9,7 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const quality = () => doc.dataset.quality || 'full';
   const motion = () => quality() !== 'static' && !reduced;
+  const videoAllowed = () => quality() === 'full' && !reduced;  // Save-Data / 2 ядра: лише постери
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,7 +51,7 @@
   const playing = new Set();
   const vio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
     const v = e.target.querySelector('video'); if (!v) return;
-    if (e.isIntersecting && motion()) {
+    if (e.isIntersecting && videoAllowed()) {
       if (!v.dataset.ready) attachVideo(v, v.dataset.video);
       v.preload = 'auto';
       const p = v.play(); if (p && p.catch) p.catch(() => {});
@@ -60,15 +61,74 @@
   const watchVideo = el => { if (vio) vio.observe(el); };
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
-  const nav = $('#nav'), burger = $('.burger'), menu = $('#menu');
-  let lastY = scrollY, navHidden = false;
-  function openMenu(on) {
-    menu.hidden = !on; burger.setAttribute('aria-expanded', String(on)); document.body.style.overflow = on ? 'hidden' : '';
-    if (on) nav.classList.remove('is-hidden');
+  const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
+  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge')].filter(Boolean);
+  let lastY = scrollY, navHidden = false, returnFocus = null;
+  const themeButtons = Array.from(document.querySelectorAll('[data-theme-choice]'));
+  const THEME_KEY = 'pbt-theme';
+  function applyTheme(value, persist) {
+    const next = value === 'precision' ? 'precision' : 'sky';
+    if (doc.dataset.theme !== next) {
+      doc.dataset.theme = next;
+      nav.classList.remove('is-hidden');
+      navHidden = false;
+    }
+    themeButtons.forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.themeChoice === next));
+    });
+    const meta = $('meta[name="theme-color"]');
+    if (meta) meta.content = next === 'precision' ? '#101820' : '#0D6AE0';
+    const face = $('#themeFontPreload');
+    if (face) face.href = 'fonts/' + (next === 'precision' ? 'IBMPlexSans-600-cyrillic.woff2' : 'Tektur-var-cyrillic.woff2');
+    if (persist) {
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* приватний режим / заблоковане сховище */ }
+    }
+    // Обидві теми спільно використовують DOM і медіа. Після зміни стилю
+    // перераховуємо геометрію й не підтримуємо прихований Canvas-цикл.
+    requestAnimationFrame(() => { measure(); render(); sparkWake(); });
   }
-  burger.addEventListener('click', () => openMenu(menu.hidden));
-  $$('a', menu).forEach(a => a.addEventListener('click', () => openMenu(false)));
-  addEventListener('keydown', e => { if (e.key === 'Escape' && !menu.hidden) openMenu(false); });
+  themeButtons.forEach(button => button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true)));
+  addEventListener('storage', event => {
+    if (event.key === THEME_KEY) applyTheme(event.newValue, false);
+  });
+
+  function openMenu(on, restoreFocus = true) {
+    if (on === !menu.hidden) return;
+    if (on) returnFocus = document.activeElement;
+    menu.hidden = !on;
+    burger.setAttribute('aria-expanded', String(on));
+    document.body.style.overflow = on ? 'hidden' : '';
+    if (on) nav.classList.remove('is-hidden');
+    /* Модальний навігаційний шар: фон неактивний для Tab і скринридерів. */
+    menuBackdrop.forEach(el => { el.inert = on; });
+    if (on) menuClose.focus();
+    else if (restoreFocus) (returnFocus && returnFocus.isConnected ? returnFocus : burger).focus({ preventScroll: true });
+  }
+  burger.addEventListener('click', () => openMenu(true));
+  menuClose.addEventListener('click', () => openMenu(false));
+  Array.from(menu.querySelectorAll('a')).forEach(a => a.addEventListener('click', () => {
+    const hash = a.getAttribute('href');
+    openMenu(false, false);
+    if (hash && hash.startsWith('#') && hash.length > 1) {
+      const target = document.getElementById(hash.slice(1));
+      if (target) requestAnimationFrame(() => {
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      });
+    }
+  }));
+  addEventListener('keydown', e => {
+    if (menu.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); openMenu(false); return; }
+    if (e.key !== 'Tab') return;
+    const focusable = $('button:not([disabled]), a[href]', menu).filter(el => el.getClientRects().length);
+    if (!focusable.length) { e.preventDefault(); return; }
+    if (e.shiftKey && document.activeElement === focusable[0]) {
+      e.preventDefault(); focusable[focusable.length - 1].focus();
+    } else if (!e.shiftKey && document.activeElement === focusable[focusable.length - 1]) {
+      e.preventDefault(); focusable[0].focus();
+    }
+  });
 
   /* ───── ГЕРОЙ ───── */
   const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
@@ -92,7 +152,7 @@
   /* блиски на воді — canvas, лише повна якість і лише поки герой у кадрі */
   let ctx = null, cW = 0, cH = 0, cLast = 0, dots = [];
   function sparkSize() {
-    if (!spark) return;
+    if (!spark || getComputedStyle(spark).display === 'none') { ctx = null; dots = []; return; }
     const dpr = Math.min(devicePixelRatio || 1, 1.5);
     cW = spark.clientWidth; cH = spark.clientHeight;
     spark.width = Math.round(cW * dpr); spark.height = Math.round(cH * dpr);
@@ -104,7 +164,7 @@
   let sparkOn = false;
   const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroP < 1 && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
   function sparkLoop(t) {
-    if (!ctx || quality() !== 'full' || reduced || heroP >= 1 || document.hidden) { sparkOn = false; return; }
+    if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || reduced || heroP >= 1 || document.hidden) { sparkOn = false; return; }
     requestAnimationFrame(sparkLoop);
     if (t - cLast < 33) return;
     cLast = t;
@@ -160,7 +220,7 @@
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(render); } };
   addEventListener('scroll', onScroll, { passive: true });
   let rT;
-  addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { profile(); measure(); render(); }, 120); });
+  addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (!mobileLayout() && !menu.hidden) openMenu(false, false); profile(); measure(); render(); }, 120); });
 
   /* ───── ПОЯВА СЕКЦІЙ, ЛІЧИЛЬНИКИ, МАРШРУТИ ───── */
   const rio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
@@ -208,6 +268,7 @@
       measure();
     });
     if (finePointer && motion()) grid.addEventListener('pointermove', e => {         /* нахил картки за вказівником */
+      if (doc.dataset.theme === 'precision') return;
       const u = e.target.closest('.unit'); if (!u) return;
       const r = u.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
       u.style.setProperty('--ry', `${(x * 7).toFixed(2)}deg`); u.style.setProperty('--rx', `${(-y * 7).toFixed(2)}deg`);
@@ -225,8 +286,18 @@
   }
 
   /* ───── КАЛЬКУЛЯТОР ЗМІНИ ───── */
-  const weightOf = u => { const s = (u.specs.find(x => /Вага|Вантажопідйомність/.test(x.k)) || {}).v || ''; const m = s.match(/(\d+(?:[.,]\d+)?)\s*т/); return m ? parseFloat(m[1].replace(',', '.')) : null; };
-  const trailerFor = u => { const w = weightOf(u); return D.trailers.find(t => (w == null ? 22 : w) <= t.maxT) || D.trailers[D.trailers.length - 1]; };
+  /* Трал підбираємо лише за фактичною МАСОЮ, не за вантажопідйомністю.
+     Без маси або за перевищення 60 т вартість подачі НЕ вигадуємо. */
+  const weightOf = u => {
+    const spec = (u.specs || []).find(s => /^(?:Маса|Вага)(?:\s|$)/i.test(s.k));
+    const m = spec && String(spec.v).match(/^\s*(\d+(?:[.,]\d+)?)\s*т(?:\s|$)/i);
+    const w = m ? Number(m[1].replace(',', '.')) : null;
+    return w !== null && Number.isFinite(w) && w > 0 ? w : null;
+  };
+  const trailerFor = u => {
+    const w = weightOf(u);
+    return w === null ? null : (D.trailers.find(t => w <= t.maxT) || null);
+  };
   let totalShown = 0, totalAnim = 0;
   function tweenTotal(el, to) {
     const from = totalShown, t0 = performance.now(), id = ++totalAnim;
@@ -245,18 +316,34 @@
     function calc() {
       const u = priced.find(x => x.id === sel.value) || priced[0];
       const hours = clamp(parseInt(hrN.value, 10) || 0, 1, 5000), kmv = clamp(parseInt(kmN.value, 10) || 0, 0, 3000);
-      const crane = u.cat === 'crane', tr = trailerFor(u);
-      const rent = hours * u.price, deliv = crane ? 0 : kmv * tr.rate, total = rent + deliv;
+      const crane = u.cat === 'crane', needsTrailer = !crane && kmv > 0;
+      const tr = needsTrailer ? trailerFor(u) : null;
+      const transportKnown = !crane && (!needsTrailer || tr !== null);  // автокран їде сам; його подача окремо уточнюється
+      const rent = hours * u.price, deliv = tr ? kmv * tr.rate : 0, total = rent + deliv;
       tweenTotal($('#cTotal'), total);
+      const deliveryLine = crane
+        ? '<div><span>Подача автокрана</span><b>уточнюється</b></div>'
+        : !needsTrailer
+          ? '<div><span>Подача тралом</span><b>не заявлена</b></div>'
+          : tr
+            ? `<div><span>Подача тралом ${esc(tr.name.replace(/^Трал\s*/, ''))}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`
+            : '<div><span>Подача тралом: маса невідома або поза діапазоном</span><b>уточнюється</b></div>';
       $('#cLines').innerHTML = `<div><span>Оренда: ${hours} год × ${fmt(u.price)} грн</span><b>${fmt(rent)} грн</b></div>` +
-        (crane ? `<div><span>Подача автокрана</span><b>уточнюється</b></div>` : `<div><span>Подача тралом ${esc(tr.name.replace(/^Трал\s*/, ''))}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`) +
-        `<div><span>Разом, орієнтовно</span><b>${fmt(total)} грн</b></div>`;
+        deliveryLine +
+        `<div><span>${transportKnown ? 'Разом, орієнтовно' : 'Оренда без подачі'}</span><b>${fmt(total)} грн</b></div>`;
       km.disabled = kmN.disabled = crane;
-      $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км`}`;
-      $('#cOut').dataset.total = String(total);
+      $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км${transportKnown ? '' : ' (ціну уточнити)'}`}`;
+      $('#cOut').dataset.total = transportKnown ? String(total) : '';
+      $('#cOut').dataset.estimate = transportKnown ? 'with-delivery' : 'rent-only';
     }
     fill(hr); fill(km); calc();
-    window.PBTcalc = (id, hours, kmv) => { const u = priced.find(x => x.id === id); if (!u) return null; const crane = u.cat === 'crane'; return hours * u.price + (crane ? 0 : kmv * trailerFor(u).rate); };
+    window.PBTcalc = (id, hours, kmv) => {
+      const u = priced.find(x => x.id === id);
+      if (!u || !Number.isInteger(hours) || hours < 1 || hours > 5000 || !Number.isInteger(kmv) || kmv < 0 || kmv > 3000) return null;
+      if (u.cat === 'crane' || kmv === 0) return hours * u.price;
+      const tr = trailerFor(u);
+      return tr ? hours * u.price + kmv * tr.rate : null;
+    };
   }
 
   /* ───── МАТЕРІАЛИ, ДОКАЗ, ГЕОГРАФІЯ ───── */
@@ -374,7 +461,22 @@
   const form = $('#lead'), done = $('#done'), fallback = $('#fallback'), msg = $('#formMsg');
   let idemKey = null, idemHash = '';
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''));
-  function setErr(name, text) { const f = form.querySelector(`[data-field="${name}"]`); if (!f) return; f.classList.toggle('is-err', !!text); const e = $('.err', f); if (e) e.textContent = text || ''; }
+  function setErr(name, text) {
+    const group = form.querySelector(`[data-field="${name}"]`);
+    if (!group) return;
+    const active = !!text, field = $('input, select, textarea', group), error = $('.err', group);
+    group.classList.toggle('is-err', active);
+    if (error) { error.id = `error-${name}`; error.textContent = text || ''; }
+    if (!field) return;
+    if (active) field.setAttribute('aria-invalid', 'true');
+    else field.removeAttribute('aria-invalid');
+    if (error) {
+      const ids = (field.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean).filter(id => id !== error.id);
+      if (active) ids.push(error.id);
+      if (ids.length) field.setAttribute('aria-describedby', ids.join(' '));
+      else field.removeAttribute('aria-describedby');
+    }
+  }
   function payload() {
     const fd = new FormData(form), g = k => (fd.get(k) || '').toString();
     return { type: g('type'), subject: g('subject').trim(), hours: g('hours').trim(), km: g('km').trim(), place: g('place').trim(), date: g('date').trim(),
@@ -413,10 +515,13 @@
       } else if (r.status === 422 && j.fields) {
         Object.entries(j.fields).forEach(([k, v]) => setErr(k, v));
         msg.textContent = 'Перевірте позначені поля.'; msg.classList.add('is-on');
+        const first = form.querySelector('.is-err input, .is-err select, .is-err textarea');
+        if (first) first.focus();
       } else if (r.status === 429) { msg.textContent = j.message || 'Забагато запитів. Спробуйте через 10 хвилин або зателефонуйте.'; msg.classList.add('is-on'); }
       else { msg.textContent = 'Сервер не прийняв заявку. Спробуйте ще раз або зателефонуйте — номери поруч.'; msg.classList.add('is-on'); }
     } catch (_) {
       form.hidden = true; fallback.classList.add('is-on'); $('#fbText').textContent = humanText(p);
+      fallback.focus();
     } finally { btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
   });
   $('#fbCopy').addEventListener('click', async () => {
@@ -437,7 +542,7 @@
 
   /* ───── курсорне світло ───── */
   const glow = $('#glow');
-  if (glow && finePointer && motion()) {
+  if (glow && finePointer && motion() && getComputedStyle(glow).display !== 'none') {
     let gx = 0, gy = 0, tx = 0, ty = 0, on = false;
     addEventListener('pointermove', e => { tx = e.clientX; ty = e.clientY; if (!on) { on = true; glow.classList.add('is-on'); } }, { passive: true });
     let run = false;                                   // цикл живе, лише поки світло доганяє курсор
@@ -463,7 +568,7 @@
     const cr = $('#cineCredits');
     if (cr) cr.innerHTML = `<details class="credits"><summary>Джерела ілюстративних кадрів «Масштабу»</summary><ul>${chs.map(c =>
       `<li><a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; кадровано, виконано колірну корекцію</li>`).join('')}</ul></details>`;
-    if (!motion() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
+    if (!videoAllowed() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
     sec.classList.add('is-pinned');
     rail.innerHTML = chs.map(c => `<a href="#cine-${esc(c.id)}"><span>${esc(c.word)}</span></a>`).join('');
     const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), dots = $$('a', rail);
@@ -506,6 +611,7 @@
   /* ───── СТАРТ ───── */
   function start() {
     profile();
+    applyTheme(doc.dataset.theme, false);
     renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
     reveal();
     measure(); render();
@@ -516,13 +622,13 @@
        (замість прозорості — чорне тло), тому там і в однофайловій збірці лишається статичний кадр. Перший кадр анімації = статичний. */
     const logo = $('.logo-hero'), lv = $('#logoAnim');
     const ua = navigator.userAgent, appleWebKit = /AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg|CriOS|FxiOS|Android/.test(ua);
-    if (logo && lv && motion() && !D.videoData && !appleWebKit && lv.canPlayType('video/webm; codecs="vp9"')) afterLoad(() => {
+    if (logo && lv && videoAllowed() && !D.videoData && !appleWebKit && lv.canPlayType('video/webm; codecs="vp9"')) afterLoad(() => {
       lv.src = 'media/logo/pbt-logo.webm';
       lv.addEventListener('playing', () => logo.classList.add('is-anim'), { once: true });
       lv.addEventListener('ended', () => logo.classList.remove('is-anim'), { once: true });   // останній кадр = статичний
       const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
     });
-    if (motion() && hVideo) afterLoad(() => {
+    if (videoAllowed() && hVideo) afterLoad(() => {
       attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
       /* WebKit (Safari) відхиляє ранні play() з NotAllowedError навіть для muted-відео (виміряно 08.10: відмови до ~1.46 с,
          play() о 1.5 с проходить). Точну умову не встановлено ⇒ повтор із наростаючою паузою, до 8 спроб, лише поки герой у кадрі. */
@@ -537,7 +643,7 @@
     });
     requestAnimationFrame(() => hero.classList.add('is-lit'));
     sparkWake();
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (motion()) { sparkWake(); if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (videoAllowed()) { sparkWake(); if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
   }

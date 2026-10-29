@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="uk">
+<html lang="uk" data-theme="sky">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ПБТ · ПолтаваБудТехніка — оренда спецтехніки в Полтаві: амфібії, крани, трали, сипучі матеріали</title>
 <meta name="description" content="ПолтаваБудТехніка: оренда спецтехніки з оператором у Полтаві та 9 областях. Екскаватори-амфібії для водойм, автокрани до 120 т, трали до 60 т, бульдозери, дробарки, пісок і щебінь із паспортом якості. Ціна зміни — одразу на сайті.">
-<meta name="theme-color" content="#0D6AE0">
+<meta name="theme-color" content="#101820">
 <meta property="og:title" content="ПБТ · ПолтаваБудТехніка">
 <meta property="og:description" content="Техніка, що працює там, де інші не доїдуть. Полтава і ще 8 областей.">
 <meta property="og:image" content="media/logo/og-pbt.jpg">
@@ -17,8 +17,8 @@
 <link rel="icon" href="media/logo/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="media/logo/apple-touch-icon.png">
 <link rel="preload" href="media/logo/pbt-logo.webp" as="image" fetchpriority="high">
-<link rel="preload" href="fonts/Tektur-var-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Tektur-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/IBMPlexSans-400-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" id="themeFontPreload" as="font" type="font/woff2" crossorigin>
 <script>
 /* Профіль за можливостями, не за назвою пристрою; якість — за reduced-motion / ядрами / Save-Data */
 (function(d){var m=function(q){return matchMedia(q).matches},w=innerWidth,h=innerHeight,
@@ -26,6 +26,9 @@ coarse=m('(pointer:coarse)')&&!m('(any-pointer:fine)'),
 p=(!coarse&&w>=1024&&w/h>=1.05)?'wide-fine':((coarse&&(w<760||h>w))||w<600)?'compact-touch':'medium-hybrid';
 d.classList.add('js');d.dataset.profile=p;
 d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.hardwareConcurrency||4)<=2||(navigator.connection&&navigator.connection.saveData))?'reduced':'full';
+var theme='sky';try{if(localStorage.getItem('pbt-theme')==='precision')theme='precision'}catch(_e){}
+d.dataset.theme=theme;var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='precision'?'#101820':'#0D6AE0';
+var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+(theme==='precision'?'IBMPlexSans-600-cyrillic.woff2':'Tektur-var-cyrillic.woff2');
 })(document.documentElement)
 </script>
 <link rel="stylesheet" href="css/fonts.css">
@@ -51,10 +54,16 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
   </nav>
   <a class="nav__phone" href="#zapyt" data-phone>097 863 77 77</a>
   <a class="btn btn--sm nav__cta" href="#zapyt" data-req="rent">Викликати техніку</a>
+  <div class="theme-switch" role="group" aria-label="Візуальна тема сайту">
+    <button class="theme-switch__button" type="button" data-theme-choice="sky" aria-label="Тема Небо і золото" aria-pressed="true">Небо</button>
+    <button class="theme-switch__button" type="button" data-theme-choice="precision" aria-label="Тема Industrial Precision" aria-pressed="false">Графіт</button>
+  </div>
   <button class="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Меню"><i></i><i></i></button>
   <i class="nav__bar" aria-hidden="true"></i>
 </header>
-<div class="menu" id="menu" hidden>
+<div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Мобільна навігація" hidden>
+  <button class="menu__close" id="menuClose" type="button" aria-label="Закрити меню"><span aria-hidden="true">×</span></button>
+  <p class="menu__heading" aria-hidden="true">ПБТ <span>ПолтаваБудТехніка</span></p>
   <nav aria-label="Мобільне меню">
     <a href="#roboty"><span>01</span>Роботи</a><a href="#tekhnika"><span>02</span>Техніка</a><a href="#cina"><span>03</span>Ціна</a>
     <a href="#materialy"><span>04</span>Матеріали</a><a href="#dokaz"><span>05</span>Кадри</a><a href="#geo"><span>06</span>Де працюємо</a><a href="#zapyt" data-req="rent"><span>07</span>Заявка</a>
@@ -86,7 +95,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
     <div class="hero__center" id="heroCenter">
       <p class="eyebrow">Полтава · 9 областей · 24/7</p>
       <div class="logo-hero" role="img" aria-label="ПБТ · ПолтаваБудТехніка"><img class="logo-hero__img" src="media/logo/pbt-logo.webp" width="960" height="352" alt="" fetchpriority="high" decoding="async"><video class="logo-hero__anim" id="logoAnim" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video></div>
-      <h1 id="heroTitle"><span class="line">Техніка, що працює там,</span> <span class="line" style="display:block;color:var(--gold-2)">де інші не доїдуть</span></h1>
+      <h1 id="heroTitle"><span class="line">Техніка, що працює там,</span> <span class="line" style="display:block">де інші не доїдуть</span></h1>
       <p class="hero__lead">Екскаватори-амфібії для водойм, автокрани до 120 т, трали до 60 т, бульдозери, дробарки. Пісок і щебінь із паспортом якості. З оператором і пальним.</p>
       <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Порахувати зміну</a></div>
       <ul class="hero__stats" aria-label="Коротко про парк">
@@ -204,7 +213,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
     </div>
     <div class="reel" id="reel"></div>
     <p class="eyebrow" style="margin-top:clamp(36px,5vw,56px)">Нам довіряють</p>
-    <div class="marquee" aria-label="Партнери"><ul id="partners"></ul></div>
+    <div class="marquee" role="group" aria-label="Партнери"><ul id="partners"></ul></div>
     <p class="proof__src">Логотипи партнерів — з публічного сайту компанії. Відео — власна зйомка ПБТ, TikTok @poltavabudtehnika.</p>
   </div>
 </section>
@@ -299,7 +308,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
           <div class="form__foot"><button class="btn" type="submit" id="send">Надіслати заявку</button><small>Контакт потрібен лише для того, щоб передзвонити. Ми його не публікуємо й не передаємо третім особам.</small></div>
         </form>
         <div class="done" id="done" tabindex="-1" role="status"><svg class="check" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="33"/><path d="M22 37 L32 47 L51 27"/></svg><p class="eyebrow">Прийнято</p><h3>Заявку записано</h3><p class="ref" id="ref">PBT-000000</p><p>Передзвонимо в робочий час: Пн–Пт 09:00–18:00, Сб до 15:00. Якщо терміново — набирай диспетчера, номери ліворуч.</p><p><button class="btn btn--sm" type="button" id="again">Ще одна заявка</button></p></div>
-        <div class="fallback" id="fallback" role="status"><p class="eyebrow">Сервер заявок недоступний</p><h3>Зателефонуй або надішли текст</h3><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="#zapyt" data-phone>097 863 77 77</a></p></div>
+        <div class="fallback" id="fallback" tabindex="-1" role="status"><p class="eyebrow">Сервер заявок недоступний</p><h3>Зателефонуй або надішли текст</h3><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="#zapyt" data-phone>097 863 77 77</a></p></div>
       </div>
     </div>
   </div>

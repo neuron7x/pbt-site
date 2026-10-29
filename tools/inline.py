@@ -6,6 +6,8 @@
 import base64, mimetypes, re
 from pathlib import Path
 
+from bundle_contract import inline_css
+
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 DIST = ROOT / 'dist'
@@ -22,6 +24,7 @@ def data_uri(rel):
 html = (WEB / 'index.html').read_text(encoding='utf-8')
 fonts = re.sub(r'url\(\.\./fonts/([^)]+)\)', lambda m: 'url(' + data_uri('fonts/' + m.group(1)) + ')', (WEB / 'css' / 'fonts.css').read_text(encoding='utf-8'))
 css = (WEB / 'css' / 'site.css').read_text(encoding='utf-8')
+STYLES = (('css/fonts.css', fonts), ('css/site.css', css))
 data = re.sub(r'"(media/[^"]+\.(?:webp|png|svg))"', lambda m: '"' + data_uri(m.group(1)) + '"', (WEB / 'js' / 'data.js').read_text(encoding='utf-8'))
 site = (WEB / 'js' / 'site.js').read_text(encoding='utf-8')
 cine = (WEB / 'js' / 'cine.js').read_text(encoding='utf-8')
@@ -35,7 +38,7 @@ def assemble(videos):
     vmap = ',\n'.join(f'"{n}.mp4": "{data_uri("media/video/" + n + ".mp4")}"' for n in videos)
     cmap = ',\n'.join(f'"{i}": "{data_uri("media/cine/" + i + "-w.webp")}"' for i in CINE_IDS)
     d = data + '\nwindow.PBT.videoData = {' + vmap + '};\nwindow.PBT.cinePosters = {' + cmap + '};\nwindow.PBT_BUNDLE = true;\n'
-    h = html.replace('<link rel="stylesheet" href="css/fonts.css">', '<style>' + fonts + '</style>').replace('<link rel="stylesheet" href="css/site.css">', '<style>' + css + '</style>')
+    h = inline_css(html, STYLES)
     h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
     return h
 
@@ -65,7 +68,7 @@ MULTI = DIST / 'artifact'
 shutil.rmtree(MULTI, ignore_errors=True)
 d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.mp4Only = true;\nwindow.PBT_BUNDLE = true;\n'
 h = (WEB / 'index.html').read_text(encoding='utf-8')
-h = h.replace('<link rel="stylesheet" href="css/fonts.css">', '<style>' + fonts + '</style>').replace('<link rel="stylesheet" href="css/site.css">', '<style>' + css + '</style>')
+h = inline_css(h, STYLES)
 h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
 h = re.sub(r'<link rel="preload"[^>]*>\n?', '', h)
 mhead = re.search(r'<head>(.*?)</head>', h, re.S).group(1)
