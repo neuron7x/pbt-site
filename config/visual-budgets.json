@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "baseline_commit": "7be8bba75ef612bfc424f31b894e354876d4525b",
+  "purpose": "Регресійні стелі поточного медіапаку; НЕ ціль продуктивності та НЕ обсяг одного відвідування",
+  "max_total_bytes": 120000000,
+  "max_single_asset_bytes": 10000000,
+  "rules": [
+    {"glob": "video/hero-*.mp4", "min_count": 3, "max_bytes": 10000000},
+    {"glob": "video/hero-*.webm", "min_count": 3, "max_bytes": 8000000},
+    {"glob": "video/job-*.mp4", "min_count": 5, "max_bytes": 1500000},
+    {"glob": "video/proof-*.mp4", "min_count": 6, "max_bytes": 1500000},
+    {"glob": "cine/*-w.mp4", "min_count": 6, "max_bytes": 4000000},
+    {"glob": "cine/*-m.mp4", "min_count": 6, "max_bytes": 4000000},
+    {"glob": "park/*.webp", "min_count": 32, "max_bytes": 150000},
+    {"glob": "mat/*.webp", "min_count": 16, "max_bytes": 250000}
+  ]
+}
