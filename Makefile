@@ -20,13 +20,16 @@ media:          ## відео героя/робіт/доказу з каноні
 stock:          ## секція «Масштаб»: кліпи Wikimedia Commons (config/stock.json → web/media/cine + web/js/cine.js), ліцензія й sha256 — fail-closed
 	$(PY) tools/stock.py
 
-shots:          ## знімки екранів у artifacts/shots (сервер має працювати)
+shots:          ## верифіковані скриншоти + SHA-256 JSON у artifacts/shots (сервер має працювати)
 	$(PY) tools/shots.py http://127.0.0.1:$(PORT)
+
+media-audit:    ## fail-closed розміри і sha256 локальних медіа; звіт artifacts/media-budget.json
+	$(PY) tools/media_budget.py
 
 bundle:         ## одно-файлова версія (артефакт / перегляд без сервера): dist/pbt-site.html
 	$(PY) tools/inline.py
 
-gate: test bundle ## релізний гейт: тести + збірка; дерево після гейта чисте
+gate: test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
 	@status="$$(git status --porcelain)"; test -z "$$status" || { echo "дерево брудне після гейта"; printf '%s\n' "$$status"; exit 1; }; echo "GATE PASS"
 
 clean:
@@ -37,4 +40,4 @@ ops-install:    ## systemd --user: сервіс + сторож здоров'я +
 
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/ —/'
-.PHONY: run test test-api test-site media stock shots bundle gate clean ops-install help
+.PHONY: run test test-api test-site media stock shots media-audit bundle gate clean ops-install help
