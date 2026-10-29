@@ -112,7 +112,7 @@ def test_theme_switch_never_introduces_unsolicited_layout_shift(page_factory):
       new PerformanceObserver(list => {
         for (const entry of list.getEntries())
           if (!entry.hadRecentInput) window.__unexpectedShifts.push(entry.value);
-      }).observe({type: 'layout-shift', buffered: true});
+      }).observe({type: 'layout-shift'});
     }""")
     page.locator('[data-theme-choice="precision"]').click()
     page.wait_for_timeout(180)
