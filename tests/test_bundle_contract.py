@@ -1,5 +1,6 @@
 """Контракт переносної збірки: оформлення не губиться після інлайнування."""
 
+import ast
 from pathlib import Path
 
 import pytest
@@ -56,7 +57,13 @@ def test_actual_offline_input_embeds_single_canonical_dual_theme_stylesheet():
 
 def test_inline_builder_uses_shared_contract_for_both_outputs():
     code = (ROOT / "tools" / "inline.py").read_text(encoding="utf-8")
-    assert "from bundle_contract import inline_css" in code
+    # Тестуємо семантику імпорту, а не крихкий порядок імен у рядку.
+    imports = [
+        {alias.name for alias in node.names}
+        for node in ast.walk(ast.parse(code))
+        if isinstance(node, ast.ImportFrom) and node.module == "bundle_contract"
+    ]
+    assert any({"emit_fragment", "inline_css"} <= names for names in imports)
     assert code.count("inline_css(") == 2  # однофайлова й багатофайлова
     assert code.count("emit_fragment(") == 2  # обидва артефакти: prepaint перед CSS
 
