@@ -9,9 +9,9 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const quality = () => doc.dataset.quality || 'full';
   const motion = () => quality() !== 'static' && !reduced;
-  // Явна згода Save-Data/reduced-motion має пріоритет над CPU-евристикою:
-  // hardwareConcurrency ненадійна ознака реальної продуктивності (зокрема у CI).
-  const videoAllowed = () => motion() && !(navigator.connection && navigator.connection.saveData);
+  // CPU-constrained/Save-Data/reduced-motion devices stay poster-first.
+  // Browser tests explicitly emulate the full and constrained profiles.
+  const videoAllowed = () => quality() === 'full' && !reduced;
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
