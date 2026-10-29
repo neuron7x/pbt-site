@@ -21,6 +21,7 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PBT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Зафіксований checkout (v4.2.2)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683

@@ -29,7 +29,17 @@ INSTRUMENT = r"""
   try {
     new PerformanceObserver(list => {
       for (const e of list.getEntries()) window.__pbtVitals.shifts.push({
-        start: e.startTime, value: e.value, hadRecentInput: e.hadRecentInput
+        start: e.startTime, value: e.value, hadRecentInput: e.hadRecentInput,
+        sources: (e.sources || []).slice(0, 6).map(s => {
+          const el = s.node;
+          const name = el ? el.tagName.toLowerCase()
+            + (el.id ? '#' + el.id : '')
+            + (el.classList && el.classList.length
+              ? '.' + Array.from(el.classList).slice(0, 2).join('.') : '') : 'unknown';
+          return {element: name,
+            beforeY: s.previousRect?.y ?? null,
+            afterY: s.currentRect?.y ?? null};
+        })
       });
     }).observe({type: 'layout-shift', buffered: true});
   } catch (_) {}
@@ -124,6 +134,7 @@ def sample(browser, url: str, theme: str) -> dict:
             "switch_unprompted_shift_sum": round(
                 sum(e["value"] for e in induced if not e["hadRecentInput"]), 5),
             "switch_shift_events": len(induced),
+            "switch_shifts": induced,
         }
     finally:
         ctx.close()
@@ -145,13 +156,17 @@ def run(url: str, repetitions: int) -> dict:
     for theme, raw in samples.items():
         lcp = p75([s["lcp_ms"] for s in raw])
         cls = p75([s["cls"] for s in raw])
+        max_deferred_shift = max(s["switch_unprompted_shift_sum"] for s in raw)
         summaries[theme] = {
             "p75_lcp_ms": lcp, "p75_cls": cls,
+            "max_deferred_switch_shift": max_deferred_shift,
             "synthetic_budget_met": lcp <= LCP_LIMIT_MS and cls <= CLS_LIMIT,
+            "switch_stable": max_deferred_shift <= 0.001,
             "raw": raw,
         }
     return {
-        "schema_version": 1, "source_sha": os.getenv("GITHUB_SHA"),
+        "schema_version": 2, "execution_sha": os.getenv("GITHUB_SHA"),
+        "branch_head_sha": os.getenv("PBT_HEAD_SHA"),
         "kind": "synthetic_chromium_lab_not_field_data",
         "profile": {"width": 390, "height": 844, "dpr": 2,
                     "cpu_throttle": 4, "logical_cores_override": 8,
@@ -178,9 +193,14 @@ def main() -> int:
     for theme, metrics in result["themes"].items():
         print(theme, "synthetic p75 LCP=", metrics["p75_lcp_ms"],
               "CLS=", metrics["p75_cls"],
-              "LAB_BUDGET_MET=", metrics["synthetic_budget_met"])
+              "LAB_BUDGET_MET=", metrics["synthetic_budget_met"],
+              "SWITCH_STABLE=", metrics["switch_stable"],
+              "DEFERRED_SHIFT=", metrics["max_deferred_switch_shift"])
     print("INP=NOT_MEASURED; FIELD_METRICS=UNVERIFIED; artifact=", output)
-    return 0
+    return 0 if all(
+        metrics["synthetic_budget_met"] and metrics["switch_stable"]
+        for metrics in result["themes"].values()
+    ) else 1
 
 
 if __name__ == "__main__":
