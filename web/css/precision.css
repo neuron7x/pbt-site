@@ -117,6 +117,8 @@ h3 { letter-spacing:-.035em }
 }
 .hero__sky {
   background:
+    /* Top scrim is independent of footage, keeping white navigation legible. */
+    linear-gradient(180deg,rgba(9,18,26,.82),transparent 20%),
     linear-gradient(90deg,rgba(10,19,27,.97) 0%,rgba(10,19,27,.89) 24%,rgba(10,19,27,.48) 56%,rgba(10,19,27,.10) 100%),
     linear-gradient(0deg,rgba(10,19,27,.52),transparent 36%);
   mix-blend-mode:normal;
@@ -348,7 +350,7 @@ h3 { letter-spacing:-.035em }
   h2 { font-size:clamp(36px,10.2vw,49px) }
   .hero__video { object-position:50% 50%;filter:saturate(.85) contrast(1.06) brightness(.69) }
   .hero__sky {
-    background:linear-gradient(180deg,rgba(9,18,26,.62),rgba(9,18,26,.74) 45%,rgba(9,18,26,.84) 100%);
+    background:linear-gradient(180deg,rgba(9,18,26,.82),rgba(9,18,26,.76) 45%,rgba(9,18,26,.84) 100%);
   }
   .hero__center { justify-items:center;text-align:center;left:var(--gut);right:var(--gut);width:auto;gap:clamp(8px,1.35svh,14px) }
   .hero__center .eyebrow { justify-content:center }
