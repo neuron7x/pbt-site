@@ -90,7 +90,7 @@ def test_lead_form_shows_field_errors_before_sending(page_factory):
 def test_hero_video_plays_and_scene_dives(page_factory):
     pg = page_factory()
     assert pg.get_attribute('#heroVideo', 'poster').endswith('hero-wide.webp')
-    pg.wait_for_function('(() => { const v = document.getElementById("heroVideo"); return v.currentSrc && v.currentSrc.includes("hero-wide") && v.readyState >= 2 && !v.paused; })()', timeout=15000)
+    pg.wait_for_function('() => { const v = document.getElementById("heroVideo"); return v.currentSrc && v.currentSrc.includes("hero-wide") && v.readyState >= 2 && !v.paused; }', timeout=15000)
     assert pg.evaluate('document.querySelector("#hero").classList.contains("is-lit")')
     assert pg.locator('#heroTitle .w').count() >= 6                       # слова заголовка — окремі спани появи
     pg.evaluate('scrollTo({top: innerHeight * 1.1, behavior: "instant"})'); pg.wait_for_timeout(300)
