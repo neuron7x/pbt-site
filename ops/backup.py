@@ -16,7 +16,7 @@ DB = Path(os.environ.get('LEAD_DB') or ROOT / 'data' / 'leads.db')
 OUT = Path(os.environ.get('BACKUP_DIR') or ROOT / 'data' / 'backups')
 KEEP = int(os.environ.get('BACKUP_KEEP') or 14)
 
- 
+
 def _sync_backup_file(path):
     with path.open('rb') as handle:
         os.fsync(handle.fileno())
