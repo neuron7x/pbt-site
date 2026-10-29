@@ -60,15 +60,46 @@
   const watchVideo = el => { if (vio) vio.observe(el); };
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
-  const nav = $('#nav'), burger = $('.burger'), menu = $('#menu');
-  let lastY = scrollY, navHidden = false;
-  function openMenu(on) {
-    menu.hidden = !on; burger.setAttribute('aria-expanded', String(on)); document.body.style.overflow = on ? 'hidden' : '';
+  const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
+  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge')].filter(Boolean);
+  let lastY = scrollY, navHidden = false, returnFocus = null;
+  function openMenu(on, restoreFocus = true) {
+    if (on === !menu.hidden) return;
+    if (on) returnFocus = document.activeElement;
+    menu.hidden = !on;
+    burger.setAttribute('aria-expanded', String(on));
+    document.body.style.overflow = on ? 'hidden' : '';
     if (on) nav.classList.remove('is-hidden');
+    /* Модальний навігаційний шар: фон неактивний для Tab і скринридерів. */
+    menuBackdrop.forEach(el => { el.inert = on; });
+    if (on) menuClose.focus();
+    else if (restoreFocus) (returnFocus && returnFocus.isConnected ? returnFocus : burger).focus({ preventScroll: true });
   }
-  burger.addEventListener('click', () => openMenu(menu.hidden));
-  $$('a', menu).forEach(a => a.addEventListener('click', () => openMenu(false)));
-  addEventListener('keydown', e => { if (e.key === 'Escape' && !menu.hidden) openMenu(false); });
+  burger.addEventListener('click', () => openMenu(true));
+  menuClose.addEventListener('click', () => openMenu(false));
+  $('a', menu).forEach(a => a.addEventListener('click', () => {
+    const hash = a.getAttribute('href');
+    openMenu(false, false);
+    if (hash && hash.startsWith('#') && hash.length > 1) {
+      const target = document.getElementById(hash.slice(1));
+      if (target) requestAnimationFrame(() => {
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      });
+    }
+  }));
+  addEventListener('keydown', e => {
+    if (menu.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); openMenu(false); return; }
+    if (e.key !== 'Tab') return;
+    const focusable = $('button:not([disabled]), a[href]', menu).filter(el => el.getClientRects().length);
+    if (!focusable.length) { e.preventDefault(); return; }
+    if (e.shiftKey && document.activeElement === focusable[0]) {
+      e.preventDefault(); focusable[focusable.length - 1].focus();
+    } else if (!e.shiftKey && document.activeElement === focusable[focusable.length - 1]) {
+      e.preventDefault(); focusable[0].focus();
+    }
+  });
 
   /* ───── ГЕРОЙ ───── */
   const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
