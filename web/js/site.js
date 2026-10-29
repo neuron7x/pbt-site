@@ -191,7 +191,7 @@
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(render); } };
   addEventListener('scroll', onScroll, { passive: true });
   let rT;
-  addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { profile(); measure(); render(); }, 120); });
+  addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (!mobileLayout() && !menu.hidden) openMenu(false, false); profile(); measure(); render(); }, 120); });
 
   /* ───── ПОЯВА СЕКЦІЙ, ЛІЧИЛЬНИКИ, МАРШРУТИ ───── */
   const rio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
