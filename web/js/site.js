@@ -257,7 +257,7 @@
       const hours = clamp(parseInt(hrN.value, 10) || 0, 1, 5000), kmv = clamp(parseInt(kmN.value, 10) || 0, 0, 3000);
       const crane = u.cat === 'crane', needsTrailer = !crane && kmv > 0;
       const tr = needsTrailer ? trailerFor(u) : null;
-      const transportKnown = !needsTrailer || tr !== null;
+      const transportKnown = !crane && (!needsTrailer || tr !== null);  // автокран їде сам; його подача окремо уточнюється
       const rent = hours * u.price, deliv = tr ? kmv * tr.rate : 0, total = rent + deliv;
       tweenTotal($('#cTotal'), total);
       const deliveryLine = crane
