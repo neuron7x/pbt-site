@@ -172,7 +172,7 @@ def test_404_page(page_factory):
 
 
 @pytest.mark.parametrize('w,h,mobile', VIEWPORTS[::2], ids=lambda v: str(v))
-def test_axe_wcag22aa_no_serious_violations(page_factory, w, h, mobile):
+def test_axe_wcag22aa_zero_violations(page_factory, w, h, mobile):
     pg = page_factory(w, h, mobile=mobile, bypass_csp=True)
     pg.add_script_tag(path=str(ROOT / 'tests' / 'vendor' / 'axe.min.js'))
     # контраст міряємо в стані спокою: поява .rv (opacity/transform) посеред переходу давала хибні color-contrast
@@ -180,8 +180,8 @@ def test_axe_wcag22aa_no_serious_violations(page_factory, w, h, mobile):
     pg.add_style_tag(content='*,*::before,*::after{transition:none!important;animation:none!important}')
     pg.evaluate("document.querySelectorAll('.rv').forEach(el => el.classList.add('is-in'))")
     pg.wait_for_timeout(50)
-    res = pg.evaluate('axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag22aa"]}})')
-    bad = [(v['id'], v['impact'], [n['target'] for n in v['nodes']][:3]) for v in res['violations'] if v['impact'] in ('serious', 'critical')]
+    res = pg.evaluate('axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]}})')
+    bad = [(v['id'], v['impact'], [n['target'] for n in v['nodes']][:3]) for v in res['violations']]
     assert not bad, bad
 
 

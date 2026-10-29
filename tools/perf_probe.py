@@ -20,7 +20,17 @@ LCP_LIMIT_MS = 2500.0
 CLS_LIMIT = 0.1
 INSTRUMENT = r"""
 (() => {
-  window.__pbtVitals = {lcp: null, shifts: [], longTasks: 0};
+  const nodeLabel = node => {
+    if (!node) return 'unknown';
+    // LayoutShiftAttribution.node may be Document or Text, not Element.
+    const raw = typeof node.tagName === 'string' ? node.tagName :
+      (typeof node.nodeName === 'string' ? node.nodeName : 'unknown');
+    const id = typeof node.id === 'string' && node.id ? '#' + node.id : '';
+    const classes = node.classList && node.classList.length
+      ? '.' + Array.from(node.classList).slice(0, 2).join('.') : '';
+    return raw.toLowerCase() + id + classes;
+  };
+  window.__pbtVitals = {lcp: null, shifts: [], longTasks: 0, nodeLabel};
   try {
     new PerformanceObserver(list => {
       for (const e of list.getEntries()) window.__pbtVitals.lcp = e.startTime;
@@ -31,12 +41,7 @@ INSTRUMENT = r"""
       for (const e of list.getEntries()) window.__pbtVitals.shifts.push({
         start: e.startTime, value: e.value, hadRecentInput: e.hadRecentInput,
         sources: (e.sources || []).slice(0, 6).map(s => {
-          const el = s.node;
-          const name = el ? el.tagName.toLowerCase()
-            + (el.id ? '#' + el.id : '')
-            + (el.classList && el.classList.length
-              ? '.' + Array.from(el.classList).slice(0, 2).join('.') : '') : 'unknown';
-          return {element: name,
+          return {element: nodeLabel(s.node),
             beforeY: s.previousRect?.y ?? null,
             afterY: s.currentRect?.y ?? null};
         })
@@ -185,9 +190,24 @@ def main() -> int:
     ap.add_argument("--out", default="artifacts/perf/dual-theme-mobile.json")
     ap.add_argument("--runs", type=int, default=3)
     args = ap.parse_args()
-    result = run(args.url, args.runs)
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        result = run(args.url, args.runs)
+    except Exception as exc:
+        # Preserve failed-run evidence; still fail CI and retain the traceback.
+        failure = {
+            "schema_version": 2,
+            "kind": "synthetic_chromium_lab_not_field_data",
+            "release_status": "MEASUREMENT_FAILED",
+            "execution_sha": os.getenv("GITHUB_SHA"),
+            "branch_head_sha": os.getenv("PBT_HEAD_SHA"),
+            "error_class": type(exc).__name__, "error": str(exc),
+            "field_vitals_verified": False, "inp_ms": None,
+        }
+        output.write_text(json.dumps(failure, indent=2, sort_keys=True) + "\n",
+                          encoding="utf-8")
+        raise
     output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n",
                       encoding="utf-8")
     for theme, metrics in result["themes"].items():

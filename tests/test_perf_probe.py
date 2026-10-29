@@ -1,7 +1,7 @@
 """Unit proof for the numerical methodology of the synthetic mobile probe."""
 import pytest
 
-from tools.perf_probe import cls_max_session, p75
+from tools.perf_probe import INSTRUMENT, cls_max_session, p75
 
 
 def test_p75_is_nearest_rank_not_interpolated():
@@ -37,3 +37,28 @@ def test_cls_resets_if_a_session_exceeds_five_seconds():
 def test_only_input_related_shifts_do_not_contribute_to_standard_cls():
     assert cls_max_session([{"start": 250, "value": 0.8,
                              "hadRecentInput": True}]) == 0.0
+
+
+
+def test_shift_source_label_handles_document_text_and_svg_nodes(browser):
+    """Real Chromium regression for the 2026-10-29 probe crash on non-Element nodes."""
+    page = browser.new_page()
+    try:
+        page.goto("about:blank")
+        page.evaluate(INSTRUMENT)
+        labels = page.evaluate("""() => {
+          const div = document.createElement('div');
+          div.id = 'target';
+          div.className = 'one two';
+          const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          return [
+            window.__pbtVitals.nodeLabel(document),
+            window.__pbtVitals.nodeLabel(document.createTextNode('text')),
+            window.__pbtVitals.nodeLabel(div),
+            window.__pbtVitals.nodeLabel(svg),
+            window.__pbtVitals.nodeLabel(null)
+          ];
+        }""")
+        assert labels == ["#document", "#text", "div#target.one.two", "svg", "unknown"]
+    finally:
+        page.close()

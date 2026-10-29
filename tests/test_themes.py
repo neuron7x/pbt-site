@@ -103,7 +103,7 @@ def test_axe_wcag22aa_zero_violations_in_each_theme(page_factory, theme, width, 
     page.add_style_tag(content="*,*::before,*::after{transition:none!important;animation:none!important}")
     page.evaluate("document.querySelectorAll('.rv').forEach(el => el.classList.add('is-in'))")
     result = page.evaluate("""async () => axe.run(document, {
-      runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag22aa']}
+      runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}
     })""")
     bad = [(v["id"], v.get("impact"), [n["target"] for n in v["nodes"]][:3]) for v in result["violations"]]
     assert not bad, bad
@@ -171,3 +171,30 @@ def test_default_browser_chrome_color_agrees_with_sky_before_prepaint():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     assert '<html lang="uk" data-theme="sky">' in html
     assert '<meta name="theme-color" content="#0D6AE0">' in html
+
+
+
+@pytest.mark.parametrize("theme", ["sky", "precision"])
+@pytest.mark.parametrize("state", ["modal-menu", "invalid-form"])
+def test_axe_wcag22aa_checks_dynamic_interaction_states(page_factory, theme, state):
+    """Rendered state changes are in-scope WCAG 2.2 AA, not only initial page."""
+    page = page_factory(390, 844, mobile=True, reduced=True, bypass_csp=True)
+    page.locator(f'[data-theme-choice="{theme}"]').click()
+    if state == "modal-menu":
+        page.locator(".burger").click()
+        assert page.locator("#menu").is_visible()
+    else:
+        page.locator("#contact").fill("invalid")
+        page.locator("#hours").fill("0")
+        page.locator("#send").click()
+        assert page.locator("#contact").get_attribute("aria-invalid") == "true"
+    page.add_script_tag(path=str(ROOT / "tests" / "vendor" / "axe.min.js"))
+    page.add_style_tag(content="*,*::before,*::after{transition:none!important;animation:none!important}")
+    page.evaluate("document.querySelectorAll('.rv').forEach(el => el.classList.add('is-in'))")
+    result = page.evaluate("""async () => axe.run(document, {
+      runOnly: {type: 'tag', values:
+        ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}
+    })""")
+    bad = [(v["id"], v["impact"], [n["target"] for n in v["nodes"]][:3])
+           for v in result["violations"]]
+    assert not bad, bad
