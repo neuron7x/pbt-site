@@ -23,3 +23,12 @@ scans are blocking, not successes. Inspect the actual GitHub job and
 `artifacts/security/osv-receipt.json` for matching exact HEAD and scanner outcome.
 
 Owner-only: visual design, tariffs/VAT and production release decisions.
+
+## Additional scoped AST gate (not a substitute for SAST)
+
+`tools/security_static.py` parses **server/** and **ops/** Python via stdlib AST,
+rejecting eval/exec, unsafe deserialization, shell subprocesses and network
+calls without explicit timeouts. `tests/test_security_static.py` inserts
+adversarial code mutants and checks each is rejected. CI emits an exact-head
+`pbt-static` evidence artifact and fails on missing/invalid input. This is a
+narrow source hygiene guard, **not** broad static analysis or ASVS certification.

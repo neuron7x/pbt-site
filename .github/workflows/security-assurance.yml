@@ -86,3 +86,36 @@ jobs:
           path: artifacts/security/osv-receipt.json
           if-no-files-found: error
           retention-days: 14
+
+  scoped-static:
+    name: Fail-closed AST policy / server + ops
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      PBT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - name: Immutable checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - name: Pinned Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - name: Verify exact SHA and check source primitives
+        run: |
+          test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
+          git diff --check HEAD^1 HEAD
+          python tools/security_static.py --roots server ops \
+            --expected-head "$PBT_HEAD_SHA" --output artifacts/security/scoped-static.json
+      - name: Preserve policy findings including failures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: pbt-static-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/security/scoped-static.json
+          if-no-files-found: error
+          retention-days: 14
