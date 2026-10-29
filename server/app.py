@@ -417,20 +417,24 @@ class _HeaderDeadlineReader(io.RawIOBase):
         return True
 
     def readinto(self, b):
-        h, dl = self.h, self.h._hdr_deadline
-        if dl is not None:
-            left = dl - time.monotonic()
-            if left <= 0:
-                h._hdr_expired = True
-                raise TimeoutError('header deadline')
-            h.connection.settimeout(min(h.timeout, left))
+        h = self.h
+        header_deadline = h._hdr_deadline
+        body_deadline = h._body_deadline if header_deadline is None else None
+        deadline = header_deadline if header_deadline is not None else body_deadline
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                if header_deadline is not None:
+                    h._hdr_expired = True
+                raise TimeoutError('absolute request read deadline')
+            h.connection.settimeout(min(h.timeout, remaining))
         try:
             n = h.connection.recv_into(b)
         except TimeoutError:
-            if dl is not None:
+            if header_deadline is not None:
                 h._hdr_expired = True
             raise
-        if dl is not None:
+        if header_deadline is not None:
             h._hdr_bytes += n
         return n
 
@@ -463,7 +467,11 @@ class Handler(SimpleHTTPRequestHandler):
 
     timeout = float(ENV('REQUEST_TIMEOUT') or 20)   # S7: повільний клієнт (slowloris) не тримає потік безстроково (env — лише для перевірки)
     header_timeout = float(ENV('HEADER_TIMEOUT') or 10)   # SEC-1: абсолютний бюджет (с) на рядок запиту+заголовки → 408
+    body_timeout = float(ENV('REQUEST_BODY_DEADLINE') or 10)  # R1: абсолютний бюджет, не таймаут між байтами
+    if not 0.1 <= body_timeout <= 60:
+        raise ValueError('REQUEST_BODY_DEADLINE must be between 0.1 and 60 seconds')
     _hdr_deadline = None
+    _body_deadline = None
 
     def setup(self):
         super().setup()
@@ -721,9 +729,28 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(413, {'ok': False, 'error': 'size'})
         if not rate_ok(ip, 'any'):
             return self.rate_limited(ip)
+        self._body_deadline = time.monotonic() + self.body_timeout
         try:
-            body = json.loads(self.rfile.read(n).decode('utf-8'))
+            raw = self.rfile.read(n)
+        except TimeoutError:
+            # Абсолютний час вичерпано: ніколи не приймати недочитаний JSON.
+            self.close_connection = True
+            return self.send_json(408, {'ok': False, 'error': 'request_timeout'})
         except Exception:  # noqa: BLE001
+            self.close_connection = True
+            return self.send_json(400, {'ok': False, 'error': 'json'})
+        finally:
+            self._body_deadline = None
+            try:
+                self.connection.settimeout(self.timeout)
+            except OSError:
+                pass
+        if len(raw) != n:
+            self.close_connection = True
+            return self.send_json(400, {'ok': False, 'error': 'json'})
+        try:
+            body = json.loads(raw.decode('utf-8'))
+        except (UnicodeDecodeError, ValueError):
             return self.send_json(400, {'ok': False, 'error': 'json'})
         try:
             data, err = validate(body)
