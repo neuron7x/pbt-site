@@ -64,7 +64,7 @@
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
   const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge')].filter(Boolean);
   let lastY = scrollY, navHidden = false, returnFocus = null;
-  const themeButtons = $('[data-theme-choice]');
+  const themeButtons = Array.from(document.querySelectorAll('[data-theme-choice]'));
   const THEME_KEY = 'pbt-theme';
   function applyTheme(value, persist) {
     const next = value === 'precision' ? 'precision' : 'sky';
@@ -106,7 +106,7 @@
   }
   burger.addEventListener('click', () => openMenu(true));
   menuClose.addEventListener('click', () => openMenu(false));
-  $('a', menu).forEacha => a.addEventListener('click', () => {
+  Array.from(menu.querySelectorAll('a')).forEach(a => a.addEventListener('click', () => {
     const hash = a.getAttribute('href');
     openMenu(false, false);
     if (hash && hash.startsWith('#') && hash.length > 1) {
