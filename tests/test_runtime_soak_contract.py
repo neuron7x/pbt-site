@@ -15,6 +15,8 @@ def test_soak_duration_and_budgets_cannot_be_diluted():
     assert cfg['budgets']['maximum_p99_lead_ms'] <= 2000
     assert cfg['budgets']['maximum_rss_kib'] <= 262144
     assert cfg['budgets']['maximum_rss_growth_kib_per_process'] <= 65536
+    assert cfg['budgets']['maximum_tree_vm_rss_sum_kib'] <= 393216
+    assert cfg['budgets']['maximum_delivery_descendants'] <= 8
     assert cfg['budgets']['maximum_pending_outbox'] <= 128
     assert cfg['budgets']['maximum_failed_deliveries'] == 0
     assert cfg['budgets']['minimum_backup_checkpoints'] >= 2
@@ -47,6 +49,9 @@ def test_short_smoke_real_socket_fault_recovery_and_hmac(tmp_path):
     assert result['crm']['invalid_hmac'] == 0
     assert result['crm']['invalid_payloads'] == 0
     assert result['crm']['unexpected_transport_aborts'] == 0
+    assert result['resource_scope'] == 'sampled_server_plus_descendants_sum_vm_rss_not_cgroup_peak'
+    assert result['tree_vm_rss_sum_peak_kib'] >= result['rss_peak_kib']
+    assert result['observed_child_processes_peak'] <= 8
     assert 0 <= result['crm']['expected_crash_aborts'] <= 4
     assert result['backup_checkpoints'] >= 2
     assert result['field_inp'] == 'NOT_MEASURED'
@@ -129,3 +134,43 @@ def test_crm_incomplete_transport_fails_closed_and_is_separate_from_hmac():
         assert result['observed_distinct_leads'] == 0
     finally:
         crm.stop()
+
+
+def test_proc_tree_census_sees_child_of_nonleader_thread():
+    """A worker-spawned process must be counted even when /task/<pid>/children is empty."""
+    import os
+    from types import SimpleNamespace
+    import threading
+    import time
+    from tools.runtime_soak import resources
+
+    spawned = []
+    ready = threading.Event()
+
+    def launch_child():
+        child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(3)'],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        spawned.append(child)
+        ready.set()
+        child.wait(timeout=5)
+
+    worker = threading.Thread(target=launch_child, daemon=True)
+    worker.start()
+    assert ready.wait(2)
+    try:
+        captured = None
+        for _ in range(30):
+            seen = resources(SimpleNamespace(pid=os.getpid()))
+            if seen['ChildCount'] >= 1 and seen['ChildRSSSum'] > 0:
+                captured = seen
+                break
+            time.sleep(.03)
+        assert captured, 'child was invisible to process-tree RSS accounting'
+        assert captured['VmRSS'] > 0 and captured['Threads'] >= 2
+        assert captured['ChildRSSSum'] > 0
+    finally:
+        for child in spawned:
+            if child.poll() is None:
+                child.kill()
+            child.wait(timeout=5)
+        worker.join(timeout=5)

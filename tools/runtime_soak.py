@@ -204,15 +204,59 @@ def sqlite_counts(db):
             'failed': status.get('failed', 0)}
 
 
-def resources(proc):
-    status = Path(f'/proc/{proc.pid}/status').read_text()
+def _proc_status(pid):
+    status = Path(f'/proc/{pid}/status').read_text()
     rows = {}
     for line in status.splitlines():
-        if line.startswith(('VmRSS:', 'Threads:')):
+        if line.startswith(('VmRSS:', 'Threads:', 'PPid:')):
             k, v = line.split(':', 1)
             rows[k] = int(v.split()[0])
+    return rows
+
+
+def _descendants(root_pid):
+    """Census children of *all threads*, recursively (Linux /proc).
+
+    The worker spawns deliveries from executor threads, not the group leader.
+    Enumerating only /proc/<pid>/task/<pid>/children misses those processes.
+    This is sampled process-tree evidence, not a continuous cgroup peak.
+    """
+    found = set()
+    pending = [root_pid]
+    while pending:
+        pid = pending.pop()
+        try:
+            tasks = Path(f'/proc/{pid}/task').iterdir()
+            for task in tasks:
+                try:
+                    child_text = (task / 'children').read_text()
+                except FileNotFoundError:
+                    continue  # Thread exited during census.
+                for token in child_text.split():
+                    child = int(token)
+                    if child != root_pid and child not in found:
+                        found.add(child)
+                        pending.append(child)
+        except FileNotFoundError:
+            continue  # Process exited during census.
+    return found
+
+
+def resources(proc):
+    rows = _proc_status(proc.pid)
     if 'VmRSS' not in rows or 'Threads' not in rows:
         raise RuntimeError('rss_or_thread_measurement_missing')
+    child_rss = 0
+    live_children = 0
+    for pid in _descendants(proc.pid):
+        try:
+            child = _proc_status(pid)
+        except FileNotFoundError:
+            continue  # Short-lived process exited between census and read.
+        child_rss += child.get('VmRSS', 0)  # Zombies may not expose VmRSS.
+        live_children += 1
+    rows['ChildRSSSum'] = child_rss
+    rows['ChildCount'] = live_children
     return rows
 
 
@@ -253,6 +297,8 @@ def exercise(profile, seconds, source_sha, cfg):
             began = time.monotonic()
             samples = []
             rss_epochs = [[]]
+            child_rss_epochs = [[]]
+            child_count_epochs = [[]]
             threads_max = 0
             pending_max = 0
             accepted = 0
@@ -277,6 +323,8 @@ def exercise(profile, seconds, source_sha, cfg):
                 if last_resource_sample < 0 or elapsed - last_resource_sample >= 2:
                     seen = resources(proc)
                     rss_epochs[-1].append(seen['VmRSS'])
+                    child_rss_epochs[-1].append(seen['ChildRSSSum'])
+                    child_count_epochs[-1].append(seen['ChildCount'])
                     threads_max = max(threads_max, seen['Threads'])
                     pending_max = max(pending_max, sqlite_counts(db)['pending'])
                     last_resource_sample = elapsed
@@ -296,6 +344,8 @@ def exercise(profile, seconds, source_sha, cfg):
                         with crm.lock:
                             crm.crash_window = False
                     rss_epochs.append([])
+                    child_rss_epochs.append([])
+                    child_count_epochs.append([])
                     last_resource_sample = -1
                     restarted = True
                 time.sleep(max(0, periods['request_period_s'] - (time.monotonic() - tick)))
@@ -316,6 +366,11 @@ def exercise(profile, seconds, source_sha, cfg):
             stats = crm.snapshot()
             rss_peaks = [max(x) for x in rss_epochs if x]
             rss_growth = [max(x) - x[0] for x in rss_epochs if x]
+            tree_rss_peak = max(
+                server + child
+                for server_epoch, child_epoch in zip(rss_epochs, child_rss_epochs)
+                for server, child in zip(server_epoch, child_epoch))
+            child_count_peak = max(max(group) for group in child_count_epochs if group)
             report = {
                 'schema': 'pbt-soak-evidence-v1',
                 'source_sha': source_sha,
@@ -332,6 +387,11 @@ def exercise(profile, seconds, source_sha, cfg):
                 'api_max_ms': round(max(samples), 3),
                 'api_latency_samples_ms': [round(v, 3) for v in samples],
                 'rss_sample_epochs_kib': rss_epochs,
+                'child_rss_sample_epochs_kib': child_rss_epochs,
+                'child_process_sample_epochs': child_count_epochs,
+                'tree_vm_rss_sum_peak_kib': tree_rss_peak,
+                'observed_child_processes_peak': child_count_peak,
+                'resource_scope': 'sampled_server_plus_descendants_sum_vm_rss_not_cgroup_peak',
                 'rss_peak_kib': max(rss_peaks),
                 'rss_growth_max_kib': max(rss_growth),
                 'threads_peak': threads_max,
@@ -355,6 +415,10 @@ def exercise(profile, seconds, source_sha, cfg):
             gate(report['api_p99_ms'] <= limits['maximum_p99_lead_ms'], 'api_p99')
             gate(report['rss_peak_kib'] <= limits['maximum_rss_kib'], 'rss_peak')
             gate(report['rss_growth_max_kib'] <= limits['maximum_rss_growth_kib_per_process'], 'rss_growth')
+            gate(tree_rss_peak <= limits['maximum_tree_vm_rss_sum_kib'], 'tree_rss_peak')
+            gate(child_count_peak <= limits['maximum_delivery_descendants'], 'delivery_descendant_bound')
+            if profile == 'soak':
+                gate(child_count_peak >= 1, 'no_outbound_child_observed')
             gate(threads_max <= limits['maximum_thread_count'], 'thread_bound')
             gate(pending_max <= limits['maximum_pending_outbox'], 'outbox_backlog_peak')
             gate(drain_elapsed <= limits['maximum_drain_s'], 'outbox_drain_deadline')

@@ -41,6 +41,29 @@ def verify(report, budget, expected):
         raise ValueError('memory_provenance')
     if peak > limits['maximum_rss_kib'] or growth > limits['maximum_rss_growth_kib_per_process']:
         raise ValueError('memory_budget')
+    if report['resource_scope'] != 'sampled_server_plus_descendants_sum_vm_rss_not_cgroup_peak':
+        raise ValueError('resource_scope')
+    child_rss = report['child_rss_sample_epochs_kib']
+    child_n = report['child_process_sample_epochs']
+    if len(child_rss) != len(rss) or len(child_n) != len(rss):
+        raise ValueError('missing_child_epochs')
+    if any(len(rss[i]) != len(child_rss[i]) or len(rss[i]) != len(child_n[i])
+           for i in range(len(rss))):
+        raise ValueError('inconsistent_tree_sample_lengths')
+    all_rss = [rss_epoch[j] + child_rss[i][j]
+               for i, rss_epoch in enumerate(rss)
+               for j in range(len(rss_epoch))]
+    all_children = [v for epoch in child_n for v in epoch]
+    if (not all_rss or any(type(v) is not int or v < 0 for e in child_rss for v in e)
+            or any(type(v) is not int or v < 0 for v in all_children)):
+        raise ValueError('invalid_tree_samples')
+    if (report['tree_vm_rss_sum_peak_kib'] != max(all_rss)
+            or report['observed_child_processes_peak'] != max(all_children)):
+        raise ValueError('falsified_tree_memory_or_child_peak')
+    if max(all_rss) > limits['maximum_tree_vm_rss_sum_kib'] or max(all_children) > limits['maximum_delivery_descendants']:
+        raise ValueError('resource_tree_budget')
+    if profile == 'soak' and not max(all_children):
+        raise ValueError('no_measured_outbound_children')
     if report['threads_peak'] > limits['maximum_thread_count'] or report['pending_outbox_peak'] > limits['maximum_pending_outbox']:
         raise ValueError('bounded_resources')
     if not report['process_crash_and_restart'] or report['backup_checkpoints'] < limits['minimum_backup_checkpoints']:

@@ -36,6 +36,11 @@ def test_verifier_rejects_forged_success_for_crm_integrity_and_crash_aborts():
         'accepted_leads': n, 'observed_duration_s': cfg['smoke']['minimum_duration_s'],
         'api_latency_samples_ms': [1.0] * n, 'api_p99_ms': 1.0,
         'rss_sample_epochs_kib': [[1024], [1280]],
+        'child_rss_sample_epochs_kib': [[512], [0]],
+        'child_process_sample_epochs': [[1], [0]],
+        'tree_vm_rss_sum_peak_kib': 1536,
+        'observed_child_processes_peak': 1,
+        'resource_scope': 'sampled_server_plus_descendants_sum_vm_rss_not_cgroup_peak',
         'rss_peak_kib': 1280, 'rss_growth_max_kib': 0,
         'threads_peak': 4, 'pending_outbox_peak': 2,
         'process_crash_and_restart': True, 'backup_checkpoints': 2,
@@ -58,3 +63,45 @@ def test_verifier_rejects_forged_success_for_crm_integrity_and_crash_aborts():
     del missing['crm']['unexpected_transport_aborts']
     with pytest.raises(KeyError):
         verify(missing, cfg, head)
+
+
+def test_verifier_rejects_fabricated_child_memory_peak_and_missing_sample():
+    """Mutating either side of process-tree evidence must not be accepted."""
+    import pytest
+    from tools.verify_soak_evidence import verify
+    budget = json.loads((ROOT / 'config/runtime-soak-budgets.json').read_text())
+    head = 'b' * 40
+    n = budget['smoke']['minimum_accepted']
+    report = {
+        'profile': 'smoke', 'source_sha': head, 'status': 'PASS', 'violations': [],
+        'accepted_leads': n, 'observed_duration_s': 10,
+        'api_latency_samples_ms': [1.] * n, 'api_p99_ms': 1.,
+        'rss_sample_epochs_kib': [[1024, 1050], [1200, 1300]],
+        'child_rss_sample_epochs_kib': [[500, 400], [0, 600]],
+        'child_process_sample_epochs': [[1, 1], [0, 1]],
+        'tree_vm_rss_sum_peak_kib': 1900,
+        'observed_child_processes_peak': 1,
+        'resource_scope': 'sampled_server_plus_descendants_sum_vm_rss_not_cgroup_peak',
+        'rss_peak_kib': 1300, 'rss_growth_max_kib': 100,
+        'threads_peak': 4, 'pending_outbox_peak': 2,
+        'process_crash_and_restart': True, 'backup_checkpoints': 2,
+        'drain_elapsed_s': 1, 'final_sqlite_integrity': 'ok',
+        'outbox': {'leads': n, 'pending': 0, 'delivered': n, 'failed': 0},
+        'crm': {'invalid_hmac': 0, 'invalid_payloads': 0, 'expected_crash_aborts': 0,
+                'unexpected_transport_aborts': 0, 'observed_distinct_leads': n},
+        'field_inp': 'NOT_MEASURED', 'scope': 'synthetic_local_http_sqlite_not_production'
+    }
+    assert verify(report, budget, head)
+    import copy
+    forged_peak = copy.deepcopy(report)
+    forged_peak['tree_vm_rss_sum_peak_kib'] = 1300
+    with pytest.raises(ValueError):
+        verify(forged_peak, budget, head)
+    missing_child = copy.deepcopy(report)
+    missing_child['child_rss_sample_epochs_kib'][0].pop()
+    with pytest.raises(ValueError):
+        verify(missing_child, budget, head)
+    impossible_child = copy.deepcopy(report)
+    impossible_child['child_process_sample_epochs'][0][0] = -1
+    with pytest.raises(ValueError):
+        verify(impossible_child, budget, head)
