@@ -123,7 +123,7 @@
     if (menu.hidden) return;
     if (e.key === 'Escape') { e.preventDefault(); openMenu(false); return; }
     if (e.key !== 'Tab') return;
-    const focusable = $('button:not([disabled]), a[href]', menu).filter(el => el.getClientRects().length);
+    const focusable = Array.from(menu.querySelectorAll('button:not([disabled]), a[href]')).filter(el => el.getClientRects().length);
     if (!focusable.length) { e.preventDefault(); return; }
     if (e.shiftKey && document.activeElement === focusable[0]) {
       e.preventDefault(); focusable[focusable.length - 1].focus();
