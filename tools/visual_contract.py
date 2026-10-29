@@ -6,8 +6,10 @@
 from __future__ import annotations
 
 import hashlib
-import struct
+from io import BytesIO
 from pathlib import Path
+
+from PIL import Image, UnidentifiedImageError
 
 SCHEMA_VERSION = 1
 REQUIRED_SECTIONS = (
@@ -27,14 +29,18 @@ VIEWPORTS = (
 
 
 def png_dimensions(content: bytes) -> tuple[int, int]:
-    """Зчитує лише заголовок PNG: захист від порожнього/битого артефакту."""
-    if len(content) < 24 or content[:8] != b"\x89PNG\r\n\x1a\n" or content[12:16] != b"IHDR":
-        raise ValueError("Не PNG або пошкоджений заголовок")
-    width, height = struct.unpack(">II", content[16:24])
-    if not (0 < width <= 20000 and 0 < height <= 20000):
+    """Pillow перевіряє справжній PNG, зокрема CRC, а не тільки магічні байти."""
+    try:
+        with Image.open(BytesIO(content)) as img:
+            if img.format != "PNG":
+                raise ValueError("Очікується PNG")
+            size = img.size
+            img.verify()
+    except (UnidentifiedImageError, OSError, SyntaxError) as exc:
+        raise ValueError(f"Пошкоджений PNG: {exc}") from exc
+    if not (0 < size[0] <= 20000 and 0 < size[1] <= 20000):
         raise ValueError("Недопустимий розмір PNG")
-    return width, height
-
+    return size
 
 def capture_record(content: bytes, name: str, viewport: str, section: str, width: int, height: int) -> dict:
     w, h = png_dimensions(content)
