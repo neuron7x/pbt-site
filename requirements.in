@@ -1,5 +1,5 @@
 # Runtime uses only the Python standard library. These are the verified test tools.
-pytest==8.4.2
+pytest==9.0.3
 playwright==1.57.0
-pillow==12.2.0
+pillow==13.0.0
 numpy==2.4.6
