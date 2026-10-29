@@ -16,6 +16,11 @@ def png(width=16, height=8):
 def valid_probe():
     return {
         "theme": "sky", "quality": "static",
+        "appearance": {
+            "surface": "rgb(234, 247, 255)", "hero": "rgb(13, 106, 224)",
+            "heading_font": "Tektur, system-ui", "cta_radius": "999px",
+            "pressed": ["sky"],
+        },
         "visible_h1": True, "visible_cta": True,
         "horizontal_overflow": False,
         "sections": list(vc.REQUIRED_SECTIONS),
@@ -32,6 +37,20 @@ def test_layout_hard_checks_are_fail_closed():
         "broken_visible_images": ["broken.webp"], "page_errors": ["ReferenceError"],
     })
     assert len(vc.audit_layout(probe)) == 7
+
+
+def test_both_theme_appearances_are_checked_not_just_data_attribute():
+    baseline = valid_probe()
+    assert vc.audit_layout(baseline) == []
+    counterfeit = {**baseline, "theme": "precision"}
+    errors = vc.audit_layout(counterfeit)
+    assert len(errors) >= 4 and any("aria-pressed" in err for err in errors)
+    correct = {**baseline, "theme": "precision", "appearance": {
+        "surface": "rgb(245, 245, 242)", "hero": "rgb(16, 24, 32)",
+        "heading_font": "IBM Plex Sans, system-ui", "cta_radius": "5px",
+        "pressed": ["precision"],
+    }}
+    assert vc.audit_layout(correct) == []
 
 
 def test_png_sha_crc_and_complete_two_theme_matrix(tmp_path, monkeypatch):

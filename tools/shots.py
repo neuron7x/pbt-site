@@ -41,6 +41,14 @@ PROBE = """() => {
   }).map(img => img.getAttribute('src') || '[без src]');
   return {
     theme: document.documentElement.dataset.theme || null,
+    appearance: {
+      surface: getComputedStyle(document.body).backgroundColor,
+      hero: getComputedStyle(document.getElementById('hero')).backgroundColor,
+      heading_font: getComputedStyle(document.querySelector('h2')).fontFamily,
+      cta_radius: getComputedStyle(document.querySelector('#hero .btn')).borderTopLeftRadius,
+      pressed: [...document.querySelectorAll('[data-theme-choice][aria-pressed="true"]')]
+        .map(el => el.dataset.themeChoice)
+    },
     quality: document.documentElement.dataset.quality || null,
     visible_h1: displayed(document.querySelector('h1')),
     visible_cta: displayed(document.querySelector('#hero a[href="#zapyt"]')),

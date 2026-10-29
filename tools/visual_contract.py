@@ -98,6 +98,30 @@ def capture_record(content: bytes, name: str, viewport: str, section: str, width
 def audit_layout(probe: dict) -> list[str]:
     """Без здогадів про розміри елементів: лише машинно-видимі порушення."""
     failures = []
+    theme = probe.get("theme")
+    # Позначка data-theme недостатня: перевіряємо реальний computed-style.
+    expected = {
+        "sky": {
+            "surface": "rgb(234, 247, 255)",
+            "hero": "rgb(13, 106, 224)",
+            "heading_font": "Tektur",
+            "cta_radius": "999px",
+        },
+        "precision": {
+            "surface": "rgb(245, 245, 242)",
+            "hero": "rgb(16, 24, 32)",
+            "heading_font": "IBM Plex Sans",
+            "cta_radius": "5px",
+        },
+    }
+    if theme in expected:
+        appearance = probe.get("appearance") or {}
+        for key, wanted in expected[theme].items():
+            observed = appearance.get(key)
+            if observed is None or (wanted not in observed if key == "heading_font" else observed != wanted):
+                failures.append(f"Тема {theme}: {key} фактично {observed!r}, очікували {wanted!r}")
+        if appearance.get("pressed") != [theme]:
+            failures.append(f"Тема {theme}: неправильний aria-pressed у перемикачі")
     if probe.get("theme") not in THEMES:
         failures.append("Тема не визначена або невалідна")
     if probe.get("quality") != "static":
