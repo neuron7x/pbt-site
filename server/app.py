@@ -6,7 +6,7 @@
 Безпека (OWASP Input Validation / CSRF): JSON-only, ліміт тіла, allowlist для
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
-import email.utils, hashlib, hmac, io, json, logging, os, posixpath, re, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
+import base64, email.utils, hashlib, hmac, io, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -291,6 +291,8 @@ def _contact(method, s):
 # незавершену доставку (стан у БД). Семантика — «щонайменше раз»: падіння між відправкою й записом статусу дасть повтор
 # (вебхук несе id заявки для ідемпотентного прийому).
 DELIVERY_TIMEOUT = float(ENV('DELIVERY_TIMEOUT') or 8)
+if not math.isfinite(DELIVERY_TIMEOUT) or not 0.1 <= DELIVERY_TIMEOUT <= 120:
+    raise ValueError('DELIVERY_TIMEOUT must be finite and between 0.1 and 120 seconds')
 DELIVERY_CONCURRENCY = int(ENV('DELIVERY_CONCURRENCY') or 4)
 if not 1 <= DELIVERY_CONCURRENCY <= 8:
     raise ValueError('DELIVERY_CONCURRENCY must be between 1 and 8')
@@ -322,26 +324,75 @@ def channels():
     return out
 
 
+class TransientDeliveryError(Exception):
+    pass
+
+
+_DELIVERY_CHILD = ROOT / 'server' / 'delivery_transport.py'
+_DELIVERY_CHILD_ENV = {
+    'PATH', 'SSL_CERT_FILE', 'SSL_CERT_DIR',
+    'HTTP_PROXY', 'HTTPS_PROXY', 'NO_PROXY',
+    'http_proxy', 'https_proxy', 'no_proxy',
+}
+
+
 def send(channel, lead_id, data):
-    """Одна спроба доставки. HTTP 4xx (крім 408/429) → PermanentDeliveryError; решта винятків — тимчасові."""
+    """One *absolute-deadline* outbound attempt; no unkillable socket threads.
+
+    The Linux child owns DNS, TLS and reading response headers. Parent's
+    communicate(timeout) kills and reaps it on deadline, preserving durable
+    at-least-once retries even if the receiver already accepted the request.
+    Payload/Telegram credentials travel via stdin, never argv or logs.
+    """
+    if channel == 'telegram':
+        text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
+        body = urllib.parse.urlencode({'chat_id': ENV('TELEGRAM_CHAT_ID'), 'text': text[:4000]}).encode()
+        url = f"{TELEGRAM_API}/bot{ENV('TELEGRAM_BOT_TOKEN')}/sendMessage"
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    elif channel == 'webhook':
+        body = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()
+        signature = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), body, hashlib.sha256).hexdigest()
+        url = ENV('LEAD_WEBHOOK_URL')
+        headers = {'Content-Type': 'application/json', 'X-PBT-Signature': signature}
+    else:
+        raise PermanentDeliveryError(f'unknown channel {channel}')
+
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme not in ('http', 'https') or not parsed.netloc:
+        raise PermanentDeliveryError('invalid delivery URL scheme')
+
+    wire = json.dumps({
+        'url': url, 'body_b64': base64.b64encode(body).decode('ascii'),
+        'headers': headers, 'socket_timeout_s': DELIVERY_TIMEOUT,
+    }, ensure_ascii=True, separators=(',', ':')).encode('utf-8')
+    if len(wire) > 65536:
+        raise PermanentDeliveryError('delivery payload too large')
+
+    env = {k: v for k, v in os.environ.items() if k in _DELIVERY_CHILD_ENV}
+    env['PBT_PARENT_PID'] = str(os.getpid())
+    env['PYTHONDONTWRITEBYTECODE'] = '1'
     try:
-        if channel == 'telegram':
-            text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
-            body = urllib.parse.urlencode({'chat_id': ENV('TELEGRAM_CHAT_ID'), 'text': text[:4000]}).encode()
-            with urllib.request.urlopen(f"{TELEGRAM_API}/bot{ENV('TELEGRAM_BOT_TOKEN')}/sendMessage", body, timeout=DELIVERY_TIMEOUT):
-                pass  # HTTP status, not a potentially unbounded response body, defines delivery success.
-        elif channel == 'webhook':
-            raw = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()
-            sig = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), raw, hashlib.sha256).hexdigest()
-            req = urllib.request.Request(ENV('LEAD_WEBHOOK_URL'), raw, {'Content-Type': 'application/json', 'X-PBT-Signature': sig})
-            with urllib.request.urlopen(req, timeout=DELIVERY_TIMEOUT):
-                pass  # Never block a delivery worker consuming a slow-trickled success body.
-        else:
-            raise PermanentDeliveryError(f'unknown channel {channel}')
-    except urllib.error.HTTPError as e:
-        if 400 <= e.code < 500 and e.code not in (408, 429):
-            raise PermanentDeliveryError(f'HTTP {e.code}') from None
-        raise
+        child = subprocess.Popen(
+            [sys.executable, str(_DELIVERY_CHILD)], stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            env=env, close_fds=True)
+    except OSError as exc:
+        raise TransientDeliveryError(type(exc).__name__) from None
+    try:
+        reply, _ = child.communicate(wire, timeout=DELIVERY_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        child.kill()
+        child.communicate()  # Reap; do not strand a process or an executor slot.
+        raise TransientDeliveryError('outbound_total_deadline') from None
+
+    status = reply.decode('ascii', errors='replace').strip()
+    if child.returncode == 0 and not status:
+        return
+    if child.returncode == 10 and re.fullmatch(r'HTTP 4\d{2}', status):
+        raise PermanentDeliveryError(status)
+    if child.returncode == 11 and re.fullmatch(r'(?:HTTP [1-5]\d{2}|[A-Za-z][A-Za-z0-9_]{0,39})', status):
+        raise TransientDeliveryError(status)
+    raise TransientDeliveryError('delivery_child_failure')
 
 
 def _attempt_delivery(row):
@@ -352,6 +403,8 @@ def _attempt_delivery(row):
         return None, False
     except PermanentDeliveryError as e:
         return str(e), True
+    except TransientDeliveryError as e:
+        return str(e), False
     except Exception as e:  # noqa: BLE001
         return type(e).__name__ + (f' {e.code}' if isinstance(e, urllib.error.HTTPError) else ''), False
 
