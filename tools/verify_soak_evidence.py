@@ -52,6 +52,10 @@ def verify(report, budget, expected):
     crm = report['crm']
     if crm['invalid_hmac'] != 0 or crm['observed_distinct_leads'] != n:
         raise ValueError('signature_or_crm_coverage')
+    if crm['invalid_payloads'] != 0 or crm['unexpected_transport_aborts'] != 0:
+        raise ValueError('invalid_webhook_or_unexpected_transport_abort')
+    if type(crm['expected_crash_aborts']) is not int or not 0 <= crm['expected_crash_aborts'] <= 4:
+        raise ValueError('unbounded_crash_transport_aborts')
     if profile == 'soak':
         if not all(crm['http_status_counts'].get(str(x), 0) > 0 for x in (408, 429, 503)):
             raise ValueError('missing_adversarial_fault_class')

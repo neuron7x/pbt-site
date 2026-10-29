@@ -46,25 +46,67 @@ class SyntheticCRM:
         self.attempts = Counter()
         self.statuses = Counter()
         self.bad_signatures = 0
+        self.bad_payloads = 0
+        self.expected_crash_aborts = 0
+        self.unexpected_transport_aborts = 0
+        self.crash_window = False
         self.lock = threading.Lock()
         state = self
 
         class Handler(BaseHTTPRequestHandler):
+            def reply(self, code):
+                try:
+                    self.send_response(code)
+                    self.send_header('Content-Length', '2')
+                    self.end_headers()
+                    self.wfile.write(b'{}')
+                except OSError:
+                    pass  # The deliberately killed sender may have closed its socket.
+
             def do_POST(self):
-                body = self.rfile.read(int(self.headers.get('Content-Length') or 0))
+                try:
+                    length = int(self.headers.get('Content-Length') or 0)
+                except ValueError:
+                    length = -1
+                if not 0 < length <= 8192:
+                    with state.lock:
+                        state.bad_payloads += 1
+                        state.statuses[400] += 1
+                    self.close_connection = True
+                    self.reply(400)
+                    return
+                try:
+                    body = self.rfile.read(length)
+                except OSError:
+                    body = b''
+                if len(body) != length:
+                    # An intentional SIGKILL may interrupt a request in-flight.
+                    # Reject partial messages; never call these a bad HMAC.
+                    with state.lock:
+                        if state.crash_window:
+                            state.expected_crash_aborts += 1
+                        else:
+                            state.unexpected_transport_aborts += 1
+                        state.statuses[400] += 1
+                    self.close_connection = True
+                    self.reply(400)
+                    return
                 signature = self.headers.get('X-PBT-Signature', '')
-                valid = hmac.compare_digest(
+                signature_ok = hmac.compare_digest(
                     signature, hmac.new(SECRET, body, hashlib.sha256).hexdigest())
                 try:
                     lead_id = json.loads(body)['id']
-                    valid = valid and type(lead_id) is int and lead_id > 0
+                    payload_ok = type(lead_id) is int and lead_id > 0
                 except (KeyError, TypeError, ValueError, UnicodeDecodeError):
-                    valid = False
-                    lead_id = -1
+                    lead_id, payload_ok = -1, False
+                valid = signature_ok and payload_ok
                 with state.lock:
-                    if not valid:
+                    if not signature_ok:
                         state.bad_signatures += 1
                         code, attempt = 403, 0
+                    elif not payload_ok:
+                        state.bad_payloads += 1
+                        code, attempt = 422, 0
                     else:
                         state.attempts[lead_id] += 1
                         attempt = state.attempts[lead_id]
@@ -81,13 +123,7 @@ class SyntheticCRM:
                     state.statuses[code] += 1
                 if valid and attempt == 1 and lead_id % 97 == 0:
                     time.sleep(0.85)
-                try:
-                    self.send_response(code)
-                    self.send_header('Content-Length', '2')
-                    self.end_headers()
-                    self.wfile.write(b'{}')
-                except OSError:
-                    pass  # Expected after a deliberately injected client timeout.
+                self.reply(code)
 
             def log_message(self, *args):
                 pass
@@ -103,7 +139,10 @@ class SyntheticCRM:
             return {'observed_distinct_leads': len(self.attempts),
                     'total_webhook_attempts': sum(self.attempts.values()),
                     'http_status_counts': {str(k): v for k, v in sorted(self.statuses.items())},
-                    'invalid_hmac': self.bad_signatures}
+                    'invalid_hmac': self.bad_signatures,
+                    'invalid_payloads': self.bad_payloads,
+                    'expected_crash_aborts': self.expected_crash_aborts,
+                    'unexpected_transport_aborts': self.unexpected_transport_aborts}
 
     def stop(self):
         self.server.shutdown()
@@ -246,10 +285,16 @@ def exercise(profile, seconds, source_sha, cfg):
                         backup(env)
                         checkpoints.add(name)
                 if elapsed >= seconds / 2 and not restarted:
-                    stop(proc)
-                    if sqlite_counts(db)['leads'] != accepted:
-                        raise RuntimeError('accepted_lead_missing_after_process_crash')
-                    proc = launch(env, port)
+                    with crm.lock:
+                        crm.crash_window = True
+                    try:
+                        stop(proc)
+                        if sqlite_counts(db)['leads'] != accepted:
+                            raise RuntimeError('accepted_lead_missing_after_process_crash')
+                        proc = launch(env, port)
+                    finally:
+                        with crm.lock:
+                            crm.crash_window = False
                     rss_epochs.append([])
                     last_resource_sample = -1
                     restarted = True
@@ -319,6 +364,11 @@ def exercise(profile, seconds, source_sha, cfg):
             gate(restarted, 'restart_not_executed')
             gate(len(actual_backups) >= limits['minimum_backup_checkpoints'], 'backup_checkpoint_missing')
             gate(stats['invalid_hmac'] == 0, 'hmac_failed')
+            gate(stats['invalid_payloads'] == 0, 'webhook_payload_invalid')
+            gate(stats['unexpected_transport_aborts'] == 0, 'unexpected_transport_abort')
+            # Exactly four delivery worker slots exist in this synthetic profile.
+            gate(stats['expected_crash_aborts'] <= int(env['DELIVERY_CONCURRENCY']),
+                 'crash_transport_abort_bound')
             gate(stats['observed_distinct_leads'] == accepted, 'webhook_coverage')
             if profile == 'soak':
                 gate(all(stats['http_status_counts'].get(str(code), 0) > 0 for code in (408, 429, 503)),
