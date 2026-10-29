@@ -190,7 +190,10 @@ h3 { letter-spacing:-.035em }
 .cine__head .eyebrow { color:#CAD5DD }
 .cine__note { font-family:var(--f-b);font-size:13px;color:#AEBBC5;max-width:68ch }
 .cine__veil {
+  /* The subtitle sits on arbitrary footage: local luminance is bounded by
+     a center scrim, not by assuming a uniformly dark video frame. */
   background:
+    radial-gradient(ellipse 65% 43% at 50% 52%,rgba(8,16,24,.79),rgba(8,16,24,.60) 55%,transparent 86%),
     linear-gradient(90deg,rgba(10,17,24,.48),rgba(10,17,24,.24)),
     linear-gradient(0deg,rgba(10,17,24,.80),transparent 35%,transparent 70%,rgba(10,17,24,.68));
 }
