@@ -99,3 +99,15 @@ def test_static_precision_pairs_meet_wcag_normal_text_contrast(foreground, backg
     a, b = _luminance(foreground), _luminance(background)
     ratio = (max(a, b) + 0.05) / (min(a, b) + 0.05)
     assert ratio >= 4.5, (foreground, background, ratio)
+
+
+def test_precision_not_found_page_has_legible_surface(page_factory):
+    pg = page_factory(path="/nema-takoi-storinky")
+    values = pg.evaluate("""() => ({
+      background: getComputedStyle(document.querySelector('main')).backgroundColor,
+      foreground: getComputedStyle(document.querySelector('main')).color,
+      heading: document.querySelector('h2').textContent
+    })""")
+    assert values["background"] == "rgb(16, 24, 32)", values
+    assert values["foreground"] == "rgb(255, 255, 255)", values
+    assert "сторінки немає" in values["heading"].lower(), values
