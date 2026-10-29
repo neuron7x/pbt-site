@@ -11,7 +11,8 @@ from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+THEMES = ('sky', 'precision')
 REQUIRED_SECTIONS = (
     "top", "roboty", "masshtab", "tekhnika", "cina",
     "materialy", "dokaz", "geo", "zapyt",
@@ -23,7 +24,6 @@ VIEWPORTS = (
     ("desktop-1024", 1024, 768, False, ("top", "tekhnika")),
     ("tablet-820", 820, 1180, True, ("top",)),
     ("mobile-390", 390, 844, True, ("top", "roboty", "tekhnika", "cina", "zapyt")),
-    ("mobile-360-low", 360, 640, True, ("top",)),
     ("mobile-320", 320, 568, True, ("top",)),
 )
 
@@ -42,13 +42,16 @@ def png_dimensions(content: bytes) -> tuple[int, int]:
         raise ValueError("Недопустимий розмір PNG")
     return size
 
-def capture_record(content: bytes, name: str, viewport: str, section: str, width: int, height: int) -> dict:
+def capture_record(content: bytes, name: str, viewport: str, section: str, width: int, height: int, theme: str = 'sky') -> dict:
+    if theme not in THEMES:
+        raise ValueError("Непідтримувана тема: " + theme)
     w, h = png_dimensions(content)
     if (w, h) != (width, height):
         raise ValueError(f"{name}: фактичні пікселі {w}x{h}, очікували {width}x{height}")
     return {
         "filename": name,
         "viewport": viewport,
+        "theme": theme,
         "section": section,
         "width": w,
         "height": h,
@@ -60,6 +63,8 @@ def capture_record(content: bytes, name: str, viewport: str, section: str, width
 def audit_layout(probe: dict) -> list[str]:
     """Без здогадів про розміри елементів: лише машинно-видимі порушення."""
     failures = []
+    if probe.get("theme") not in THEMES:
+        failures.append("Тема не визначена або невалідна")
     if probe.get("quality") != "static":
         failures.append("Потрібен статичний reduced-motion профіль")
     if not probe.get("visible_h1"):
@@ -84,7 +89,7 @@ def verify_capture_manifest(report: dict, directory: Path) -> list[str]:
     if report.get("schema_version") != SCHEMA_VERSION:
         failures.append("Невідома версія маніфесту")
     names = set()
-    expected = {(v[0], s) for v in VIEWPORTS for s in v[4]}
+    expected = {(theme, v[0], section) for theme in THEMES for v in VIEWPORTS for section in v[4]}
     observed = set()
     for rec in report.get("captures", []):
         name = rec.get("filename", "")
@@ -92,7 +97,9 @@ def verify_capture_manifest(report: dict, directory: Path) -> list[str]:
             failures.append("Невалідне чи повторене ім'я PNG: " + name)
             continue
         names.add(name)
-        observed.add((rec.get("viewport"), rec.get("section")))
+        observed.add((rec.get("theme"), rec.get("viewport"), rec.get("section")))
+        if name != f"{rec.get('theme')}--{rec.get('viewport')}--{rec.get('section')}.png":
+            failures.append("Ім’я PNG не збігається з темою/екраном/секцією: " + name)
         p = directory / name
         if not p.is_file():
             failures.append("Немає файла: " + name)
