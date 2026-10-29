@@ -1,9 +1,6 @@
 name: PBT / Transport reliability gate
 
 on:
-  push:
-    branches:
-      - 'codex/pbt-transport-deadline-*'
   pull_request:
     branches: [main]
     paths:

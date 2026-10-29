@@ -2,9 +2,6 @@ name: PBT / Перевірка якості PR
 on:
   pull_request:
     branches: [main]
-  push:
-    branches:
-      - 'codex/**'
 
 permissions:
   contents: read
