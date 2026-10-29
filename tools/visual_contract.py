@@ -35,7 +35,7 @@ def png_dimensions(content: bytes) -> tuple[int, int]:
 
     Pillow.verify() не гарантує IEND CRC, тому звіряємо всі чанки вручну.
     """
-    signature = b"\\x89PNG\\r\\n\\x1a\\n"
+    signature = b"\x89PNG\r\n\x1a\n"
     if not content.startswith(signature):
         raise ValueError("Невалідний PNG signature")
     pos, ihdr, has_data, ended = 8, False, False, False
