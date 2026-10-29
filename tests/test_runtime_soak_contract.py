@@ -47,4 +47,10 @@ def test_short_smoke_real_socket_fault_recovery_and_hmac(tmp_path):
     assert result['crm']['invalid_hmac'] == 0
     assert result['backup_checkpoints'] >= 2
     assert result['field_inp'] == 'NOT_MEASURED'
+    import subprocess as _subprocess
+    verified = _subprocess.run([
+        sys.executable, str(ROOT / 'tools/verify_soak_evidence.py'), '--report', str(report),
+        '--expected-head', result['source_sha']
+    ], cwd=ROOT, capture_output=True, text=True, timeout=10)
+    assert verified.returncode == 0, verified.stdout + verified.stderr
     assert '0671234567' not in report.read_text() and 'local-test-only-secret' not in report.read_text()

@@ -285,6 +285,8 @@ def exercise(profile, seconds, source_sha, cfg):
                 'api_p95_ms': round(percentile(samples, 95), 3),
                 'api_p99_ms': round(percentile(samples, 99), 3),
                 'api_max_ms': round(max(samples), 3),
+                'api_latency_samples_ms': [round(v, 3) for v in samples],
+                'rss_sample_epochs_kib': rss_epochs,
                 'rss_peak_kib': max(rss_peaks),
                 'rss_growth_max_kib': max(rss_growth),
                 'threads_peak': threads_max,
@@ -318,6 +320,10 @@ def exercise(profile, seconds, source_sha, cfg):
             gate(len(actual_backups) >= limits['minimum_backup_checkpoints'], 'backup_checkpoint_missing')
             gate(stats['invalid_hmac'] == 0, 'hmac_failed')
             gate(stats['observed_distinct_leads'] == accepted, 'webhook_coverage')
+            if profile == 'soak':
+                gate(all(stats['http_status_counts'].get(str(code), 0) > 0 for code in (408, 429, 503)),
+                     'required_fault_class_not_observed')
+                gate(stats['total_webhook_attempts'] > accepted, 'retry_path_not_exercised')
             report['violations'] = violations
             report['status'] = 'PASS' if not violations else 'FAIL'
             return report

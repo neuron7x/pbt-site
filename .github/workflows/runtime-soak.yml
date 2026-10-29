@@ -49,6 +49,10 @@ jobs:
             --report artifacts/soak/soak-evidence.json
           test -s artifacts/soak/soak-evidence.json
           python -c 'import json; d=json.load(open("artifacts/soak/soak-evidence.json")); assert d["status"]=="PASS" and d["source_sha"]=="${{ github.event.pull_request.head.sha }}"'
+      - name: Independently recompute raw-sample p99, RSS bounds and fault evidence
+        run: |
+          python tools/verify_soak_evidence.py \
+            --report artifacts/soak/soak-evidence.json --expected-head "$PBT_HEAD_SHA"
       - name: Preserve exact-head measured evidence even on FAIL
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
