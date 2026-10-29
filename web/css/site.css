@@ -128,7 +128,7 @@
   --t-map-ring-animation: ring 2.2s var(--ease) infinite;
   --t-footer-bg: var(--ink);
   --t-tag-bg:var(--grad-gold); --t-tag-fg:var(--ink);
-  --t-logo-width:min(440px,86vw); --t-logo-mobile:min(440px,86vw); --t-fact-bg:rgba(255,255,255,.1);
+  --t-logo-width:min(720px,72vw,58svh); --t-logo-mobile:min(440px,86vw); --t-fact-bg:rgba(255,255,255,.1);
   --t-cine-veil:radial-gradient(62% 34% at 50% 52%,rgba(4,31,69,.66),rgba(4,31,69,.46) 55%,transparent),linear-gradient(180deg,rgba(4,31,69,.82),rgba(4,31,69,.12) 30%,rgba(4,31,69,.12) 62%,rgba(4,31,69,.9));
   --t-marquee-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
   --t-hero-stats-border:0 solid transparent; --t-hero-stats-padding:0; --t-footer-legal:#7FA3CF;
