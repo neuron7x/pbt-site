@@ -84,6 +84,6 @@ def test_static_palette_pairs_meet_wcag_aa(foreground, background):
 def test_not_found_surface_respects_persisted_theme(page_factory):
     page = page_factory()
     page.locator('[data-theme-choice="precision"]').click()
-    page.goto(page.url.split("#")[0].replace(page.url.split("#")[0].split("/")[-1], "") + "nema-takoi-storinky")
+    page.goto(page.url.split("#")[0].rstrip("/") + "/nema-takoi-storinky")
     assert page.evaluate("document.documentElement.dataset.theme") == "precision"
     assert page.evaluate("getComputedStyle(document.querySelector('main')).backgroundColor") == "rgb(16, 24, 32)"
