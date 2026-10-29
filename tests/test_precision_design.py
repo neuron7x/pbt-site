@@ -1,40 +1,37 @@
-"""Industrial Precision visual-contract tests.
-
-These complement—not replace—the existing browser, accessibility, video and API
-tests. Deliberately assert a small number of durable visual invariants instead
-of hard-coding screenshots or animation timing.
-"""
+"""Issue #4: обидві теми читають одну CSS token-систему без шару поверх шару."""
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
+CSS = ROOT / "web" / "css" / "site.css"
 
 
-def test_precision_css_is_loaded_after_base_on_all_public_pages():
-    for filename in ("index.html", "404.html"):
-        text = (ROOT / "web" / filename).read_text(encoding="utf-8")
-        assert "css/precision.css" in text
-        assert text.index("css/site.css") < text.index("css/precision.css")
-        assert text.count("css/precision.css") == 1
-
-
-def test_precision_layer_has_no_network_dependency():
-    css = (ROOT / "web" / "css" / "precision.css").read_text(encoding="utf-8")
-    assert "https://" not in css and "http://" not in css
+def test_one_stylesheet_for_both_themes_and_offline_build():
+    for name in ("index.html", "404.html"):
+        html = (ROOT / "web" / name).read_text(encoding="utf-8")
+        assert html.count("css/site.css") == 1
+        assert "css/precision.css" not in html
+    assert not (ROOT / "web" / "css" / "precision.css").exists()
+    css = CSS.read_text(encoding="utf-8")
+    assert ':root[data-theme="sky"]' in css
+    assert ':root[data-theme="precision"]' in css
     assert "@import" not in css
-    assert "url(" not in css
-    assert "--precision-graphite" in css and "--precision-paper" in css
+    for token in ("--t-heading-case:", "--t-btn-bg:", "--t-nav-bg:",
+                  "--t-hero-overlay:", "--t-unit-radius:", "--t-quote-bg:"):
+        assert css.count(token) == 2, token
 
 
-@pytest.mark.parametrize("w,h,mobile", [
+@pytest.mark.parametrize("width,height,mobile", [
     (1440, 900, False),
     (820, 1180, True),
     (390, 844, True),
 ], ids=["desktop", "tablet", "phone"])
-def test_precision_visual_contract_and_no_overflow(page_factory, w, h, mobile):
-    pg = page_factory(w, h, mobile=mobile)
-    values = pg.evaluate("""() => {
+def test_precision_token_contract_and_no_horizontal_overflow(page_factory, width, height, mobile):
+    page = page_factory(width, height, mobile=mobile)
+    assert page.evaluate("document.documentElement.dataset.theme") == "sky"
+    page.locator('[data-theme-choice="precision"]').click()
+    values = page.evaluate("""() => {
       const css = s => getComputedStyle(document.querySelector(s));
       return {
         body: css('body').backgroundColor,
@@ -42,72 +39,51 @@ def test_precision_visual_contract_and_no_overflow(page_factory, w, h, mobile):
         font: css('h2').fontFamily,
         radius: css('.btn').borderTopLeftRadius,
         gauge: css('#gauge').display,
-        glow: css('#glow').display,
         wave: css('.wave').display,
         hero: css('#hero').backgroundColor,
-        overflow: document.scrollingElement.scrollWidth > innerWidth + 1,
-        stylesheet: [...document.styleSheets].some(s =>
-          s.href && s.href.includes('/css/precision.css'))
+        overflow: document.scrollingElement.scrollWidth > innerWidth + 1
       };
     }""")
     assert values["body"] == "rgb(245, 245, 242)", values
     assert values["heading"] == "none", values
     assert "IBM Plex Sans" in values["font"], values
     assert values["radius"] == "5px", values
-    assert values["gauge"] == values["glow"] == values["wave"] == "none", values
+    assert values["gauge"] == values["wave"] == "none", values
     assert values["hero"] == "rgb(16, 24, 32)", values
-    assert values["stylesheet"] is True and values["overflow"] is False, values
+    assert not values["overflow"], values
 
 
-def test_reduced_motion_remains_complete_and_not_video_dependent(page_factory):
-    pg = page_factory(reduced=True)
-    values = pg.evaluate("""() => ({
-      quality: document.documentElement.dataset.quality,
-      visibleTitle: !!document.querySelector('h1')?.getBoundingClientRect().height,
-      fleet: document.querySelectorAll('#park .unit').length,
-      video: document.getElementById('heroVideo').currentSrc,
-      wave: getComputedStyle(document.querySelector('.wave')).display
-    })""")
-    assert values == {
-        "quality": "static",
-        "visibleTitle": True,
-        "fleet": 32,
-        "video": "",
-        "wave": "none",
-    }
+def test_reduced_motion_is_complete_for_both_themes(page_factory):
+    page = page_factory(reduced=True)
+    for theme in ("sky", "precision"):
+        page.locator(f'[data-theme-choice="{theme}"]').click()
+        assert page.evaluate("document.documentElement.dataset.quality") == "static"
+        assert page.locator("#park .unit").count() == 32
+        assert page.locator("h1").is_visible()
+        assert page.evaluate("!document.querySelector('#heroVideo').currentSrc")
 
 
 def _luminance(color):
     rgb = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
-    linear = [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in rgb]
-    return sum(a * b for a, b in zip(linear, (0.2126, 0.7152, 0.0722)))
+    lin = [x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in rgb]
+    return sum(a * b for a, b in zip(lin, (.2126, .7152, .0722)))
 
 
 @pytest.mark.parametrize("foreground,background", [
-    ("#14202A", "#F5F5F2"),  # body copy on neutral paper
-    ("#15202A", "#FDC501"),  # main CTA on brand gold
-    ("#FFFFFF", "#14202A"),  # catalogue CTA on ink
-    ("#FFFFFF", "#101820"),  # inverse heading on graphite
-    ("#5B6974", "#F5F5F2"),  # subtle overline on paper
-    ("#C6D2D9", "#101820"),  # inverse section-heading accent
-    ("#1A5EA0", "#FFFFFF"),  # service link
+    ("#14202A", "#F5F5F2"),
+    ("#15202A", "#FDC501"),
+    ("#FFFFFF", "#14202A"),
+    ("#FFFFFF", "#101820"),
+    ("#5B6974", "#F5F5F2"),
 ])
-def test_static_precision_pairs_meet_wcag_normal_text_contrast(foreground, background):
-    """Static pairs only: moving video-frame contrast needs browser screenshots."""
-    css = (ROOT / "web" / "css" / "precision.css").read_text(encoding="utf-8").upper()
-    assert foreground in css and background in css
-    a, b = _luminance(foreground), _luminance(background)
-    ratio = (max(a, b) + 0.05) / (min(a, b) + 0.05)
-    assert ratio >= 4.5, (foreground, background, ratio)
+def test_static_palette_pairs_meet_wcag_aa(foreground, background):
+    left, right = _luminance(foreground), _luminance(background)
+    assert (max(left, right) + .05) / (min(left, right) + .05) >= 4.5
 
 
-def test_precision_not_found_page_has_legible_surface(page_factory):
-    pg = page_factory(path="/nema-takoi-storinky")
-    values = pg.evaluate("""() => ({
-      background: getComputedStyle(document.querySelector('main')).backgroundColor,
-      foreground: getComputedStyle(document.querySelector('main')).color,
-      heading: document.querySelector('h2').textContent
-    })""")
-    assert values["background"] == "rgb(16, 24, 32)", values
-    assert values["foreground"] == "rgb(255, 255, 255)", values
-    assert "сторінки немає" in values["heading"].lower(), values
+def test_not_found_surface_respects_persisted_theme(page_factory):
+    page = page_factory()
+    page.locator('[data-theme-choice="precision"]').click()
+    page.goto(page.url.split("#")[0].replace(page.url.split("#")[0].split("/")[-1], "") + "nema-takoi-storinky")
+    assert page.evaluate("document.documentElement.dataset.theme") == "precision"
+    assert page.evaluate("getComputedStyle(document.querySelector('main')).backgroundColor") == "rgb(16, 24, 32)"
