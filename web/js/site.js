@@ -9,6 +9,7 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const quality = () => doc.dataset.quality || 'full';
   const motion = () => quality() !== 'static' && !reduced;
+  const videoAllowed = () => quality() === 'full' && !reduced;  // Save-Data / 2 ядра: лише постери
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,7 +51,7 @@
   const playing = new Set();
   const vio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
     const v = e.target.querySelector('video'); if (!v) return;
-    if (e.isIntersecting && motion()) {
+    if (e.isIntersecting && videoAllowed()) {
       if (!v.dataset.ready) attachVideo(v, v.dataset.video);
       v.preload = 'auto';
       const p = v.play(); if (p && p.catch) p.catch(() => {});
@@ -520,7 +521,7 @@
     const cr = $('#cineCredits');
     if (cr) cr.innerHTML = `<details class="credits"><summary>Джерела ілюстративних кадрів «Масштабу»</summary><ul>${chs.map(c =>
       `<li><a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; кадровано, виконано колірну корекцію</li>`).join('')}</ul></details>`;
-    if (!motion() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
+    if (!videoAllowed() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
     sec.classList.add('is-pinned');
     rail.innerHTML = chs.map(c => `<a href="#cine-${esc(c.id)}"><span>${esc(c.word)}</span></a>`).join('');
     const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), dots = $$('a', rail);
@@ -573,13 +574,13 @@
        (замість прозорості — чорне тло), тому там і в однофайловій збірці лишається статичний кадр. Перший кадр анімації = статичний. */
     const logo = $('.logo-hero'), lv = $('#logoAnim');
     const ua = navigator.userAgent, appleWebKit = /AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg|CriOS|FxiOS|Android/.test(ua);
-    if (logo && lv && motion() && !D.videoData && !appleWebKit && lv.canPlayType('video/webm; codecs="vp9"')) afterLoad(() => {
+    if (logo && lv && videoAllowed() && !D.videoData && !appleWebKit && lv.canPlayType('video/webm; codecs="vp9"')) afterLoad(() => {
       lv.src = 'media/logo/pbt-logo.webm';
       lv.addEventListener('playing', () => logo.classList.add('is-anim'), { once: true });
       lv.addEventListener('ended', () => logo.classList.remove('is-anim'), { once: true });   // останній кадр = статичний
       const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
     });
-    if (motion() && hVideo) afterLoad(() => {
+    if (videoAllowed() && hVideo) afterLoad(() => {
       attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
       /* WebKit (Safari) відхиляє ранні play() з NotAllowedError навіть для muted-відео (виміряно 08.10: відмови до ~1.46 с,
          play() о 1.5 с проходить). Точну умову не встановлено ⇒ повтор із наростаючою паузою, до 8 спроб, лише поки герой у кадрі. */
@@ -594,7 +595,7 @@
     });
     requestAnimationFrame(() => hero.classList.add('is-lit'));
     sparkWake();
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (motion()) { sparkWake(); if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (videoAllowed()) { sparkWake(); if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
   }
