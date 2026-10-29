@@ -127,6 +127,10 @@
   --t-map-home-animation: home 2.6s var(--ease) infinite;
   --t-map-ring-animation: ring 2.2s var(--ease) infinite;
   --t-footer-bg: var(--ink);
+  --t-logo-width:min(440px,86vw); --t-logo-mobile:min(440px,86vw); --t-fact-bg:rgba(255,255,255,.1);
+  --t-cine-veil:radial-gradient(62% 34% at 50% 52%,rgba(4,31,69,.66),rgba(4,31,69,.46) 55%,transparent),linear-gradient(180deg,rgba(4,31,69,.82),rgba(4,31,69,.12) 30%,rgba(4,31,69,.12) 62%,rgba(4,31,69,.9));
+  --t-marquee-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+  --t-hero-stats-border:0 solid transparent; --t-hero-stats-padding:0; --t-footer-legal:#7FA3CF;
   --t-404-bg: var(--sky-900);
   --t-404-color: #fff;
 }
@@ -243,6 +247,9 @@
   --t-map-home-animation: none;
   --t-map-ring-animation: none;
   --t-footer-bg: #0B1218;
+  --t-logo-width:min(248px,27vw,34svh); --t-logo-mobile:min(210px,54vw,30svh); --t-fact-bg:transparent;
+  --t-cine-veil:radial-gradient(ellipse 65% 43% at 50% 52%,rgba(8,16,24,.79),rgba(8,16,24,.6) 55%,transparent 86%),linear-gradient(90deg,rgba(10,17,24,.48),rgba(10,17,24,.24)),linear-gradient(0deg,rgba(10,17,24,.8),transparent 35%,transparent 70%,rgba(10,17,24,.68));
+  --t-marquee-mask:none; --t-hero-stats-border:1px solid rgba(255,255,255,.32); --t-hero-stats-padding:17px; --t-footer-legal:#A6B4BF;
   --t-404-bg: #101820;
   --t-404-color: #fff;
 }
@@ -378,7 +385,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .hero__lead{color:var(--t-hero-lead-color);max-width:62ch;font-size:clamp(15px,min(1.1vw,2.4svh),18px);text-shadow:var(--t-hero-lead-glow);position:relative;isolation:isolate}
 /* скрим іде за самим підзаголовком (будь-який в'юпорт): ≥4.5:1 на кожному кадрі монтажу — tests/test_site.py */
 .hero__lead::before{content:"";position:absolute;inset:-45% -14%;z-index:-1;pointer-events:none;background:var(--t-hero-lead-scrim)}   /* 09.10: після зсуву центру кадр під текстом світліший — 3.84:1 на телефоні */
-.hero__stats{display:flex;flex-wrap:wrap;justify-content:var(--t-hero-stats-justify);gap:var(--t-hero-stats-gap);margin-top:clamp(2px,1.2svh,16px)}
+.hero__stats{display:flex;flex-wrap:wrap;justify-content:var(--t-hero-stats-justify);gap:var(--t-hero-stats-gap);padding-top:var(--t-hero-stats-padding);border-top:var(--t-hero-stats-border);margin-top:clamp(2px,1.2svh,16px)}
 .hero__stats li{display:grid;justify-items:center;gap:4px;min-width:84px}
 .hero__stats b{font:var(--t-hero-stats-font);color:var(--t-hero-stats-color);text-shadow:var(--t-hero-stats-shadow);font-variant-numeric:tabular-nums}
 .hero__stats b small{font-size:.5em;margin-left:.08em}
@@ -534,11 +541,12 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .fact{background:var(--t-fact-bg,rgba(255,255,255,.1));box-shadow:inset 0 0 0 1px var(--line-w);border-radius:var(--t-card-radius);padding:22px 18px;display:grid;gap:8px;text-align:center;backdrop-filter:blur(8px)}
 .fact b{font:800 clamp(34px,3.4vw,54px)/1 var(--f-d);background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
 .fact span{font-size:13px;color:#F2F9FF;line-height:1.4}
-.marquee{overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);margin-top:22px}
+.marquee{overflow:hidden;mask-image:var(--t-marquee-mask);-webkit-mask-image:var(--t-marquee-mask);margin-top:22px}
 .marquee ul{display:flex;gap:14px;width:max-content;animation:var(--t-marquee-animation)}
 .marquee:hover ul{animation-play-state:paused}
 @keyframes marquee{to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.marquee ul{animation:none;flex-wrap:wrap;width:auto;justify-content:center}}
+.marquee li:nth-child(n+18){display:var(--t-marquee-dup)}
 .marquee li{flex:none;width:112px;height:112px;background:var(--white);border-radius:var(--t-card-radius);padding:10px;display:grid;place-items:center}
 .marquee img{width:100%;height:100%;object-fit:contain}
 .proof__src{margin-top:18px;text-align:center;font-size:12.5px;color:var(--white)}
@@ -624,7 +632,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .credits ul{display:grid;gap:4px;margin-top:8px}
 .credits a{text-decoration:underline;text-underline-offset:2px}
 .credits a:hover{color:var(--gold)}
-.foot__legal{max-width:var(--wrap);margin:40px auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;font-size:12px;color:#7FA3CF}
+.foot__legal{max-width:var(--wrap);margin:40px auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);display:flex;flex-wrap:wrap;gap:12px 28px;justify-content:space-between;font-size:12px;color:var(--t-footer-legal)}
 .foot__legal a{text-decoration:underline;text-underline-offset:3px;display:inline-block;padding:4px 0}
 
 /* ── курсорне світло (лише точний вказівник) ── */
@@ -679,10 +687,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .cine__stage{position:sticky;top:0;height:100svh;overflow:hidden;margin-bottom:-100svh;z-index:-1;background:var(--t-cine-bg)}
 .cine__v{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.08);transition:opacity 1.1s var(--ease),transform 7s linear}
 .cine__v.is-on{opacity:1;transform:scale(1)}
-.cine__veil{position:absolute;inset:0;background:
-  radial-gradient(62% 34% at 50% 52%,rgba(4,31,69,.66) 0%,rgba(4,31,69,.46) 55%,rgba(4,31,69,0) 100%),   /* підпис розділу: ≥4.5:1 на будь-якому кадрі (tests/test_cine.py) */
-  linear-gradient(180deg,rgba(4,31,69,.82) 0%,rgba(4,31,69,.12) 30%,rgba(4,31,69,.12) 62%,rgba(4,31,69,.9) 100%),
-  radial-gradient(120% 80% at 50% 50%,transparent 55%,rgba(4,31,69,.55) 100%)}
+.cine__veil{position:absolute;inset:0;background:var(--t-cine-veil)}
 .cine__head{position:relative;display:grid;gap:18px;justify-items:center;text-align:center;padding:var(--sec) var(--gut) clamp(40px,6vw,80px);max-width:900px;margin:0 auto}
 .cine__head h2 span{background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
 .s-cine .eyebrow{color:var(--white)}
