@@ -64,6 +64,32 @@
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
   const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge')].filter(Boolean);
   let lastY = scrollY, navHidden = false, returnFocus = null;
+  const themeButtons = $('[data-theme-choice]');
+  const THEME_KEY = 'pbt-theme';
+  function applyTheme(value, persist) {
+    const next = value === 'precision' ? 'precision' : 'sky';
+    if (doc.dataset.theme !== next) {
+      doc.dataset.theme = next;
+      nav.classList.remove('is-hidden');
+      navHidden = false;
+    }
+    themeButtons.forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.themeChoice === next));
+    });
+    const meta = $('meta[name="theme-color"]');
+    if (meta) meta.content = next === 'precision' ? '#101820' : '#0D6AE0';
+    if (persist) {
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* приватний режим / заблоковане сховище */ }
+    }
+    // Обидві теми спільно використовують DOM і медіа. Після зміни стилю
+    // перераховуємо геометрію й не підтримуємо прихований Canvas-цикл.
+    requestAnimationFrame(() => { measure(); render(); sparkWake(); });
+  }
+  themeButtons.forEach(button => button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true)));
+  addEventListener('storage', event => {
+    if (event.key === THEME_KEY) applyTheme(event.newValue, false);
+  });
+
   function openMenu(on, restoreFocus = true) {
     if (on === !menu.hidden) return;
     if (on) returnFocus = document.activeElement;
@@ -136,7 +162,7 @@
   let sparkOn = false;
   const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroP < 1 && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
   function sparkLoop(t) {
-    if (!ctx || quality() !== 'full' || reduced || heroP >= 1 || document.hidden) { sparkOn = false; return; }
+    if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || reduced || heroP >= 1 || document.hidden) { sparkOn = false; return; }
     requestAnimationFrame(sparkLoop);
     if (t - cLast < 33) return;
     cLast = t;
@@ -240,6 +266,7 @@
       measure();
     });
     if (finePointer && motion()) grid.addEventListener('pointermove', e => {         /* нахил картки за вказівником */
+      if (doc.dataset.theme === 'precision') return;
       const u = e.target.closest('.unit'); if (!u) return;
       const r = u.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
       u.style.setProperty('--ry', `${(x * 7).toFixed(2)}deg`); u.style.setProperty('--rx', `${(-y * 7).toFixed(2)}deg`);
@@ -582,6 +609,7 @@
   /* ───── СТАРТ ───── */
   function start() {
     profile();
+    applyTheme(doc.dataset.theme, false);
     renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
     reveal();
     measure(); render();
