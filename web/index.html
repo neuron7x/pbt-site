@@ -17,8 +17,8 @@
 <link rel="icon" href="media/logo/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="media/logo/apple-touch-icon.png">
 <link rel="preload" href="media/logo/pbt-logo.webp" as="image" fetchpriority="high">
-<link rel="preload" href="fonts/IBMPlexSans-600-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/IBMPlexSans-400-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" id="themeFontPreload" as="font" type="font/woff2" crossorigin>
 <script>
 /* Профіль за можливостями, не за назвою пристрою; якість — за reduced-motion / ядрами / Save-Data */
 (function(d){var m=function(q){return matchMedia(q).matches},w=innerWidth,h=innerHeight,
@@ -28,6 +28,7 @@ d.classList.add('js');d.dataset.profile=p;
 d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.hardwareConcurrency||4)<=2||(navigator.connection&&navigator.connection.saveData))?'reduced':'full';
 var theme='sky';try{if(localStorage.getItem('pbt-theme')==='precision')theme='precision'}catch(_e){}
 d.dataset.theme=theme;var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='precision'?'#101820':'#0D6AE0';
+var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+(theme==='precision'?'IBMPlexSans-600-cyrillic.woff2':'Tektur-var-cyrillic.woff2');
 })(document.documentElement)
 </script>
 <link rel="stylesheet" href="css/fonts.css">
