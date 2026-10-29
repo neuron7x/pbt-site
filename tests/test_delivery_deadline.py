@@ -109,7 +109,10 @@ def test_51_saturated_header_stalls_then_restart_drains_without_loss(srv):
         assert recovered.rows('SELECT sum(attempts),count(*) FROM outbox') == [(102, 51)]
         assert recovered.rows("SELECT count(*) FROM outbox WHERE status='failed'") == [(0,)]
         assert recovered.rows('SELECT count(*) FROM leads') == [(51,)]
-        assert len(seen) == 102
+        # A killed child can time out before transmitting its request at all.
+        # Only *received* bodies are HMAC-checked; all 51 recovered deliveries
+        # must have been observed, without pretending every aborted try arrived.
+        assert len(seen) >= 51
         assert sorted({json.loads(raw)['id'] for raw, _ in seen}) == list(range(1, 52))
         for raw, sig in seen:
             assert hmac.compare_digest(sig, hmac.new(b'sec', raw, hashlib.sha256).hexdigest())
@@ -135,3 +138,44 @@ def test_unsupported_total_deadline_configuration_fails_closed(tmp_path):
                            env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                            timeout=4, check=False)
         assert p.returncode != 0, value
+
+
+def test_redirect_does_not_forward_webhook_hmac_to_other_host(srv):
+    """A signed request must not leak to a redirect target, even on 307."""
+    from test_leads import Stub
+
+    destination = Stub()
+    captured = []
+
+    class Redirect(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = self.rfile.read(int(self.headers.get('Content-Length') or 0))
+            captured.append((body, self.headers.get('X-PBT-Signature')))
+            self.send_response(307)
+            self.send_header('Location', destination.url + '/forwarded')
+            self.send_header('Content-Length', '0')
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    sender = ThreadingHTTPServer(('127.0.0.1', 0), Redirect)
+    sender.daemon_threads = True
+    t = threading.Thread(target=sender.serve_forever, daemon=True)
+    t.start()
+    try:
+        site = srv(LEAD_WEBHOOK_URL=f'http://127.0.0.1:{sender.server_address[1]}/hook',
+                   LEAD_WEBHOOK_SECRET='sec', DELIVERY_MAX_ATTEMPTS='1')
+        assert site.post(LEAD, 'k-redirect-001')[0] == 201
+        assert wait_for(lambda: site.rows(
+            "SELECT count(*) FROM outbox WHERE status='failed'") == [(1,)] or None, timeout=5)
+        assert destination.hits == []
+        assert len(captured) == 1
+        raw, sig = captured[0]
+        assert hmac.compare_digest(sig, hmac.new(b'sec', raw, hashlib.sha256).hexdigest())
+        assert site.rows('SELECT count(*) FROM leads') == [(1,)]
+    finally:
+        sender.shutdown()
+        sender.server_close()
+        t.join(timeout=3)
+        destination.close()
