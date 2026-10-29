@@ -94,6 +94,14 @@ def test_sky_hero_logo_preserves_original_desktop_footprint(page_factory):
     logo = page.locator(".logo-hero")
     assert 500 <= logo.bounding_box()["width"] <= 550
     page.locator('[data-theme-choice="precision"]').click()
+    # Updating a root CSS custom property can leave getComputedStyle(width)
+    # stale within the same task in Chromium, even though the token changed.
+    # Verify the committed layout frame; retain the exact size acceptance band.
+    page.wait_for_function(
+        "() => { const w = document.querySelector('.logo-hero').getBoundingClientRect().width; "
+        "return w >= 220 && w <= 265; }",
+        timeout=1500,
+    )
     diagnostic = page.evaluate("""() => ({
       theme: document.documentElement.dataset.theme,
       token: getComputedStyle(document.documentElement).getPropertyValue('--t-logo-width').trim(),
