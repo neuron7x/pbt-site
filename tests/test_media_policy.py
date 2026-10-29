@@ -5,14 +5,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def test_preload_matches_hero_typography_without_obsolete_tektur():
+def test_preload_matches_selected_theme_only():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     faces = (ROOT / "web" / "css" / "fonts.css").read_text(encoding="utf-8")
-    for variant in ("IBMPlexSans-600-cyrillic.woff2", "IBMPlexSans-400-cyrillic.woff2"):
-        assert html.count('href="fonts/' + variant + '"') == 1
+    assert html.count('href="fonts/IBMPlexSans-400-cyrillic.woff2"') == 1
+    assert 'id="themeFontPreload"' in html
+    assert "theme==='precision'?'IBMPlexSans-600-cyrillic.woff2':'Tektur-var-cyrillic.woff2'" in html
+    for variant in ("IBMPlexSans-600-cyrillic.woff2", "IBMPlexSans-400-cyrillic.woff2",
+                    "Tektur-var-cyrillic.woff2"):
         assert variant in faces
         assert (ROOT / "web" / "fonts" / variant).is_file()
-    assert 'rel="preload" href="fonts/Tektur' not in html
 
 
 def test_save_data_does_not_fetch_autoplay_videos(browser, server):
