@@ -43,3 +43,15 @@ These are **local synthetic** measures. Do not infer a production delivery
 p95/p99, offsite RPO, or live external CRM acceptance. A deployment must
 independently establish receiver deduplication, actual DNS/TLS/proxy behavior,
 process resource budgets and explicit SLI/SLO.
+
+## Fail-closed numeric operational configuration
+
+On startup, invalid/non-finite HTTP input timeout or absolute header deadline,
+delivery retry limit/backoff/poll interval, disk-free readiness threshold, or
+connection slot wait **aborts the process** rather than disabling timeouts,
+spinning on pending outbox, bypassing low-disk checks, or converting temporary
+downstream failures into terminal lost deliveries. Existing normal defaults and
+the documented six-hour exponential retry-backoff ceiling are unchanged.
+`tests/test_delivery_deadline.py` includes negative fault-injection vectors for
+`nan`, infinities, negative deadlines, zero polling and unbounded retry counts.
+The HTTP security and full make gates run these cases on the source HEAD.

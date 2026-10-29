@@ -297,13 +297,21 @@ DELIVERY_CONCURRENCY = int(ENV('DELIVERY_CONCURRENCY') or 4)
 if not 1 <= DELIVERY_CONCURRENCY <= 8:
     raise ValueError('DELIVERY_CONCURRENCY must be between 1 and 8')
 DELIVERY_MAX_ATTEMPTS = int(ENV('DELIVERY_MAX_ATTEMPTS') or 8)
+if not 1 <= DELIVERY_MAX_ATTEMPTS <= 64:
+    raise ValueError('DELIVERY_MAX_ATTEMPTS must be between 1 and 64')
 DELIVERY_BACKOFF_S = float(ENV('DELIVERY_BACKOFF_S') or 30)        # 30 с · 2^(n−1), стеля — 6 год
+if not math.isfinite(DELIVERY_BACKOFF_S) or not 0.001 <= DELIVERY_BACKOFF_S <= 604800:
+    raise ValueError('DELIVERY_BACKOFF_S must be finite and between 0.001 and 604800')
 DELIVERY_BACKOFF_MAX_S = 6 * 3600
 DELIVERY_POLL_S = float(ENV('DELIVERY_POLL_S') or 30)
+if not math.isfinite(DELIVERY_POLL_S) or not 0.01 <= DELIVERY_POLL_S <= 300:
+    raise ValueError('DELIVERY_POLL_S must be finite and between 0.01 and 300')
 DELIVERY_HEARTBEAT_INTERVAL_S = float(ENV('DELIVERY_HEARTBEAT_INTERVAL_S') or 15)
 if not 1 <= DELIVERY_HEARTBEAT_INTERVAL_S <= 60:
     raise ValueError('DELIVERY_HEARTBEAT_INTERVAL_S must be between 1 and 60')
 HEALTH_MIN_FREE_MB = float(ENV('HEALTH_MIN_FREE_MB') or 50)
+if not math.isfinite(HEALTH_MIN_FREE_MB) or HEALTH_MIN_FREE_MB < 0:
+    raise ValueError('HEALTH_MIN_FREE_MB must be finite and non-negative')
 TELEGRAM_API = ENV('TELEGRAM_API_BASE') or 'https://api.telegram.org'
 _wake = threading.Event()
 
@@ -578,9 +586,13 @@ class Handler(SimpleHTTPRequestHandler):
                       '.woff2': 'font/woff2', '.json': 'application/json', '.webm': 'video/webm', '.mp4': 'video/mp4',
                       '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml'}
 
-    timeout = float(ENV('REQUEST_TIMEOUT') or 20)   # S7: повільний клієнт (slowloris) не тримає потік безстроково (env — лише для перевірки)
-    header_timeout = float(ENV('HEADER_TIMEOUT') or 10)   # SEC-1: абсолютний бюджет (с) на рядок запиту+заголовки → 408
-    body_timeout = float(ENV('REQUEST_BODY_DEADLINE') or 10)  # R1: абсолютний бюджет, не таймаут між байтами
+    timeout = float(ENV('REQUEST_TIMEOUT') or 20)   # S7: bounded per-socket inactivity
+    header_timeout = float(ENV('HEADER_TIMEOUT') or 10)   # SEC-1: absolute total header budget
+    body_timeout = float(ENV('REQUEST_BODY_DEADLINE') or 10)  # R1: absolute body budget
+    if not math.isfinite(timeout) or not 0.1 <= timeout <= 120:
+        raise ValueError('REQUEST_TIMEOUT must be finite and between 0.1 and 120')
+    if not math.isfinite(header_timeout) or not 0.1 <= header_timeout <= 60:
+        raise ValueError('HEADER_TIMEOUT must be finite and between 0.1 and 60')
     if not 0.1 <= body_timeout <= 60:
         raise ValueError('REQUEST_BODY_DEADLINE must be between 0.1 and 60 seconds')
     _hdr_deadline = None
@@ -974,7 +986,10 @@ def main():
     max_conn = int(ENV('MAX_CONNECTIONS') or 128)
     if not 1 <= max_conn <= 200:
         raise SystemExit('MAX_CONNECTIONS must be 1..200 (systemd TasksMax=256)')
-    srv = Server((host, port), Handler, max_conn, float(ENV('CONN_SLOT_WAIT') or Handler.header_timeout))
+    slot_wait = float(ENV('CONN_SLOT_WAIT') or Handler.header_timeout)
+    if not math.isfinite(slot_wait) or not 0 <= slot_wait <= 120:
+        raise SystemExit('CONN_SLOT_WAIT must be finite and between 0 and 120')
+    srv = Server((host, port), Handler, max_conn, slot_wait)
     if not _schema_ok.is_set():
         threading.Thread(target=migrate_retry_worker, name='migrate', daemon=True).start()
     if (ENV('DELIVERY_WORKER') or '1') != '0':      # 0 — лише для тестів («падіння до доставки»)

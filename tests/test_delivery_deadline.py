@@ -12,6 +12,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+import pytest
+
 from test_leads import LEAD, srv, wait_for  # noqa: F401
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -179,3 +181,24 @@ def test_redirect_does_not_forward_webhook_hmac_to_other_host(srv):
         sender.server_close()
         t.join(timeout=3)
         destination.close()
+
+
+@pytest.mark.parametrize(('key', 'value'), [
+    ('HEADER_TIMEOUT', 'nan'), ('HEADER_TIMEOUT', 'inf'), ('HEADER_TIMEOUT', '-1'),
+    ('REQUEST_TIMEOUT', 'nan'), ('REQUEST_TIMEOUT', '-1'),
+    ('DELIVERY_MAX_ATTEMPTS', '-1'), ('DELIVERY_MAX_ATTEMPTS', '1000000'),
+    ('DELIVERY_BACKOFF_S', 'nan'), ('DELIVERY_BACKOFF_S', '-1'),
+    ('DELIVERY_POLL_S', 'nan'), ('DELIVERY_POLL_S', '0'),
+    ('HEALTH_MIN_FREE_MB', 'nan'), ('HEALTH_MIN_FREE_MB', '-1'),
+    ('CONN_SLOT_WAIT', 'nan'), ('CONN_SLOT_WAIT', '-1'),
+])
+def test_invalid_operational_timeout_and_retry_configuration_fails_closed(tmp_path, key, value):
+    """Never accept non-finite deadlines or retries that silently kill liveness."""
+    env = dict(os.environ, HOST='127.0.0.1', PORT='0',
+               LEAD_DB=str(tmp_path / 'missing.db'), PYTHONDONTWRITEBYTECODE='1')
+    env[key] = value
+    result = subprocess.run([sys.executable, str(ROOT / 'server' / 'app.py')],
+                            env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                            timeout=4, check=False)
+    assert result.returncode != 0, (key, value)
+    assert key.encode() in result.stderr, (key, value, result.stderr[-600:])
