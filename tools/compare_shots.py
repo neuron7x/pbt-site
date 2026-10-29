@@ -15,17 +15,18 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageEnhance, ImageStat
 
 if __package__:
-    from .visual_contract import verify_capture_manifest
+    from .visual_contract import THEMES, verify_capture_manifest
 else:
-    from visual_contract import verify_capture_manifest
+    from visual_contract import THEMES, verify_capture_manifest
 
 PREVIEWS = {
-    ("desktop-1440", "top"),
-    ("desktop-1440", "cina"),
-    ("desktop-1440", "zapyt"),
-    ("mobile-390", "top"),
-    ("mobile-390", "cina"),
-    ("mobile-390", "zapyt"),
+    (theme, viewport, section)
+    for theme in THEMES
+    for viewport, section in (
+        ("desktop-1440", "top"), ("desktop-1440", "cina"),
+        ("desktop-1440", "zapyt"), ("mobile-390", "top"),
+        ("mobile-390", "cina"), ("mobile-390", "zapyt"),
+    )
 }
 
 
@@ -70,13 +71,13 @@ def compare(baseline: Path, candidate: Path, output: Path) -> dict:
         after = Image.open(candidate / name).convert("RGB")
         metrics, delta = image_difference(before, after)
         row = {
-            "filename": name, "viewport": pa[name]["viewport"],
+            "filename": name, "theme": pa[name]["theme"], "viewport": pa[name]["viewport"],
             "section": pa[name]["section"], **metrics,
             "baseline_sha256": pa[name]["sha256"],
             "candidate_sha256": pb[name]["sha256"],
         }
         rows.append(row)
-        if (row["viewport"], row["section"]) in PREVIEWS:
+        if (row["theme"], row["viewport"], row["section"]) in PREVIEWS:
             diff = ImageEnhance.Contrast(delta).enhance(4).convert("RGB")
             contact = Image.new("RGB", (before.width * 3, before.height))
             contact.paste(before, (0, 0))
@@ -105,7 +106,7 @@ def compare(baseline: Path, candidate: Path, output: Path) -> dict:
     lines += ["", "Контакт-листи: **ліворуч baseline, центр candidate, праворуч посилена різниця ×4**.",
               "Посилення застосовано **лише** до третьої панелі."]
     lines.extend(f"- [{row['filename']}](compare--{row['filename']})" for row in rows
-                 if (row["viewport"], row["section"]) in PREVIEWS)
+                 if (row["theme"], row["viewport"], row["section"]) in PREVIEWS)
     (output / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return report
 
