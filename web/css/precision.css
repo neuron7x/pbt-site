@@ -371,6 +371,22 @@ h3 { letter-spacing:-.035em }
 .sec--deep .btn--ghost { background:transparent;color:#fff;border-color:rgba(255,255,255,.72) }
 .sec--deep .btn--ghost:hover { background:rgba(255,255,255,.12) }
 
+/* Fixed header must not obscure keyboard targets or anchor destinations.
+   WCAG 2.2 SC 2.4.11; comfortably-sized touch affordances. */
+html {scroll-padding-top:88px}
+main section[id] {scroll-margin-top:88px}
+.chip {min-height:44px}
+.unit .btn--sm {min-height:44px}
+.field .err {line-height:1.45}
+.field.is-err input[aria-invalid=true],.field.is-err select[aria-invalid=true],.field.is-err textarea[aria-invalid=true] {
+  border-color:#B42318;box-shadow:0 0 0 3px rgba(180,35,24,.12)
+}
+@media (max-width:699px) {
+  html {scroll-padding-top:76px}
+  main section[id] {scroll-margin-top:76px}
+  .hero__center .row .btn {min-height:44px}
+}
+
 /* 10 — Responsive constraints; progressive enhancement remains native */
 @media (max-width:1023px) {
   .hero__center { width:calc(100% - 2 * var(--gut));left:var(--gut);right:var(--gut) }
