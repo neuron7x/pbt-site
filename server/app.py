@@ -7,6 +7,7 @@
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
 import email.utils, hashlib, hmac, io, json, logging, os, posixpath, re, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -288,6 +289,9 @@ def _contact(method, s):
 # незавершену доставку (стан у БД). Семантика — «щонайменше раз»: падіння між відправкою й записом статусу дасть повтор
 # (вебхук несе id заявки для ідемпотентного прийому).
 DELIVERY_TIMEOUT = float(ENV('DELIVERY_TIMEOUT') or 8)
+DELIVERY_CONCURRENCY = int(ENV('DELIVERY_CONCURRENCY') or 4)
+if not 1 <= DELIVERY_CONCURRENCY <= 8:
+    raise ValueError('DELIVERY_CONCURRENCY must be between 1 and 8')
 DELIVERY_MAX_ATTEMPTS = int(ENV('DELIVERY_MAX_ATTEMPTS') or 8)
 DELIVERY_BACKOFF_S = float(ENV('DELIVERY_BACKOFF_S') or 30)        # 30 с · 2^(n−1), стеля — 6 год
 DELIVERY_BACKOFF_MAX_S = 6 * 3600
@@ -333,38 +337,55 @@ def send(channel, lead_id, data):
         raise
 
 
+def _attempt_delivery(row):
+    """Network I/O only: no SQLite access from sender threads."""
+    _, lead_id, channel, _, payload = row
+    try:
+        send(channel, lead_id, json.loads(payload))
+        return None, False
+    except PermanentDeliveryError as e:
+        return str(e), True
+    except Exception as e:  # noqa: BLE001
+        return type(e).__name__ + (f' {e.code}' if isinstance(e, urllib.error.HTTPError) else ''), False
+
+
 def deliver_due(now=None):
-    """Один прохід outbox: усі належні рядки 'pending'. Повертає кількість спроб. Токени/URL у журнал не пишуться."""
+    """One bounded outbox batch; apply results as they complete (at-least-once after crash)."""
     with _db_lock:
         c = db()
         rows = c.execute("SELECT o.id, o.lead_id, o.channel, o.attempts, l.payload FROM outbox o JOIN leads l ON l.id = o.lead_id "
                          "WHERE o.status = 'pending' AND o.next_at <= ? ORDER BY o.id LIMIT 50", (now or time.time(),)).fetchall()
         c.close()
-    for oid, lead_id, ch, att, payload in rows:
-        err, permanent = None, False
-        try:
-            send(ch, lead_id, json.loads(payload))
-        except PermanentDeliveryError as e:
-            err, permanent = str(e), True
-        except Exception as e:  # noqa: BLE001
-            err = type(e).__name__ + (f' {e.code}' if isinstance(e, urllib.error.HTTPError) else '')
-        att += 1; t = time.time()
-        with _db_lock:
-            c = db()
-            if err is None:
-                c.execute("UPDATE outbox SET status='delivered', attempts=?, last_at=?, last_error=NULL, delivered_at=? WHERE id=?",
-                          (att, t, datetime.now(timezone.utc).isoformat(), oid))
-                sent = [r[0] for r in c.execute("SELECT channel FROM outbox WHERE lead_id=? AND status='delivered' ORDER BY id", (lead_id,))]
-                c.execute('UPDATE leads SET delivered=? WHERE id=?', (','.join(sent), lead_id))
-                log.info('delivery ok lead=%s channel=%s attempt=%s', lead_id, ch, att)
-            elif permanent or att >= DELIVERY_MAX_ATTEMPTS:
-                c.execute("UPDATE outbox SET status='failed', attempts=?, last_at=?, last_error=? WHERE id=?", (att, t, err, oid))
-                log.error('delivery FAILED lead=%s channel=%s attempts=%s err=%s', lead_id, ch, att, err)
-            else:
-                nxt = t + min(DELIVERY_BACKOFF_S * 2 ** (att - 1), DELIVERY_BACKOFF_MAX_S)
-                c.execute('UPDATE outbox SET attempts=?, last_at=?, last_error=?, next_at=? WHERE id=?', (att, t, err, nxt, oid))
-                log.warning('delivery retry lead=%s channel=%s attempt=%s err=%s', lead_id, ch, att, err)
-            c.commit(); c.close()
+    if not rows:
+        return 0
+    # At most 50 queued and at most 8 in-flight network requests. The sole
+    # delivery worker owns this batch; never hold _db_lock across network I/O.
+    with ThreadPoolExecutor(max_workers=DELIVERY_CONCURRENCY, thread_name_prefix='pbt-delivery') as executor:
+        tasks = {executor.submit(_attempt_delivery, row): row for row in rows}
+        for task in as_completed(tasks):
+            oid, lead_id, ch, att, _ = tasks[task]
+            err, permanent = task.result()
+            att += 1
+            t = time.time()
+            with _db_lock:
+                c = db()
+                try:
+                    if err is None:
+                        c.execute("UPDATE outbox SET status='delivered', attempts=?, last_at=?, last_error=NULL, delivered_at=? WHERE id=?",
+                                  (att, t, datetime.now(timezone.utc).isoformat(), oid))
+                        sent = [r[0] for r in c.execute("SELECT channel FROM outbox WHERE lead_id=? AND status='delivered' ORDER BY id", (lead_id,))]
+                        c.execute('UPDATE leads SET delivered=? WHERE id=?', (','.join(sent), lead_id))
+                        log.info('delivery ok lead=%s channel=%s attempt=%s', lead_id, ch, att)
+                    elif permanent or att >= DELIVERY_MAX_ATTEMPTS:
+                        c.execute("UPDATE outbox SET status='failed', attempts=?, last_at=?, last_error=? WHERE id=?", (att, t, err, oid))
+                        log.error('delivery FAILED lead=%s channel=%s attempts=%s err=%s', lead_id, ch, att, err)
+                    else:
+                        nxt = t + min(DELIVERY_BACKOFF_S * 2 ** (att - 1), DELIVERY_BACKOFF_MAX_S)
+                        c.execute('UPDATE outbox SET attempts=?, last_at=?, last_error=?, next_at=? WHERE id=?', (att, t, err, nxt, oid))
+                        log.warning('delivery retry lead=%s channel=%s attempt=%s err=%s', lead_id, ch, att, err)
+                    c.commit()
+                finally:
+                    c.close()
     return len(rows)
 
 

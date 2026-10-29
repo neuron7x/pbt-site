@@ -1,6 +1,7 @@
 """Дискримінаційні тести меж сервера й збірки: кожен закриває мутанта, що виживав на попередньому наборі
 (незалежний аудит J, 213ccb0: M01–M23). Ідентифікатор мутанта — у назві/докстрінгу тесту."""
-import base64, hashlib, hmac, json, re, socket, sqlite3, time, urllib.error, urllib.request
+import base64, hashlib, hmac, json, re, socket, sqlite3, time, threading, urllib.error, urllib.request
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import pytest
 from test_leads import LEAD, Srv, Stub, _port, srv, wait_for  # noqa: F401  (фікстура srv)
@@ -124,6 +125,69 @@ def test_backlog_after_restart_drains_in_one_pass(srv):
     done = wait_for(lambda: s2.rows("SELECT count(*) FROM outbox WHERE status='delivered'")[0][0] == 5 or None, timeout=5)
     st.close()
     assert done and len(st.hits) == 5
+
+
+def test_bounded_parallel_delivery_breaks_sequential_downstream_stall(srv):
+    """Four queued webhook deliveries must enter the receiver concurrently.
+
+    A single-threaded worker reaches the receiver barrier once, then times out.
+    No wall-clock throughput estimate is inferred from this synchronization test.
+    """
+    gate = threading.Barrier(4)
+    received = []
+    errors = []
+    lock = threading.Lock()
+
+    class Receiver(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = self.rfile.read(int(self.headers['Content-Length']))
+            with lock:
+                received.append((body, dict(self.headers)))
+            try:
+                gate.wait(timeout=6)
+            except threading.BrokenBarrierError:
+                with lock:
+                    errors.append('receiver barrier timed out')
+                self.send_response(503)
+                self.send_header('Content-Length', '0')
+                self.end_headers()
+                return
+            self.send_response(200)
+            self.send_header('Content-Length', '2')
+            self.end_headers()
+            self.wfile.write(b'{}')
+
+        def log_message(self, *args):
+            pass
+
+    receiver = ThreadingHTTPServer(('127.0.0.1', 0), Receiver)
+    receiver.daemon_threads = True
+    thread = threading.Thread(target=receiver.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f'http://127.0.0.1:{receiver.server_address[1]}/hook'
+        s = srv(LEAD_WEBHOOK_URL=url, LEAD_WEBHOOK_SECRET='sec', DELIVERY_WORKER='0')
+        for i in range(4):
+            assert s.post(LEAD, f'k-parallel-{i:06d}')[0] == 201
+        assert s.rows("SELECT count(*) FROM outbox WHERE status='pending'") == [(4,)]
+        s.kill()
+        restarted = srv(LEAD_WEBHOOK_URL=url, LEAD_WEBHOOK_SECRET='sec',
+                        DELIVERY_CONCURRENCY='4', DELIVERY_POLL_S='30', DELIVERY_TIMEOUT='2')
+        done = wait_for(lambda: restarted.rows("SELECT count(*) FROM outbox WHERE status='delivered'") == [(4,)],
+                        timeout=9)
+        assert done, 'webhook requests were serial or did not complete'
+        assert not errors, errors
+        assert len(received) == 4
+        assert sorted(json.loads(body)['id'] for body, _ in received) == [1, 2, 3, 4]
+        for body, headers in received:
+            sig = {k.lower(): v for k, v in headers.items()}['x-pbt-signature']
+            assert hmac.compare_digest(sig, hmac.new(b'sec', body, hashlib.sha256).hexdigest())
+        assert restarted.rows("SELECT count(*) FROM outbox WHERE status='pending'") == [(0,)]
+        assert restarted.rows("SELECT sum(attempts) FROM outbox") == [(4,)]
+    finally:
+        receiver.shutdown()
+        receiver.server_close()
+        thread.join(timeout=3)
 
 
 def test_outbox_51_rows_after_restart_drains_before_next_poll(srv):
