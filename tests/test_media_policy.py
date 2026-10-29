@@ -5,11 +5,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def test_preload_matches_selected_theme_only():
+def test_preload_covers_selected_and_alternate_theme_without_late_font_swaps():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     faces = (ROOT / "web" / "css" / "fonts.css").read_text(encoding="utf-8")
     assert html.count('href="fonts/IBMPlexSans-400-cyrillic.woff2"') == 1
     assert 'id="themeFontPreload"' in html
+    # Regression: from precision into sky, uncached Tektur triggered delayed
+    # layout shifts (unprompted sum 0.04977 on mobile 4x CPU, 2026-10-29).
+    for subset in ("Tektur-var-cyrillic.woff2", "Tektur-var-latin.woff2"):
+        assert f'href="fonts/{subset}" as="font"' in html
+    assert html.index('href="fonts/Tektur-var-latin.woff2"') < html.index('rel="stylesheet"')
     assert "theme==='precision'?'IBMPlexSans-600-cyrillic.woff2':'Tektur-var-cyrillic.woff2'" in html
     for variant in ("IBMPlexSans-600-cyrillic.woff2", "IBMPlexSans-400-cyrillic.woff2",
                     "Tektur-var-cyrillic.woff2"):
