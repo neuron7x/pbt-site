@@ -49,3 +49,11 @@ for an **operator-selected** freshness policy. A missing marker returns UNKNOWN
 (exit 2), a stale marker DEGRADED (exit 1). The CLI default remains unchanged,
 and `/api/health` remains byte-contract compatible. A recent heartbeat is not
 proof that CRM accepted leads; monitor failed/pending counts separately.
+
+## Power interruption evidence boundary
+
+The online SQLite copy is integrity-checked and fsynced before an atomic
+create-only hard link publishes the snapshot. The backup directory metadata is
+then fsynced before returning success; an injected file/directory fsync failure
+returns nonzero. This improves crash durability but cannot guarantee RPO=0,
+hardware trust, off-device replication or survival of disk destruction.

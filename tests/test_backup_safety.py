@@ -106,3 +106,35 @@ def test_restore_outbox_snapshot_preserves_pending_jobs_and_monotonic_id(srv, tm
     recovered = srv(DELIVERY_WORKER='0', LEAD_WEBHOOK_URL=endpoint, LEAD_WEBHOOK_SECRET='secret')
     assert recovered.post(LEAD, 'k-recovery-000004')[1]['ref'] == 'PBT-000004'
     assert recovered.rows('SELECT id FROM leads ORDER BY id') == [(1,), (2,), (4,)]
+
+
+def test_backup_fsync_failure_cannot_report_success_or_publish(tmp_path, capsys):
+    db, out = tmp_path / 'leads.db', tmp_path / 'backups'
+    _seed(db)
+    backup = _module(db, out, 3)
+
+    def disk_failure(_):
+        raise OSError('injected fsync failure')
+
+    backup._sync_backup_file = disk_failure
+    assert backup.main() == 1
+    assert 'FAIL' in capsys.readouterr().err
+    assert not list(out.glob('leads-*.db'))
+    assert not list(out.glob('*.tmp'))
+
+
+def test_backup_directory_sync_failure_is_reported_even_if_link_exists(tmp_path, capsys):
+    db, out = tmp_path / 'leads.db', tmp_path / 'backups'
+    _seed(db)
+    backup = _module(db, out, 3)
+
+    def directory_failure(_):
+        raise OSError('injected metadata fsync failure')
+
+    backup._sync_backup_directory = directory_failure
+    assert backup.main() == 1
+    assert 'FAIL' in capsys.readouterr().err
+    snapshots = list(out.glob('leads-*.db'))
+    assert len(snapshots) == 1  # Published atomically but not certified durable.
+    with sqlite3.connect(snapshots[0]) as c:
+        assert c.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'

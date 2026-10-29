@@ -16,6 +16,19 @@ DB = Path(os.environ.get('LEAD_DB') or ROOT / 'data' / 'leads.db')
 OUT = Path(os.environ.get('BACKUP_DIR') or ROOT / 'data' / 'backups')
 KEEP = int(os.environ.get('BACKUP_KEEP') or 14)
 
+ 
+def _sync_backup_file(path):
+    with path.open('rb') as handle:
+        os.fsync(handle.fileno())
+
+
+def _sync_backup_directory(directory):
+    fd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
 
 def main():
     if KEEP < 1:
@@ -46,7 +59,9 @@ def main():
             count = copy.execute('SELECT count(*) FROM leads').fetchone()[0]
 
         os.chmod(tmp, 0o600)
+        _sync_backup_file(tmp)   # Durable content must precede the namespace publication.
         os.link(tmp, dst)  # Atomic no-replace; FileExistsError is a hard failure.
+        _sync_backup_directory(OUT)  # Persist the new name before returning success.
         tmp.unlink()
         tmp = None
 
