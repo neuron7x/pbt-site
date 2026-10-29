@@ -198,3 +198,17 @@ def test_axe_wcag22aa_checks_dynamic_interaction_states(page_factory, theme, sta
     bad = [(v["id"], v["impact"], [n["target"] for n in v["nodes"]][:3])
            for v in result["violations"]]
     assert not bad, bad
+
+
+
+def test_accessible_names_include_actual_visible_control_labels(page_factory):
+    """WCAG 2.1 SC 2.5.3: visible button/link text must occur in its accessible name."""
+    pg = page_factory(reduced=True)
+    for theme in ("sky", "precision"):
+        control = pg.locator(f'[data-theme-choice="{theme}"]')
+        assert control.inner_text().strip().casefold() in (
+            control.get_attribute("aria-label") or ""
+        ).casefold()
+    for control in pg.locator("a.brand").all():
+        assert "полтавабудтехніка" in (control.get_attribute("aria-label") or "").casefold()
+    assert "onsubmit=" not in (ROOT / "web" / "index.html").read_text(encoding="utf-8")

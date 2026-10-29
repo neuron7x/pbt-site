@@ -302,6 +302,8 @@
   }
   function renderCalc() {
     const sel = $('#cMachine'), hr = $('#cHours'), hrN = $('#cHoursN'), km = $('#cKm'), kmN = $('#cKmN');
+    // Hashed CSP forbids inline handlers; keyboard Enter must not submit this form.
+    $('#calcForm').addEventListener('submit', event => event.preventDefault());
     const priced = D.fleet.filter(u => u.price && u.unit === 'год');
     sel.innerHTML = priced.map(u => `<option value="${u.id}">${esc(u.name)} — ${fmt(u.price)} грн/год</option>`).join('');
     const fill = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min) * 100).toFixed(1)}%`);
