@@ -97,6 +97,9 @@ def test_sky_hero_logo_preserves_original_desktop_footprint(page_factory):
     diagnostic = page.evaluate("""() => ({
       theme: document.documentElement.dataset.theme,
       token: getComputedStyle(document.documentElement).getPropertyValue('--t-logo-width').trim(),
+      inheritedToken: getComputedStyle(document.querySelector('.logo-hero')).getPropertyValue('--t-logo-width').trim(),
+      minWidth: getComputedStyle(document.querySelector('.logo-hero')).minWidth,
+      maxWidth: getComputedStyle(document.querySelector('.logo-hero')).maxWidth,
       computed: getComputedStyle(document.querySelector('.logo-hero')).width,
       box: document.querySelector('.logo-hero').getBoundingClientRect().width
     })""")

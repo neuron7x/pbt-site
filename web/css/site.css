@@ -374,7 +374,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .hero__center{position:absolute;z-index:4;left:var(--gut);right:var(--t-hero-center-right);width:var(--t-hero-center-width);top:calc(50% + 30px);transform:translateY(-50%);display:grid;justify-items:var(--t-hero-center-justify);text-align:var(--t-hero-center-align);gap:var(--t-hero-center-gap);will-change:transform,opacity}   /* +30px: центр нижче шапки (09.10: на 1366×650 підзаголовок заїжджав під меню) */
 .hero__center .eyebrow{color:var(--white)}
 /* логотип власника (tools/logo.py): статичний кадр — LCP і запасний варіант; поверх — VP9-анімація з альфою, грає раз */
-.logo-hero{position:relative;width:var(--t-logo-width);margin:6px auto 0;aspect-ratio:960/352;filter:drop-shadow(0 .9vw 1.4vw rgba(6,43,92,.45))}
+.logo-hero{position:relative;width:var(--t-logo-width);min-width:0;max-width:100%;margin:6px auto 0;aspect-ratio:960/352;filter:drop-shadow(0 .9vw 1.4vw rgba(6,43,92,.45))}
 .logo-hero__img,.logo-hero__anim{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:contain}
 .logo-hero__anim{opacity:0}
 .logo-hero.is-anim .logo-hero__anim{opacity:1}.logo-hero.is-anim .logo-hero__img{opacity:0}
