@@ -23,19 +23,22 @@
   function selectTrailer(specs, trailers) {
     const mass = massTonnes(specs);
     if (mass === null) return Object.freeze({ reason: 'mass-unknown', trailer: null });
-    if (!Array.isArray(trailers) || !trailers.length || trailers.some(t =>
-      !t || typeof t.name !== 'string' || !t.name.trim() ||
-      !Number.isFinite(t.maxT) || t.maxT <= 0 ||
-      !validInt(t.rate, 1, Number.MAX_SAFE_INTEGER))) {
+    if (!Array.isArray(trailers) || !trailers.length)
       return Object.freeze({ reason: 'tariff-invalid', trailer: null });
+    // O(T) часу, O(1) пам'яті. Перевіряємо ВСІ ставки: погані дані
+    // не можна ігнорувати лише тому, що інший трал уже підходить.
+    let best = null;
+    for (const t of trailers) {
+      if (!t || typeof t.name !== 'string' || !t.name.trim() ||
+          !Number.isFinite(t.maxT) || t.maxT <= 0 ||
+          !validInt(t.rate, 1, Number.MAX_SAFE_INTEGER))
+        return Object.freeze({ reason: 'tariff-invalid', trailer: null });
+      if (mass > t.maxT) continue;
+      if (!best || t.maxT < best.maxT ||
+          (t.maxT === best.maxT && (t.rate < best.rate ||
+           (t.rate === best.rate && t.name < best.name)))) best = t;
     }
-    // Канонічний вибір: мінімальна достатня вантажність, потім ставка.
-    // Не залежить від порядку даних і не змінює вхідний масив.
-    const choices = trailers.filter(t => mass <= t.maxT);
-    if (!choices.length) return Object.freeze({ reason: 'capacity-exceeded', trailer: null });
-    choices.sort((a, b) => a.maxT - b.maxT || a.rate - b.rate ||
-      (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-    const best = choices[0];
+    if (!best) return Object.freeze({ reason: 'capacity-exceeded', trailer: null });
     return Object.freeze({ reason: null, trailer: Object.freeze({
       name: best.name, maxT: best.maxT, rate: best.rate,
     }) });

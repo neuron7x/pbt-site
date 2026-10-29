@@ -90,8 +90,12 @@ def test_storage_denied_still_allows_in_memory_theme_selection(browser, server):
 @pytest.mark.parametrize("theme", ["sky", "precision"])
 @pytest.mark.parametrize("width,height,mobile", [
     (1440, 900, False),
+    (1024, 768, False),
+    (820, 1180, True),
     (390, 844, True),
-])
+    (360, 640, True),
+    (320, 568, True),
+], ids=["desktop", "small-desktop", "tablet", "phone", "small-phone", "minimum-phone"])
 def test_axe_wcag22aa_zero_violations_in_each_theme(page_factory, theme, width, height, mobile):
     page = page_factory(width, height, mobile=mobile, reduced=True, bypass_csp=True)
     page.locator(f'[data-theme-choice="{theme}"]').click()
@@ -105,8 +109,16 @@ def test_axe_wcag22aa_zero_violations_in_each_theme(page_factory, theme, width, 
     assert not bad, bad
 
 
-def test_theme_switch_never_introduces_unsolicited_layout_shift(page_factory):
-    page = page_factory(1440, 900, reduced=True)
+@pytest.mark.parametrize("width,height,mobile", [
+    (1440, 900, False),
+    (1024, 768, False),
+    (820, 1180, True),
+    (390, 844, True),
+    (360, 640, True),
+    (320, 568, True),
+], ids=["desktop", "small-desktop", "tablet", "phone", "small-phone", "minimum-phone"])
+def test_theme_switch_never_introduces_unsolicited_layout_shift(page_factory, width, height, mobile):
+    page = page_factory(width, height, mobile=mobile, reduced=True)
     page.evaluate("""() => {
       window.__unexpectedShifts = [];
       new PerformanceObserver(list => {

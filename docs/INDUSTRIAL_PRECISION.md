@@ -1,7 +1,7 @@
 # Industrial Precision + Sky and Gold — canonical dual-theme system, issue #4 / draft PR #2
 
 **Baseline:** `main@7be8bba75ef612bfc424f31b894e354876d4525b` (2026-10-29).
-**Status (2026-10-29):** two theme configurations exist in one CSS, yet **no completed full-green CI / screenshot / CWV proof on the current head** is claimed here.
+**Status (2026-10-29):** release gate **PASS on SHA `6c7eefe7985c39a7f5bdd7a1277a9817f52e36e0`** (two independent CI runs, each 255 tests). The follow-up test-coverage commit requires fresh CI; **CWV field proof and owner visual acceptance are still OPEN**.
 
 ## Design hypothesis
 
@@ -72,15 +72,40 @@ accessibility and screenshot proof before a merge.
 7. Recheck source prices and VAT against owner-approved CRM records before
    public presentation.
 
-## Baseline evidence limits
+## Verified CI evidence and remaining limits (29 October 2026)
 
-`docs/RELEASE_STATUS.md` reports historic Lighthouse mobile performance ~50,
-182 tests passing at an older commit (`d5193f1`). Neither result proves
-current correctness. PR #3 at `a8eda92f35cf` was **red** (one PNG CRC
-integrity test failed, 202 passed); two-theme screenshots remain **unverified**.
-Current-head release gate must finish successfully. Neither LCP ≤ 2.5 s,
-INP ≤ 200 ms, CLS ≤ 0.1, real video-frame contrast nor full NIST SSDF 1.1
-coverage has been verified. Do not infer PASS from source structure.
+| Scope | Immutable SHA | GitHub Actions run | Observed result |
+|---|---|---|---|
+| PR #2 canonical two-theme branch | `6c7eefe7985c39a7f5bdd7a1277a9817f52e36e0` | [40865394201](https://github.com/neuron7x/pbt-site/actions/runs/40865394201) | Smoke **29 passed**; `make gate` **255 passed**, workflow success; seven baseline screenshots uploaded |
+| PR #2 independent verification | same SHA | [40865387315](https://github.com/neuron7x/pbt-site/actions/runs/40865387315) | Smoke **29 passed**; `make gate` **255 passed**, workflow success |
+| Stacked PR #3 screenshot/evidence scope (not PR #2 code) | `62567ea85364bb2c4a8637c8b96a19518796d8b8` | [40865735337](https://github.com/neuron7x/pbt-site/actions/runs/40865735337) | `make gate` **268 passed**; media budget: **160 files, 116103276 bytes, zero violations**; **32 screenshots**, Chromium 143.0.7499.4, screenshot script reports zero violations and generated `artifacts/shots/manifest.json` |
+| Stacked PR #3 general quality workflow | same SHA | [40865735489](https://github.com/neuron7x/pbt-site/actions/runs/40865735489) | Workflow success |
+
+The old failure in run [40864813680](https://github.com/neuron7x/pbt-site/actions/runs/40864813680)
+was a **test/source import-string expectation mismatch**
+(`test_inline_builder_uses_shared_contract_for_both_outputs`, 1 failed
+and 28 passed), not a proof of an actual CSS duplication. The current
+SHA passes the corrected contract. Cancelled superseded runs do not
+count as passing or failing verification.
+
+**What these results do and do not establish.** The committed PR #2
+tests cover both `sky` and `precision` with axe WCAG 2.2 AA on
+desktop and phone, six viewport sizes for keyboard persistence,
+localStorage-denied mode, no unrequested media replacement, prepaint
+CSP-hashed restore, reduced motion and a desktop layout-shift observer.
+This follow-up coverage commit expands **axe to 2 themes × 6 viewports**
+and **layout-shift observation to 6 viewports**; those new checks must
+pass at the new SHA before being called verified. PR #3 owns screenshot
+acceptance; a generated PNG and SHA-256 alone do **not** establish visual
+quality. Owner pixel-level review remains outstanding.
+
+`docs/RELEASE_STATUS.md` cites historic Lighthouse mobile performance
+~50 at a different commit. **No verified mobile CWV results for this
+head** demonstrate LCP ≤ 2.5 s, INP ≤ 200 ms or CLS ≤ 0.1 under real
+field conditions. Real video-frame contrast, source-data freshness,
+copyright/footage approval and owner visual acceptance remain open.
+Do not infer an accessibility certification solely from axe, or a
+release authorization from a successful automated gate.
 
 ## Follow-up PR sequence
 

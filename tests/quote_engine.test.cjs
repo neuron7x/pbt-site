@@ -60,3 +60,23 @@ test('seeded monotonicity / deterministic oracle: 2000 property cases', () => {
     }
   }
 });
+
+test('independent exhaustive oracle: every mass around both trailer bounds', () => {
+  // Незалежна еталонна таблиця ставок, без викликів селектора моделі.
+  for (let mass=1;mass<=80;mass++) for (const hours of [1,8,501]) for (const km of [0,10,100]) {
+    const rent=hours*1350;
+    const rate=mass<=40?100:mass<=60?140:null;
+    const expected=km===0?rent:rate===null?null:rent+km*rate;
+    const u=unit(mass);
+    const actual=Q.legacyTotal(u,trucks,hours,km);
+    assert.equal(actual,expected,'mass='+mass+',hours='+hours+',km='+km);
+    const q=Q.quote(u,trucks,hours,km);
+    assert.equal(q.total,expected,'quote total: mass='+mass+',hours='+hours+',km='+km);
+    if (expected === null) {
+      assert.equal(q.status,'rent-only');
+      assert.equal(q.reason,'capacity-exceeded');
+    } else {
+      assert.equal(q.status,'complete');
+    }
+  }
+});
