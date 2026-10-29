@@ -113,7 +113,7 @@ def capture_viewport(browser, spec: tuple) -> tuple[dict, list[dict], list[str]]
 def run() -> int:
     report = {
         "schema_version": SCHEMA_VERSION,
-        "revision": os.environ.get("GITHUB_SHA") or None,
+        "revision": os.environ.get("PBT_HEAD_SHA") or os.environ.get("GITHUB_SHA") or None,
         "measurement_type": "laboratory screenshot audit; NOT field Core Web Vitals",
         "field_lcp_ms": None,
         "field_inp_ms": None,
