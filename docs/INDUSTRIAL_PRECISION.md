@@ -28,11 +28,7 @@ real photography and typography become the dominant visual substrate.
 | Proof | Saturated stats, animated logos | Evidence-first photography, plain stats and static partner logos |
 | Decorative motion | Cursor glow, waves, depth gauge | Removed from visible interface; functional animations and existing scroll contracts retained |
 
-The first PR is deliberately a separate CSS layer (`web/css/precision.css`)
-loaded after `site.css`: a reversible migration without broad JS rewrites or
-CRM-facing changes. After screenshots and acceptance, consolidate both files to
-remove redundant cascade rules. Do not treat the overlay as the final CSS
-architecture.
+**Owner decision — issue #4 (29 October 2026):** The first proposal's separate\n`precision.css` has been **removed**. Both \u00abНебо і золото\u00bb (`sky`, default) and\n\u00abIndustrial Precision\u00bb (`precision`) are now configured by semantic\ncustom properties on `:root[data-theme=...]` inside **one `web/css/site.css`**.\nAll components consume the same properties; no duplicate theme stylesheet is\nloaded by the browser or embedded bundle. The header provides keyboard-accessible\n`aria-pressed` buttons; a CSP-hashed inline bootstrap sets the saved theme\nbefore the CSS loads, using fail-safe `localStorage` reads. The media and\nCRM lead contracts are unchanged. Both themes still require their own CI,\naccessibility and screenshot proof before a merge.
 
 ## Explicit non-goals and preserved invariants
 
