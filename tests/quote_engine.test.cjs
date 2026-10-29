@@ -33,6 +33,14 @@ test('strict boundaries and mass parsing cannot be gamed', () => {
   }
   assert.equal(Q.massTonnes([{k:'Маса',v:'22,5 т'}]),22.5);
   assert.equal(Q.massTonnes([{k:'Вага',v:'31 т'}]),31);
+  for (const v of ['22 т / 44 т', '22 т 60 т', '22 т уточнити', '22 т, 44 т']) {
+    assert.equal(Q.massTonnes([{k:'Маса',v}]),null,'ambiguous mass: '+v);
+    const ambiguous=unit(22); ambiguous.specs=[{k:'Маса',v}];
+    const uncertain=Q.quote(ambiguous,trucks,2,20);
+    assert.equal(uncertain.status,'rent-only');
+    assert.equal(uncertain.delivery,null);
+    assert.equal(uncertain.total,null);
+  }
 });
 test('tariff configuration is immutable and order-independent', () => {
   const front=Q.quote(unit(22),trucks,2,15);

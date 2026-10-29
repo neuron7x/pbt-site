@@ -14,7 +14,7 @@
     const masses = specs.filter(s => s && typeof s.k === 'string' && /^(?:Маса|Вага)(?:\s|$)/i.test(s.k));
     if (masses.length !== 1) return null; // Дублікат або конфлікт метаданих: fail-closed.
     const found = String(masses[0].v == null ? '' : masses[0].v).trim()
-      .match(/^(\d+(?:[.,]\d+)?)\s*т(?:\s|$)/i);
+      .match(/^(\d+(?:[.,]\d+)?)\s*т$/i);
     if (!found) return null;
     const mass = Number(found[1].replace(',', '.'));
     return Number.isFinite(mass) && mass > 0 ? mass : null;
