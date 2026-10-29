@@ -21,6 +21,7 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+      PBT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Зафіксований checkout (v4.2.2)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -66,6 +67,28 @@ jobs:
           done
           curl --fail --silent --show-error http://127.0.0.1:4180/api/health >/dev/null
           make shots
+      - name: Synthetic dual-theme mobile LCP/CLS evidence (not field INP)
+        if: success()
+        run: |
+          export HOST=127.0.0.1 PORT=4180 LEAD_DB="$RUNNER_TEMP/pbt-perf-leads.db"
+          python server/app.py > "$RUNNER_TEMP/pbt-perf-server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:4180/api/health >/dev/null 2>&1; then break; fi
+            sleep 0.25
+          done
+          curl --fail --silent --show-error http://127.0.0.1:4180/api/health >/dev/null
+          python tools/perf_probe.py --url http://127.0.0.1:4180/ --runs 3 \
+            --out artifacts/perf/dual-theme-mobile.json
+      - name: Preserve synthetic metrics (no release authorization)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pbt-mobile-lab-${{ github.run_id }}
+          path: artifacts/perf/dual-theme-mobile.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Зберегти оглядові знімки PR (не тести)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

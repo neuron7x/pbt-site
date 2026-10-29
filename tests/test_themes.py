@@ -90,8 +90,12 @@ def test_storage_denied_still_allows_in_memory_theme_selection(browser, server):
 @pytest.mark.parametrize("theme", ["sky", "precision"])
 @pytest.mark.parametrize("width,height,mobile", [
     (1440, 900, False),
+    (1024, 768, False),
+    (820, 1180, True),
     (390, 844, True),
-])
+    (360, 640, True),
+    (320, 568, True),
+], ids=["desktop", "small-desktop", "tablet", "phone", "small-phone", "minimum-phone"])
 def test_axe_wcag22aa_zero_violations_in_each_theme(page_factory, theme, width, height, mobile):
     page = page_factory(width, height, mobile=mobile, reduced=True, bypass_csp=True)
     page.locator(f'[data-theme-choice="{theme}"]').click()
@@ -99,14 +103,22 @@ def test_axe_wcag22aa_zero_violations_in_each_theme(page_factory, theme, width, 
     page.add_style_tag(content="*,*::before,*::after{transition:none!important;animation:none!important}")
     page.evaluate("document.querySelectorAll('.rv').forEach(el => el.classList.add('is-in'))")
     result = page.evaluate("""async () => axe.run(document, {
-      runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag22aa']}
+      runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}
     })""")
     bad = [(v["id"], v.get("impact"), [n["target"] for n in v["nodes"]][:3]) for v in result["violations"]]
     assert not bad, bad
 
 
-def test_theme_switch_never_introduces_unsolicited_layout_shift(page_factory):
-    page = page_factory(1440, 900, reduced=True)
+@pytest.mark.parametrize("width,height,mobile", [
+    (1440, 900, False),
+    (1024, 768, False),
+    (820, 1180, True),
+    (390, 844, True),
+    (360, 640, True),
+    (320, 568, True),
+], ids=["desktop", "small-desktop", "tablet", "phone", "small-phone", "minimum-phone"])
+def test_theme_switch_has_no_delayed_unprompted_cls(page_factory, width, height, mobile):
+    page = page_factory(width, height, mobile=mobile, reduced=True)
     page.evaluate("""() => {
       window.__unexpectedShifts = [];
       new PerformanceObserver(list => {
@@ -115,9 +127,9 @@ def test_theme_switch_never_introduces_unsolicited_layout_shift(page_factory):
       }).observe({type: 'layout-shift'});
     }""")
     page.locator('[data-theme-choice="precision"]').click()
-    page.wait_for_timeout(180)
+    page.wait_for_timeout(700)
     page.locator('[data-theme-choice="sky"]').click()
-    page.wait_for_timeout(180)
+    page.wait_for_timeout(700)
     assert page.evaluate("window.__unexpectedShifts.reduce((a,b)=>a+b,0)") <= 0.001
 
 
@@ -126,3 +138,63 @@ def test_csp_no_inline_script_weakening_in_backend_source():
     assert "_inline_script_hashes()" in server
     assert "script-src 'self'" in server
     assert "script-src 'self' 'unsafe-inline'" not in server
+
+
+@pytest.mark.parametrize("theme", ["sky", "precision"])
+@pytest.mark.parametrize("path", ["/", "/missing-page"])
+def test_prepaint_restores_storage_under_enforced_browser_csp(browser, server, theme, path):
+    """Real browser must execute the allowlisted prepaint code while blocking unknown inline scripts."""
+    import json
+    context = browser.new_context()
+    try:
+        context.add_init_script("localStorage.setItem('pbt-theme', " + json.dumps(theme) + ");")
+        page = context.new_page()
+        response = page.goto(server["base"] + path, wait_until="load")
+        assert response.status == (200 if path == "/" else 404)
+        assert page.evaluate("document.documentElement.dataset.theme") == theme
+        assert page.evaluate("document.querySelector('meta[name=theme-color]').content") == (
+            "#101820" if theme == "precision" else "#0D6AE0"
+        )
+        executed = page.evaluate("""() => {
+          const el = document.createElement('script');
+          el.textContent = 'window.__pbtUnexpectedInline = true';
+          document.head.appendChild(el);
+          el.remove();
+          return window.__pbtUnexpectedInline === true;
+        }""")
+        assert not executed, "unknown inline script bypassed Content-Security-Policy"
+    finally:
+        context.close()
+
+
+def test_default_browser_chrome_color_agrees_with_sky_before_prepaint():
+    html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+    assert '<html lang="uk" data-theme="sky">' in html
+    assert '<meta name="theme-color" content="#0D6AE0">' in html
+
+
+
+@pytest.mark.parametrize("theme", ["sky", "precision"])
+@pytest.mark.parametrize("state", ["modal-menu", "invalid-form"])
+def test_axe_wcag22aa_checks_dynamic_interaction_states(page_factory, theme, state):
+    """Rendered state changes are in-scope WCAG 2.2 AA, not only initial page."""
+    page = page_factory(390, 844, mobile=True, reduced=True, bypass_csp=True)
+    page.locator(f'[data-theme-choice="{theme}"]').click()
+    if state == "modal-menu":
+        page.locator(".burger").click()
+        assert page.locator("#menu").is_visible()
+    else:
+        page.locator("#contact").fill("invalid")
+        page.locator("#hours").fill("0")
+        page.locator("#send").click()
+        assert page.locator("#contact").get_attribute("aria-invalid") == "true"
+    page.add_script_tag(path=str(ROOT / "tests" / "vendor" / "axe.min.js"))
+    page.add_style_tag(content="*,*::before,*::after{transition:none!important;animation:none!important}")
+    page.evaluate("document.querySelectorAll('.rv').forEach(el => el.classList.add('is-in'))")
+    result = page.evaluate("""async () => axe.run(document, {
+      runOnly: {type: 'tag', values:
+        ['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}
+    })""")
+    bad = [(v["id"], v["impact"], [n["target"] for n in v["nodes"]][:3])
+           for v in result["violations"]]
+    assert not bad, bad
