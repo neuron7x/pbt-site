@@ -39,3 +39,13 @@ Backup creation fails closed for missing source databases, invalid retention,
 corrupt snapshots and name collisions; it never silently replaces an earlier
 recovery point. A restore must use a verifiable upper ID watermark (logs and/or
 `--min-seq`) to avoid reusing an already issued CRM lead ID.
+
+## Optional worker-thread liveness (not delivery/readiness)
+
+With a durable additive `runtime_heartbeat` marker, the delivery worker
+records activity at most once every 15 seconds (configurable 1–60 seconds).
+Use `ops/outbox_health.py --max-pending-age-s 600 --max-worker-idle-s 45`
+for an **operator-selected** freshness policy. A missing marker returns UNKNOWN
+(exit 2), a stale marker DEGRADED (exit 1). The CLI default remains unchanged,
+and `/api/health` remains byte-contract compatible. A recent heartbeat is not
+proof that CRM accepted leads; monitor failed/pending counts separately.

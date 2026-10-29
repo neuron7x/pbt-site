@@ -91,6 +91,8 @@ def migrate(timeout=10):
         status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0,
         last_at REAL, last_error TEXT, delivered_at TEXT, UNIQUE(lead_id, channel))''')
     c.execute("CREATE INDEX IF NOT EXISTS outbox_due ON outbox(status, next_at)")
+    c.execute("""CREATE TABLE IF NOT EXISTS runtime_heartbeat(
+        name TEXT PRIMARY KEY, observed_at REAL NOT NULL)""")
     c.commit(); c.close()
 
 
@@ -296,6 +298,9 @@ DELIVERY_MAX_ATTEMPTS = int(ENV('DELIVERY_MAX_ATTEMPTS') or 8)
 DELIVERY_BACKOFF_S = float(ENV('DELIVERY_BACKOFF_S') or 30)        # 30 с · 2^(n−1), стеля — 6 год
 DELIVERY_BACKOFF_MAX_S = 6 * 3600
 DELIVERY_POLL_S = float(ENV('DELIVERY_POLL_S') or 30)
+DELIVERY_HEARTBEAT_INTERVAL_S = float(ENV('DELIVERY_HEARTBEAT_INTERVAL_S') or 15)
+if not 1 <= DELIVERY_HEARTBEAT_INTERVAL_S <= 60:
+    raise ValueError('DELIVERY_HEARTBEAT_INTERVAL_S must be between 1 and 60')
 HEALTH_MIN_FREE_MB = float(ENV('HEALTH_MIN_FREE_MB') or 50)
 TELEGRAM_API = ENV('TELEGRAM_API_BASE') or 'https://api.telegram.org'
 _wake = threading.Event()
@@ -391,7 +396,22 @@ def deliver_due(now=None):
     return len(rows)
 
 
+def _record_worker_heartbeat():
+    """Durable *thread activity* marker; never misrepresent as downstream success."""
+    with _db_lock:
+        c = db()
+        try:
+            c.execute("""INSERT INTO runtime_heartbeat(name, observed_at)
+                         VALUES('delivery', ?)
+                         ON CONFLICT(name) DO UPDATE SET observed_at=excluded.observed_at""",
+                      (time.time(),))
+            c.commit()
+        finally:
+            c.close()
+
+
 def delivery_worker():
+    last_heartbeat = float('-inf')
     while True:
         try:
             # A full batch may leave due rows; do not sleep for the entire poll interval.
@@ -399,6 +419,12 @@ def delivery_worker():
                 pass
         except Exception as e:  # noqa: BLE001
             log.error('delivery worker error %s', type(e).__name__)
+        if time.monotonic() - last_heartbeat >= DELIVERY_HEARTBEAT_INTERVAL_S:
+            try:
+                _record_worker_heartbeat()
+                last_heartbeat = time.monotonic()
+            except Exception as e:  # noqa: BLE001
+                log.error('delivery heartbeat error %s', type(e).__name__)
         _wake.wait(DELIVERY_POLL_S); _wake.clear()
 
 
