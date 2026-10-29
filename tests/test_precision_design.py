@@ -75,3 +75,27 @@ def test_reduced_motion_remains_complete_and_not_video_dependent(page_factory):
         "video": "",
         "wave": "none",
     }
+
+
+def _luminance(color):
+    rgb = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    linear = [x / 12.92 if x <= 0.04045 else ((x + 0.055) / 1.055) ** 2.4 for x in rgb]
+    return sum(a * b for a, b in zip(linear, (0.2126, 0.7152, 0.0722)))
+
+
+@pytest.mark.parametrize("foreground,background", [
+    ("#14202A", "#F5F5F2"),  # body copy on neutral paper
+    ("#15202A", "#FDC501"),  # main CTA on brand gold
+    ("#FFFFFF", "#14202A"),  # catalogue CTA on ink
+    ("#FFFFFF", "#101820"),  # inverse heading on graphite
+    ("#5B6974", "#F5F5F2"),  # subtle overline on paper
+    ("#C6D2D9", "#101820"),  # inverse section-heading accent
+    ("#1A5EA0", "#FFFFFF"),  # service link
+])
+def test_static_precision_pairs_meet_wcag_normal_text_contrast(foreground, background):
+    """Static pairs only: moving video-frame contrast needs browser screenshots."""
+    css = (ROOT / "web" / "css" / "precision.css").read_text(encoding="utf-8").upper()
+    assert foreground in css and background in css
+    a, b = _luminance(foreground), _luminance(background)
+    ratio = (max(a, b) + 0.05) / (min(a, b) + 0.05)
+    assert ratio >= 4.5, (foreground, background, ratio)
