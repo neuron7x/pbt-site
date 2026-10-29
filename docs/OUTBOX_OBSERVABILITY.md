@@ -57,3 +57,17 @@ create-only hard link publishes the snapshot. The backup directory metadata is
 then fsynced before returning success; an injected file/directory fsync failure
 returns nonzero. This improves crash durability but cannot guarantee RPO=0,
 hardware trust, off-device replication or survival of disk destruction.
+
+
+## Fail-closed known RPO gaps at restore
+
+The restore tool **refuses with exit code 3** when an independently established
+issued-ID watermark (server log or `--min-seq`) exceeds the last lead in the
+selected backup. This detects **known** loss of accepted leads; merely advancing
+`sqlite_sequence` is not recovery. On refusal the original database is not
+replaced. Operators must reconcile missing leads from separately retained logs,
+downstream receipts, or off-device records before deliberately using
+`--allow-rpo-gap`. That break-glass flag **only** acknowledges the gap; it
+cannot reconstruct contact details or outbox work. The result records the gap
+count and is not a zero-loss attestation. Unknown missing records and a lost
+journal cannot be disproved by a local backup.

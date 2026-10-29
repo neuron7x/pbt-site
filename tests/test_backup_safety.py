@@ -94,12 +94,19 @@ def test_restore_outbox_snapshot_preserves_pending_jobs_and_monotonic_id(srv, tm
         assert conn.execute("SELECT count(*) FROM outbox WHERE status='pending'").fetchone() == (2,)
     assert server.post(LEAD, 'k-recovery-000003')[1]['ref'] == 'PBT-000003'
     server.kill()
-    restore = subprocess.run([
+    cmd = [
         sys.executable, str(ROOT / 'ops/restore.py'), str(snapshot),
         '--db', str(server.db), '--log', str(tmp_path / 'missing.log'),
         '--min-seq', '3', '--port', str(server.port)
-    ], capture_output=True, text=True, timeout=15)
+    ]
+    denied = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    assert denied.returncode == 3 and 'known_RPO_gap=1' in denied.stderr
+    with sqlite3.connect(server.db) as conn:
+        assert conn.execute('SELECT id FROM leads ORDER BY id').fetchall() == [(1,), (2,), (3,)]
+        assert conn.execute('SELECT count(*) FROM outbox').fetchone() == (3,)
+    restore = subprocess.run(cmd + ['--allow-rpo-gap'], capture_output=True, text=True, timeout=15)
     assert restore.returncode == 0, restore.stdout + restore.stderr
+    assert 'known_RPO_gap=1' in restore.stdout
     with sqlite3.connect(server.db) as conn:
         assert conn.execute('SELECT id FROM leads ORDER BY id').fetchall() == [(1,), (2,)]
         assert conn.execute("SELECT lead_id FROM outbox WHERE status='pending' ORDER BY lead_id").fetchall() == [(1,), (2,)]
@@ -138,3 +145,18 @@ def test_backup_directory_sync_failure_is_reported_even_if_link_exists(tmp_path,
     assert len(snapshots) == 1  # Published atomically but not certified durable.
     with sqlite3.connect(snapshots[0]) as c:
         assert c.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+
+
+def test_restore_negative_watermark_does_not_mutate_any_database(tmp_path):
+    source = tmp_path / 'source.db'
+    dest = tmp_path / 'production.db'
+    _seed(source)
+    _seed(dest)
+    before = dest.read_bytes()
+    result = subprocess.run([
+        sys.executable, str(ROOT / 'ops/restore.py'), str(source),
+        '--db', str(dest), '--log', str(tmp_path / 'missing.log'),
+        '--min-seq', '-1', '--port', '0'
+    ], capture_output=True, text=True, timeout=15)
+    assert result.returncode == 1 and 'negative' in result.stderr
+    assert dest.read_bytes() == before
