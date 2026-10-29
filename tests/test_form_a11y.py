@@ -13,8 +13,9 @@ def test_invalid_contact_has_programmatic_error_description(page_factory):
         assert error_id in (field.get_attribute("aria-describedby") or "").split()
         assert pg.locator("#" + error_id).inner_text().strip()
         assert pg.locator("#" + error_id).is_visible()
-    assert pg.evaluate("document.activeElement.id") == "hours" or pg.evaluate("document.activeElement.id") == "contact"
+    assert pg.evaluate("document.activeElement.closest(\'.is-err\') !== null")
 
+    pg.fill("#subject", "Екскаватор, зміна")
     pg.fill("#contact", "097 863 77 77")
     pg.fill("#hours", "8")
     pg.click("#send")
