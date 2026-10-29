@@ -17,7 +17,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 from visual_contract import (
-    SCHEMA_VERSION, VIEWPORTS, audit_layout, capture_record, verify_capture_manifest,
+    SCHEMA_VERSION, THEMES, VIEWPORTS, audit_layout, capture_record, verify_capture_manifest,
 )
 
 BASE = sys.argv[1].rstrip("/") if len(sys.argv) > 1 else "http://127.0.0.1:4180"
@@ -40,6 +40,7 @@ PROBE = """() => {
     return onscreen && img.complete && !img.naturalWidth;
   }).map(img => img.getAttribute('src') || '[без src]');
   return {
+    theme: document.documentElement.dataset.theme || null,
     quality: document.documentElement.dataset.quality || null,
     visible_h1: displayed(document.querySelector('h1')),
     visible_cta: displayed(document.querySelector('#hero a[href="#zapyt"]')),
@@ -60,7 +61,7 @@ PROBE = """() => {
 }"""
 
 
-def capture_viewport(browser, spec: tuple) -> tuple[dict, list[dict], list[str]]:
+def capture_viewport(browser, spec: tuple, theme: str) -> tuple[dict, list[dict], list[str]]:
     key, width, height, mobile, scenes = spec
     context = browser.new_context(
         viewport={"width": width, "height": height},
@@ -73,6 +74,9 @@ def capture_viewport(browser, spec: tuple) -> tuple[dict, list[dict], list[str]]
     )
     records = []
     violations = []
+    if theme == "precision":
+        # Ініціалізація до першого inline script/CSS: перевіряємо справжній restore.
+        context.add_init_script("""try { localStorage.setItem('pbt-theme', 'precision'); } catch (_) {}""")
     page = context.new_page()
     errors: list[str] = []
     page.on("pageerror", lambda err: errors.append(str(err)[:350]))
@@ -82,9 +86,11 @@ def capture_viewport(browser, spec: tuple) -> tuple[dict, list[dict], list[str]]
         page.wait_for_timeout(180)
         probe = page.evaluate(PROBE)
         probe["page_errors"] = list(errors)
-        violations.extend(f"{key}: {msg}" for msg in audit_layout(probe))
+        if probe["theme"] != theme:
+            violations.append(f"{theme}/{key}: очікували тему {theme}, отримали {probe['theme']}")
+        violations.extend(f"{theme}/{key}: {msg}" for msg in audit_layout(probe))
         for section in scenes:
-            filename = f"{key}--{section}.png"
+            filename = f"{theme}--{key}--{section}.png"
             try:
                 page.evaluate("""id => {
                   const el = document.getElementById(id);
@@ -96,13 +102,13 @@ def capture_viewport(browser, spec: tuple) -> tuple[dict, list[dict], list[str]]
                     path=str(OUT / filename), animations="disabled",
                     caret="hide", scale="css", timeout=30000,
                 )
-                records.append(capture_record(content, filename, key, section, width, height))
+                records.append(capture_record(content, filename, key, section, width, height, theme))
             except Exception as err:
-                violations.append(f"{key}/{section}: не створено PNG: {str(err)[:250]}")
+                violations.append(f"{theme}/{key}/{section}: не створено PNG: {str(err)[:250]}")
         if errors:
-            violations.extend(f"{key}: JavaScript: {e}" for e in errors)
+            violations.extend(f"{theme}/{key}: JavaScript: {e}" for e in errors)
         return {
-            "viewport": key, "width": width, "height": height,
+            "viewport": key, "theme": theme, "width": width, "height": height,
             "mobile": mobile, "profile": "reduced-motion / poster-only",
             "probe": probe,
         }, records, violations
@@ -128,14 +134,15 @@ def run() -> int:
             browser = playwright.chromium.launch()
             try:
                 report["browser"] = {"engine": "chromium", "version": browser.version}
-                for spec in VIEWPORTS:
-                    try:
-                        profile, records, violations = capture_viewport(browser, spec)
-                        report["viewports"].append(profile)
-                        report["captures"].extend(records)
-                        report["failures"].extend(violations)
-                    except Exception as exc:
-                        report["failures"].append(f"{spec[0]}: {type(exc).__name__}: {str(exc)[:350]}")
+                for theme in THEMES:
+                    for spec in VIEWPORTS:
+                        try:
+                            profile, records, violations = capture_viewport(browser, spec, theme)
+                            report["viewports"].append(profile)
+                            report["captures"].extend(records)
+                            report["failures"].extend(violations)
+                        except Exception as exc:
+                            report["failures"].append(f"{theme}/{spec[0]}: {type(exc).__name__}: {str(exc)[:350]}")
             finally:
                 browser.close()
     except Exception as exc:
