@@ -288,18 +288,11 @@
   }
 
   /* ───── КАЛЬКУЛЯТОР ЗМІНИ ───── */
-  /* Трал підбираємо лише за фактичною МАСОЮ, не за вантажопідйомністю.
-     Без маси або за перевищення 60 т вартість подачі НЕ вигадуємо. */
-  const weightOf = u => {
-    const spec = (u.specs || []).find(s => /^(?:Маса|Вага)(?:\s|$)/i.test(s.k));
-    const m = spec && String(spec.v).match(/^\s*(\d+(?:[.,]\d+)?)\s*т(?:\s|$)/i);
-    const w = m ? Number(m[1].replace(',', '.')) : null;
-    return w !== null && Number.isFinite(w) && w > 0 ? w : null;
-  };
-  const trailerFor = u => {
-    const w = weightOf(u);
-    return w === null ? null : (D.trailers.find(t => w <= t.maxT) || null);
-  };
+  // Єдина чиста модель: UI читає результат, але не обчислює тариф.
+  const quoteModel = window.PBTQuote;
+  if (!quoteModel || typeof quoteModel.quote !== 'function')
+    throw new Error('Відсутнє ядро кошторису PBTQuote');
+
   let totalShown = 0, totalAnim = 0;
   function tweenTotal(el, to) {
     const from = totalShown, t0 = performance.now(), id = ++totalAnim;
@@ -318,10 +311,23 @@
     function calc() {
       const u = priced.find(x => x.id === sel.value) || priced[0];
       const hours = clamp(parseInt(hrN.value, 10) || 0, 1, 5000), kmv = clamp(parseInt(kmN.value, 10) || 0, 0, 3000);
+      const estimate = quoteModel.quote(u, D.trailers, hours, kmv);
+      if (!estimate) {
+        // Невалідна модель скасовує tween і стирає ПОПЕРЕДНЮ суму.
+        // Інакше стара цифра лишалась видимою при коректному fail-closed.
+        totalAnim += 1;
+        totalShown = 0;
+        $('#cTotal').textContent = '—';
+        $('#cLines').textContent = 'Розрахунок тимчасово недоступний. Уточніть вартість подачі.';
+        $('#cOut').dataset.total = '';
+        $('#cOut').dataset.estimate = 'invalid';
+        $('#cOrder').disabled = true;
+        return;
+      }
+      $('#cOrder').disabled = false;
       const crane = u.cat === 'crane', needsTrailer = !crane && kmv > 0;
-      const tr = needsTrailer ? trailerFor(u) : null;
-      const transportKnown = !crane && (!needsTrailer || tr !== null);  // автокран їде сам; його подача окремо уточнюється
-      const rent = hours * u.price, deliv = tr ? kmv * tr.rate : 0, total = rent + deliv;
+      const tr = estimate.trailer, transportKnown = estimate.status === 'complete';
+      const rent = estimate.rental, deliv = estimate.delivery, total = estimate.displayed;
       tweenTotal($('#cTotal'), total);
       const deliveryLine = crane
         ? '<div><span>Подача автокрана</span><b>уточнюється</b></div>'
@@ -341,10 +347,7 @@
     fill(hr); fill(km); calc();
     window.PBTcalc = (id, hours, kmv) => {
       const u = priced.find(x => x.id === id);
-      if (!u || !Number.isInteger(hours) || hours < 1 || hours > 5000 || !Number.isInteger(kmv) || kmv < 0 || kmv > 3000) return null;
-      if (u.cat === 'crane' || kmv === 0) return hours * u.price;
-      const tr = trailerFor(u);
-      return tr ? hours * u.price + kmv * tr.rate : null;
+      return quoteModel.legacyTotal(u, D.trailers, hours, kmv);
     };
   }
 
