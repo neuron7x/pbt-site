@@ -932,26 +932,52 @@ class Handler(SimpleHTTPRequestHandler):
             replay = self.idem_replay(idem, ph)
             if replay:
                 return replay()
-        # квота прийнятих заявок — ПІСЛЯ перевірки повтору: повтор уже прийнятої заявки не впирається в ліміт і не витрачає його.
-        # OPS-4: тут лише перевірка; списання — після коміту (невдалий запис квоту не з'їдає)
+        # Fast-path: rejected new leads do not reach SQLite. The check is
+        # repeated with the SQLite storage lock before committing a new lead.
+        # A previously committed idempotent replay was already handled above.
         if not rate_ok(ip, 'lead', 'lead_day', commit=False):
             return self.rate_limited(ip)
         ip_hash = hmac.new(IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()[:16]
         chans = channels()
+        quota_raced = False
+        existing = None
+        lead_id = None
         try:
             with _db_lock:
                 c = db()
                 try:
-                    c.execute('BEGIN IMMEDIATE')          # заявка й завдання доставки — одна транзакція
-                    cur = c.execute('INSERT INTO leads(created,type,payload,ip_hash,ua,idem_key,payload_hash) VALUES(?,?,?,?,?,?,?)',
-                                    (datetime.now(timezone.utc).isoformat(), data['type'], json.dumps(data, ensure_ascii=False),
-                                     ip_hash, (self.headers.get('User-Agent') or '')[:200], idem, ph))
-                    lead_id = cur.lastrowid
-                    c.executemany('INSERT INTO outbox(lead_id, channel) VALUES(?, ?)', [(lead_id, ch) for ch in chans])
-                    c.commit()
+                    c.execute('BEGIN IMMEDIATE')
+                    # A matching request may have committed since idem_replay().
+                    # Recheck inside the same lock, before enforcing the quota.
+                    if idem:
+                        existing = c.execute(
+                            'SELECT id, payload_hash FROM leads WHERE idem_key=?',
+                            (idem,)).fetchone()
+                    if existing is None:
+                        # Check + SQLite commit + quota charge are serialized.
+                        # Previously these were separate critical sections:
+                        # simultaneous new keys could all pass a quota of one.
+                        if not rate_ok(ip, 'lead', 'lead_day', commit=False):
+                            quota_raced = True
+                        else:
+                            cur = c.execute(
+                                'INSERT INTO leads(created,type,payload,ip_hash,ua,idem_key,payload_hash) '
+                                'VALUES(?,?,?,?,?,?,?)',
+                                (datetime.now(timezone.utc).isoformat(), data['type'],
+                                 json.dumps(data, ensure_ascii=False), ip_hash,
+                                 (self.headers.get('User-Agent') or '')[:200], idem, ph))
+                            lead_id = cur.lastrowid
+                            c.executemany('INSERT INTO outbox(lead_id, channel) VALUES(?, ?)',
+                                          [(lead_id, ch) for ch in chans])
+                            c.commit()
+                            # Charge only after durability, before another
+                            # request can check the same limit under _db_lock.
+                            rate_commit(ip, 'lead', 'lead_day')
                 finally:
                     c.close()
-        except sqlite3.IntegrityError:            # той самий ключ записав інший процес між перевіркою й вставкою
+        except sqlite3.IntegrityError:
+            # Shared SQLite file across app processes: preserve existing
+            # database-enforced key uniqueness and replay behavior.
             replay = self.idem_replay(idem, ph) if idem else None
             if replay:
                 return replay()
@@ -960,7 +986,13 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:  # noqa: BLE001
             log.error('lead storage failed ip=%s err=%s', ip, type(e).__name__)
             return self.send_json(500, {'ok': False, 'error': 'storage'})
-        rate_commit(ip, 'lead', 'lead_day')
+        if existing is not None:
+            if existing[1] != ph:
+                log.warning('lead idempotency conflict id=%s', existing[0])
+                return self.send_json(409, {'ok': False, 'error': 'idempotency_conflict'})
+            return self.send_json(201, {'ok': True, 'ref': f'PBT-{existing[0]:06d}', 'replayed': True})
+        if quota_raced:
+            return self.rate_limited(ip)
         _wake.set()
         log.info('lead stored id=%s type=%s outbox=%s', lead_id, data['type'], ','.join(chans) or 'local')
         return self.send_json(201, {'ok': True, 'ref': f'PBT-{lead_id:06d}'})

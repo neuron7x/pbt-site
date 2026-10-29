@@ -144,6 +144,17 @@ def test_concurrent_duplicates_are_one_lead(srv):
     assert s.rows('SELECT count(*) FROM leads') == [(1,)]
 
 
+def test_concurrent_duplicates_replay_at_strict_quota(srv):
+    # An in-flight identical key must remain a 201 replay, not become a 429
+    # after another request atomically reserves the only available lead slot.
+    s = srv(RATE_LEAD_10MIN='1', RATE_LEAD_DAY='1')
+    with ThreadPoolExecutor(16) as ex:
+        responses = list(ex.map(lambda _: s.post(LEAD, 'k-concurrent-quota-01'), range(16)))
+    assert all(response[0] == 201 for response in responses), responses
+    assert len({response[1]['ref'] for response in responses}) == 1
+    assert s.rows('SELECT count(*) FROM leads') == [(1,)]
+
+
 def test_key_survives_restart(srv):
     s = srv(); ref = s.post(LEAD, 'k-restart-0001')[1]['ref']; s.kill()
     s2 = srv()
