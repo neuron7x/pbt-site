@@ -202,3 +202,39 @@ def test_invalid_operational_timeout_and_retry_configuration_fails_closed(tmp_pa
                             timeout=4, check=False)
     assert result.returncode != 0, (key, value)
     assert key.encode() in result.stderr, (key, value, result.stderr[-600:])
+
+
+def test_sigkill_parent_kills_inflight_delivery_child(srv):
+    """A killed server must not leave a live orphan sender holding PII/HMAC."""
+    if sys.platform != 'linux':
+        pytest.skip('PR_SET_PDEATHSIG requires Linux')
+    from tools.runtime_soak import _descendants
+
+    receiver, thread, fast, seen, url = trickle_receiver()
+    try:
+        site = srv(LEAD_WEBHOOK_URL=url, LEAD_WEBHOOK_SECRET='sec',
+                   DELIVERY_TIMEOUT='3', DELIVERY_POLL_S='.05')
+        assert site.post(LEAD, 'k-pdeath-000001')[0] == 201
+        child_pid = wait_for(
+            lambda: next(iter(_descendants(site.p.pid)), None), timeout=2)
+        assert child_pid is not None, 'an active delivery child was never observed'
+
+        def still_running(pid):
+            try:
+                status = Path(f'/proc/{pid}/status').read_text()
+            except FileNotFoundError:
+                return False
+            state = next((row.split()[1] for row in status.splitlines()
+                          if row.startswith('State:')), '?')
+            return state != 'Z'
+
+        assert still_running(child_pid), 'sender exited before crash injection'
+        site.kill(hard=True)
+        stopped = wait_for(lambda: not still_running(child_pid) or None, timeout=4)
+        assert stopped, 'PR_SET_PDEATHSIG failed to terminate orphan delivery'
+        assert site.rows('SELECT count(*) FROM leads') == [(1,)]
+        assert site.rows("SELECT count(*) FROM outbox WHERE status='pending'") == [(1,)]
+    finally:
+        receiver.shutdown()
+        receiver.server_close()
+        thread.join(timeout=3)
