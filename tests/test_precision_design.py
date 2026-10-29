@@ -94,4 +94,11 @@ def test_sky_hero_logo_preserves_original_desktop_footprint(page_factory):
     logo = page.locator(".logo-hero")
     assert 500 <= logo.bounding_box()["width"] <= 550
     page.locator('[data-theme-choice="precision"]').click()
-    assert 220 <= logo.bounding_box()["width"] <= 265
+    diagnostic = page.evaluate("""() => ({
+      theme: document.documentElement.dataset.theme,
+      token: getComputedStyle(document.documentElement).getPropertyValue('--t-logo-width').trim(),
+      computed: getComputedStyle(document.querySelector('.logo-hero')).width,
+      box: document.querySelector('.logo-hero').getBoundingClientRect().width
+    })""")
+    assert diagnostic["theme"] == "precision", diagnostic
+    assert 220 <= diagnostic["box"] <= 265, diagnostic

@@ -40,3 +40,22 @@ def test_save_data_does_not_fetch_autoplay_videos(browser, server):
         assert pg.locator("#park .unit").count() == 32
     finally:
         ctx.close()
+
+
+def test_two_logical_cores_do_not_override_user_motion_preference(browser, server):
+    """Наявність двох CPU у CI не дорівнює явному Save-Data."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    try:
+        page = ctx.new_page()
+        page.add_init_script("""Object.defineProperty(navigator, 'hardwareConcurrency', {
+          configurable: true, value: 2
+        });""")
+        page.goto(server["base"] + "/", wait_until="networkidle")
+        assert page.evaluate("document.documentElement.dataset.quality") == "reduced"
+        page.wait_for_function("""() => {
+          const v = document.getElementById('heroVideo');
+          return !!v.currentSrc && v.readyState >= 1;
+        }""", timeout=15000)
+        assert page.evaluate("document.getElementById('heroVideo').currentSrc.includes('hero-wide')")
+    finally:
+        ctx.close()

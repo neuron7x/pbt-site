@@ -43,9 +43,18 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends ffmpeg
           python -m playwright install --with-deps chromium webkit
+      - name: Швидкий контрактний smoke до дорогого повного gate
+        run: |
+          python -m pytest -q -p no:cacheprovider \
+            tests/test_frontend_bootstrap.py \
+            tests/test_menu_accessibility.py \
+            tests/test_precision_design.py \
+            tests/test_theme_tokens.py \
+            tests/test_bundle_contract.py
       - name: Повний незмінений релізний гейт
         run: make gate
       - name: Зафіксувати реальні знімки desktop / mobile
+        if: always()
         run: |
           export HOST=127.0.0.1 PORT=4180 LEAD_DB="$RUNNER_TEMP/pbt-visual-leads.db"
           python server/app.py > "$RUNNER_TEMP/pbt-visual-server.log" 2>&1 &
