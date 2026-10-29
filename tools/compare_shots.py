@@ -14,7 +14,10 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageEnhance, ImageStat
 
-from visual_contract import verify_capture_manifest
+if __package__:
+    from .visual_contract import verify_capture_manifest
+else:
+    from visual_contract import verify_capture_manifest
 
 PREVIEWS = {
     ("desktop-1440", "top"),
