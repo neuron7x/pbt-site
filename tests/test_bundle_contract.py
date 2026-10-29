@@ -39,7 +39,7 @@ def test_inline_css_fails_on_unapproved_extra_stylesheet():
         inline_css(doc, (("css/site.css", "body{}"),))
 
 
-def test_actual_offline_input_includes_precision_layer_once():
+def test_actual_offline_input_embeds_single_canonical_dual_theme_stylesheet():
     source = (WEB / "index.html").read_text(encoding="utf-8")
     styles = tuple(
         (path, (WEB / path).read_text(encoding="utf-8"))
@@ -51,7 +51,7 @@ def test_actual_offline_input_includes_precision_layer_once():
     assert ':root[data-theme="sky"]' in html
     assert "css/site.css" not in html
     assert html.count("<style>") == 2
-    assert html.index(styles[0][1][:80]) < html.index(styles[1][1][:80]) < html.index(styles[2][1][:80])
+    assert html.index(styles[0][1][:80]) < html.index(styles[1][1][:80])
 
 
 def test_inline_builder_uses_shared_contract_for_both_outputs():
