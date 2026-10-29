@@ -17,7 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 DATA = ROOT / 'data'
 CONFIG = ROOT / 'config' / 'business.json'
-DATA.mkdir(exist_ok=True)
+os.umask(0o077)  # PII, logs and SQLite sidecars must not inherit permissive host modes.
+DATA.mkdir(mode=0o700, exist_ok=True)
+DATA.chmod(0o700)
 
 
 def load_env():
@@ -42,6 +44,7 @@ class _OneLineFormatter(logging.Formatter):
 
 
 _log_h = logging.FileHandler(DATA / 'server.log')
+os.fchmod(_log_h.stream.fileno(), 0o600)
 _log_h.setFormatter(_OneLineFormatter('%(asctime)s %(levelname)s %(message)s'))
 logging.basicConfig(level=logging.INFO, handlers=[_log_h])
 log = logging.getLogger('pbt')
@@ -66,6 +69,10 @@ METHODS = {'phone', 'telegram', 'viber', 'whatsapp'}
 
 # ─── сховище ─────────────────────────────────────────────
 DB = Path(ENV('LEAD_DB') or DATA / 'leads.db')
+for _suffix in ('', '-wal', '-shm', '-journal'):
+    _private_db_file = Path(f'{DB}{_suffix}')
+    if _private_db_file.is_file():
+        _private_db_file.chmod(0o600)
 _db_lock = threading.Lock()
 
 
