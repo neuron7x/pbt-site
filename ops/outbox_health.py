@@ -32,9 +32,12 @@ def snapshot(path, now):
                WHERE o.status='pending'""", (now,)).fetchone()
         failed = db.execute("SELECT count(*) FROM outbox WHERE status='failed'").fetchone()[0]
         delivered = db.execute("SELECT count(*) FROM outbox WHERE status='delivered'").fetchone()[0]
+        invalid_status = db.execute("SELECT count(*) FROM outbox WHERE status NOT IN ('pending','failed','delivered')").fetchone()[0]
+        orphan = db.execute("SELECT count(*) FROM outbox o LEFT JOIN leads l ON l.id=o.lead_id WHERE l.id IS NULL").fetchone()[0]
         db.execute('ROLLBACK')
         age = max(0.0, now - datetime.fromisoformat(oldest).timestamp()) if oldest else None
         return {'pending': pending, 'due': due, 'failed': failed, 'delivered': delivered,
+                'unknown_status_rows': invalid_status, 'orphan_outbox_rows': orphan,
                 'oldest_pending_age_s': round(age, 3) if age is not None else None}
     finally:
         db.close()
@@ -57,6 +60,9 @@ def main(argv=None):
         # Do not include paths, payloads, tokens, SQL, contact data or exception messages.
         print(json.dumps({'ok': False, 'status': 'unknown', 'reason': 'storage_unverifiable',
                           'error_type': type(exc).__name__}))
+        return 2
+    if report['unknown_status_rows'] or report['orphan_outbox_rows']:
+        print(json.dumps({'ok': False, 'status': 'unknown', 'reason': 'outbox_integrity', **report}, sort_keys=True))
         return 2
     stale = report['oldest_pending_age_s'] is not None and report['oldest_pending_age_s'] > a.max_pending_age_s
     overfailed = report['failed'] > a.max_failed

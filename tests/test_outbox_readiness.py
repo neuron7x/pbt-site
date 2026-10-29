@@ -75,3 +75,16 @@ def test_non_sqlite_database_is_unknown_not_healthy(tmp_path):
     code, report = probe(db)
     assert code == 2 and report['status'] == 'unknown'
     assert report['reason'] == 'storage_unverifiable'
+
+
+def test_orphan_or_unknown_outbox_status_is_unknown_not_false_healthy(srv):
+    server = srv(DELIVERY_WORKER='0', LEAD_WEBHOOK_URL='http://127.0.0.1:9/hook', LEAD_WEBHOOK_SECRET='sec')
+    assert server.post(LEAD, 'k-integrity-00001')[0] == 201
+    with sqlite3.connect(server.db) as db:
+        db.execute("UPDATE outbox SET status='unrecognized' WHERE lead_id=1")
+    code, report = probe(server.db)
+    assert code == 2 and report['status'] == 'unknown' and report['unknown_status_rows'] == 1
+    with sqlite3.connect(server.db) as db:
+        db.execute("UPDATE outbox SET status='pending', lead_id=99999 WHERE id=1")
+    code, report = probe(server.db)
+    assert code == 2 and report['status'] == 'unknown' and report['orphan_outbox_rows'] == 1
