@@ -323,12 +323,14 @@ def send(channel, lead_id, data):
         if channel == 'telegram':
             text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
             body = urllib.parse.urlencode({'chat_id': ENV('TELEGRAM_CHAT_ID'), 'text': text[:4000]}).encode()
-            urllib.request.urlopen(f"{TELEGRAM_API}/bot{ENV('TELEGRAM_BOT_TOKEN')}/sendMessage", body, timeout=DELIVERY_TIMEOUT).read()
+            with urllib.request.urlopen(f"{TELEGRAM_API}/bot{ENV('TELEGRAM_BOT_TOKEN')}/sendMessage", body, timeout=DELIVERY_TIMEOUT):
+                pass  # HTTP status, not a potentially unbounded response body, defines delivery success.
         elif channel == 'webhook':
             raw = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()
             sig = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), raw, hashlib.sha256).hexdigest()
             req = urllib.request.Request(ENV('LEAD_WEBHOOK_URL'), raw, {'Content-Type': 'application/json', 'X-PBT-Signature': sig})
-            urllib.request.urlopen(req, timeout=DELIVERY_TIMEOUT).read()
+            with urllib.request.urlopen(req, timeout=DELIVERY_TIMEOUT):
+                pass  # Never block a delivery worker consuming a slow-trickled success body.
         else:
             raise PermanentDeliveryError(f'unknown channel {channel}')
     except urllib.error.HTTPError as e:

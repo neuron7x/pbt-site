@@ -178,6 +178,50 @@ def test_response_does_not_wait_for_hanging_webhook(srv):
     assert s.rows('SELECT count(*) FROM outbox') == [(1,)]
 
 
+def test_successful_webhook_with_never_finished_body_does_not_retry_or_block(srv):
+    """A 2xx acknowledgement is complete at headers; a trickled body must not cause duplicates."""
+    import hashlib
+    import hmac
+    seen = []
+
+    class SlowBody(BaseHTTPRequestHandler):
+        def do_POST(self):
+            raw = self.rfile.read(int(self.headers['Content-Length']))
+            seen.append((raw, {k.lower(): v for k, v in self.headers.items()}))
+            self.send_response(200)
+            self.send_header('Content-Length', '65536')
+            self.end_headers()
+            self.wfile.write(b'!')  # Old urlopen(...).read() waited for the missing 65535 bytes.
+            self.wfile.flush()
+            time.sleep(4)
+
+        def log_message(self, *args):
+            pass
+
+    receiver = ThreadingHTTPServer(('127.0.0.1', 0), SlowBody)
+    receiver.daemon_threads = True
+    worker = threading.Thread(target=receiver.serve_forever, daemon=True)
+    worker.start()
+    try:
+        url = f'http://127.0.0.1:{receiver.server_address[1]}/hook'
+        s = srv(LEAD_WEBHOOK_URL=url, LEAD_WEBHOOK_SECRET='secret',
+                DELIVERY_TIMEOUT='1', DELIVERY_BACKOFF_S='10')
+        status, result, _ = s.post(LEAD, 'k-trickle-ack-00001')
+        assert status == 201 and result['ok']
+        assert wait_for(lambda: s.rows("SELECT status, attempts FROM outbox") == [('delivered', 1)] or None,
+                        timeout=2.5), 'success body was consumed or retried'
+        assert len(seen) == 1
+        raw, headers = seen[0]
+        assert json.loads(raw)['id'] == 1
+        assert hmac.compare_digest(headers['x-pbt-signature'],
+                                   hmac.new(b'secret', raw, hashlib.sha256).hexdigest())
+        assert s.rows('SELECT count(*) FROM leads') == [(1,)]
+    finally:
+        receiver.shutdown()
+        receiver.server_close()
+        worker.join(timeout=3)
+
+
 def test_transient_failures_retry_until_delivered(srv):
     st = Stub([500, 429])
     s = srv(LEAD_WEBHOOK_URL=st.url + '/hook', LEAD_WEBHOOK_SECRET='sec')
