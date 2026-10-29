@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import hashlib
+import struct
+import zlib
 from io import BytesIO
 from pathlib import Path
 
@@ -29,17 +31,50 @@ VIEWPORTS = (
 
 
 def png_dimensions(content: bytes) -> tuple[int, int]:
-    """Pillow перевіряє справжній PNG, зокрема CRC, а не тільки магічні байти."""
+    """Валідує CRC усіх PNG-чанків і декодування, без неперевіреного хвоста.
+
+    Pillow.verify() не гарантує IEND CRC, тому звіряємо всі чанки вручну.
+    """
+    signature = b"\\x89PNG\\r\\n\\x1a\\n"
+    if not content.startswith(signature):
+        raise ValueError("Невалідний PNG signature")
+    pos, ihdr, has_data, ended = 8, False, False, False
+    while pos < len(content):
+        if len(content) - pos < 12:
+            raise ValueError("Обрізаний заголовок PNG chunk")
+        length = struct.unpack_from(">I", content, pos)[0]
+        end = pos + 12 + length
+        if end > len(content):
+            raise ValueError("Обрізаний PNG chunk")
+        tag = content[pos + 4:pos + 8]
+        if not all(65 <= c <= 90 or 97 <= c <= 122 for c in tag):
+            raise ValueError("Невалідний тип PNG chunk")
+        expected = struct.unpack_from(">I", content, end - 4)[0]
+        observed = zlib.crc32(content[pos + 4:end - 4]) & 0xFFFFFFFF
+        if observed != expected:
+            raise ValueError("PNG CRC32 mismatch: " + tag.decode("ascii"))
+        if pos == 8 and (tag != b"IHDR" or length != 13):
+            raise ValueError("Перший PNG chunk повинен бути IHDR")
+        ihdr |= tag == b"IHDR"
+        has_data |= tag == b"IDAT"
+        pos = end
+        if tag == b"IEND":
+            if length != 0 or pos != len(content):
+                raise ValueError("Некоректний IEND або зайві байти після PNG")
+            ended = True
+            break
+    if not (ihdr and has_data and ended):
+        raise ValueError("PNG без обов'язкових IHDR/IDAT/IEND")
     try:
         with Image.open(BytesIO(content)) as img:
             if img.format != "PNG":
                 raise ValueError("Очікується PNG")
             size = img.size
-            img.verify()
-    except (UnidentifiedImageError, OSError, SyntaxError) as exc:
+            if not (0 < size[0] <= 20000 and 0 < size[1] <= 20000):
+                raise ValueError("Недопустимий розмір PNG")
+            img.load()
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as exc:
         raise ValueError(f"Пошкоджений PNG: {exc}") from exc
-    if not (0 < size[0] <= 20000 and 0 < size[1] <= 20000):
-        raise ValueError("Недопустимий розмір PNG")
     return size
 
 def capture_record(content: bytes, name: str, viewport: str, section: str, width: int, height: int, theme: str = 'sky') -> dict:
