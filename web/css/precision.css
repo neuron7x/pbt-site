@@ -340,6 +340,13 @@ h3 { letter-spacing:-.035em }
 .foot h4 { color:#BAC7D1 }
 .foot__legal { color:#A6B4BF;border-color:rgba(255,255,255,.16) }
 
+/* Standalone 404 uses .sec--deep rather than the regular .on-deep section. */
+.sec--deep { background:#101820;color:#fff }
+.sec--deep .eyebrow,.sec--deep .lead { color:#C9D5DD }
+.sec--deep h2 span { color:#C6D2D9 }
+.sec--deep .btn--ghost { background:transparent;color:#fff;border-color:rgba(255,255,255,.72) }
+.sec--deep .btn--ghost:hover { background:rgba(255,255,255,.12) }
+
 /* 10 — Responsive constraints; progressive enhancement remains native */
 @media (max-width:1023px) {
   .hero__center { width:calc(100% - 2 * var(--gut));left:var(--gut);right:var(--gut) }
