@@ -106,7 +106,7 @@
   }
   burger.addEventListener('click', () => openMenu(true));
   menuClose.addEventListener('click', () => openMenu(false));
-  $('a', menu).forEach(a => a.addEventListener('click', () => {
+  $('a', menu).forEacha => a.addEventListener('click', () => {
     const hash = a.getAttribute('href');
     openMenu(false, false);
     if (hash && hash.startsWith('#') && hash.length > 1) {
