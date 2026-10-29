@@ -432,7 +432,22 @@
   const form = $('#lead'), done = $('#done'), fallback = $('#fallback'), msg = $('#formMsg');
   let idemKey = null, idemHash = '';
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''));
-  function setErr(name, text) { const f = form.querySelector(`[data-field="${name}"]`); if (!f) return; f.classList.toggle('is-err', !!text); const e = $('.err', f); if (e) e.textContent = text || ''; }
+  function setErr(name, text) {
+    const group = form.querySelector(`[data-field="${name}"]`);
+    if (!group) return;
+    const active = !!text, field = $('input, select, textarea', group), error = $('.err', group);
+    group.classList.toggle('is-err', active);
+    if (error) { error.id = `error-${name}`; error.textContent = text || ''; }
+    if (!field) return;
+    if (active) field.setAttribute('aria-invalid', 'true');
+    else field.removeAttribute('aria-invalid');
+    if (error) {
+      const ids = (field.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean).filter(id => id !== error.id);
+      if (active) ids.push(error.id);
+      if (ids.length) field.setAttribute('aria-describedby', ids.join(' '));
+      else field.removeAttribute('aria-describedby');
+    }
+  }
   function payload() {
     const fd = new FormData(form), g = k => (fd.get(k) || '').toString();
     return { type: g('type'), subject: g('subject').trim(), hours: g('hours').trim(), km: g('km').trim(), place: g('place').trim(), date: g('date').trim(),
@@ -471,10 +486,13 @@
       } else if (r.status === 422 && j.fields) {
         Object.entries(j.fields).forEach(([k, v]) => setErr(k, v));
         msg.textContent = 'Перевірте позначені поля.'; msg.classList.add('is-on');
+        const first = form.querySelector('.is-err input, .is-err select, .is-err textarea');
+        if (first) first.focus();
       } else if (r.status === 429) { msg.textContent = j.message || 'Забагато запитів. Спробуйте через 10 хвилин або зателефонуйте.'; msg.classList.add('is-on'); }
       else { msg.textContent = 'Сервер не прийняв заявку. Спробуйте ще раз або зателефонуйте — номери поруч.'; msg.classList.add('is-on'); }
     } catch (_) {
       form.hidden = true; fallback.classList.add('is-on'); $('#fbText').textContent = humanText(p);
+      fallback.focus();
     } finally { btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
   });
   $('#fbCopy').addEventListener('click', async () => {
