@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="uk">
+<html lang="uk" data-theme="sky">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -26,11 +26,12 @@ coarse=m('(pointer:coarse)')&&!m('(any-pointer:fine)'),
 p=(!coarse&&w>=1024&&w/h>=1.05)?'wide-fine':((coarse&&(w<760||h>w))||w<600)?'compact-touch':'medium-hybrid';
 d.classList.add('js');d.dataset.profile=p;
 d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.hardwareConcurrency||4)<=2||(navigator.connection&&navigator.connection.saveData))?'reduced':'full';
+var theme='sky';try{if(localStorage.getItem('pbt-theme')==='precision')theme='precision'}catch(_e){}
+d.dataset.theme=theme;var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='precision'?'#101820':'#0D6AE0';
 })(document.documentElement)
 </script>
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/site.css">
-<link rel="stylesheet" href="css/precision.css">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"LocalBusiness","name":"ТОВ «ПолтаваБудТехніка»","alternateName":"ПБТ","url":"https://pbt-spectehnika.com.ua","telephone":["+380978637777","+380958637777"],
 "address":{"@type":"PostalAddress","streetAddress":"вул. Довженка, 2А","addressLocality":"Полтава","postalCode":"36002","addressCountry":"UA"},
@@ -52,6 +53,10 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
   </nav>
   <a class="nav__phone" href="#zapyt" data-phone>097 863 77 77</a>
   <a class="btn btn--sm nav__cta" href="#zapyt" data-req="rent">Викликати техніку</a>
+  <div class="theme-switch" role="group" aria-label="Візуальна тема сайту">
+    <button class="theme-switch__button" type="button" data-theme-choice="sky" aria-label="Тема Небо і золото" aria-pressed="true">Небо</button>
+    <button class="theme-switch__button" type="button" data-theme-choice="precision" aria-label="Тема Industrial Precision" aria-pressed="false">Графіт</button>
+  </div>
   <button class="burger" type="button" aria-expanded="false" aria-controls="menu" aria-label="Меню"><i></i><i></i></button>
   <i class="nav__bar" aria-hidden="true"></i>
 </header>
@@ -89,7 +94,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
     <div class="hero__center" id="heroCenter">
       <p class="eyebrow">Полтава · 9 областей · 24/7</p>
       <div class="logo-hero" role="img" aria-label="ПБТ · ПолтаваБудТехніка"><img class="logo-hero__img" src="media/logo/pbt-logo.webp" width="960" height="352" alt="" fetchpriority="high" decoding="async"><video class="logo-hero__anim" id="logoAnim" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video></div>
-      <h1 id="heroTitle"><span class="line">Техніка, що працює там,</span> <span class="line" style="display:block;color:var(--gold-2)">де інші не доїдуть</span></h1>
+      <h1 id="heroTitle"><span class="line">Техніка, що працює там,</span> <span class="line" style="display:block">де інші не доїдуть</span></h1>
       <p class="hero__lead">Екскаватори-амфібії для водойм, автокрани до 120 т, трали до 60 т, бульдозери, дробарки. Пісок і щебінь із паспортом якості. З оператором і пальним.</p>
       <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Порахувати зміну</a></div>
       <ul class="hero__stats" aria-label="Коротко про парк">
@@ -207,7 +212,7 @@ d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.har
     </div>
     <div class="reel" id="reel"></div>
     <p class="eyebrow" style="margin-top:clamp(36px,5vw,56px)">Нам довіряють</p>
-    <div class="marquee" aria-label="Партнери"><ul id="partners"></ul></div>
+    <div class="marquee" role="group" aria-label="Партнери"><ul id="partners"></ul></div>
     <p class="proof__src">Логотипи партнерів — з публічного сайту компанії. Відео — власна зйомка ПБТ, TikTok @poltavabudtehnika.</p>
   </div>
 </section>
