@@ -42,20 +42,24 @@ def test_save_data_does_not_fetch_autoplay_videos(browser, server):
         ctx.close()
 
 
-def test_two_logical_cores_do_not_override_user_motion_preference(browser, server):
-    """Наявність двох CPU у CI не дорівнює явному Save-Data."""
+def test_two_logical_cores_use_posters_and_never_fetch_autoplay_media(browser, server):
+    """Low-core profile is a real production budget, not a CI inconvenience."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     try:
         page = ctx.new_page()
+        requests = []
+        page.on("request", lambda req: requests.append(req.url) if req.resource_type == "media" else None)
         page.add_init_script("""Object.defineProperty(navigator, 'hardwareConcurrency', {
           configurable: true, value: 2
         });""")
         page.goto(server["base"] + "/", wait_until="networkidle")
+        page.wait_for_timeout(1250)
         assert page.evaluate("document.documentElement.dataset.quality") == "reduced"
-        page.wait_for_function("""() => {
-          const v = document.getElementById('heroVideo');
-          return !!v.currentSrc && v.readyState >= 1;
-        }""", timeout=15000)
-        assert page.evaluate("document.getElementById('heroVideo').currentSrc.includes('hero-wide')")
+        assert page.evaluate("!document.getElementById('heroVideo').currentSrc")
+        assert page.evaluate("!document.getElementById('logoAnim').currentSrc")
+        assert page.evaluate("!document.getElementById('masshtab').classList.contains('is-pinned')")
+        assert not requests, requests
+        assert page.locator("#park .unit").count() == 32
+        assert page.locator("#cine .cine__ch").count() == 6
     finally:
         ctx.close()
