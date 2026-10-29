@@ -52,8 +52,14 @@ def test_png_sha_crc_and_complete_two_theme_matrix(tmp_path, monkeypatch):
     assert vc.verify_capture_manifest(malformed, tmp_path)
     duplicated = {"schema_version": vc.SCHEMA_VERSION, "captures": records + records[:1]}
     assert any("повторене" in err for err in vc.verify_capture_manifest(duplicated, tmp_path))
-    (tmp_path / "sky--small--top.png").write_bytes(raw + b"mutated")
+    another = BytesIO()
+    Image.new("RGB", (16, 8), (0, 0, 0)).save(another, format="PNG")
+    # Валідний PNG, але інші пікселі: саме хеш викриває підміну.
+    (tmp_path / "sky--small--top.png").write_bytes(another.getvalue())
     assert any("sha256" in err for err in vc.verify_capture_manifest(report, tmp_path))
+    # Коректний вміст + довільний хвіст: парсер відхиляє ще до перевірки SHA.
+    (tmp_path / "sky--small--top.png").write_bytes(raw + b"mutated")
+    assert any("Не PNG" in err for err in vc.verify_capture_manifest(report, tmp_path))
 
 
 def test_png_crc_is_actually_checked():
@@ -63,6 +69,10 @@ def test_png_crc_is_actually_checked():
         vc.png_dimensions(bytes(content))
     with pytest.raises(ValueError):
         vc.capture_record(b"<html>fake</html>", "sky--fake.png", "small", "top", 16, 8)
+    with pytest.raises(ValueError):
+        vc.png_dimensions(png()[:-12])  # truncated IEND
+    with pytest.raises(ValueError):
+        vc.png_dimensions(png() + b"hidden payload")  # trailing bytes
 
 
 def test_dimensions_must_match_css_viewport():
