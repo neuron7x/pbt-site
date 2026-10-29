@@ -27,3 +27,15 @@ measuring a production service. Absence of `--max-pending-age-s` is invalid.
 - No secrets, payloads or contact details may be emitted.
 
 This probe is neither ASVS certification nor NIST SSDF attestation.
+
+## Recovery point boundary
+
+A healthy SQLite online snapshot is not a zero-RPO durable replica. If storage
+fails after a backup, accepted leads committed after that snapshot are absent
+from it; an operator must reconcile this gap from independently retained logs
+or downstream records. Never claim lossless recovery from scheduled snapshots.
+
+Backup creation fails closed for missing source databases, invalid retention,
+corrupt snapshots and name collisions; it never silently replaces an earlier
+recovery point. A restore must use a verifiable upper ID watermark (logs and/or
+`--min-seq`) to avoid reusing an already issued CRM lead ID.

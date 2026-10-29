@@ -57,7 +57,7 @@ jobs:
           python -m pytest -q -p no:cacheprovider \
             tests/test_request_body_deadline.py tests/test_api.py \
             tests/test_leads.py tests/test_hardening.py \
-            tests/test_outbox_readiness.py tests/test_rate_resource_bound.py
+            tests/test_outbox_readiness.py tests/test_rate_resource_bound.py tests/test_backup_safety.py
       - name: Preserve adversarial HTTP JUnit without redundant browser installation
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
