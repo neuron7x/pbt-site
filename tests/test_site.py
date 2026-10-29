@@ -60,6 +60,14 @@ def test_calculator_enter_does_not_navigate_or_execute_csp_blocked_handler(page_
     before = pg.url
     pg.locator("#cHoursN").fill("12")
     pg.locator("#cHoursN").press("Enter")
+    # Real submit-event cancellation is the invariant: implicit Enter may
+    # not submit when multiple number inputs are present in the form.
+    prevented = pg.evaluate("""() => {
+      const event = new Event('submit', {bubbles: true, cancelable: true});
+      document.getElementById('calcForm').dispatchEvent(event);
+      return event.defaultPrevented;
+    }""")
+    assert prevented, "calculator submit listener must block navigation under hashed CSP"
     pg.wait_for_timeout(150)
     assert pg.url == before
     assert pg.locator("#cHoursN").input_value() == "12"
