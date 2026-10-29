@@ -126,6 +126,44 @@ def test_backlog_after_restart_drains_in_one_pass(srv):
     assert done and len(st.hits) == 5
 
 
+def test_outbox_51_rows_after_restart_drains_before_next_poll(srv):
+    """51 due rows must not incur an extra 30-second wait after the first 50."""
+    st = Stub()
+    try:
+        s = srv(LEAD_WEBHOOK_URL=st.url + '/hook', LEAD_WEBHOOK_SECRET='sec', DELIVERY_WORKER='0')
+        for i in range(51):
+            assert s.post(LEAD, f'k-over50-{i:05d}')[0] == 201
+        assert s.rows("SELECT count(*) FROM outbox WHERE status='pending'") == [(51,)]
+        s.kill()
+        restarted = srv(LEAD_WEBHOOK_URL=st.url + '/hook', LEAD_WEBHOOK_SECRET='sec', DELIVERY_POLL_S='30')
+        done = wait_for(lambda: restarted.rows("SELECT count(*) FROM outbox WHERE status='delivered'") == [(51,)],
+                        timeout=12)
+        assert done, 'worker waited for the 30s poll interval with a due backlog'
+        assert restarted.rows("SELECT count(*) FROM outbox WHERE status='pending'") == [(0,)]
+        assert len(st.hits) == 51
+        ids = [json.loads(body)['id'] for _, body, _ in st.hits]
+        assert sorted(ids) == list(range(1, 52))
+        for _, body, headers in st.hits:
+            signature = {k.lower(): v for k, v in headers.items()}['x-pbt-signature']
+            assert hmac.compare_digest(signature, hmac.new(b'sec', body, hashlib.sha256).hexdigest())
+    finally:
+        st.close()
+
+
+def test_rate_identity_cardinality_is_bounded_without_quota_eviction(srv):
+    """Many proxy identities cannot grow memory without bound or reset existing quotas."""
+    s = srv(TRUST_PROXY='1', RATE_IP_CAP='2', RATE_ANY_10MIN='10',
+            RATE_LEAD_10MIN='3', RATE_LEAD_DAY='3')
+    for i in range(2):
+        assert _lead(s, f'k-ipcap-{i:06d}', xff=f'203.0.113.{10 + i}')[0] == 201
+    for i in range(64):
+        code, data = _lead(s, f'k-flood-{i:06d}', xff=f'198.51.100.{i + 1}')
+        assert (code, data.get('error')) == (429, 'rate')
+    assert _lead(s, 'k-ipcap-000003', xff='203.0.113.10')[0] == 201
+    assert s.rows('SELECT count(*) FROM leads') == [(3,)]
+    assert s.rows('SELECT count(*) FROM outbox') == [(0,)]
+
+
 def test_server_5xx_is_transient(srv):
     """M23: будь-яка 5xx (тут 501, 503) — тимчасова: повтор до успіху."""
     st = Stub([501, 503])

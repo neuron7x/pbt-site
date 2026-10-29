@@ -119,6 +119,10 @@ for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
 
 # ─── rate limit на IP: усі запити (захист від перебору) і прийняті заявки ───
 _hits, _hits_lock = {}, threading.Lock()
+_active_ips = set()  # One identity per IP, independently of its three quota buckets.
+RATE_IP_CAP = int(ENV('RATE_IP_CAP') or 8192)
+if RATE_IP_CAP < 1:
+    raise ValueError('RATE_IP_CAP must be positive')
 LIMITS = {'any': (int(ENV('RATE_ANY_10MIN') or 60), 600), 'lead': (int(ENV('RATE_LEAD_10MIN') or 5), 600),
           'lead_day': (int(ENV('RATE_LEAD_DAY') or 30), 86400)}
 
@@ -133,17 +137,21 @@ def _prune(now):
     _last_prune[0] = now
     for key in [k for k, ts in _hits.items() if not ts or now - ts[-1] >= LIMITS[k[1]][1]]:
         del _hits[key]
+    _active_ips.intersection_update(ip for ip, _ in _hits)
 
 
 def rate_ok(ip, *buckets, commit=True):
     now = time.time()
     with _hits_lock:
         _prune(now)
+        if ip not in _active_ips and len(_active_ips) >= RATE_IP_CAP:
+            return False  # Fail closed: evicting an active identity would reset its quota.
         for b in buckets:
             lim, win = LIMITS[b]
             if len([t for t in _hits.get((ip, b), []) if now - t < win]) >= lim:
                 return False
         if commit:
+            _active_ips.add(ip)
             for b in buckets:
                 _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
         return True
@@ -153,6 +161,7 @@ def rate_commit(ip, *buckets):
     """OPS-4: списати квоту після успішного запису (без повторної перевірки — заявка вже прийнята)."""
     now = time.time()
     with _hits_lock:
+        _active_ips.add(ip)  # The 'any' bucket was committed for this accepted request.
         for b in buckets:
             _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
 
@@ -362,7 +371,9 @@ def deliver_due(now=None):
 def delivery_worker():
     while True:
         try:
-            deliver_due()
+            # A full batch may leave due rows; do not sleep for the entire poll interval.
+            while deliver_due() == 50:
+                pass
         except Exception as e:  # noqa: BLE001
             log.error('delivery worker error %s', type(e).__name__)
         _wake.wait(DELIVERY_POLL_S); _wake.clear()
