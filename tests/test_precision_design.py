@@ -87,3 +87,11 @@ def test_not_found_surface_respects_persisted_theme(page_factory):
     page.goto(page.url.split("#")[0].rstrip("/") + "/nema-takoi-storinky")
     assert page.evaluate("document.documentElement.dataset.theme") == "precision"
     assert page.evaluate("getComputedStyle(document.querySelector('main')).backgroundColor") == "rgb(16, 24, 32)"
+
+def test_sky_hero_logo_preserves_original_desktop_footprint(page_factory):
+    """Sky desktop must retain baseline Tektur-era logo scale; precision stays restrained."""
+    page = page_factory(1440, 900, reduced=True)
+    logo = page.locator(".logo-hero")
+    assert 500 <= logo.bounding_box()["width"] <= 550
+    page.locator('[data-theme-choice="precision"]').click()
+    assert 220 <= logo.bounding_box()["width"] <= 265
