@@ -118,14 +118,16 @@ def capture_viewport(browser, spec: tuple, theme: str) -> tuple[dict, list[dict]
                       b.right > 0 && b.left < innerWidth &&
                       b.bottom > 0 && b.top < innerHeight;
                   });
-                  await Promise.all(visible.map(img =>
-                    Promise.race([
+                  const results = await Promise.all(visible.map(async img => ({
+                    img,
+                    decoded: await Promise.race([
                       img.decode().then(() => true, () => false),
                       new Promise(resolve => setTimeout(() => resolve(false), 4000))
                     ])
-                  ));
-                  return visible.filter(img => !img.complete || !img.naturalWidth)
-                    .map(img => img.currentSrc || img.getAttribute('src') || '[без src]');
+                  })));
+                  return results.filter(({img, decoded}) =>
+                    !decoded || !img.complete || !img.naturalWidth)
+                    .map(({img}) => img.currentSrc || img.getAttribute('src') || '[без src]');
                 }""")
                 if invalid_images:
                     violations.append(
