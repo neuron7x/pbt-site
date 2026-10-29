@@ -30,7 +30,7 @@ def test_missing_mass_shows_rental_only_and_no_complete_estimate(page_factory):
     text = pg.locator("#cLines").inner_text().lower()
     assert "маса невідома" in text
     assert "оренда без подачі" in text
-    assert "2 800" in text.replace("\u00a0", " "), text
+    assert "".join(filter(str.isdigit, pg.inner_text("#cTotal"))) == "2800", text
     assert "ціну уточнити" in pg.get_attribute("#cOrder", "data-subject")
 
 
