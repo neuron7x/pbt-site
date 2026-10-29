@@ -13,15 +13,14 @@ WEB = ROOT / "web"
 def test_inline_css_preserves_stylesheet_order_and_removes_external_links():
     doc = '<head>' + ''.join(
         f'<link rel="stylesheet" href="{p}">'
-        for p in ("css/fonts.css", "css/site.css", "css/precision.css")
+        for p in ("css/fonts.css", "css/site.css")
     ) + "</head>"
     res = inline_css(doc, (
         ("css/fonts.css", "/* шрифти */"),
-        ("css/site.css", "/* база */"),
-        ("css/precision.css", "/* точність */"),
+        ("css/site.css", "/* обидві теми */"),
     ))
-    assert res.count("<style>") == 3
-    assert res.index("/* шрифти */") < res.index("/* база */") < res.index("/* точність */")
+    assert res.count("<style>") == 2
+    assert res.index("/* шрифти */") < res.index("/* обидві теми */")
     assert "rel=\"stylesheet\"" not in res
 
 
@@ -44,12 +43,14 @@ def test_actual_offline_input_includes_precision_layer_once():
     source = (WEB / "index.html").read_text(encoding="utf-8")
     styles = tuple(
         (path, (WEB / path).read_text(encoding="utf-8"))
-        for path in ("css/fonts.css", "css/site.css", "css/precision.css")
+        for path in ("css/fonts.css", "css/site.css")
     )
     html = inline_css(source, styles)
     assert "css/precision.css" not in html
+    assert ':root[data-theme="precision"]' in html
+    assert ':root[data-theme="sky"]' in html
     assert "css/site.css" not in html
-    assert html.count("<style>") == 3
+    assert html.count("<style>") == 2
     assert html.index(styles[0][1][:80]) < html.index(styles[1][1][:80]) < html.index(styles[2][1][:80])
 
 
