@@ -78,6 +78,8 @@
     });
     const meta = $('meta[name="theme-color"]');
     if (meta) meta.content = next === 'precision' ? '#101820' : '#0D6AE0';
+    const face = $('#themeFontPreload');
+    if (face) face.href = 'fonts/' + (next === 'precision' ? 'IBMPlexSans-600-cyrillic.woff2' : 'Tektur-var-cyrillic.woff2');
     if (persist) {
       try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* приватний режим / заблоковане сховище */ }
     }
