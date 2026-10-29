@@ -54,6 +54,18 @@ def test_calculator_matches_price_list(page_factory):
     assert pg.evaluate(f'window.PBTcalc("{heavy["id"]}", 1, 10)') == heavy['price'] + 10 * 100
 
 
+def test_calculator_enter_does_not_navigate_or_execute_csp_blocked_handler(page_factory):
+    """With hashed script CSP, Enter must never trigger a default GET form navigation."""
+    pg = page_factory(reduced=True)
+    before = pg.url
+    pg.locator("#cHoursN").fill("12")
+    pg.locator("#cHoursN").press("Enter")
+    pg.wait_for_timeout(150)
+    assert pg.url == before
+    assert pg.locator("#cHoursN").input_value() == "12"
+    assert not [e for e in pg.errors if "Refused to execute inline event handler" in e]
+
+
 @pytest.mark.parametrize('v', VECTORS, ids=lambda v: f"{v['field']}:{v['value']}")
 def test_contract_vectors_client(page_factory, v):
     """Клієнт і сервер валідують за одним корпусом (tests/contracts/lead_vectors.json)."""
@@ -227,13 +239,16 @@ def _lum(px):
     return .2126 * r + .7152 * g + .0722 * b
 
 
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
 @pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
-def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile):
-    """Підзаголовок героя (#EAF6FF, 15–18 px) лежить на монтажі. Було 2.2:1 на кадрі з білим MAN (4 з 10 кадрів < 4.5).
+def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile, theme):
+    """Підзаголовок героя на монтажі, обидві теми. Раніше Sky давала 2.2:1 на білому MAN.
     10 точок монтажу, текст сховано, 90-й перцентиль яскравості фону під ним → ≥ 4.5:1."""
     import io
     from PIL import Image
     pg = page_factory(w, h, mobile=mobile)
+    if theme == 'precision':
+        pg.locator('[data-theme-choice="precision"]').click()
     pg.wait_for_timeout(1500)                                         # слова заголовка й підзаголовок з'являються по черзі
     fg = _lum([float(x) for x in re.findall(r'[\d.]+', pg.evaluate("getComputedStyle(document.querySelector('.hero__lead')).color"))[:3]])
     pg.add_style_tag(content='.hero__lead{color:transparent!important;text-shadow:none!important}')

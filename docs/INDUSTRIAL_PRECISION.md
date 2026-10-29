@@ -1,7 +1,7 @@
 # Industrial Precision + Sky and Gold — canonical dual-theme system, issue #4 / draft PR #2
 
 **Baseline:** `main@7be8bba75ef612bfc424f31b894e354876d4525b` (2026-10-29).
-**Status (2026-10-29):** release gate **PASS on SHA `6c7eefe7985c39a7f5bdd7a1277a9817f52e36e0`** (two independent CI runs, each 255 tests). The follow-up test-coverage commit requires fresh CI; **CWV field proof and owner visual acceptance are still OPEN**.
+**Status (2026-10-29):** [CI run 40875628429](https://github.com/neuron7x/pbt-site/actions/runs/40875628429) **PASS** on SHA `df00ac3b4eba0f5c379ad18f8114b329b1d95297`: 287 pytest PASS, `GATE PASS`, extended axe WCAG 2.0/2.1/2.2 A/AA zero violations including dynamic states; mobile synthetic p75 Sky LCP 2208 ms/CLS 0.04488, Precision LCP 1336 ms/CLS 0.01063, both theme-switch deferred shifts 0. These are **not field results**, INP unmeasured. The subsequent CSP/keyboard/contrast/Node24 hardening commit requires fresh CI; **owner visual acceptance and field CWV remain OPEN**.
 
 ## Design hypothesis
 
