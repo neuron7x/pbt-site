@@ -105,7 +105,35 @@ def capture_viewport(browser, spec: tuple, theme: str) -> tuple[dict, list[dict]
                   if (!el) throw Error('Відсутня секція: ' + id);
                   el.scrollIntoView({block: 'start', behavior: 'instant'});
                 }""", section)
+                # Повний page.screenshot НЕ запускає lazy loading поза viewport.
+                # Для кожного кадру очікуємо саме ВИДИМІ img і не приймаємо
+                # порожню картку як візуальний доказ.
                 page.wait_for_timeout(140)
+                invalid_images = page.evaluate("""async () => {
+                  const visible = [...document.images].filter(img => {
+                    const b = img.getBoundingClientRect();
+                    const style = getComputedStyle(img);
+                    return b.width > 0 && b.height > 0 &&
+                      style.display !== 'none' && style.visibility !== 'hidden' &&
+                      b.right > 0 && b.left < innerWidth &&
+                      b.bottom > 0 && b.top < innerHeight;
+                  });
+                  await Promise.all(visible.map(img =>
+                    Promise.race([
+                      img.decode().then(() => true, () => false),
+                      new Promise(resolve => setTimeout(() => resolve(false), 4000))
+                    ])
+                  ));
+                  return visible.filter(img => !img.complete || !img.naturalWidth)
+                    .map(img => img.currentSrc || img.getAttribute('src') || '[без src]');
+                }""")
+                if invalid_images:
+                    violations.append(
+                        f"{theme}/{key}/{section}: неготові видимі зображення: " +
+                        ", ".join(invalid_images[:12])
+                    )
+                if page.evaluate("document.scrollingElement.scrollWidth > innerWidth + 1"):
+                    violations.append(f"{theme}/{key}/{section}: горизонтальне переповнення")
                 content = page.screenshot(
                     path=str(OUT / filename), animations="disabled",
                     caret="hide", scale="css", timeout=30000,
