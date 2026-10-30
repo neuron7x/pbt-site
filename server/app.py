@@ -932,10 +932,12 @@ class Handler(SimpleHTTPRequestHandler):
             replay = self.idem_replay(idem, ph)
             if replay:
                 return replay()
-        # Fast-path: rejected new leads do not reach SQLite. The check is
-        # repeated with the SQLite storage lock before committing a new lead.
-        # A previously committed idempotent replay was already handled above.
-        if not rate_ok(ip, 'lead', 'lead_day', commit=False):
+        # Fast-reject only unkeyed leads. A keyed caller can observe its
+        # key absent, then another caller can commit that same key and exhaust
+        # quota before this caller reaches the old fast-path check. Keyed
+        # requests must reach the lock-scoped replay/conflict check first,
+        # preserving 201 replay and 409 conflict instead of a false 429.
+        if not idem and not rate_ok(ip, 'lead', 'lead_day', commit=False):
             return self.rate_limited(ip)
         ip_hash = hmac.new(IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()[:16]
         chans = channels()
