@@ -371,3 +371,38 @@ def test_lead_and_outbox_commit_atomically(srv, tmp_path):
     code, j, _ = s2.post(LEAD, 'k-atomic-00001')
     assert code == 500 and j['error'] == 'storage'
     assert s2.rows('SELECT count(*) FROM leads') == [(0,)] and s2.rows('SELECT count(*) FROM outbox') == [(0,)]
+
+# ─── malformed JSON Unicode scalar boundary ──────────────────────
+@pytest.mark.parametrize('field', ('subject', 'place', 'name', 'comment'))
+def test_escaped_lone_surrogate_is_422_and_not_persisted(srv, field):
+    """An ASCII-escaped isolated UTF-16 surrogate must not drop the HTTP reply."""
+    s = srv(DELIVERY_WORKER='0')
+    data = {**LEAD, field: 'valid' + chr(0xD800) + 'text'}
+    raw = json.dumps(data, ensure_ascii=True).encode('ascii')
+    req = urllib.request.Request(
+        s.base + '/api/lead', raw,
+        {'Origin': s.base, 'Content-Type': 'application/json',
+         'Idempotency-Key': 'k-surrogate-negative-001'}, method='POST')
+    with pytest.raises(urllib.error.HTTPError) as rejected:
+        urllib.request.urlopen(req, timeout=4)
+    assert rejected.value.code == 422
+    response = json.loads(rejected.value.read())
+    assert response['error'] == 'validation' and field in response['fields']
+    assert s.rows('SELECT count(*) FROM leads') == [(0,)]
+    assert s.rows('SELECT count(*) FROM outbox') == [(0,)]
+
+
+def test_valid_json_surrogate_pair_preserves_201_and_emoji(srv):
+    """json.loads recombines a paired surrogate into a valid Unicode scalar."""
+    s = srv(DELIVERY_WORKER='0')
+    data = {**LEAD, 'subject': 'Екскаватор ' + chr(0x1F9E0)}
+    raw = json.dumps(data, ensure_ascii=True).encode('ascii')
+    req = urllib.request.Request(
+        s.base + '/api/lead', raw,
+        {'Origin': s.base, 'Content-Type': 'application/json',
+         'Idempotency-Key': 'k-surrogate-valid-pair-01'}, method='POST')
+    with urllib.request.urlopen(req, timeout=4) as accepted:
+        assert accepted.status == 201
+        assert json.loads(accepted.read())['ref'] == 'PBT-000001'
+    assert s.rows('SELECT count(*) FROM leads') == [(1,)]
+    assert json.loads(s.rows('SELECT payload FROM leads')[0][0])['subject'] == data['subject']

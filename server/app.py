@@ -186,6 +186,7 @@ def clean(v, maxlen, multiline=False):
     if not isinstance(v, (str, int, float)):
         raise ValueError('type')
     s = unicodedata.normalize('NFC', str(v))
+    s.encode('utf-8')  # Reject lone JSON \uXXXX surrogates before hashing/storage.
     s = CTRL.sub('', s)
     if not multiline:
         s = re.sub(r'\s+', ' ', s)
