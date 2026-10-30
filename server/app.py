@@ -7,7 +7,7 @@
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
 import base64, email.utils, hashlib, hmac, io, ipaddress, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -389,9 +389,13 @@ def send(channel, lead_id, data):
     """
     if channel == 'telegram':
         text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
-        body = urllib.parse.urlencode({'chat_id': ENV('TELEGRAM_CHAT_ID'), 'text': text[:4000]}).encode()
+        # Telegram Bot API accepts application/json. UTF-8 avoids 12-byte
+        # percent-encoding per astral emoji and remains below the child 16-KiB
+        # body limit for a 4000-character message (<=16000 UTF-8 bytes).
+        body = json.dumps({'chat_id': ENV('TELEGRAM_CHAT_ID'), 'text': text[:4000]},
+                          ensure_ascii=False, separators=(',', ':')).encode('utf-8')
         url = f"{TELEGRAM_API}/bot{ENV('TELEGRAM_BOT_TOKEN')}/sendMessage"
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        headers = {'Content-Type': 'application/json'}
     elif channel == 'webhook':
         body = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()
         signature = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), body, hashlib.sha256).hexdigest()
@@ -451,7 +455,24 @@ def _attempt_delivery(row):
         return type(e).__name__ + (f' {e.code}' if isinstance(e, urllib.error.HTTPError) else ''), False
 
 
-def deliver_due(now=None):
+def _completed_with_heartbeat(tasks, heartbeat):
+    """Yield completed network futures and refresh worker activity while waiting.
+
+    No SQLite lock is held while waiting. The callback is called on completion
+    and on bounded timeout; heartbeat means worker activity, never CRM success.
+    """
+    if heartbeat is None:
+        yield from as_completed(tasks)
+        return
+    pending = set(tasks)
+    while pending:
+        done, pending = wait(pending, timeout=DELIVERY_HEARTBEAT_INTERVAL_S,
+                             return_when=FIRST_COMPLETED)
+        heartbeat()
+        yield from done
+
+
+def deliver_due(now=None, heartbeat=None):
     """One bounded outbox batch; apply results as they complete (at-least-once after crash)."""
     with _db_lock:
         c = db()
@@ -464,7 +485,7 @@ def deliver_due(now=None):
     # delivery worker owns this batch; never hold _db_lock across network I/O.
     with ThreadPoolExecutor(max_workers=DELIVERY_CONCURRENCY, thread_name_prefix='pbt-delivery') as executor:
         tasks = {executor.submit(_attempt_delivery, row): row for row in rows}
-        for task in as_completed(tasks):
+        for task in _completed_with_heartbeat(tasks, heartbeat):
             oid, lead_id, ch, att, _ = tasks[task]
             err, permanent = task.result()
             att += 1
@@ -507,20 +528,30 @@ def _record_worker_heartbeat():
 
 def delivery_worker():
     last_heartbeat = float('-inf')
-    while True:
+
+    def heartbeat_if_due():
+        nonlocal last_heartbeat
+        if time.monotonic() - last_heartbeat < DELIVERY_HEARTBEAT_INTERVAL_S:
+            return
         try:
-            # A full batch may leave due rows; do not sleep for the entire poll interval.
-            while deliver_due() == 50:
-                pass
+            _record_worker_heartbeat()
+            last_heartbeat = time.monotonic()
+        except Exception as e:  # noqa: BLE001
+            log.error('delivery heartbeat error %s', type(e).__name__)
+
+    while True:
+        heartbeat_if_due()
+        try:
+            # Maintain liveness through each 50-row batch and continuously
+            # draining backlog. Never wait for all outbound futures to finish.
+            while deliver_due(heartbeat=heartbeat_if_due) == 50:
+                heartbeat_if_due()
         except Exception as e:  # noqa: BLE001
             log.error('delivery worker error %s', type(e).__name__)
-        if time.monotonic() - last_heartbeat >= DELIVERY_HEARTBEAT_INTERVAL_S:
-            try:
-                _record_worker_heartbeat()
-                last_heartbeat = time.monotonic()
-            except Exception as e:  # noqa: BLE001
-                log.error('delivery heartbeat error %s', type(e).__name__)
-        _wake.wait(DELIVERY_POLL_S); _wake.clear()
+        heartbeat_if_due()
+        # Wake often enough to record heartbeat even without new requests.
+        _wake.wait(min(DELIVERY_POLL_S, DELIVERY_HEARTBEAT_INTERVAL_S))
+        _wake.clear()
 
 
 def public_config():

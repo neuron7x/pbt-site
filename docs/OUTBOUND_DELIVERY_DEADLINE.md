@@ -74,3 +74,21 @@ rather than disabling signature verification or silently omitting delivery.
 This is a **source-level configuration policy**, not evidence that an actual
 production destination currently uses plaintext or that production TLS has
 been externally measured.
+
+
+## Telegram Unicode transport: no form-encoding expansion
+
+Telegram Bot API `sendMessage` supports HTTP POST with
+`application/json` (https://core.telegram.org/bots/api#making-requests).
+The sender encodes `chat_id` and the existing 4000-character message in
+UTF-8 JSON with `ensure_ascii=False`, instead of percent-encoding every
+byte of non-ASCII text as `application/x-www-form-urlencoded`.
+This preserves validated emoji and Cyrillic fields while keeping the unchanged
+16-KiB decoded child payload bound and 64-KiB stdin-envelope bound. The old
+form-encoded path could exceed 16 KiB for a valid 5–6 KiB UTF-8 lead and
+terminate a durable Telegram outbox job after futile retries. The regression
+test sends maximal validated emoji fields over a real local HTTP request, reads
+the actual Telegram-compatible JSON body from a local receiver, and asserts
+one completed outbox delivery with no lost Unicode text. It does **not** claim
+that Telegram's external service or credentials were tested. The CRM webhook
+format and its HMAC-SHA256 bytes remain exactly unchanged.

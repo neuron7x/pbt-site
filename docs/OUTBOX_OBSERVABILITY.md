@@ -71,3 +71,26 @@ downstream receipts, or off-device records before deliberately using
 cannot reconstruct contact details or outbox work. The result records the gap
 count and is not a zero-loss attestation. Unknown missing records and a lost
 journal cannot be disproved by a local backup.
+
+
+## Heartbeat while processing saturated delivery batches
+
+A worker can process 50 queued outbound jobs for longer than the configured
+heartbeat freshness threshold. A heartbeat only after the entire batch or
+multiple consecutive 50-row batches falsely marks a live worker as stale.
+The worker now updates its *activity* marker at its configured cadence while
+waiting on outbound futures and between batches, without holding the SQLite
+write lock during network I/O. This is driven by the worker thread, not a
+separate watchdog that might falsely report a dead worker as active.
+Idle polling is also bounded by the heartbeat interval.
+
+The regression schedules 51 durable outbox rows, stalls one delivery task,
+and independently reads the SQLite heartbeat while the task remains blocked;
+it then releases the task and checks all 51 rows drain without terminal
+failure. A recent marker means the scheduler is active—not that the receiver
+acknowledged the message, that work is making forward progress, or that
+pending age is within policy. Operators must monitor `failed`, `pending`
+and `oldest_pending_age_s` independently. Choose `--max-worker-idle-s`
+greater than the configured heartbeat interval plus scheduler/SQLite jitter
+(e.g. 45 s for the default 15 s interval); an interval of 60 s cannot satisfy
+a 45 s freshness requirement. No live CRM or production SLO is implied.
