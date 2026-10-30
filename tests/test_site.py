@@ -54,6 +54,26 @@ def test_calculator_matches_price_list(page_factory):
     assert pg.evaluate(f'window.PBTcalc("{heavy["id"]}", 1, 10)') == heavy['price'] + 10 * 100
 
 
+def test_calculator_enter_does_not_navigate_or_execute_csp_blocked_handler(page_factory):
+    """With hashed script CSP, Enter must never trigger a default GET form navigation."""
+    pg = page_factory(reduced=True)
+    before = pg.url
+    pg.locator("#cHoursN").fill("12")
+    pg.locator("#cHoursN").press("Enter")
+    # Real submit-event cancellation is the invariant: implicit Enter may
+    # not submit when multiple number inputs are present in the form.
+    prevented = pg.evaluate("""() => {
+      const event = new Event('submit', {bubbles: true, cancelable: true});
+      document.getElementById('calcForm').dispatchEvent(event);
+      return event.defaultPrevented;
+    }""")
+    assert prevented, "calculator submit listener must block navigation under hashed CSP"
+    pg.wait_for_timeout(150)
+    assert pg.url == before
+    assert pg.locator("#cHoursN").input_value() == "12"
+    assert not [e for e in pg.errors if "Refused to execute inline event handler" in e]
+
+
 @pytest.mark.parametrize('v', VECTORS, ids=lambda v: f"{v['field']}:{v['value']}")
 def test_contract_vectors_client(page_factory, v):
     """Клієнт і сервер валідують за одним корпусом (tests/contracts/lead_vectors.json)."""
@@ -90,7 +110,7 @@ def test_lead_form_shows_field_errors_before_sending(page_factory):
 def test_hero_video_plays_and_scene_dives(page_factory):
     pg = page_factory()
     assert pg.get_attribute('#heroVideo', 'poster').endswith('hero-wide.webp')
-    pg.wait_for_function('(() => { const v = document.getElementById("heroVideo"); return v.currentSrc && v.currentSrc.includes("hero-wide") && v.readyState >= 2 && !v.paused; })()', timeout=15000)
+    pg.wait_for_function('() => { const v = document.getElementById("heroVideo"); return v.currentSrc && v.currentSrc.includes("hero-wide") && v.readyState >= 2 && !v.paused; }', timeout=15000)
     assert pg.evaluate('document.querySelector("#hero").classList.contains("is-lit")')
     assert pg.locator('#heroTitle .w').count() >= 6                       # слова заголовка — окремі спани появи
     pg.evaluate('scrollTo({top: innerHeight * 1.1, behavior: "instant"})'); pg.wait_for_timeout(300)
@@ -172,7 +192,7 @@ def test_404_page(page_factory):
 
 
 @pytest.mark.parametrize('w,h,mobile', VIEWPORTS[::2], ids=lambda v: str(v))
-def test_axe_wcag22aa_no_serious_violations(page_factory, w, h, mobile):
+def test_axe_wcag22aa_zero_violations(page_factory, w, h, mobile):
     pg = page_factory(w, h, mobile=mobile, bypass_csp=True)
     pg.add_script_tag(path=str(ROOT / 'tests' / 'vendor' / 'axe.min.js'))
     # контраст міряємо в стані спокою: поява .rv (opacity/transform) посеред переходу давала хибні color-contrast
@@ -180,8 +200,8 @@ def test_axe_wcag22aa_no_serious_violations(page_factory, w, h, mobile):
     pg.add_style_tag(content='*,*::before,*::after{transition:none!important;animation:none!important}')
     pg.evaluate("document.querySelectorAll('.rv').forEach(el => el.classList.add('is-in'))")
     pg.wait_for_timeout(50)
-    res = pg.evaluate('axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag22aa"]}})')
-    bad = [(v['id'], v['impact'], [n['target'] for n in v['nodes']][:3]) for v in res['violations'] if v['impact'] in ('serious', 'critical')]
+    res = pg.evaluate('axe.run(document, {runOnly: {type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]}})')
+    bad = [(v['id'], v['impact'], [n['target'] for n in v['nodes']][:3]) for v in res['violations']]
     assert not bad, bad
 
 
@@ -227,13 +247,16 @@ def _lum(px):
     return .2126 * r + .7152 * g + .0722 * b
 
 
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
 @pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)], ids=['desktop', 'phone'])
-def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile):
-    """Підзаголовок героя (#EAF6FF, 15–18 px) лежить на монтажі. Було 2.2:1 на кадрі з білим MAN (4 з 10 кадрів < 4.5).
+def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile, theme):
+    """Підзаголовок героя на монтажі, обидві теми. Раніше Sky давала 2.2:1 на білому MAN.
     10 точок монтажу, текст сховано, 90-й перцентиль яскравості фону під ним → ≥ 4.5:1."""
     import io
     from PIL import Image
     pg = page_factory(w, h, mobile=mobile)
+    if theme == 'precision':
+        pg.locator('[data-theme-choice="precision"]').click()
     pg.wait_for_timeout(1500)                                         # слова заголовка й підзаголовок з'являються по черзі
     fg = _lum([float(x) for x in re.findall(r'[\d.]+', pg.evaluate("getComputedStyle(document.querySelector('.hero__lead')).color"))[:3]])
     pg.add_style_tag(content='.hero__lead{color:transparent!important;text-shadow:none!important}')

@@ -6,6 +6,8 @@
 import base64, mimetypes, re
 from pathlib import Path
 
+from bundle_contract import emit_fragment, inline_css
+
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 DIST = ROOT / 'dist'
@@ -22,7 +24,9 @@ def data_uri(rel):
 html = (WEB / 'index.html').read_text(encoding='utf-8')
 fonts = re.sub(r'url\(\.\./fonts/([^)]+)\)', lambda m: 'url(' + data_uri('fonts/' + m.group(1)) + ')', (WEB / 'css' / 'fonts.css').read_text(encoding='utf-8'))
 css = (WEB / 'css' / 'site.css').read_text(encoding='utf-8')
+STYLES = (('css/fonts.css', fonts), ('css/site.css', css))
 data = re.sub(r'"(media/[^"]+\.(?:webp|png|svg))"', lambda m: '"' + data_uri(m.group(1)) + '"', (WEB / 'js' / 'data.js').read_text(encoding='utf-8'))
+quote = (WEB / 'js' / 'quote.js').read_text(encoding='utf-8')
 site = (WEB / 'js' / 'site.js').read_text(encoding='utf-8')
 cine = (WEB / 'js' / 'cine.js').read_text(encoding='utf-8')
 CINE_IDS = re.findall(r'"id": "([a-z]+)"', cine)
@@ -35,8 +39,8 @@ def assemble(videos):
     vmap = ',\n'.join(f'"{n}.mp4": "{data_uri("media/video/" + n + ".mp4")}"' for n in videos)
     cmap = ',\n'.join(f'"{i}": "{data_uri("media/cine/" + i + "-w.webp")}"' for i in CINE_IDS)
     d = data + '\nwindow.PBT.videoData = {' + vmap + '};\nwindow.PBT.cinePosters = {' + cmap + '};\nwindow.PBT_BUNDLE = true;\n'
-    h = html.replace('<link rel="stylesheet" href="css/fonts.css">', '<style>' + fonts + '</style>').replace('<link rel="stylesheet" href="css/site.css">', '<style>' + css + '</style>')
-    h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
+    h = inline_css(html, STYLES)
+    h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
     return h
 
 
@@ -53,7 +57,7 @@ head = re.search(r'<head>(.*?)</head>', page, re.S).group(1)
 body = re.search(r'<body[^>]*>(.*?)</body>', page, re.S).group(1)
 keep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', head, re.S)
 early = re.search(r'<script>\s*/\* Профіль.*?</script>', head, re.S).group(0)
-frag = '<title>ПБТ · ПолтаваБудТехніка</title>\n' + '\n'.join(keep) + '\n' + early + '\n' + body
+frag = emit_fragment('ПБТ · ПолтаваБудТехніка', keep, early, body)
 (DIST / 'pbt-site.artifact.html').write_text(frag, encoding='utf-8')
 for f in ('pbt-site.html', 'pbt-site.artifact.html'):
     print(f, round((DIST / f).stat().st_size / 1048576, 2), 'MB', '| відео у бандлі:', len(videos), '/', len(ALL))
@@ -65,15 +69,15 @@ MULTI = DIST / 'artifact'
 shutil.rmtree(MULTI, ignore_errors=True)
 d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.mp4Only = true;\nwindow.PBT_BUNDLE = true;\n'
 h = (WEB / 'index.html').read_text(encoding='utf-8')
-h = h.replace('<link rel="stylesheet" href="css/fonts.css">', '<style>' + fonts + '</style>').replace('<link rel="stylesheet" href="css/site.css">', '<style>' + css + '</style>')
-h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
+h = inline_css(h, STYLES)
+h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
 h = re.sub(r'<link rel="preload"[^>]*>\n?', '', h)
 mhead = re.search(r'<head>(.*?)</head>', h, re.S).group(1)
 mbody = re.search(r'<body[^>]*>(.*?)</body>', h, re.S).group(1)
 mkeep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', mhead, re.S)
 mearly = re.search(r'<script>\s*/\* Профіль.*?</script>', mhead, re.S).group(0)
 MULTI.mkdir(parents=True)
-(MULTI / 'index.html').write_text('<title>ПБТ · ПолтаваБудТехніка</title>\n' + '\n'.join(mkeep) + '\n' + mearly + '\n' + mbody, encoding='utf-8')
+(MULTI / 'index.html').write_text(emit_fragment('ПБТ · ПолтаваБудТехніка', mkeep, mearly, mbody), encoding='utf-8')
 n = 0
 for f in sorted((WEB / 'media').rglob('*')):
     if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'pbt-logo.webm'):   # логотип — лише webm (альфа)

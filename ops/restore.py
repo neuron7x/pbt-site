@@ -2,6 +2,9 @@
 """Відновлення бази заявок з бекапу (OPS-1). id заявки — AUTOINCREMENT, монотонний лише в межах файлу: після відкату до знімка
 sqlite_sequence повертається назад, і номери LA-NNNNNN з вікна «бекап → збій» видаються вдруге (вебхук дедуплікує за id).
 Тому після копіювання лічильник піднімається до max(знімок, N з журналу 'lead stored id=N', --min-seq).
+Незворотна втрата прийнятих заявок між snapshot та останнім виданим ID заборонена за замовчуванням:
+код 3 (REFUSED) і поточна БД залишається незмінною. Break-glass --allow-rpo-gap допускається лише після
+позафайлової звірки втрачених заявок; прапорець НЕ повертає їх автоматично.
 
 Fail-closed: сервер відповідає на своєму порту → відмова (код 2); журналу нема / в ньому нема жодного 'lead stored' і не
 задано --min-seq → відмова (код 1): журнал лежить у тому ж data/, що й БД, тож може загинути разом з нею.
@@ -38,9 +41,13 @@ def main(argv=None):
     ap.add_argument('--db', default=os.environ.get('LEAD_DB') or str(ROOT / 'data' / 'leads.db'))
     ap.add_argument('--log', default=str(ROOT / 'data' / 'server.log'))
     ap.add_argument('--min-seq', type=int, default=None)
+    ap.add_argument('--allow-rpo-gap', action='store_true',
+                    help='explicit break-glass acknowledgment of unrecoverable accepted leads after the snapshot')
     ap.add_argument('--host', default=os.environ.get('HOST') or '127.0.0.1')
     ap.add_argument('--port', type=int, default=int(os.environ.get('PORT') or 4180))
     a = ap.parse_args(argv)
+    if a.min_seq is not None and a.min_seq < 0:
+        print('restore FAIL: negative --min-seq invalid', file=sys.stderr); return 1
     if server_answers(a.host, a.port):
         print(f'restore REFUSED: сервер відповідає на {a.host}:{a.port} — спершу зупини його', file=sys.stderr); return 2
     src, dst = Path(a.backup), Path(a.db)
@@ -63,6 +70,15 @@ def main(argv=None):
         row = c.execute("SELECT seq FROM sqlite_sequence WHERE name='leads'").fetchone()
         snap = max(row[0] if row else 0, c.execute('SELECT coalesce(max(id), 0) FROM leads').fetchone()[0])
         seq = max(snap, n_log or 0, a.min_seq or 0)
+        # A higher externally issued watermark proves a known RPO gap. Raising
+        # sqlite_sequence avoids ID reuse but never restores the missing leads.
+        # Never silently discard accepted outbox jobs on routine restore.
+        if seq > snap and not a.allow_rpo_gap:
+            c.close()
+            tmp.unlink(missing_ok=True)
+            print(f'restore REFUSED: known_RPO_gap={seq-snap}; '
+                  'reconcile missing accepted leads before explicit --allow-rpo-gap', file=sys.stderr)
+            return 3
         if row:
             c.execute("UPDATE sqlite_sequence SET seq=? WHERE name='leads'", (seq,))
         else:
@@ -83,7 +99,8 @@ def main(argv=None):
         if f.exists():
             f.replace(Path(f'{dst}.pre-restore-{stamp}{suf}'))
     os.chmod(tmp, 0o600); tmp.replace(dst)
-    print(f'restore OK: {src.name} → {dst} seq={seq} (знімок={snap} журнал={n_log} min-seq={a.min_seq})'); return 0
+    print(f'restore OK: {src.name} → {dst} seq={seq} known_RPO_gap={seq-snap} '
+          f'(знімок={snap} журнал={n_log} min-seq={a.min_seq})'); return 0
 
 
 if __name__ == '__main__':

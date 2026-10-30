@@ -144,6 +144,17 @@ def test_concurrent_duplicates_are_one_lead(srv):
     assert s.rows('SELECT count(*) FROM leads') == [(1,)]
 
 
+def test_concurrent_duplicates_replay_at_strict_quota(srv):
+    # An in-flight identical key must remain a 201 replay, not become a 429
+    # after another request atomically reserves the only available lead slot.
+    s = srv(RATE_LEAD_10MIN='1', RATE_LEAD_DAY='1')
+    with ThreadPoolExecutor(16) as ex:
+        responses = list(ex.map(lambda _: s.post(LEAD, 'k-concurrent-quota-01'), range(16)))
+    assert all(response[0] == 201 for response in responses), responses
+    assert len({response[1]['ref'] for response in responses}) == 1
+    assert s.rows('SELECT count(*) FROM leads') == [(1,)]
+
+
 def test_key_survives_restart(srv):
     s = srv(); ref = s.post(LEAD, 'k-restart-0001')[1]['ref']; s.kill()
     s2 = srv()
@@ -176,6 +187,50 @@ def test_response_does_not_wait_for_hanging_webhook(srv):
     st.close()
     assert code == 201 and dt < 1.0, dt           # раніше: відповідь після 8 + 8 с таймаутів доставки
     assert s.rows('SELECT count(*) FROM outbox') == [(1,)]
+
+
+def test_successful_webhook_with_never_finished_body_does_not_retry_or_block(srv):
+    """A 2xx acknowledgement is complete at headers; a trickled body must not cause duplicates."""
+    import hashlib
+    import hmac
+    seen = []
+
+    class SlowBody(BaseHTTPRequestHandler):
+        def do_POST(self):
+            raw = self.rfile.read(int(self.headers['Content-Length']))
+            seen.append((raw, {k.lower(): v for k, v in self.headers.items()}))
+            self.send_response(200)
+            self.send_header('Content-Length', '65536')
+            self.end_headers()
+            self.wfile.write(b'!')  # Old urlopen(...).read() waited for the missing 65535 bytes.
+            self.wfile.flush()
+            time.sleep(4)
+
+        def log_message(self, *args):
+            pass
+
+    receiver = ThreadingHTTPServer(('127.0.0.1', 0), SlowBody)
+    receiver.daemon_threads = True
+    worker = threading.Thread(target=receiver.serve_forever, daemon=True)
+    worker.start()
+    try:
+        url = f'http://127.0.0.1:{receiver.server_address[1]}/hook'
+        s = srv(LEAD_WEBHOOK_URL=url, LEAD_WEBHOOK_SECRET='secret',
+                DELIVERY_TIMEOUT='1', DELIVERY_BACKOFF_S='10')
+        status, result, _ = s.post(LEAD, 'k-trickle-ack-00001')
+        assert status == 201 and result['ok']
+        assert wait_for(lambda: s.rows("SELECT status, attempts FROM outbox") == [('delivered', 1)] or None,
+                        timeout=2.5), 'success body was consumed or retried'
+        assert len(seen) == 1
+        raw, headers = seen[0]
+        assert json.loads(raw)['id'] == 1
+        assert hmac.compare_digest(headers['x-pbt-signature'],
+                                   hmac.new(b'secret', raw, hashlib.sha256).hexdigest())
+        assert s.rows('SELECT count(*) FROM leads') == [(1,)]
+    finally:
+        receiver.shutdown()
+        receiver.server_close()
+        worker.join(timeout=3)
 
 
 def test_transient_failures_retry_until_delivered(srv):
@@ -316,3 +371,71 @@ def test_lead_and_outbox_commit_atomically(srv, tmp_path):
     code, j, _ = s2.post(LEAD, 'k-atomic-00001')
     assert code == 500 and j['error'] == 'storage'
     assert s2.rows('SELECT count(*) FROM leads') == [(0,)] and s2.rows('SELECT count(*) FROM outbox') == [(0,)]
+
+# ─── malformed JSON Unicode scalar boundary ──────────────────────
+@pytest.mark.parametrize('field', ('subject', 'place', 'name', 'comment'))
+def test_escaped_lone_surrogate_is_422_and_not_persisted(srv, field):
+    """An ASCII-escaped isolated UTF-16 surrogate must not drop the HTTP reply."""
+    s = srv(DELIVERY_WORKER='0')
+    data = {**LEAD, field: 'valid' + chr(0xD800) + 'text'}
+    raw = json.dumps(data, ensure_ascii=True).encode('ascii')
+    req = urllib.request.Request(
+        s.base + '/api/lead', raw,
+        {'Origin': s.base, 'Content-Type': 'application/json',
+         'Idempotency-Key': 'k-surrogate-negative-001'}, method='POST')
+    with pytest.raises(urllib.error.HTTPError) as rejected:
+        urllib.request.urlopen(req, timeout=4)
+    assert rejected.value.code == 422
+    response = json.loads(rejected.value.read())
+    assert response['error'] == 'validation' and field in response['fields']
+    assert s.rows('SELECT count(*) FROM leads') == [(0,)]
+    assert s.rows('SELECT count(*) FROM outbox') == [(0,)]
+
+
+def test_valid_json_surrogate_pair_preserves_201_and_emoji(srv):
+    """json.loads recombines a paired surrogate into a valid Unicode scalar."""
+    s = srv(DELIVERY_WORKER='0')
+    data = {**LEAD, 'subject': 'Екскаватор ' + chr(0x1F9E0)}
+    raw = json.dumps(data, ensure_ascii=True).encode('ascii')
+    req = urllib.request.Request(
+        s.base + '/api/lead', raw,
+        {'Origin': s.base, 'Content-Type': 'application/json',
+         'Idempotency-Key': 'k-surrogate-valid-pair-01'}, method='POST')
+    with urllib.request.urlopen(req, timeout=4) as accepted:
+        assert accepted.status == 201
+        assert json.loads(accepted.read())['ref'] == 'PBT-000001'
+    assert s.rows('SELECT count(*) FROM leads') == [(1,)]
+    assert json.loads(s.rows('SELECT payload FROM leads')[0][0])['subject'] == data['subject']
+
+
+# ─── privacy: neither full peer IP nor URL query/Origin in durable logs ───
+def test_http_access_and_rejected_origin_logs_are_pseudonymous(srv):
+    """Negative falsifier: the old handler emitted raw XFF, query and Origin."""
+    s = srv(TRUST_PROXY='1', DELIVERY_WORKER='0')
+    journal = ROOT / 'data' / 'server.log'
+    offset = journal.stat().st_size
+    raw_ip = '198.51.100.237'
+    marker = 'pbt-private-query-314159'
+    request = urllib.request.Request(
+        s.base + '/api/health?contact=' + marker,
+        headers={'X-Forwarded-For': raw_ip})
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            assert response.status in (200, 503)
+    except urllib.error.HTTPError as exc:
+        assert exc.code == 503
+    invalid_origin = 'https://untrusted.invalid/private/' + marker
+    rejected = urllib.request.Request(
+        s.base + '/api/lead', json.dumps(LEAD).encode('utf-8'),
+        {'Content-Type': 'application/json', 'Origin': invalid_origin,
+         'X-Forwarded-For': raw_ip}, method='POST')
+    with pytest.raises(urllib.error.HTTPError) as response:
+        urllib.request.urlopen(rejected, timeout=5)
+    assert response.value.code == 403
+    journal_delta = journal.read_bytes()[offset:].decode('utf-8')
+    assert raw_ip not in journal_delta
+    assert '127.0.0.1 ' not in journal_delta
+    assert marker not in journal_delta
+    assert invalid_origin not in journal_delta
+    assert 'client_hash=' in journal_delta
+    assert 'status=403' in journal_delta

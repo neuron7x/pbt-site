@@ -1,0 +1,63 @@
+name: PBT / 30-minute runtime soak — measured synthetic R2/R3 evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'ops/**'
+      - 'tools/runtime_soak.py'
+      - 'config/runtime-soak-budgets.json'
+      - 'tests/test_runtime_soak_contract.py'
+      - '.github/workflows/runtime-soak.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pbt-soak-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bounded-soak:
+    name: 1800s+ real socket / SQLite / RSS / HMAC fault-injection
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PBT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - name: Exact-head SHA-pinned checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 2
+      - name: Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - name: Verify immutable SHA and policy syntax
+        run: |
+          test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
+          git diff --check HEAD^1 HEAD
+          python -m compileall -q server/app.py tools/runtime_soak.py ops/backup.py
+          python -m json.tool config/runtime-soak-budgets.json > /dev/null
+      - name: Real measured 30-minute synthetic soak (no field/production claims)
+        run: |
+          python tools/runtime_soak.py --profile soak --duration-s 1800 \
+            --report artifacts/soak/soak-evidence.json
+          test -s artifacts/soak/soak-evidence.json
+          python -c 'import json; d=json.load(open("artifacts/soak/soak-evidence.json")); assert d["status"]=="PASS" and d["source_sha"]=="${{ github.event.pull_request.head.sha }}"'
+      - name: Independently recompute raw-sample p99, RSS bounds and fault evidence
+        run: |
+          python tools/verify_soak_evidence.py \
+            --report artifacts/soak/soak-evidence.json --expected-head "$PBT_HEAD_SHA"
+      - name: Preserve exact-head measured evidence even on FAIL
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: pbt-soak-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/soak/soak-evidence.json
+          if-no-files-found: error
+          retention-days: 14

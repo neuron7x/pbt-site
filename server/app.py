@@ -6,7 +6,8 @@
 Безпека (OWASP Input Validation / CSRF): JSON-only, ліміт тіла, allowlist для
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
-import email.utils, hashlib, hmac, io, json, logging, os, posixpath, re, sqlite3, threading, time, unicodedata, urllib.parse, urllib.request
+import base64, email.utils, hashlib, hmac, io, ipaddress, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -16,7 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 DATA = ROOT / 'data'
 CONFIG = ROOT / 'config' / 'business.json'
-DATA.mkdir(exist_ok=True)
+os.umask(0o077)  # PII, logs and SQLite sidecars must not inherit permissive host modes.
+DATA.mkdir(mode=0o700, exist_ok=True)
+DATA.chmod(0o700)
 
 
 def load_env():
@@ -41,6 +44,7 @@ class _OneLineFormatter(logging.Formatter):
 
 
 _log_h = logging.FileHandler(DATA / 'server.log')
+os.fchmod(_log_h.stream.fileno(), 0o600)
 _log_h.setFormatter(_OneLineFormatter('%(asctime)s %(levelname)s %(message)s'))
 logging.basicConfig(level=logging.INFO, handlers=[_log_h])
 log = logging.getLogger('pbt')
@@ -59,12 +63,23 @@ def _ip_salt():
 
 
 IP_SALT = _ip_salt()
+
+
+def _ip_hash(ip):
+    """Keyed pseudonymous client identifier; never write a raw address to logs."""
+    return hmac.new(IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()[:16]
+
+
 MAX_BODY = 8 * 1024
 TYPES = {'rent', 'material', 'transport', 'other'}
 METHODS = {'phone', 'telegram', 'viber', 'whatsapp'}
 
 # ─── сховище ─────────────────────────────────────────────
 DB = Path(ENV('LEAD_DB') or DATA / 'leads.db')
+for _suffix in ('', '-wal', '-shm', '-journal'):
+    _private_db_file = Path(f'{DB}{_suffix}')
+    if _private_db_file.is_file():
+        _private_db_file.chmod(0o600)
 _db_lock = threading.Lock()
 
 
@@ -90,6 +105,8 @@ def migrate(timeout=10):
         status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0,
         last_at REAL, last_error TEXT, delivered_at TEXT, UNIQUE(lead_id, channel))''')
     c.execute("CREATE INDEX IF NOT EXISTS outbox_due ON outbox(status, next_at)")
+    c.execute("""CREATE TABLE IF NOT EXISTS runtime_heartbeat(
+        name TEXT PRIMARY KEY, observed_at REAL NOT NULL)""")
     c.commit(); c.close()
 
 
@@ -119,6 +136,11 @@ for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
 
 # ─── rate limit на IP: усі запити (захист від перебору) і прийняті заявки ───
 _hits, _hits_lock = {}, threading.Lock()
+# One identity per client, independently of its three quota buckets; insertion order = least recently seen first.
+_active_ips = {}
+RATE_IP_CAP = int(ENV('RATE_IP_CAP') or 8192)
+if RATE_IP_CAP < 1:
+    raise ValueError('RATE_IP_CAP must be positive')
 LIMITS = {'any': (int(ENV('RATE_ANY_10MIN') or 60), 600), 'lead': (int(ENV('RATE_LEAD_10MIN') or 5), 600),
           'lead_day': (int(ENV('RATE_LEAD_DAY') or 30), 86400)}
 
@@ -133,9 +155,40 @@ def _prune(now):
     _last_prune[0] = now
     for key in [k for k, ts in _hits.items() if not ts or now - ts[-1] >= LIMITS[k[1]][1]]:
         del _hits[key]
+    live = {ip for ip, _ in _hits}
+    for ip in [ip for ip in _active_ips if ip not in live]:
+        del _active_ips[ip]
+
+
+def rate_identity(ip):
+    """IPv6 clients are limited per /64: one subscriber routinely owns the whole prefix, so per-address keys would
+    let a single sender mint unlimited identities. IPv4 (and anything unparsable) stays per address."""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if addr.version == 6:
+        if addr.ipv4_mapped is not None:
+            return str(addr.ipv4_mapped)
+        return str(ipaddress.ip_network(f'{addr}/64', strict=False))
+    return str(addr)
+
+
+def _touch(ip):
+    """Mark `ip` most recently seen. At the cardinality cap the least recently seen identity is evicted with its
+    buckets. Refusing every new identity instead (the previous behaviour) let one sender holding the table full lock
+    out all real customers; eviction costs at most a quota reset for an idle identity, which rotation buys anyway."""
+    _active_ips.pop(ip, None)
+    while len(_active_ips) >= RATE_IP_CAP:
+        old = next(iter(_active_ips))
+        del _active_ips[old]
+        for b in LIMITS:
+            _hits.pop((old, b), None)
+    _active_ips[ip] = None
 
 
 def rate_ok(ip, *buckets, commit=True):
+    ip = rate_identity(ip)
     now = time.time()
     with _hits_lock:
         _prune(now)
@@ -144,6 +197,7 @@ def rate_ok(ip, *buckets, commit=True):
             if len([t for t in _hits.get((ip, b), []) if now - t < win]) >= lim:
                 return False
         if commit:
+            _touch(ip)
             for b in buckets:
                 _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
         return True
@@ -151,8 +205,10 @@ def rate_ok(ip, *buckets, commit=True):
 
 def rate_commit(ip, *buckets):
     """OPS-4: списати квоту після успішного запису (без повторної перевірки — заявка вже прийнята)."""
+    ip = rate_identity(ip)
     now = time.time()
     with _hits_lock:
+        _touch(ip)  # The 'any' bucket was committed for this accepted request.
         for b in buckets:
             _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
 
@@ -167,6 +223,7 @@ def clean(v, maxlen, multiline=False):
     if not isinstance(v, (str, int, float)):
         raise ValueError('type')
     s = unicodedata.normalize('NFC', str(v))
+    s.encode('utf-8')  # Reject lone JSON \uXXXX surrogates before hashing/storage.
     s = CTRL.sub('', s)
     if not multiline:
         s = re.sub(r'\s+', ' ', s)
@@ -279,11 +336,27 @@ def _contact(method, s):
 # незавершену доставку (стан у БД). Семантика — «щонайменше раз»: падіння між відправкою й записом статусу дасть повтор
 # (вебхук несе id заявки для ідемпотентного прийому).
 DELIVERY_TIMEOUT = float(ENV('DELIVERY_TIMEOUT') or 8)
+if not math.isfinite(DELIVERY_TIMEOUT) or not 0.1 <= DELIVERY_TIMEOUT <= 120:
+    raise ValueError('DELIVERY_TIMEOUT must be finite and between 0.1 and 120 seconds')
+DELIVERY_CONCURRENCY = int(ENV('DELIVERY_CONCURRENCY') or 4)
+if not 1 <= DELIVERY_CONCURRENCY <= 8:
+    raise ValueError('DELIVERY_CONCURRENCY must be between 1 and 8')
 DELIVERY_MAX_ATTEMPTS = int(ENV('DELIVERY_MAX_ATTEMPTS') or 8)
+if not 1 <= DELIVERY_MAX_ATTEMPTS <= 64:
+    raise ValueError('DELIVERY_MAX_ATTEMPTS must be between 1 and 64')
 DELIVERY_BACKOFF_S = float(ENV('DELIVERY_BACKOFF_S') or 30)        # 30 с · 2^(n−1), стеля — 6 год
+if not math.isfinite(DELIVERY_BACKOFF_S) or not 0.001 <= DELIVERY_BACKOFF_S <= 604800:
+    raise ValueError('DELIVERY_BACKOFF_S must be finite and between 0.001 and 604800')
 DELIVERY_BACKOFF_MAX_S = 6 * 3600
 DELIVERY_POLL_S = float(ENV('DELIVERY_POLL_S') or 30)
+if not math.isfinite(DELIVERY_POLL_S) or not 0.01 <= DELIVERY_POLL_S <= 300:
+    raise ValueError('DELIVERY_POLL_S must be finite and between 0.01 and 300')
+DELIVERY_HEARTBEAT_INTERVAL_S = float(ENV('DELIVERY_HEARTBEAT_INTERVAL_S') or 15)
+if not 1 <= DELIVERY_HEARTBEAT_INTERVAL_S <= 60:
+    raise ValueError('DELIVERY_HEARTBEAT_INTERVAL_S must be between 1 and 60')
 HEALTH_MIN_FREE_MB = float(ENV('HEALTH_MIN_FREE_MB') or 50)
+if not math.isfinite(HEALTH_MIN_FREE_MB) or HEALTH_MIN_FREE_MB < 0:
+    raise ValueError('HEALTH_MIN_FREE_MB must be finite and non-negative')
 TELEGRAM_API = ENV('TELEGRAM_API_BASE') or 'https://api.telegram.org'
 _wake = threading.Event()
 
@@ -304,68 +377,219 @@ def channels():
     return out
 
 
-def send(channel, lead_id, data):
-    """Одна спроба доставки. HTTP 4xx (крім 408/429) → PermanentDeliveryError; решта винятків — тимчасові."""
+class TransientDeliveryError(Exception):
+    pass
+
+
+_DELIVERY_CHILD = ROOT / 'server' / 'delivery_transport.py'
+_DELIVERY_CHILD_ENV = {
+    'PATH', 'SSL_CERT_FILE', 'SSL_CERT_DIR',
+    'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY',
+    'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy',
+}
+
+
+def _safe_outbound_url(url):
+    """Never transmit accepted lead PII or Telegram tokens over remote plaintext.
+
+    Local synthetic and same-host adapters may use loopback HTTP. All other
+    endpoints require TLS and cannot carry embedded URI credentials.
+    """
     try:
-        if channel == 'telegram':
-            text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
-            body = urllib.parse.urlencode({'chat_id': ENV('TELEGRAM_CHAT_ID'), 'text': text[:4000]}).encode()
-            urllib.request.urlopen(f"{TELEGRAM_API}/bot{ENV('TELEGRAM_BOT_TOKEN')}/sendMessage", body, timeout=DELIVERY_TIMEOUT).read()
-        elif channel == 'webhook':
-            raw = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()
-            sig = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), raw, hashlib.sha256).hexdigest()
-            req = urllib.request.Request(ENV('LEAD_WEBHOOK_URL'), raw, {'Content-Type': 'application/json', 'X-PBT-Signature': sig})
-            urllib.request.urlopen(req, timeout=DELIVERY_TIMEOUT).read()
-        else:
-            raise PermanentDeliveryError(f'unknown channel {channel}')
-    except urllib.error.HTTPError as e:
-        if 400 <= e.code < 500 and e.code not in (408, 429):
-            raise PermanentDeliveryError(f'HTTP {e.code}') from None
-        raise
+        parsed = urllib.parse.urlsplit(url)
+        if parsed.scheme not in ('http', 'https') or not parsed.hostname:
+            return False
+        if parsed.username is not None or parsed.password is not None:
+            return False
+        _ = parsed.port  # Reject malformed numeric ports.
+        if parsed.scheme == 'https':
+            return True
+        if parsed.hostname == 'localhost':
+            return True
+        return ipaddress.ip_address(parsed.hostname).is_loopback
+    except (ValueError, TypeError):
+        return False
 
 
-def deliver_due(now=None):
-    """Один прохід outbox: усі належні рядки 'pending'. Повертає кількість спроб. Токени/URL у журнал не пишуться."""
+# Invalid external endpoints are a startup error, not silently omitted delivery.
+for _url in (ENV('LEAD_WEBHOOK_URL'), ENV('TELEGRAM_API_BASE')):
+    if _url and not _safe_outbound_url(_url):
+        raise ValueError('insecure outbound delivery URL: remote HTTPS required')
+
+
+def send(channel, lead_id, data):
+    """One *absolute-deadline* outbound attempt; no unkillable socket threads.
+
+    The Linux child owns DNS, TLS and reading response headers. Parent's
+    communicate(timeout) kills and reaps it on deadline, preserving durable
+    at-least-once retries even if the receiver already accepted the request.
+    Payload/Telegram credentials travel via stdin, never argv or logs.
+    """
+    if channel == 'telegram':
+        text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
+        # Telegram Bot API accepts application/json. UTF-8 avoids 12-byte
+        # percent-encoding per astral emoji and remains below the child 16-KiB
+        # body limit for a 4000-character message (<=16000 UTF-8 bytes).
+        body = json.dumps({'chat_id': ENV('TELEGRAM_CHAT_ID'), 'text': text[:4000]},
+                          ensure_ascii=False, separators=(',', ':')).encode('utf-8')
+        url = f"{TELEGRAM_API}/bot{ENV('TELEGRAM_BOT_TOKEN')}/sendMessage"
+        headers = {'Content-Type': 'application/json'}
+    elif channel == 'webhook':
+        body = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()
+        signature = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), body, hashlib.sha256).hexdigest()
+        url = ENV('LEAD_WEBHOOK_URL')
+        headers = {'Content-Type': 'application/json', 'X-PBT-Signature': signature}
+    else:
+        raise PermanentDeliveryError(f'unknown channel {channel}')
+
+    if not _safe_outbound_url(url):
+        raise PermanentDeliveryError('insecure outbound delivery URL')
+
+    wire = json.dumps({
+        'url': url, 'body_b64': base64.b64encode(body).decode('ascii'),
+        'headers': headers, 'socket_timeout_s': DELIVERY_TIMEOUT,
+    }, ensure_ascii=True, separators=(',', ':')).encode('utf-8')
+    if len(wire) > 65536:
+        raise PermanentDeliveryError('delivery payload too large')
+
+    env = {k: v for k, v in os.environ.items() if k in _DELIVERY_CHILD_ENV}
+    env['PBT_PARENT_PID'] = str(os.getpid())
+    env['PYTHONDONTWRITEBYTECODE'] = '1'
+    try:
+        child = subprocess.Popen(
+            [sys.executable, str(_DELIVERY_CHILD)], stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            env=env, close_fds=True)
+    except OSError as exc:
+        raise TransientDeliveryError(type(exc).__name__) from None
+    try:
+        reply, _ = child.communicate(wire, timeout=DELIVERY_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        child.kill()
+        child.communicate()  # Reap; do not strand a process or an executor slot.
+        raise TransientDeliveryError('outbound_total_deadline') from None
+
+    status = reply.decode('ascii', errors='replace').strip()
+    if child.returncode == 0 and not status:
+        return
+    if child.returncode == 10 and re.fullmatch(r'HTTP 4\d{2}', status):
+        raise PermanentDeliveryError(status)
+    if child.returncode == 11 and re.fullmatch(r'(?:HTTP [1-5]\d{2}|[A-Za-z][A-Za-z0-9_]{0,39})', status):
+        raise TransientDeliveryError(status)
+    raise TransientDeliveryError('delivery_child_failure')
+
+
+def _attempt_delivery(row):
+    """Network I/O only: no SQLite access from sender threads."""
+    _, lead_id, channel, _, payload = row
+    try:
+        send(channel, lead_id, json.loads(payload))
+        return None, False
+    except PermanentDeliveryError as e:
+        return str(e), True
+    except TransientDeliveryError as e:
+        return str(e), False
+    except Exception as e:  # noqa: BLE001
+        return type(e).__name__ + (f' {e.code}' if isinstance(e, urllib.error.HTTPError) else ''), False
+
+
+def _completed_with_heartbeat(tasks, heartbeat):
+    """Yield completed network futures and refresh worker activity while waiting.
+
+    No SQLite lock is held while waiting. The callback is called on completion
+    and on bounded timeout; heartbeat means worker activity, never CRM success.
+    """
+    if heartbeat is None:
+        yield from as_completed(tasks)
+        return
+    pending = set(tasks)
+    while pending:
+        done, pending = wait(pending, timeout=DELIVERY_HEARTBEAT_INTERVAL_S,
+                             return_when=FIRST_COMPLETED)
+        heartbeat()
+        yield from done
+
+
+def deliver_due(now=None, heartbeat=None):
+    """One bounded outbox batch; apply results as they complete (at-least-once after crash)."""
     with _db_lock:
         c = db()
         rows = c.execute("SELECT o.id, o.lead_id, o.channel, o.attempts, l.payload FROM outbox o JOIN leads l ON l.id = o.lead_id "
                          "WHERE o.status = 'pending' AND o.next_at <= ? ORDER BY o.id LIMIT 50", (now or time.time(),)).fetchall()
         c.close()
-    for oid, lead_id, ch, att, payload in rows:
-        err, permanent = None, False
-        try:
-            send(ch, lead_id, json.loads(payload))
-        except PermanentDeliveryError as e:
-            err, permanent = str(e), True
-        except Exception as e:  # noqa: BLE001
-            err = type(e).__name__ + (f' {e.code}' if isinstance(e, urllib.error.HTTPError) else '')
-        att += 1; t = time.time()
-        with _db_lock:
-            c = db()
-            if err is None:
-                c.execute("UPDATE outbox SET status='delivered', attempts=?, last_at=?, last_error=NULL, delivered_at=? WHERE id=?",
-                          (att, t, datetime.now(timezone.utc).isoformat(), oid))
-                sent = [r[0] for r in c.execute("SELECT channel FROM outbox WHERE lead_id=? AND status='delivered' ORDER BY id", (lead_id,))]
-                c.execute('UPDATE leads SET delivered=? WHERE id=?', (','.join(sent), lead_id))
-                log.info('delivery ok lead=%s channel=%s attempt=%s', lead_id, ch, att)
-            elif permanent or att >= DELIVERY_MAX_ATTEMPTS:
-                c.execute("UPDATE outbox SET status='failed', attempts=?, last_at=?, last_error=? WHERE id=?", (att, t, err, oid))
-                log.error('delivery FAILED lead=%s channel=%s attempts=%s err=%s', lead_id, ch, att, err)
-            else:
-                nxt = t + min(DELIVERY_BACKOFF_S * 2 ** (att - 1), DELIVERY_BACKOFF_MAX_S)
-                c.execute('UPDATE outbox SET attempts=?, last_at=?, last_error=?, next_at=? WHERE id=?', (att, t, err, nxt, oid))
-                log.warning('delivery retry lead=%s channel=%s attempt=%s err=%s', lead_id, ch, att, err)
-            c.commit(); c.close()
+    if not rows:
+        return 0
+    # At most 50 queued and at most 8 in-flight network requests. The sole
+    # delivery worker owns this batch; never hold _db_lock across network I/O.
+    with ThreadPoolExecutor(max_workers=DELIVERY_CONCURRENCY, thread_name_prefix='pbt-delivery') as executor:
+        tasks = {executor.submit(_attempt_delivery, row): row for row in rows}
+        for task in _completed_with_heartbeat(tasks, heartbeat):
+            oid, lead_id, ch, att, _ = tasks[task]
+            err, permanent = task.result()
+            att += 1
+            t = time.time()
+            with _db_lock:
+                c = db()
+                try:
+                    if err is None:
+                        c.execute("UPDATE outbox SET status='delivered', attempts=?, last_at=?, last_error=NULL, delivered_at=? WHERE id=?",
+                                  (att, t, datetime.now(timezone.utc).isoformat(), oid))
+                        sent = [r[0] for r in c.execute("SELECT channel FROM outbox WHERE lead_id=? AND status='delivered' ORDER BY id", (lead_id,))]
+                        c.execute('UPDATE leads SET delivered=? WHERE id=?', (','.join(sent), lead_id))
+                        log.info('delivery ok lead=%s channel=%s attempt=%s', lead_id, ch, att)
+                    elif permanent or att >= DELIVERY_MAX_ATTEMPTS:
+                        c.execute("UPDATE outbox SET status='failed', attempts=?, last_at=?, last_error=? WHERE id=?", (att, t, err, oid))
+                        log.error('delivery FAILED lead=%s channel=%s attempts=%s err=%s', lead_id, ch, att, err)
+                    else:
+                        nxt = t + min(DELIVERY_BACKOFF_S * 2 ** (att - 1), DELIVERY_BACKOFF_MAX_S)
+                        c.execute('UPDATE outbox SET attempts=?, last_at=?, last_error=?, next_at=? WHERE id=?', (att, t, err, nxt, oid))
+                        log.warning('delivery retry lead=%s channel=%s attempt=%s err=%s', lead_id, ch, att, err)
+                    c.commit()
+                finally:
+                    c.close()
     return len(rows)
 
 
-def delivery_worker():
-    while True:
+def _record_worker_heartbeat():
+    """Durable *thread activity* marker; never misrepresent as downstream success."""
+    with _db_lock:
+        c = db()
         try:
-            deliver_due()
+            c.execute("""INSERT INTO runtime_heartbeat(name, observed_at)
+                         VALUES('delivery', ?)
+                         ON CONFLICT(name) DO UPDATE SET observed_at=excluded.observed_at""",
+                      (time.time(),))
+            c.commit()
+        finally:
+            c.close()
+
+
+def delivery_worker():
+    last_heartbeat = float('-inf')
+
+    def heartbeat_if_due():
+        nonlocal last_heartbeat
+        if time.monotonic() - last_heartbeat < DELIVERY_HEARTBEAT_INTERVAL_S:
+            return
+        try:
+            _record_worker_heartbeat()
+            last_heartbeat = time.monotonic()
+        except Exception as e:  # noqa: BLE001
+            log.error('delivery heartbeat error %s', type(e).__name__)
+
+    while True:
+        heartbeat_if_due()
+        try:
+            # Maintain liveness through each 50-row batch and continuously
+            # draining backlog. Never wait for all outbound futures to finish.
+            while deliver_due(heartbeat=heartbeat_if_due) == 50:
+                heartbeat_if_due()
         except Exception as e:  # noqa: BLE001
             log.error('delivery worker error %s', type(e).__name__)
-        _wake.wait(DELIVERY_POLL_S); _wake.clear()
+        heartbeat_if_due()
+        # Wake often enough to record heartbeat even without new requests.
+        _wake.wait(min(DELIVERY_POLL_S, DELIVERY_HEARTBEAT_INTERVAL_S))
+        _wake.clear()
 
 
 def public_config():
@@ -417,20 +641,24 @@ class _HeaderDeadlineReader(io.RawIOBase):
         return True
 
     def readinto(self, b):
-        h, dl = self.h, self.h._hdr_deadline
-        if dl is not None:
-            left = dl - time.monotonic()
-            if left <= 0:
-                h._hdr_expired = True
-                raise TimeoutError('header deadline')
-            h.connection.settimeout(min(h.timeout, left))
+        h = self.h
+        header_deadline = h._hdr_deadline
+        body_deadline = h._body_deadline if header_deadline is None else None
+        deadline = header_deadline if header_deadline is not None else body_deadline
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                if header_deadline is not None:
+                    h._hdr_expired = True
+                raise TimeoutError('absolute request read deadline')
+            h.connection.settimeout(min(h.timeout, remaining))
         try:
             n = h.connection.recv_into(b)
         except TimeoutError:
-            if dl is not None:
+            if header_deadline is not None:
                 h._hdr_expired = True
             raise
-        if dl is not None:
+        if header_deadline is not None:
             h._hdr_bytes += n
         return n
 
@@ -461,9 +689,17 @@ class Handler(SimpleHTTPRequestHandler):
                       '.woff2': 'font/woff2', '.json': 'application/json', '.webm': 'video/webm', '.mp4': 'video/mp4',
                       '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml'}
 
-    timeout = float(ENV('REQUEST_TIMEOUT') or 20)   # S7: повільний клієнт (slowloris) не тримає потік безстроково (env — лише для перевірки)
-    header_timeout = float(ENV('HEADER_TIMEOUT') or 10)   # SEC-1: абсолютний бюджет (с) на рядок запиту+заголовки → 408
+    timeout = float(ENV('REQUEST_TIMEOUT') or 20)   # S7: bounded per-socket inactivity
+    header_timeout = float(ENV('HEADER_TIMEOUT') or 10)   # SEC-1: absolute total header budget
+    body_timeout = float(ENV('REQUEST_BODY_DEADLINE') or 10)  # R1: absolute body budget
+    if not math.isfinite(timeout) or not 0.1 <= timeout <= 120:
+        raise ValueError('REQUEST_TIMEOUT must be finite and between 0.1 and 120')
+    if not math.isfinite(header_timeout) or not 0.1 <= header_timeout <= 60:
+        raise ValueError('HEADER_TIMEOUT must be finite and between 0.1 and 60')
+    if not 0.1 <= body_timeout <= 60:
+        raise ValueError('REQUEST_BODY_DEADLINE must be between 0.1 and 60 seconds')
     _hdr_deadline = None
+    _body_deadline = None
 
     def setup(self):
         super().setup()
@@ -600,8 +836,13 @@ class Handler(SimpleHTTPRequestHandler):
         return self.client_address[0] in ('127.0.0.1', '::1') and (ENV('TRUST_PROXY') or '0') == '1'
 
     def log_message(self, fmt, *args):
-        # S9: керівні символи з рядка запиту не потрапляють у журнал (підробка записів)
-        log.info('%s %s', self.client_ip(), CTRL.sub('?', fmt % args).replace('\r', '?').replace('\n', '?'))
+        # Do not persist query-string PII, URLs, Origin headers or raw peer IP.
+        # Only log bounded, server-derived metadata and a keyed IP pseudonym.
+        status = str(args[1]) if fmt == '"%s" %s %s' and len(args) == 3 else ''
+        if not re.fullmatch(r'[1-5][0-9]{2}', status):
+            status = 'event'
+        method = self.command if getattr(self, 'command', None) in ('GET', 'HEAD', 'POST', 'OPTIONS') else 'OTHER'
+        log.info('http client_hash=%s method=%s status=%s', _ip_hash(self.client_ip()), method, status)
 
     def end_headers(self):
         for k, v in SEC_HEADERS.items():
@@ -709,7 +950,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(404, {'ok': False, 'error': 'not_found'})
         ip = self.client_ip()
         if not self.origin_ok():
-            log.warning('lead rejected: origin ip=%s origin=%r', ip, self.headers.get('Origin'))
+            log.warning('lead rejected: origin ip_hash=%s', _ip_hash(ip))
             return self.send_json(403, {'ok': False, 'error': 'origin'})
         if 'application/json' not in (self.headers.get('Content-Type') or ''):
             return self.send_json(415, {'ok': False, 'error': 'content_type'})
@@ -721,17 +962,36 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(413, {'ok': False, 'error': 'size'})
         if not rate_ok(ip, 'any'):
             return self.rate_limited(ip)
+        self._body_deadline = time.monotonic() + self.body_timeout
         try:
-            body = json.loads(self.rfile.read(n).decode('utf-8'))
+            raw = self.rfile.read(n)
+        except TimeoutError:
+            # Абсолютний час вичерпано: ніколи не приймати недочитаний JSON.
+            self.close_connection = True
+            return self.send_json(408, {'ok': False, 'error': 'request_timeout'})
         except Exception:  # noqa: BLE001
+            self.close_connection = True
+            return self.send_json(400, {'ok': False, 'error': 'json'})
+        finally:
+            self._body_deadline = None
+            try:
+                self.connection.settimeout(self.timeout)
+            except OSError:
+                pass
+        if len(raw) != n:
+            self.close_connection = True
+            return self.send_json(400, {'ok': False, 'error': 'json'})
+        try:
+            body = json.loads(raw.decode('utf-8'))
+        except (UnicodeDecodeError, ValueError):
             return self.send_json(400, {'ok': False, 'error': 'json'})
         try:
             data, err = validate(body)
         except Exception as e:  # noqa: BLE001 — запобіжник: жоден вхід не валить обробник (S12)
-            log.error('lead validation crashed ip=%s err=%s', ip, type(e).__name__)
+            log.error('lead validation crashed ip_hash=%s err=%s', _ip_hash(ip), type(e).__name__)
             return self.send_json(400, {'ok': False, 'error': 'validation'})
         if err.get('_') == 'spam':
-            log.warning('lead dropped: honeypot ip=%s', ip)
+            log.warning('lead dropped: honeypot ip_hash=%s', _ip_hash(ip))
             return self.send_json(200, {'ok': True, 'ref': 'PBT-000000'})  # тиха відмова ботам
         if err:
             return self.send_json(422, {'ok': False, 'error': 'validation', 'fields': err})
@@ -740,47 +1000,81 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {'ok': False, 'error': 'idempotency_key'})
         ph = hashlib.sha256(json.dumps(data, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
         if not _schema_ok.is_set():
-            log.error('lead storage unavailable: schema not migrated ip=%s', ip)
+            log.error('lead storage unavailable: schema not migrated ip_hash=%s', _ip_hash(ip))
             return self.send_json(503, {'ok': False, 'error': 'storage'})
         if idem:
             replay = self.idem_replay(idem, ph)
             if replay:
                 return replay()
-        # квота прийнятих заявок — ПІСЛЯ перевірки повтору: повтор уже прийнятої заявки не впирається в ліміт і не витрачає його.
-        # OPS-4: тут лише перевірка; списання — після коміту (невдалий запис квоту не з'їдає)
-        if not rate_ok(ip, 'lead', 'lead_day', commit=False):
+        # Fast-reject only unkeyed leads. A keyed caller can observe its
+        # key absent, then another caller can commit that same key and exhaust
+        # quota before this caller reaches the old fast-path check. Keyed
+        # requests must reach the lock-scoped replay/conflict check first,
+        # preserving 201 replay and 409 conflict instead of a false 429.
+        if not idem and not rate_ok(ip, 'lead', 'lead_day', commit=False):
             return self.rate_limited(ip)
-        ip_hash = hmac.new(IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()[:16]
+        ip_hash = _ip_hash(ip)
         chans = channels()
+        quota_raced = False
+        existing = None
+        lead_id = None
         try:
             with _db_lock:
                 c = db()
                 try:
-                    c.execute('BEGIN IMMEDIATE')          # заявка й завдання доставки — одна транзакція
-                    cur = c.execute('INSERT INTO leads(created,type,payload,ip_hash,ua,idem_key,payload_hash) VALUES(?,?,?,?,?,?,?)',
-                                    (datetime.now(timezone.utc).isoformat(), data['type'], json.dumps(data, ensure_ascii=False),
-                                     ip_hash, (self.headers.get('User-Agent') or '')[:200], idem, ph))
-                    lead_id = cur.lastrowid
-                    c.executemany('INSERT INTO outbox(lead_id, channel) VALUES(?, ?)', [(lead_id, ch) for ch in chans])
-                    c.commit()
+                    c.execute('BEGIN IMMEDIATE')
+                    # A matching request may have committed since idem_replay().
+                    # Recheck inside the same lock, before enforcing the quota.
+                    if idem:
+                        existing = c.execute(
+                            'SELECT id, payload_hash FROM leads WHERE idem_key=?',
+                            (idem,)).fetchone()
+                    if existing is None:
+                        # Check + SQLite commit + quota charge are serialized.
+                        # Previously these were separate critical sections:
+                        # simultaneous new keys could all pass a quota of one.
+                        if not rate_ok(ip, 'lead', 'lead_day', commit=False):
+                            quota_raced = True
+                        else:
+                            cur = c.execute(
+                                'INSERT INTO leads(created,type,payload,ip_hash,ua,idem_key,payload_hash) '
+                                'VALUES(?,?,?,?,?,?,?)',
+                                (datetime.now(timezone.utc).isoformat(), data['type'],
+                                 json.dumps(data, ensure_ascii=False), ip_hash,
+                                 (self.headers.get('User-Agent') or '')[:200], idem, ph))
+                            lead_id = cur.lastrowid
+                            c.executemany('INSERT INTO outbox(lead_id, channel) VALUES(?, ?)',
+                                          [(lead_id, ch) for ch in chans])
+                            c.commit()
+                            # Charge only after durability, before another
+                            # request can check the same limit under _db_lock.
+                            rate_commit(ip, 'lead', 'lead_day')
                 finally:
                     c.close()
-        except sqlite3.IntegrityError:            # той самий ключ записав інший процес між перевіркою й вставкою
+        except sqlite3.IntegrityError:
+            # Shared SQLite file across app processes: preserve existing
+            # database-enforced key uniqueness and replay behavior.
             replay = self.idem_replay(idem, ph) if idem else None
             if replay:
                 return replay()
-            log.error('lead storage integrity error ip=%s', ip)
+            log.error('lead storage integrity error ip_hash=%s', _ip_hash(ip))
             return self.send_json(500, {'ok': False, 'error': 'storage'})
         except Exception as e:  # noqa: BLE001
-            log.error('lead storage failed ip=%s err=%s', ip, type(e).__name__)
+            log.error('lead storage failed ip_hash=%s err=%s', _ip_hash(ip), type(e).__name__)
             return self.send_json(500, {'ok': False, 'error': 'storage'})
-        rate_commit(ip, 'lead', 'lead_day')
+        if existing is not None:
+            if existing[1] != ph:
+                log.warning('lead idempotency conflict id=%s', existing[0])
+                return self.send_json(409, {'ok': False, 'error': 'idempotency_conflict'})
+            return self.send_json(201, {'ok': True, 'ref': f'PBT-{existing[0]:06d}', 'replayed': True})
+        if quota_raced:
+            return self.rate_limited(ip)
         _wake.set()
         log.info('lead stored id=%s type=%s outbox=%s', lead_id, data['type'], ','.join(chans) or 'local')
         return self.send_json(201, {'ok': True, 'ref': f'PBT-{lead_id:06d}'})
 
     def rate_limited(self, ip):
-        log.warning('lead rejected: rate ip=%s', ip)
+        log.warning('lead rejected: rate ip_hash=%s', _ip_hash(ip))
         return self.send_json(429, {'ok': False, 'error': 'rate', 'message': 'Забагато запитів. Спробуй за 10 хвилин.'})
 
     def idem_replay(self, idem, ph):
@@ -794,7 +1088,7 @@ class Handler(SimpleHTTPRequestHandler):
                 finally:
                     c.close()
         except Exception as e:  # noqa: BLE001 — OPS-2: помилка БД тут рвала з'єднання без відповіді й без запису в журнал
-            log.error('lead storage failed (idempotency lookup) ip=%s err=%s', self.client_ip(), type(e).__name__)
+            log.error('lead storage failed (idempotency lookup) ip_hash=%s err=%s', _ip_hash(self.client_ip()), type(e).__name__)
             return lambda: self.send_json(500, {'ok': False, 'error': 'storage'})
         if not row:
             return None
@@ -834,7 +1128,10 @@ def main():
     max_conn = int(ENV('MAX_CONNECTIONS') or 128)
     if not 1 <= max_conn <= 200:
         raise SystemExit('MAX_CONNECTIONS must be 1..200 (systemd TasksMax=256)')
-    srv = Server((host, port), Handler, max_conn, float(ENV('CONN_SLOT_WAIT') or Handler.header_timeout))
+    slot_wait = float(ENV('CONN_SLOT_WAIT') or Handler.header_timeout)
+    if not math.isfinite(slot_wait) or not 0 <= slot_wait <= 120:
+        raise SystemExit('CONN_SLOT_WAIT must be finite and between 0 and 120')
+    srv = Server((host, port), Handler, max_conn, slot_wait)
     if not _schema_ok.is_set():
         threading.Thread(target=migrate_retry_worker, name='migrate', daemon=True).start()
     if (ENV('DELIVERY_WORKER') or '1') != '0':      # 0 — лише для тестів («падіння до доставки»)
