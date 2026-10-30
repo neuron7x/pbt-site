@@ -240,14 +240,17 @@ def test_server_5xx_is_transient(srv):
 
 # ─── журнал / сіль / таймаут / здоров'я / HSTS (M12–M14, M21, M22) ─
 def test_request_log_strips_control_characters(srv):
-    """M12 (S9): керівні символи з рядка запиту не потрапляють у журнал (підробка записів/ESC-послідовності)."""
+    """M12 (S9): an injected request line may not persist URL PII or ANSI controls."""
     s = srv()
+    journal = ROOT / 'data' / 'server.log'
+    offset = journal.stat().st_size
     marker = f'LOGINJ{time.time_ns()}'
     with socket.create_connection(('127.0.0.1', s.port)) as c:
         c.sendall(f'GET /{marker}\x1b[31m\x07\x08 HTTP/1.0\r\n\r\n'.encode('latin-1')); c.recv(100)
-    log = (ROOT / 'data' / 'server.log').read_bytes()
-    line = [l for l in log.splitlines() if marker.encode() in l]
-    assert line and all(b not in line[-1] for b in (b'\x1b', b'\x07', b'\x08')), line
+    delta = journal.read_bytes()[offset:]
+    assert delta and b'client_hash=' in delta
+    assert marker.encode() not in delta
+    assert all(byte not in delta for byte in (b'\x1b', b'\x07', b'\x08'))
 
 
 def test_ip_hash_uses_secret_salt_not_constant(srv):
