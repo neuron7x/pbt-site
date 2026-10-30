@@ -406,3 +406,36 @@ def test_valid_json_surrogate_pair_preserves_201_and_emoji(srv):
         assert json.loads(accepted.read())['ref'] == 'PBT-000001'
     assert s.rows('SELECT count(*) FROM leads') == [(1,)]
     assert json.loads(s.rows('SELECT payload FROM leads')[0][0])['subject'] == data['subject']
+
+
+# ─── privacy: neither full peer IP nor URL query/Origin in durable logs ───
+def test_http_access_and_rejected_origin_logs_are_pseudonymous(srv):
+    """Negative falsifier: the old handler emitted raw XFF, query and Origin."""
+    s = srv(TRUST_PROXY='1', DELIVERY_WORKER='0')
+    journal = ROOT / 'data' / 'server.log'
+    offset = journal.stat().st_size
+    raw_ip = '198.51.100.237'
+    marker = 'pbt-private-query-314159'
+    request = urllib.request.Request(
+        s.base + '/api/health?contact=' + marker,
+        headers={'X-Forwarded-For': raw_ip})
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            assert response.status in (200, 503)
+    except urllib.error.HTTPError as exc:
+        assert exc.code == 503
+    invalid_origin = 'https://untrusted.invalid/private/' + marker
+    rejected = urllib.request.Request(
+        s.base + '/api/lead', json.dumps(LEAD).encode('utf-8'),
+        {'Content-Type': 'application/json', 'Origin': invalid_origin,
+         'X-Forwarded-For': raw_ip}, method='POST')
+    with pytest.raises(urllib.error.HTTPError) as response:
+        urllib.request.urlopen(rejected, timeout=5)
+    assert response.value.code == 403
+    journal_delta = journal.read_bytes()[offset:].decode('utf-8')
+    assert raw_ip not in journal_delta
+    assert '127.0.0.1 ' not in journal_delta
+    assert marker not in journal_delta
+    assert invalid_origin not in journal_delta
+    assert 'client_hash=' in journal_delta
+    assert 'status=403' in journal_delta

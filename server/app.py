@@ -63,6 +63,13 @@ def _ip_salt():
 
 
 IP_SALT = _ip_salt()
+
+
+def _ip_hash(ip):
+    """Keyed pseudonymous client identifier; never write a raw address to logs."""
+    return hmac.new(IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()[:16]
+
+
 MAX_BODY = 8 * 1024
 TYPES = {'rent', 'material', 'transport', 'other'}
 METHODS = {'phone', 'telegram', 'viber', 'whatsapp'}
@@ -799,8 +806,13 @@ class Handler(SimpleHTTPRequestHandler):
         return self.client_address[0] in ('127.0.0.1', '::1') and (ENV('TRUST_PROXY') or '0') == '1'
 
     def log_message(self, fmt, *args):
-        # S9: керівні символи з рядка запиту не потрапляють у журнал (підробка записів)
-        log.info('%s %s', self.client_ip(), CTRL.sub('?', fmt % args).replace('\r', '?').replace('\n', '?'))
+        # Do not persist query-string PII, URLs, Origin headers or raw peer IP.
+        # Only log bounded, server-derived metadata and a keyed IP pseudonym.
+        status = str(args[1]) if fmt == '"%s" %s %s' and len(args) == 3 else ''
+        if not re.fullmatch(r'[1-5][0-9]{2}', status):
+            status = 'event'
+        method = self.command if getattr(self, 'command', None) in ('GET', 'HEAD', 'POST', 'OPTIONS') else 'OTHER'
+        log.info('http client_hash=%s method=%s status=%s', _ip_hash(self.client_ip()), method, status)
 
     def end_headers(self):
         for k, v in SEC_HEADERS.items():
@@ -908,7 +920,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(404, {'ok': False, 'error': 'not_found'})
         ip = self.client_ip()
         if not self.origin_ok():
-            log.warning('lead rejected: origin ip=%s origin=%r', ip, self.headers.get('Origin'))
+            log.warning('lead rejected: origin ip_hash=%s', _ip_hash(ip))
             return self.send_json(403, {'ok': False, 'error': 'origin'})
         if 'application/json' not in (self.headers.get('Content-Type') or ''):
             return self.send_json(415, {'ok': False, 'error': 'content_type'})
@@ -946,10 +958,10 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             data, err = validate(body)
         except Exception as e:  # noqa: BLE001 — запобіжник: жоден вхід не валить обробник (S12)
-            log.error('lead validation crashed ip=%s err=%s', ip, type(e).__name__)
+            log.error('lead validation crashed ip_hash=%s err=%s', _ip_hash(ip), type(e).__name__)
             return self.send_json(400, {'ok': False, 'error': 'validation'})
         if err.get('_') == 'spam':
-            log.warning('lead dropped: honeypot ip=%s', ip)
+            log.warning('lead dropped: honeypot ip_hash=%s', _ip_hash(ip))
             return self.send_json(200, {'ok': True, 'ref': 'PBT-000000'})  # тиха відмова ботам
         if err:
             return self.send_json(422, {'ok': False, 'error': 'validation', 'fields': err})
@@ -958,7 +970,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {'ok': False, 'error': 'idempotency_key'})
         ph = hashlib.sha256(json.dumps(data, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
         if not _schema_ok.is_set():
-            log.error('lead storage unavailable: schema not migrated ip=%s', ip)
+            log.error('lead storage unavailable: schema not migrated ip_hash=%s', _ip_hash(ip))
             return self.send_json(503, {'ok': False, 'error': 'storage'})
         if idem:
             replay = self.idem_replay(idem, ph)
@@ -971,7 +983,7 @@ class Handler(SimpleHTTPRequestHandler):
         # preserving 201 replay and 409 conflict instead of a false 429.
         if not idem and not rate_ok(ip, 'lead', 'lead_day', commit=False):
             return self.rate_limited(ip)
-        ip_hash = hmac.new(IP_SALT.encode(), ip.encode(), hashlib.sha256).hexdigest()[:16]
+        ip_hash = _ip_hash(ip)
         chans = channels()
         quota_raced = False
         existing = None
@@ -1015,10 +1027,10 @@ class Handler(SimpleHTTPRequestHandler):
             replay = self.idem_replay(idem, ph) if idem else None
             if replay:
                 return replay()
-            log.error('lead storage integrity error ip=%s', ip)
+            log.error('lead storage integrity error ip_hash=%s', _ip_hash(ip))
             return self.send_json(500, {'ok': False, 'error': 'storage'})
         except Exception as e:  # noqa: BLE001
-            log.error('lead storage failed ip=%s err=%s', ip, type(e).__name__)
+            log.error('lead storage failed ip_hash=%s err=%s', _ip_hash(ip), type(e).__name__)
             return self.send_json(500, {'ok': False, 'error': 'storage'})
         if existing is not None:
             if existing[1] != ph:
@@ -1032,7 +1044,7 @@ class Handler(SimpleHTTPRequestHandler):
         return self.send_json(201, {'ok': True, 'ref': f'PBT-{lead_id:06d}'})
 
     def rate_limited(self, ip):
-        log.warning('lead rejected: rate ip=%s', ip)
+        log.warning('lead rejected: rate ip_hash=%s', _ip_hash(ip))
         return self.send_json(429, {'ok': False, 'error': 'rate', 'message': 'Забагато запитів. Спробуй за 10 хвилин.'})
 
     def idem_replay(self, idem, ph):
@@ -1046,7 +1058,7 @@ class Handler(SimpleHTTPRequestHandler):
                 finally:
                     c.close()
         except Exception as e:  # noqa: BLE001 — OPS-2: помилка БД тут рвала з'єднання без відповіді й без запису в журнал
-            log.error('lead storage failed (idempotency lookup) ip=%s err=%s', self.client_ip(), type(e).__name__)
+            log.error('lead storage failed (idempotency lookup) ip_hash=%s err=%s', _ip_hash(self.client_ip()), type(e).__name__)
             return lambda: self.send_json(500, {'ok': False, 'error': 'storage'})
         if not row:
             return None
