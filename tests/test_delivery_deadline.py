@@ -142,19 +142,36 @@ def test_unsupported_total_deadline_configuration_fails_closed(tmp_path):
         assert p.returncode != 0, value
 
 
-def test_redirect_does_not_forward_webhook_hmac_to_other_host(srv):
-    """A signed request must not leak to a redirect target, even on 307."""
-    from test_leads import Stub
+@pytest.mark.parametrize('code', [301, 302, 303, 307, 308])
+def test_redirect_does_not_forward_webhook_hmac_to_other_host(srv, code):
+    """A signed request must not leak to a redirect target. On 301/302/303 urllib would re-issue it as a GET with
+    the signature header and no body, and a 2xx there would mark the lead delivered: the target answers any method."""
+    reached = []
 
-    destination = Stub()
+    class Target(BaseHTTPRequestHandler):
+        def _any(self):
+            reached.append((self.command, self.headers.get('X-PBT-Signature')))
+            self.send_response(200)
+            self.send_header('Content-Length', '0')
+            self.end_headers()
+
+        do_GET = do_POST = do_HEAD = _any
+
+        def log_message(self, *args):
+            pass
+
+    target = ThreadingHTTPServer(('127.0.0.1', 0), Target)
+    target.daemon_threads = True
+    threading.Thread(target=target.serve_forever, daemon=True).start()
+    destination_url = f'http://127.0.0.1:{target.server_address[1]}'
     captured = []
 
     class Redirect(BaseHTTPRequestHandler):
         def do_POST(self):
             body = self.rfile.read(int(self.headers.get('Content-Length') or 0))
             captured.append((body, self.headers.get('X-PBT-Signature')))
-            self.send_response(307)
-            self.send_header('Location', destination.url + '/forwarded')
+            self.send_response(code)
+            self.send_header('Location', destination_url + '/forwarded')
             self.send_header('Content-Length', '0')
             self.end_headers()
 
@@ -168,10 +185,10 @@ def test_redirect_does_not_forward_webhook_hmac_to_other_host(srv):
     try:
         site = srv(LEAD_WEBHOOK_URL=f'http://127.0.0.1:{sender.server_address[1]}/hook',
                    LEAD_WEBHOOK_SECRET='sec', DELIVERY_MAX_ATTEMPTS='1')
-        assert site.post(LEAD, 'k-redirect-001')[0] == 201
+        assert site.post(LEAD, f'k-redirect-{code}')[0] == 201
         assert wait_for(lambda: site.rows(
             "SELECT count(*) FROM outbox WHERE status='failed'") == [(1,)] or None, timeout=5)
-        assert destination.hits == []
+        assert reached == []
         assert len(captured) == 1
         raw, sig = captured[0]
         assert hmac.compare_digest(sig, hmac.new(b'sec', raw, hashlib.sha256).hexdigest())
@@ -180,7 +197,8 @@ def test_redirect_does_not_forward_webhook_hmac_to_other_host(srv):
         sender.shutdown()
         sender.server_close()
         t.join(timeout=3)
-        destination.close()
+        target.shutdown()
+        target.server_close()
 
 
 @pytest.mark.parametrize(('key', 'value'), [

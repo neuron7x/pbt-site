@@ -136,7 +136,8 @@ for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
 
 # ─── rate limit на IP: усі запити (захист від перебору) і прийняті заявки ───
 _hits, _hits_lock = {}, threading.Lock()
-_active_ips = set()  # One identity per IP, independently of its three quota buckets.
+# One identity per client, independently of its three quota buckets; insertion order = least recently seen first.
+_active_ips = {}
 RATE_IP_CAP = int(ENV('RATE_IP_CAP') or 8192)
 if RATE_IP_CAP < 1:
     raise ValueError('RATE_IP_CAP must be positive')
@@ -154,21 +155,49 @@ def _prune(now):
     _last_prune[0] = now
     for key in [k for k, ts in _hits.items() if not ts or now - ts[-1] >= LIMITS[k[1]][1]]:
         del _hits[key]
-    _active_ips.intersection_update(ip for ip, _ in _hits)
+    live = {ip for ip, _ in _hits}
+    for ip in [ip for ip in _active_ips if ip not in live]:
+        del _active_ips[ip]
+
+
+def rate_identity(ip):
+    """IPv6 clients are limited per /64: one subscriber routinely owns the whole prefix, so per-address keys would
+    let a single sender mint unlimited identities. IPv4 (and anything unparsable) stays per address."""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+    if addr.version == 6:
+        if addr.ipv4_mapped is not None:
+            return str(addr.ipv4_mapped)
+        return str(ipaddress.ip_network(f'{addr}/64', strict=False))
+    return str(addr)
+
+
+def _touch(ip):
+    """Mark `ip` most recently seen. At the cardinality cap the least recently seen identity is evicted with its
+    buckets. Refusing every new identity instead (the previous behaviour) let one sender holding the table full lock
+    out all real customers; eviction costs at most a quota reset for an idle identity, which rotation buys anyway."""
+    _active_ips.pop(ip, None)
+    while len(_active_ips) >= RATE_IP_CAP:
+        old = next(iter(_active_ips))
+        del _active_ips[old]
+        for b in LIMITS:
+            _hits.pop((old, b), None)
+    _active_ips[ip] = None
 
 
 def rate_ok(ip, *buckets, commit=True):
+    ip = rate_identity(ip)
     now = time.time()
     with _hits_lock:
         _prune(now)
-        if ip not in _active_ips and len(_active_ips) >= RATE_IP_CAP:
-            return False  # Fail closed: evicting an active identity would reset its quota.
         for b in buckets:
             lim, win = LIMITS[b]
             if len([t for t in _hits.get((ip, b), []) if now - t < win]) >= lim:
                 return False
         if commit:
-            _active_ips.add(ip)
+            _touch(ip)
             for b in buckets:
                 _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
         return True
@@ -176,9 +205,10 @@ def rate_ok(ip, *buckets, commit=True):
 
 def rate_commit(ip, *buckets):
     """OPS-4: списати квоту після успішного запису (без повторної перевірки — заявка вже прийнята)."""
+    ip = rate_identity(ip)
     now = time.time()
     with _hits_lock:
-        _active_ips.add(ip)  # The 'any' bucket was committed for this accepted request.
+        _touch(ip)  # The 'any' bucket was committed for this accepted request.
         for b in buckets:
             _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
 

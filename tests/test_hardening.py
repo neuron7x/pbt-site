@@ -214,18 +214,25 @@ def test_outbox_51_rows_after_restart_drains_before_next_poll(srv):
         st.close()
 
 
-def test_rate_identity_cardinality_is_bounded_without_quota_eviction(srv):
-    """Many proxy identities cannot grow memory without bound or reset existing quotas."""
+def test_a_flood_of_identities_at_the_cap_does_not_lock_out_a_new_client(srv):
+    """The identity table stays bounded, but filling it must not refuse everyone else: the least recently seen
+    identity is evicted. Before: at RATE_IP_CAP every new client got 429 for the whole window (remote DoS)."""
     s = srv(TRUST_PROXY='1', RATE_IP_CAP='2', RATE_ANY_10MIN='10',
             RATE_LEAD_10MIN='3', RATE_LEAD_DAY='3')
-    for i in range(2):
-        assert _lead(s, f'k-ipcap-{i:06d}', xff=f'203.0.113.{10 + i}')[0] == 201
-    for i in range(64):
-        code, data = _lead(s, f'k-flood-{i:06d}', xff=f'198.51.100.{i + 1}')
-        assert (code, data.get('error')) == (429, 'rate')
-    assert _lead(s, 'k-ipcap-000003', xff='203.0.113.10')[0] == 201
-    assert s.rows('SELECT count(*) FROM leads') == [(3,)]
-    assert s.rows('SELECT count(*) FROM outbox') == [(0,)]
+    for i in range(16):
+        assert _lead(s, f'k-flood-{i:06d}', xff=f'198.51.100.{i + 1}')[0] == 201
+    assert _lead(s, 'k-fresh-000001', xff='192.0.2.77')[0] == 201
+    assert s.rows('SELECT count(*) FROM leads') == [(17,)]
+
+
+def test_ipv6_addresses_of_one_slash64_share_one_quota(srv):
+    """A sender owning a /64 cannot mint a fresh quota per address; another /64 is a different client."""
+    s = srv(TRUST_PROXY='1', RATE_LEAD_10MIN='3', RATE_LEAD_DAY='30')
+    for i in range(3):
+        assert _lead(s, f'k-v6-{i:06d}', xff=f'2001:db8:1:2::{i + 1:x}')[0] == 201
+    code, data = _lead(s, 'k-v6-000099', xff='2001:db8:1:2:ffff::9')
+    assert (code, data.get('error')) == (429, 'rate')
+    assert _lead(s, 'k-v6-other-01', xff='2001:db8:1:3::1')[0] == 201
 
 
 def test_server_5xx_is_transient(srv):

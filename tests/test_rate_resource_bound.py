@@ -32,11 +32,12 @@ for n in range(25000):
     accepted += bool(app.rate_ok(f'client-{n}', 'any'))
 gc.collect()
 current, peak = tracemalloc.get_traced_memory()
-assert accepted == 32, accepted
+assert accepted == 25000, accepted
 assert len(app._active_ips) == 32, len(app._active_ips)
 assert len(app._hits) == 32, len(app._hits)
-assert app.rate_ok('client-0', 'any') is True
-assert app.rate_ok('new-client-after-cap', 'any') is False
+assert 'client-24999' in app._active_ips and 'client-0' not in app._active_ips
+assert app.rate_ok('new-client-after-cap', 'any') is True
+assert len(app._active_ips) == 32 and len(app._hits) == 32
 assert peak - baseline < 8 * 1024 * 1024, peak - baseline
 print(json.dumps({'attempted_distinct_identities': 25000,
                   'accepted_distinct_identities': accepted,
@@ -53,6 +54,6 @@ print(json.dumps({'attempted_distinct_identities': 25000,
                           capture_output=True, text=True, timeout=25, check=False)
     assert done.returncode == 0, done.stdout + done.stderr
     result = json.loads(done.stdout)
-    assert result['accepted_distinct_identities'] == 32
+    assert result['accepted_distinct_identities'] == 25000
     assert result['tracked_buckets'] == 32
     assert result['tracemalloc_peak_delta_bytes'] < result['test_peak_heap_budget_bytes']
