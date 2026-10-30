@@ -1,8 +1,9 @@
 """Deterministic real-socket falsification of the lead-quota check/commit race.
 
-A barrier after the first read-only quota check forces eight concurrent
-requests through the vulnerable check-then-write window. The SQLite lock must
-recheck the limit and charge it before allowing the next SQLite transaction.
+A barrier after the initial idempotency lookup (after that lookup releases
+_db_lock) brings eight distinct keyed requests to the quota admission boundary.
+Never wait at a multi-request barrier while holding the SQLite serialization
+lock: the old scheduler caused false HTTP 500 errors and a broken test.
 Run in a separate interpreter to isolate server import side effects.
 """
 import json
@@ -28,19 +29,19 @@ assert app._schema_ok.is_set()
 barrier = threading.Barrier(8)
 lock = threading.Lock()
 first_checks = [0]
-original_rate_ok = app.rate_ok
+original_replay = app.Handler.idem_replay
 
-def interleaved_rate_ok(ip, *buckets, commit=True):
-    allowed = original_rate_ok(ip, *buckets, commit=commit)
-    if not commit and buckets == ('lead', 'lead_day'):
+def synchronize_pre_admission(self, idem, payload_hash):
+    # The original lookup returns after releasing _db_lock. Synchronize
+    # distinct keys here, never from rate_ok() inside the write transaction.
+    replay = original_replay(self, idem, payload_hash)
+    if replay is None and idem.startswith('k-quota-race-'):
         with lock:
             first_checks[0] += 1
-            initial = first_checks[0] <= 8
-        if initial:
-            barrier.wait(timeout=10)
-    return allowed
+        barrier.wait(timeout=10)
+    return replay
 
-app.rate_ok = interleaved_rate_ok
+app.Handler.idem_replay = synchronize_pre_admission
 class SocketServer(app.Server):
     request_queue_size = 64
 server = SocketServer(('127.0.0.1', 0), app.Handler, max_conn=32, slot_wait=5)
