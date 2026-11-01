@@ -383,8 +383,8 @@
    "edits": [
     {
      "file": "server/app.py",
-     "find": "    acquire_single_process_guard()\n    host, port",
-     "replace": "    host, port"
+     "find": "    if _guard_state == 'contended':\n        raise SystemExit('single_process_guard: another process holds this lead database')\n",
+     "replace": "    pass\n"
     }
    ],
    "oracle": [
@@ -749,6 +749,34 @@
     "node",
     "--test",
     "tests/quote_engine.test.cjs"
+   ]
+  },
+  {
+   "id": "M-NET-05-migrate-before-guard",
+   "task": "NET-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "if _guard_state == 'held':\n    for _i in range",
+     "replace": "if True:\n    for _i in range"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_refused_second_server_writes_nothing_while_restore_or_a_peer_holds_the_guard"
+   ]
+  },
+  {
+   "id": "M-EVD-03-catalog-coverage",
+   "task": "ADV-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(len(ids)==len(set(ids)) and set(ids)==set(catalog), 'mutation_catalog_coverage')\n    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed='UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED'\n",
+     "replace": "    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed=verdict if row['id'] not in catalog else ('UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED')\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
    ]
   }
  ]

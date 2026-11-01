@@ -156,10 +156,34 @@ def migrate_retry_worker():
 
 # OPS-3: лок БД на старті не валить процес (раніше — OperationalError на імпорті, лягала й статика): обмежені спроби,
 # далі сервер стартує, а міграція повторюється у фоні (main).
-for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
-    if _try_migrate(2):
-        break
-    time.sleep(0.5)
+_single_process_guard = []
+
+
+def _take_guard():
+    """Rate limits and the delivery worker live in one process's memory. A second server on the same
+    database would silently double every quota, and ops/restore.py holds this lock while it swaps files.
+    A kernel lock: SIGKILL releases it, leaving nothing to clean up. Taken before the first write."""
+    try:
+        fd = os.open(f'{DB}.server-lock', os.O_RDWR | os.O_CREAT, 0o600)
+    except OSError as e:
+        log.error('single_process_guard unavailable err=%s', type(e).__name__)
+        return 'unavailable'
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        os.close(fd)
+        return 'contended'
+    _single_process_guard.append(fd)
+    return 'held'
+
+
+_guard_state = _take_guard()
+# Without the guard nothing may write: not schema, not leads. Static pages still serve, /api/lead answers 503.
+if _guard_state == 'held':
+    for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
+        if _try_migrate(2):
+            break
+        time.sleep(0.5)
 
 # ─── rate limit на IP: усі запити (захист від перебору) і прийняті заявки ───
 _hits, _hits_lock = {}, threading.RLock()
@@ -388,7 +412,7 @@ def _date(v):
     if v in (None, ''):
         return ''
     s = clean(v, 10)
-    if not date_allowed(s):
+    if not s or not date_allowed(s):  # Whitespace is not an absent date.
         raise ValueError
     return s
 
@@ -1018,7 +1042,10 @@ class Handler(SimpleHTTPRequestHandler):
                 c.execute('ROLLBACK'); checks['db'] = c.execute('SELECT count(*) FROM leads').fetchone()[0] >= 0 and _schema_ok.is_set(); c.close()
         except Exception as e:  # noqa: BLE001
             checks['db'] = False; log.error('health: db %s', type(e).__name__)
-        st = os.statvfs(DB.parent); checks['disk'] = st.f_bavail * st.f_frsize > HEALTH_MIN_FREE_MB * 1024 * 1024
+        try:
+            st = os.statvfs(DB.parent); checks['disk'] = st.f_bavail * st.f_frsize > HEALTH_MIN_FREE_MB * 1024 * 1024
+        except OSError as e:   # A vanished data directory must answer 503, not drop the connection.
+            checks['disk'] = False; log.error('health: disk %s', type(e).__name__)
         ok = all(checks.values())
         return self.send_json(200 if ok else 503, {'ok': ok, **checks})
 
@@ -1215,20 +1242,9 @@ class Server(ThreadingHTTPServer):
             self._slots.release()
 
 
-_single_process_guard = []
-
-
 def acquire_single_process_guard():
-    """Rate limits and the delivery worker live in one process's memory. A second server on the same
-    database would silently double every quota, so the unsupported topology refuses to start.
-    A kernel lock: SIGKILL releases it, leaving nothing to clean up. ops/restore.py takes it too."""
-    fd = os.open(f'{DB}.server-lock', os.O_RDWR | os.O_CREAT, 0o600)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
-        os.close(fd)
-        raise SystemExit('single_process_guard: another process holds this lead database') from None
-    _single_process_guard.append(fd)
+    if _guard_state == 'contended':
+        raise SystemExit('single_process_guard: another process holds this lead database')
 
 
 def main():
@@ -1241,7 +1257,7 @@ def main():
     if not math.isfinite(slot_wait) or not 0 <= slot_wait <= 120:
         raise SystemExit('CONN_SLOT_WAIT must be finite and between 0 and 120')
     srv = Server((host, port), Handler, max_conn, slot_wait)
-    if not _schema_ok.is_set():
+    if not _schema_ok.is_set() and _guard_state == 'held':
         threading.Thread(target=migrate_retry_worker, name='migrate', daemon=True).start()
     if (ENV('DELIVERY_WORKER') or '1') != '0':      # 0 — лише для тестів («падіння до доставки»)
         threading.Thread(target=delivery_worker, name='delivery', daemon=True).start()

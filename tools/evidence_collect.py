@@ -64,7 +64,8 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
         if role and run['event'] in rules['run_events'] and run['head_sha'] == head:
             chosen[role] = run   # Latest wins, whatever its conclusion: a later failure is not hidden.
     manifest_runs = {role: {'id': r['id'], 'head_sha': r['head_sha'], 'event': r['event'], 'status': r['status'],
-                            'conclusion': r['conclusion'], 'attempt': r['run_attempt']} for role, r in chosen.items()}
+                            'conclusion': r['conclusion'], 'attempt': r['run_attempt'],
+                            'pull_requests': [x['number'] for x in r.get('pull_requests') or []]} for role, r in chosen.items()}
     artifacts = {}
     out.mkdir(parents=True, exist_ok=True)
     for role in rules['roles']:

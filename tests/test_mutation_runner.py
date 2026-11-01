@@ -42,6 +42,18 @@ def test_collection_error_is_invalid_not_killed(tmp_path):
     assert mr.execute(_mutant(oracle=('no_such_test_file.py',)), _tree(tmp_path), 60)['verdict'] == 'INVALID'
 
 
+def test_hang_is_not_reported_as_a_kill(tmp_path):
+    tree = _tree(tmp_path, test='import time\nfrom target import VALUE\n\ndef test_value():\n    time.sleep(30 if VALUE == 2 else 0)\n')
+    assert mr.execute(_mutant(), tree, 2)['verdict'] == 'INVALID'
+
+
+def test_full_run_refuses_a_node_oracle_that_fails_on_clean_code(tmp_path):
+    catalog = tmp_path / 'catalog.json'
+    catalog.write_text(json.dumps({'mutants': [{'id': 'N', 'task': 'X', 'edits': [{'file': 'README.md', 'find': 'ABSENT', 'replace': 'x'}],
+                                                'oracle': ['node', '--test', 'tests/missing.test.cjs']}]}))
+    assert mr.main(['--catalog', str(catalog), '--jobs', '1']) == 1
+
+
 def test_catalog_shape_is_complete():
     catalog = json.loads((ROOT / 'config/mutation-catalog.json').read_text(encoding='utf-8'))
     ids = [m['id'] for m in catalog['mutants']]

@@ -22,7 +22,7 @@ class Provider:
         ids = {r: i + 1 for i, r in enumerate(NAMES)}
         for role, name in NAMES.items():
             self.runs.append({'id': ids[role], 'name': name, 'event': event, 'head_sha': HEAD, 'status': 'completed',
-                              'conclusion': 'success', 'run_attempt': 1, 'created_at': '2026-11-01T00:00:00Z'})
+                              'conclusion': 'success', 'run_attempt': 1, 'created_at': '2026-11-01T00:00:00Z', 'pull_requests': [{'number': 14}]})
         for i, (role, (workflow, prefix)) in enumerate(ec.ARTIFACT_PREFIX.items()):
             aid = 100 + i
             raw = f'zip-{role}'.encode()
@@ -52,7 +52,7 @@ def _collect(provider, tmp, kind='pull_request', pr=14):
 def test_positive_control_writes_provider_bound_manifest(tmp_path):
     m = _collect(Provider(), tmp_path)
     assert m['schema'] == 'pbt-exact-head-evidence-matrix-v2' and len(m['artifacts']) == 10
-    assert (tmp_path / 'manifest.json').exists()
+    assert (tmp_path / 'manifest.json').exists() and all(r['pull_requests'] == [14] for r in m['runs'].values())
     for role, item in m['artifacts'].items():
         assert hashlib.sha256((tmp_path / f'{role}.zip').read_bytes()).hexdigest() == item['sha256']
 

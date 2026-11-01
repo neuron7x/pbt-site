@@ -48,8 +48,12 @@ def junit(n, role=None, drop=None):
             f'{cases}</testsuite></testsuites>').encode()
 
 
+CATALOG_RAW = (ROOT / 'config/mutation-catalog.json').read_bytes()
+CATALOG = json.loads(CATALOG_RAW)['mutants']
+
+
 def verify(meta, directory, policy, head=HEAD, base=BASE, evidence_policy=None):
-    return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY, REQUIRED_TESTS)
+    return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY, REQUIRED_TESTS, CATALOG_RAW)
 
 
 def png():
@@ -105,11 +109,13 @@ def state(tmp_path):
             'kind':'synthetic_chromium_lab_not_field_data',
             'themes':{theme:{'raw':[{'lcp_ms':1200,'cls':0.01,'switch_unprompted_shift_sum':0.0}]*3,
                               'p75_lcp_ms':1200,'p75_cls':0.01,'synthetic_budget_met':True} for theme in ('sky','precision')}}
-    osv={'head_sha':HEAD,'outcome':'success','require_hashes':True,'no_deps':True,
-         'service':'OSV','scanner_output':'','scanner_output_sha256':sha(b'')}
+    osv_output=json.dumps({'dependencies':[{'name':'a','version':'1','vulns':[]}]})
+    osv={'head_sha':HEAD,'outcome':'success','require_hashes':True,'no_deps':True,'dependency_count':1,
+         'service':'OSV','scanner_output':osv_output,'scanner_output_sha256':sha(osv_output.encode())}
     static={'head_sha':HEAD,'status':'PASS','findings':[],'files_scanned':6,
             'scanned_roots':['server','ops']}
-    mutation={'head_sha':HEAD,'status':'PASS','results':[{'id':f'M{i}','verdict':'KILLED'} for i in range(45)]+[{'id':'U','verdict':'UNTESTABLE'}]}
+    mutation={'head_sha':HEAD,'status':'PASS','catalog_sha256':sha(CATALOG_RAW),
+              'results':[{'id':m['id'],'verdict':m.get('expected','KILLED')} for m in CATALOG]}
     sast={'sast.json':json.dumps({'status':'PASS','open':[],'stale_waivers':[],'files_scanned':30,'loc':100}).encode(),
           'provenance.json':json.dumps({'head_sha':HEAD,'signed':False,'slsa_level':'none_claimed'}).encode(),
           'sbom.json':json.dumps({'bomFormat':'CycloneDX','metadata':{'component':{'version':HEAD}},
@@ -128,13 +134,13 @@ def state(tmp_path):
         'mobile':{'dual-theme-mobile.json':json.dumps(mobile).encode()},
     }
     runs={x:{'id':i+1,'head_sha':HEAD,'event':'pull_request','status':'completed',
-             'conclusion':'success','attempt':1} for i,x in enumerate(sorted(gate.WORKFLOWS))}
+             'conclusion':'success','attempt':1,'pull_requests':[14]} for i,x in enumerate(sorted(gate.WORKFLOWS))}
     artifacts={}
     for i,(role,owner) in enumerate(gate.ARTIFACT_TO_WORKFLOW.items()):
         path=tmp_path/(role+'.zip');path.write_bytes(pack(contents[role]))
         artifacts[role]={'id':100+i,'run_id':runs[owner]['id'],
                          'filename':role+'.zip','sha256':sha(path.read_bytes())}
-    meta={'schema':'pbt-exact-head-evidence-matrix-v2','head_sha':HEAD,'base_sha':BASE,
+    meta={'schema':'pbt-exact-head-evidence-matrix-v2','repository':'neuron7x/pbt-site','head_sha':HEAD,'base_sha':BASE,
           'target':{'kind':'pull_request','pr_number':14,'ref':'refs/pull/14/head'},'runs':runs,'artifacts':artifacts}
     return meta,policy,tmp_path,contents
 
@@ -147,7 +153,7 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     assert result['policy_digest']==gate.policy_digest(policy,EVIDENCE_POLICY,REQUIRED_TESTS)
     assert result['target']['pr_number']==14
     assert result['verified_png']==32 and result['soak']['accepted']==3000
-    assert result['mutation']=={'KILLED':45,'UNTESTABLE':1} and result['sast']['components']==6
+    assert result['mutation']['KILLED']==len(CATALOG)-1 and result['mutation']['UNTESTABLE']==1 and result['sast']['components']==6
 
 
 @pytest.mark.parametrize('mutant',[
@@ -161,6 +167,8 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     'wrong_source_revision_all_artifacts','junit_utf16_doctype','soak_coherent_over_latency_budget',
     'mutant_survived_but_status_pass','mutation_catalog_diluted','mutation_other_revision','sast_open_finding','sast_scanned_nothing',
     'sbom_other_revision','provenance_other_revision','png_bad_crc_with_matching_manifest',
+    'mutation_invented_rows','mutation_slice','mutation_other_catalog','mutation_killed_untestable_swap',
+    'fork_same_sha','run_of_another_pull_request','osv_vulnerability_with_success','osv_empty_output',
 ])
 def test_forged_success_is_rejected(state,mutant):
     meta,policy,directory,contents=state
@@ -196,6 +204,13 @@ def test_forged_success_is_rejected(state,mutant):
     elif mutant=='osv_outcome':
         d=json.loads(contents['osv']['osv-receipt.json']);d['outcome']='failure'
         contents['osv']['osv-receipt.json']=json.dumps(d).encode();rewrite('osv')
+    elif mutant=='fork_same_sha':meta['repository']='attacker/pbt-site'
+    elif mutant=='run_of_another_pull_request':meta['runs']['soak']['pull_requests']=[99]
+    elif mutant in ('osv_vulnerability_with_success','osv_empty_output'):
+        d=json.loads(contents['osv']['osv-receipt.json'])
+        out={'dependencies':[{'name':'a','version':'1','vulns':[{'id':'CVE-1'}]}]} if mutant=='osv_vulnerability_with_success' else {'dependencies':[]}
+        d['scanner_output']=json.dumps(out);d['scanner_output_sha256']=sha(d['scanner_output'].encode())
+        contents['osv']['osv-receipt.json']=json.dumps(d).encode();rewrite('osv')
     elif mutant=='png_bad_crc_with_matching_manifest':
         # Every digest in the chain is recomputed by the forger: only the CRC walk can catch this.
         raw=bytearray(contents['visual']['shots/00.png']);raw[-20]^=0xff;raw=bytes(raw)
@@ -216,6 +231,10 @@ def test_forged_success_is_rejected(state,mutant):
         d=json.loads(contents['mutation']['mutation-ledger.json'])
         if mutant=='mutant_survived_but_status_pass':d['results'][0]['verdict']='SURVIVED'
         if mutant=='mutation_catalog_diluted':d['results']=d['results'][:5]
+        if mutant=='mutation_invented_rows':d['results']=[{'id':f'X{i}','verdict':'KILLED'} for i in range(60)]
+        if mutant=='mutation_slice':d['results']=d['results'][:-1]
+        if mutant=='mutation_other_catalog':d['catalog_sha256']='0'*64
+        if mutant=='mutation_killed_untestable_swap':d['results'][0]['verdict']='UNTESTABLE'
         if mutant=='mutation_other_revision':d['head_sha']='c'*40
         contents['mutation']['mutation-ledger.json']=json.dumps(d).encode();rewrite('mutation')
     elif mutant.startswith('sast_') or mutant.startswith('sbom_') or mutant.startswith('provenance_'):

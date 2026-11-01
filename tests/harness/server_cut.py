@@ -82,5 +82,6 @@ if CUT == 'after_remote_ack':
 
 if os.environ.get('PBT_ALLOW_SECOND_SERVER') == '1':
     app.acquire_single_process_guard = lambda: None
+    app._try_migrate(5)  # This process lost the guard at import, so it skipped boot migration.
 
 app.main()

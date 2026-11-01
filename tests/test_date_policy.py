@@ -83,3 +83,29 @@ def test_malformed_dates_rejected_by_server_when_nonempty(tmp_path, value):
                        text=True, timeout=30, env={**os.environ, 'LEAD_DB': str(tmp_path / 'd.db'), 'DELIVERY_WORKER': '0'})
     assert r.returncode == 0, r.stderr
     assert r.stdout.split()[1] == ('True' if value == '' else 'False')
+
+
+def test_whitespace_date_through_the_real_validator_is_rejected_not_absent(tmp_path):
+    code = (_app().split('from datetime import datetime')[0] +
+            "print(sorted(app.validate({'type':'rent','subject':'Екскаватор','method':'phone','contact':'0971112233','date':'   '})[1]))\n"
+            "print(sorted(app.validate({'type':'rent','subject':'Екскаватор','method':'phone','contact':'0971112233','date':''})[1]))\n")
+    r = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, timeout=30,
+                       env={**os.environ, 'LEAD_DB': str(tmp_path / 'd.db'), 'DELIVERY_WORKER': '0'})
+    assert r.returncode == 0, r.stderr
+    assert r.stdout.splitlines() == ["['date']", '[]']
+
+
+def test_browser_without_the_new_zone_name_can_still_validate_a_date(browser, server):
+    ctx = browser.new_context(reduced_motion='reduce')
+    ctx.add_init_script("""const Real = Intl.DateTimeFormat;
+      Intl.DateTimeFormat = function (l, o) { if (o && o.timeZone === 'Europe/Kyiv') throw new RangeError('old ICU'); return new Real(l, o); };""")
+    page = ctx.new_page()
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    try:
+        page.goto(server['base'], wait_until='networkidle')
+        assert page.evaluate("() => window.PBTv('date', '2999-01-01')") is True
+        assert page.evaluate("() => window.PBTv('date', '2000-01-01')") is False
+        assert errors == []
+    finally:
+        ctx.close()

@@ -25,7 +25,7 @@ ENV_DROP = ('PYTEST_ADDOPTS',)
 def run_oracle(tree, oracle, timeout):
     env = {k: v for k, v in os.environ.items() if k not in ENV_DROP}
     env.update(PYTHONDONTWRITEBYTECODE='1', PYTEST_DISABLE_PLUGIN_AUTOLOAD='1')
-    command = oracle if isinstance(oracle, list) and oracle and oracle[0] == 'node' else \
+    command = oracle if oracle[0] == 'node' else \
         [sys.executable, '-m', 'pytest', '-q', '-x', '-p', 'no:cacheprovider', '--tb=line', *oracle]
     try:
         r = subprocess.run(command, cwd=tree, env=env, capture_output=True, text=True, timeout=timeout)
@@ -58,11 +58,11 @@ def execute(mutant, tree, timeout):
     finally:
         for name, raw in saved.items():
             (tree / name).write_bytes(raw)
-    # pytest: 1 = tests failed (a kill), 0 = survived, anything else = the oracle did not run.
-    node = mutant['oracle'][0] == 'node'
+    # 1 = tests failed (a kill), 0 = survived. A hang is not a detection: it may be load, so it needs a look.
+    # node --test also exits 1 on a missing file, so its oracles pass a positive control first (main).
     if code == 0:
         verdict = 'SURVIVED'
-    elif code == 1 or code == 'TIMEOUT' or (node and code):
+    elif code == 1:
         verdict = 'KILLED'
     else:
         verdict = 'INVALID'
@@ -86,6 +86,9 @@ def main(argv=None):
         for i in range(max(a.jobs, 1)):
             tree = Path(scratch) / f'w{i}'
             shutil.copytree(ROOT, tree, ignore=IGNORE)
+            # Some oracles resolve commits, so each copy is its own throwaway repository.
+            for command in (['init', '-q'], ['add', '-A'], ['-c', 'user.name=mutation', '-c', 'user.email=mutation@invalid', 'commit', '-qm', 'clean copy']):
+                subprocess.run(['git', *command], cwd=tree, check=True, capture_output=True, timeout=300)
             trees.append(tree)
         oracles = sorted({' '.join(m['oracle']) for m in live if m['oracle'][0] != 'node'})
         selection = sorted({arg for m in live if m['oracle'][0] != 'node' for arg in m['oracle']})
@@ -93,6 +96,11 @@ def main(argv=None):
         if control != 0:
             print(json.dumps({'status': 'FAIL', 'reason': 'positive_control_failed', 'exit': control, 'tail': tail}))
             return 1
+        for command in {tuple(m['oracle']) for m in live if m['oracle'][0] == 'node'}:
+            control, tail = run_oracle(trees[0], list(command), a.timeout)
+            if control != 0:
+                print(json.dumps({'status': 'FAIL', 'reason': 'positive_control_failed', 'exit': control, 'tail': tail}))
+                return 1
         free = list(trees)
 
         def worker(mutant):

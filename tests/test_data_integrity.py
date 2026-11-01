@@ -106,12 +106,16 @@ def test_migration_failure_rolls_back_every_schema_write_then_retry_converges(tm
 def test_legacy_orphan_is_reported_never_repaired_and_never_lost(tmp_path, srv):
     db = tmp_path / 'db0.db'
     _legacy_db(db, orphan=True)
+    log_file = ROOT / 'data' / 'server.log'
+    offset = log_file.stat().st_size if log_file.exists() else 0  # The log accumulates across tests.
     s = Srv(db, DELIVERY_WORKER='0')
     try:
         assert s.post(LEAD, 'k-after-orphan-1')[0] == 201  # Unrelated intake continues.
         rows = s.rows('SELECT lead_id, status FROM outbox')
         assert (777, 'pending') in rows, 'orphan silently repaired or deleted'
-        log = (ROOT / 'data' / 'server.log').read_text(encoding='utf-8', errors='replace')
+        with log_file.open(encoding='utf-8', errors='replace') as handle:
+            handle.seek(offset)
+            log = handle.read()
         assert re.search(r'legacy foreign key violations=1 table=outbox', log)
     finally:
         s.kill()
@@ -223,7 +227,8 @@ def test_process_death_at_each_acceptance_cutpoint(tmp_path, cut, committed):
 def test_disk_full_during_accept_is_500_with_no_partial_state(tmp_path):
     """RLIMIT_FSIZE makes SQLite's own file writes fail like a full disk (EFBIG -> SQLITE_FULL)."""
     db = tmp_path / 'full.db'
-    s = Srv(db, DELIVERY_WORKER='0')
+    hook = {'LEAD_WEBHOOK_URL': 'http://127.0.0.1:9/hook', 'LEAD_WEBHOOK_SECRET': 'k'}
+    s = Srv(db, DELIVERY_WORKER='0', **hook)
     assert s.post(LEAD, 'k-disk-before-1')[0] == 201
     s.kill()
     size = db.stat().st_size
@@ -234,7 +239,7 @@ def test_disk_full_during_accept_is_500_with_no_partial_state(tmp_path):
                f"resource.setrlimit(resource.RLIMIT_FSIZE,({size},{size}))\n"
                "app.main()\n")
     env = {**os.environ, 'PORT': str(port), 'HOST': '127.0.0.1', 'LEAD_DB': str(db), 'DELIVERY_WORKER': '0',
-           'RATE_ANY_10MIN': '10000', 'RATE_LEAD_10MIN': '10000', 'RATE_LEAD_DAY': '10000'}
+           'RATE_ANY_10MIN': '10000', 'RATE_LEAD_10MIN': '10000', 'RATE_LEAD_DAY': '10000', **hook}
     p = subprocess.Popen([sys.executable, '-c', limiter], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         for _ in range(100):
@@ -252,6 +257,6 @@ def test_disk_full_during_accept_is_500_with_no_partial_state(tmp_path):
         assert c.execute('PRAGMA integrity_check').fetchone() == ('ok',)
         ids = c.execute('SELECT id FROM leads ORDER BY id').fetchall()
         n_outbox = c.execute('SELECT count(*) FROM outbox').fetchone()[0]
-    assert n_outbox == 0
+    assert n_outbox == len(ids), 'lead and outbox did not commit as one'
     # Exactly the responses that were 201 are present: none lost, none ghost.
     assert len(ids) == 1 + statuses.count(201)

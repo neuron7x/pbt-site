@@ -41,7 +41,8 @@ def require(condition, code):
 def _test_exists(root, reference):
     path, _, name = reference.partition('::')
     file = root / path
-    if not file.is_file():
+    # A test, not any file that happens to exist.
+    if not re.fullmatch(r'tests/test_[A-Za-z0-9_]+\.py', path) or not file.is_file():
         return False
     if not name:
         return True
@@ -74,7 +75,9 @@ def check_ledger(ledger, tasks, root, catalog_ids=()):
         if disposition == 'VERIFIED':
             require(item['tests'], f'{oid}_verified_without_tests')
             require(item['verification_status'] == 'CONFIRMED', f'{oid}_verified_but_not_confirmed')
-            require(known[oid]['external_prerequisite'] is False or item.get('external_receipt'), f'{oid}_verified_without_external_receipt')
+            if known[oid]['external_prerequisite'] is not False:
+                receipt = str(item.get('external_receipt') or '')
+                require(receipt.startswith('assurance/evidence/') and (root / receipt).is_file(), f'{oid}_verified_without_external_receipt')
         if disposition == 'BLOCKED_EXTERNAL':
             require(item.get('blocker'), f'{oid}_blocked_without_named_blocker')
         if disposition in ('SUPERSEDED_WITH_PROOF', 'INAPPLICABLE_WITH_PROOF'):
@@ -83,9 +86,13 @@ def check_ledger(ledger, tasks, root, catalog_ids=()):
 
 
 def _proof_compatible(root, evidence_sha, target_sha):
-    if evidence_sha == target_sha:
-        return True
+    """Both names must be full SHAs of real commits: string equality alone would accept 'HEAD' or anything."""
+    for sha in (evidence_sha, target_sha):
+        if not isinstance(sha, str) or not re.fullmatch(r'[0-9a-f]{40}', sha):
+            return False
     try:
+        for sha in (evidence_sha, target_sha):
+            subprocess.run(['git', 'cat-file', '-e', f'{sha}^{{commit}}'], cwd=root, check=True, capture_output=True, timeout=20)
         changed = subprocess.run(['git', 'diff', '--name-only', evidence_sha, target_sha], cwd=root, check=True,
                                  capture_output=True, text=True, timeout=20).stdout.split()
     except (OSError, subprocess.SubprocessError):
@@ -103,7 +110,7 @@ def decide_claim(leaves):
     return 'PASS'
 
 
-def evaluate_case(case, root, target_sha, entries):
+def evaluate_case(case, root, target_sha, entries, stage='closed'):
     claims = {}
     for claim_id, claim in case['claims'].items():
         statuses = []
@@ -112,6 +119,7 @@ def evaluate_case(case, root, target_sha, entries):
             require(status in LEAF, f"{leaf['id']}_status")
             if status == 'PASS':
                 require(leaf.get('evidence'), f"{leaf['id']}_pass_without_evidence")
+                require(leaf.get('obligations'), f"{leaf['id']}_pass_without_obligations")
                 for ref in leaf['evidence']:
                     require(_proof_compatible(root, ref['sha'], target_sha), f"{leaf['id']}_stale_evidence_sha")
                     if 'path' in ref:
@@ -124,13 +132,15 @@ def evaluate_case(case, root, target_sha, entries):
         claims[claim_id] = decide_claim(statuses)
     require(set(claims) == {f'C{i}' for i in range(1, 11)}, 'claim_set')
     failed = sorted(o for o, e in entries.items() if e['disposition'] == 'FAILED')
+    open_items = sorted(o for o, e in entries.items() if e['disposition'] is None)
     technical = decide_claim([claims[c] for c in TECHNICAL])
-    if failed:
-        technical = 'FAIL'
     overall = decide_claim(list(claims.values()))
+    if stage != 'closed' or open_items:   # No verdict can outrun the ledger it summarizes.
+        technical = 'UNKNOWN' if technical == 'PASS' else technical
+        overall = 'UNKNOWN' if overall == 'PASS' else overall
     if failed:
-        overall = 'FAIL'
-    verdict = {'schema': 'pbt-assurance-decision-v1', 'target_sha': target_sha, 'claims': claims, 'failed_obligations': failed,
+        technical = overall = 'FAIL'
+    verdict = {'schema': 'pbt-assurance-decision-v1', 'target_sha': target_sha, 'stage': stage, 'claims': claims, 'failed_obligations': failed,
                'technical_completion': technical, 'C0': overall,
                'production_release': 'ELIGIBLE_NOT_DEPLOYED' if overall == 'PASS' else 'PRODUCTION HOLD',
                'dispositions': {}}
@@ -151,8 +161,9 @@ def main(argv=None):
         load = lambda rel: json.loads((root / rel).read_text(encoding='utf-8'))
         target = a.target_sha or subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=root, check=True, capture_output=True, text=True).stdout.strip()
         catalog = {m['id'] for m in load('config/mutation-catalog.json')['mutants']}
-        entries = check_ledger(load('assurance/ledger.json'), load('assurance/source/tasks.json'), root, catalog)
-        result = evaluate_case(load('assurance/case.json'), root, target, entries)
+        ledger = load('assurance/ledger.json')
+        entries = check_ledger(ledger, load('assurance/source/tasks.json'), root, catalog)
+        result = evaluate_case(load('assurance/case.json'), root, target, entries, ledger['stage'])
     except (Rejected, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
         print(json.dumps({'status': 'FAIL', 'reason': str(exc)[:200], 'error_type': type(exc).__name__}))
         return 1

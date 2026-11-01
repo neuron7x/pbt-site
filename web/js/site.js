@@ -507,7 +507,14 @@
   }
 
   /* ───── ВАЛІДАЦІЯ ЗАЯВКИ: той самий контракт, що й сервер ───── */
-  const kyivToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const kyivToday = () => {
+    const opts = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    // Browsers with tzdata older than 2022b know only the old zone name; a RangeError here would silently block the form.
+    for (const timeZone of ['Europe/Kyiv', 'Europe/Kiev']) {
+      try { return new Intl.DateTimeFormat('en-CA', { ...opts, timeZone }).format(new Date()); } catch (_) { /* next name */ }
+    }
+    return new Intl.DateTimeFormat('en-CA', opts).format(new Date());
+  };
   const V = {
     contact(method, s) {
       s = (s || '').trim(); if (!s) return null;

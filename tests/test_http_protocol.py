@@ -3,7 +3,9 @@
 Raw sockets: http.client would normalize the very framing these tests attack. The protocol is
 HTTP/1.0 close-delimited, so each request owns its connection and cannot smuggle a second one.
 """
+import fcntl
 import json
+import os
 from pathlib import Path
 import socket
 import sqlite3
@@ -11,6 +13,8 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
+import urllib.request
 
 import pytest
 
@@ -184,3 +188,37 @@ def test_restore_refuses_while_the_guard_is_held_even_on_another_port(tmp_path):
         assert db.read_bytes() == before
     finally:
         live.kill()
+
+
+def test_refused_second_server_writes_nothing_while_restore_or_a_peer_holds_the_guard(tmp_path):
+    """Refusal after migrating would still touch a database mid-swap. systemd retries every two seconds."""
+    db = tmp_path / 'legacy.db'
+    with sqlite3.connect(db) as c:
+        c.execute("CREATE TABLE leads(id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT NOT NULL, type TEXT NOT NULL, payload TEXT NOT NULL, ip_hash TEXT, ua TEXT, delivered TEXT)")
+    before = db.read_bytes()
+    holder = os.open(f'{db}.server-lock', os.O_RDWR | os.O_CREAT, 0o600)
+    fcntl.flock(holder, fcntl.LOCK_EX)
+    try:
+        env = {'PORT': str(_port()), 'HOST': '127.0.0.1', 'LEAD_DB': str(db), 'PATH': '/usr/bin:/bin'}
+        r = subprocess.run([sys.executable, str(ROOT / 'server/app.py')], env=env, capture_output=True, text=True, timeout=15)
+    finally:
+        os.close(holder)
+    assert r.returncode != 0 and 'single_process_guard' in r.stderr
+    assert db.read_bytes() == before, 'a refused process wrote schema'
+    assert not Path(f'{db}-journal').exists()
+
+
+def test_unavailable_guard_keeps_static_pages_and_refuses_leads(tmp_path):
+    db = tmp_path / 'missing-parent' / 'leads.db'
+    s = Srv(db, DELIVERY_WORKER='0')
+    try:
+        with urllib.request.urlopen(s.base + '/', timeout=5) as page:
+            assert page.status == 200
+        assert s.post(LEAD, 'k-no-guard-0001')[0] == 503
+        try:
+            urllib.request.urlopen(s.base + '/api/health', timeout=5)
+            assert False, 'health claimed ok without a data directory'
+        except urllib.error.HTTPError as e:
+            assert e.code == 503
+    finally:
+        s.kill()

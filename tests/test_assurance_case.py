@@ -54,6 +54,9 @@ def _mutated(fn):
     (lambda l, e: e['DB-01'].update(disposition='VERIFIED', tests=[], verification_status='CONFIRMED'), 'verified_without_tests'),
     (lambda l, e: e['DB-01'].update(disposition='VERIFIED', verification_status='INFERRED'), 'verified_but_not_confirmed'),
     (lambda l, e: e['OPS-06'].update(disposition='VERIFIED', verification_status='CONFIRMED', tests=['tests/test_business_parity.py'], external_receipt=None), 'verified_without_external_receipt'),
+    (lambda l, e: e['OPS-06'].update(disposition='VERIFIED', verification_status='CONFIRMED', tests=['tests/test_business_parity.py'], external_receipt='no-such-file'), 'verified_without_external_receipt'),
+    (lambda l, e: e['OPS-06'].update(disposition='VERIFIED', verification_status='CONFIRMED', tests=['tests/test_business_parity.py'], external_receipt='README.md'), 'verified_without_external_receipt'),
+    (lambda l, e: e['DB-01'].update(tests=['README.md']), 'names_absent_test'),
     (lambda l, e: e['OPS-06'].update(disposition='BLOCKED_EXTERNAL', blocker=''), 'blocked_without_named_blocker'),
     (lambda l, e: e['DB-01'].update(disposition='INAPPLICABLE_WITH_PROOF', proof=''), 'disposition_without_proof'),
     (lambda l, e: (l.update(stage='closed'), e['DB-01'].update(disposition=None)), 'needs_final_disposition'),
@@ -76,7 +79,7 @@ def _leaf(case, leaf_id):
 
 
 def test_external_claim_stays_unknown_and_release_stays_on_hold():
-    verdict = ac.evaluate_case(CASE, ROOT, HEAD, _entries())
+    verdict = ac.evaluate_case(CASE, ROOT, HEAD, _entries(), LEDGER['stage'])
     assert verdict['claims']['C10'] == 'UNKNOWN'
     assert verdict['production_release'] == 'PRODUCTION HOLD' and verdict['C0'] != 'PASS'
 
@@ -96,15 +99,40 @@ def test_green_ci_cannot_substitute_for_a_field_or_owner_fact():
 def test_historical_sha_with_executable_drift_cannot_prove_the_target():
     case = _case()
     leaf = _leaf(case, 'C10.field_inp')
-    leaf.update(status='PASS', evidence=[{'sha': '1' * 40}])
+    leaf.update(status='PASS', evidence=[{'sha': '1' * 40}], obligations=['WEB-03'])
     with pytest.raises(ac.Rejected, match='stale_evidence_sha'):
         ac.evaluate_case(case, ROOT, HEAD, _entries())
+
+
+@pytest.mark.parametrize('sha', ['HEAD', 'nonexistent', 'main', 'a' * 39])
+def test_evidence_must_name_a_real_full_commit_not_a_matching_string(sha):
+    case = _case()
+    _leaf(case, 'C10.field_inp').update(status='PASS', evidence=[{'sha': sha}], obligations=['WEB-03'])
+    with pytest.raises(ac.Rejected, match='stale_evidence_sha'):
+        ac.evaluate_case(case, ROOT, sha, _entries())
+
+
+def test_pass_leaf_without_obligations_and_open_ledger_cannot_certify():
+    case = _case()
+    _leaf(case, 'C10.field_inp').update(status='PASS', evidence=[{'sha': HEAD}], obligations=[])
+    with pytest.raises(ac.Rejected, match='pass_without_obligations'):
+        ac.evaluate_case(case, ROOT, HEAD, _entries())
+    entries = copy.deepcopy(_entries())
+    forced = {'schema': 'x', 'claims': {k: {'statement': '', 'leaves': [{'id': k, 'status': 'PASS', 'obligations': ['DB-01'], 'evidence': [{'sha': HEAD}]}]} for k in CASE['claims']}}
+    for entry in entries.values():
+        entry['disposition'] = 'VERIFIED'
+    verdict = ac.evaluate_case(forced, ROOT, HEAD, entries, 'pre_integration')
+    assert verdict['C0'] == 'UNKNOWN' and verdict['technical_completion'] == 'UNKNOWN'
+    entries['OPS-06']['disposition'] = None
+    assert ac.evaluate_case(forced, ROOT, HEAD, entries, 'closed')['C0'] == 'UNKNOWN'
+    entries['OPS-06']['disposition'] = 'VERIFIED'
+    assert ac.evaluate_case(forced, ROOT, HEAD, entries, 'closed')['production_release'] == 'ELIGIBLE_NOT_DEPLOYED'
 
 
 def test_evidence_file_with_other_bytes_is_rejected():
     case = _case()
     leaf = _leaf(case, 'C10.field_inp')
-    leaf.update(status='PASS', evidence=[{'sha': HEAD, 'path': 'README.md', 'sha256': '0' * 64}])
+    leaf.update(status='PASS', evidence=[{'sha': HEAD, 'path': 'README.md', 'sha256': '0' * 64}], obligations=['WEB-03'])
     with pytest.raises(ac.Rejected, match='evidence_bytes'):
         ac.evaluate_case(case, ROOT, HEAD, _entries())
 
