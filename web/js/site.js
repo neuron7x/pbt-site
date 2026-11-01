@@ -133,7 +133,7 @@
     requestAnimationFrame(() => { measure(); render(); sparkWake(); });
   }
   themeButtons.forEach(button => button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true)));
-  // Інші вкладки застосують спільний вибір під час наступної навігації:
+  // Інші вкладки застосують спільний вибір під час наступного завантаження:
   // миттєва перебудова активної сторінки спричиняє непередбачений CLS.
 
   function openMenu(on, restoreFocus = true) {
