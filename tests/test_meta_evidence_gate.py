@@ -160,7 +160,7 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     'mobile_forged_budget_flag','mobile_late_switch_shift','mobile_wrong_execution_sha','mobile_event_sha_as_execution',
     'wrong_source_revision_all_artifacts','junit_utf16_doctype','soak_coherent_over_latency_budget',
     'mutant_survived_but_status_pass','mutation_catalog_diluted','mutation_other_revision','sast_open_finding','sast_scanned_nothing',
-    'sbom_other_revision','provenance_other_revision',
+    'sbom_other_revision','provenance_other_revision','png_bad_crc_with_matching_manifest',
 ])
 def test_forged_success_is_rejected(state,mutant):
     meta,policy,directory,contents=state
@@ -196,6 +196,17 @@ def test_forged_success_is_rejected(state,mutant):
     elif mutant=='osv_outcome':
         d=json.loads(contents['osv']['osv-receipt.json']);d['outcome']='failure'
         contents['osv']['osv-receipt.json']=json.dumps(d).encode();rewrite('osv')
+    elif mutant=='png_bad_crc_with_matching_manifest':
+        # Every digest in the chain is recomputed by the forger: only the CRC walk can catch this.
+        raw=bytearray(contents['visual']['shots/00.png']);raw[-20]^=0xff;raw=bytes(raw)
+        contents['visual']['shots/00.png']=raw
+        manifest_doc=json.loads(contents['visual']['shots/manifest.json'])
+        manifest_doc['captures'][0]['sha256']=sha(raw)
+        manifest_raw=json.dumps(manifest_doc).encode()
+        contents['visual']['shots/manifest.json']=manifest_raw
+        receipt=json.loads(contents['visual']['evidence-verification.json'])
+        receipt['evidence']['shots_manifest']={'bytes':len(manifest_raw),'sha256':sha(manifest_raw)}
+        contents['visual']['evidence-verification.json']=json.dumps(receipt).encode();rewrite('visual')
     elif mutant=='soak_coherent_over_latency_budget':
         d=json.loads(contents['soak']['soak-evidence.json']);v=float(policy['budgets']['maximum_p99_lead_ms']+1)
         d['api_latency_samples_ms']=[v]*d['accepted_leads']

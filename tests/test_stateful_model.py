@@ -12,8 +12,8 @@ import pytest
 
 from test_leads import LEAD, Srv
 
-QUOTA = 6
-KEYS = [f'k-model-{i:04d}' for i in range(8)]
+QUOTA = 3
+KEYS = [f'k-model-{i:04d}' for i in range(16)]
 PAYLOADS = [{**LEAD, 'subject': f'Модельна техніка {i}'} for i in range(3)]
 ENV = {'RATE_LEAD_10MIN': str(QUOTA), 'RATE_LEAD_DAY': '100000', 'DELIVERY_WORKER': '0',
        'LEAD_WEBHOOK_URL': 'http://127.0.0.1:9/hook', 'LEAD_WEBHOOK_SECRET': 'k'}
@@ -21,12 +21,13 @@ ENV = {'RATE_LEAD_10MIN': str(QUOTA), 'RATE_LEAD_DAY': '100000', 'DELIVERY_WORKE
 
 def generate(seed, steps):
     rng = random.Random(seed)
-    return [('crash',) if rng.random() < .12 else ('submit', rng.choice(KEYS), rng.randrange(len(PAYLOADS)))
+    return [('crash',) if rng.random() < .05 else ('submit', rng.choice(KEYS), rng.randrange(len(PAYLOADS)))
             for _ in range(steps)]
 
 
-def execute(db, sequence):
+def execute(db, sequence, seen=None):
     """Run a sequence on a fresh database. Returns the first violation, or None."""
+    seen = {} if seen is None else seen
     db.unlink(missing_ok=True)
     model, charged, last_id, server = {}, 0, 0, Srv(db, **ENV)
     try:
@@ -41,10 +42,12 @@ def execute(db, sequence):
             if key in model:
                 prior, ref = model[key]
                 want = (201, ref) if prior == which else (409, None)
+                seen['replay' if prior == which else 'conflict'] = seen.get('replay' if prior == which else 'conflict', 0) + 1
                 got = (status, body.get('ref'))
                 if got != want:
                     return f'step {step} {op}: replay/conflict {got} != {want}'
             elif charged >= QUOTA:
+                seen['quota_refusal'] = seen.get('quota_refusal', 0) + 1
                 if status != 429:
                     return f'step {step} {op}: over quota got {status}'
             else:
@@ -87,8 +90,12 @@ def shrink(db, sequence):
 def test_random_walk_with_crashes_preserves_every_invariant(tmp_path, seed):
     db = tmp_path / 'model.db'
     sequence = generate(seed, 60)
-    assert sum(op[0] == 'crash' for op in sequence) >= 2, 'walk exercised no crash'
-    violation = execute(db, sequence)
+    assert sum(op[0] == 'crash' for op in sequence) >= 1, 'walk exercised no crash'
+    seen = {}
+    violation = execute(db, sequence, seen)
+    if not violation:
+        # A walk that never reached a transition says nothing about it.
+        assert all(seen.get(k) for k in ('replay', 'conflict', 'quota_refusal')), seen
     if violation:
         minimal = shrink(db, sequence)
         pytest.fail(f'seed={seed} {violation}\nminimal counterexample: {minimal}\nreplay: {execute(db, minimal)}')

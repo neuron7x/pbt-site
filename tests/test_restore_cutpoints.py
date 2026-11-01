@@ -58,14 +58,21 @@ def _make(path, ids):
 
 
 def _hot_journal(path):
-    """Leave a genuine hot rollback journal: a writer died mid-transaction after spilling pages."""
+    """A writer dies mid-transaction after spilling *existing* pages to the main file.
+
+    New pages alone would not do: without the journal they stay invisible past the old page count,
+    so a test built on them cannot tell a rolled-back database from a torn one.
+    """
     code = (f"import sqlite3,os,signal\nc=sqlite3.connect({str(path)!r},isolation_level=None)\n"
             "c.execute('PRAGMA cache_size=1')\nc.execute('BEGIN IMMEDIATE')\n"
+            "c.execute(\"UPDATE leads SET payload=?\",('TORN'*500,))\n"
             "c.execute(\"CREATE TABLE ghost(x)\")\n"
             "[c.execute('INSERT INTO ghost VALUES(?)',('g'*2000,)) for _ in range(200)]\n"
             "os.kill(os.getpid(),signal.SIGKILL)\n")
     assert subprocess.run([sys.executable, '-c', code]).returncode == -9
     assert Path(f'{path}-journal').exists()
+    raw = Path(path).read_bytes()
+    assert b'TORN' in raw, 'fixture did not dirty the main file: it would prove nothing'
 
 
 def _run(tmp, mode, index, *extra):
@@ -94,6 +101,7 @@ def _server_view(db):
         assert c.execute('PRAGMA foreign_key_check').fetchall() == []
         tables = {r[0] for r in c.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert 'ghost' not in tables, 'uncommitted transaction became visible'
+        assert not c.execute("SELECT count(*) FROM leads WHERE payload LIKE 'TORN%'").fetchone()[0], 'uncommitted update survived'
         return tuple(r[0] for r in c.execute('SELECT id FROM leads ORDER BY id'))
 
 
@@ -151,3 +159,16 @@ def test_restore_refuses_snapshot_with_foreign_key_violations(tmp_path):
     r, _ = _run(tmp_path, 'none', -1, '--allow-rpo-gap')
     assert r.returncode == 4 and 'foreign_key_violations=1' in r.stderr
     assert (tmp_path / 'leads.db').read_bytes() == before
+
+
+def test_orphaned_journal_without_its_database_never_reaches_the_new_generation(tmp_path):
+    """SQLite clears sidecars itself when it can open the path, even for a garbage file, so settling hides this
+    branch. With the main file gone (what an interrupted pre-fix restore left) nothing settles, and a real hot
+    journal would roll foreign pages into the restored database on first open."""
+    _setup(tmp_path, True)
+    (tmp_path / 'leads.db').unlink()
+    r, _ = _run(tmp_path, 'none', -1, '--allow-rpo-gap')
+    assert r.returncode == 0, r.stderr
+    assert not Path(f"{tmp_path / 'leads.db'}-journal").exists(), 'stale journal left beside the new generation'
+    assert list(tmp_path.glob('leads.db.pre-restore-*-journal')), 'journal evidence not preserved'
+    assert _server_view(tmp_path / 'leads.db') == (1, 2)

@@ -186,7 +186,7 @@
     }
    ],
    "oracle": [
-    "tests/test_restore_cutpoints.py"
+    "tests/test_restore_cutpoints.py::test_orphaned_journal_without_its_database_never_reaches_the_new_generation"
    ]
   },
   {
@@ -429,11 +429,17 @@
      "file": "web/js/site.js",
      "find": "`<a href=\"${esc(x.href)}\"><b>",
      "replace": "`<a href=\"${x.href}\"><b>"
+    },
+    {
+     "file": "web/js/site.js",
+     "find": "href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}`",
+     "replace": "href: `https://t.me/${String(c.telegram).replace('@', '')}`"
     }
    ],
    "oracle": [
     "tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink"
-   ]
+   ],
+   "note": "Escaping alone is defense in depth: every href is already encoded, so removing only esc() is an equivalent mutant. The fault is losing both layers."
   },
   {
    "id": "M-NET-06-any-scheme",

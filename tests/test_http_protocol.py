@@ -9,6 +9,7 @@ import socket
 import sqlite3
 import subprocess
 import sys
+import threading
 import time
 
 import pytest
@@ -89,28 +90,33 @@ def test_unkeyed_malformed_key_and_json_leave_no_state(srv):
 
 
 def test_slow_clients_hold_slots_for_bounded_wall_clock_only(srv):
-    """Drip one header byte per interval on every slot. The absolute deadline, not per-recv
-    inactivity, must free them: a healthy request then succeeds within a stated bound."""
-    s = srv(DELIVERY_WORKER='0', MAX_CONNECTIONS='2', HEADER_TIMEOUT='0.6', REQUEST_TIMEOUT='5', CONN_SLOT_WAIT='5')
+    """Drip on every slot for the whole test, so per-recv inactivity never fires. Only the absolute
+    deadline can free a slot: with REQUEST_TIMEOUT far longer than the bound, nothing else would."""
+    s = srv(DELIVERY_WORKER='0', MAX_CONNECTIONS='2', HEADER_TIMEOUT='0.6', REQUEST_TIMEOUT='30', CONN_SLOT_WAIT='3')
     socks = [socket.create_connection(('127.0.0.1', s.port), timeout=5) for _ in range(2)]
-    t0 = time.monotonic()
-    try:
-        for sock in socks:
-            sock.sendall(b'POST /api/lead HTTP/1.1\r\n')
-        status = None
-        while time.monotonic() - t0 < 4:
+    stop = threading.Event()
+
+    def drip():
+        while not stop.is_set():
             for sock in socks:
                 try:
-                    sock.sendall(b'X')  # Each byte would reset a mere per-recv timeout.
+                    sock.sendall(b'X')
                 except OSError:
                     pass
-            time.sleep(.1)
-            if time.monotonic() - t0 > 1.2:
-                status = s.post(LEAD, 'k-slot-recovered')[0]
-                break
+            stop.wait(.1)
+    for sock in socks:
+        sock.sendall(b'POST /api/lead HTTP/1.1\r\nX-Pad: ')
+    thread = threading.Thread(target=drip, daemon=True)
+    thread.start()
+    try:
+        time.sleep(1.2)
+        t0 = time.monotonic()
+        status = s.post(LEAD, 'k-slot-recovered')[0]
         assert status == 201
-        assert time.monotonic() - t0 < 12
+        assert time.monotonic() - t0 < 2.5, 'a free slot took longer than the header deadline explains'
     finally:
+        stop.set()
+        thread.join(2)
         for sock in socks:
             sock.close()
     assert _count(s) == 1
