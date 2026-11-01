@@ -174,3 +174,24 @@ def test_proc_tree_census_sees_child_of_nonleader_thread():
                 child.kill()
             child.wait(timeout=5)
         worker.join(timeout=5)
+
+
+def test_soak_workflow_can_measure_real_main_sha_not_only_a_pr():
+    workflow = (ROOT / '.github/workflows/runtime-soak.yml').read_text()
+    assert "  pull_request:\n    branches: [main]" in workflow
+    assert "  push:\n    branches: [main]" in workflow
+    assert "  workflow_dispatch:\n" in workflow
+    assert "PBT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}" in workflow
+    assert "ref: ${{ github.event.pull_request.head.sha || github.sha }}" in workflow
+    assert 'report["source_sha"] == os.environ["PBT_HEAD_SHA"]' in workflow
+    assert '--expected-head "$PBT_HEAD_SHA"' in workflow
+    assert 'd["source_sha"]=="${{ github.event.pull_request.head.sha }}"' not in workflow
+
+
+def test_soak_workflow_preserves_1800s_and_readonly_permissions():
+    workflow = (ROOT / '.github/workflows/runtime-soak.yml').read_text()
+    assert 'contents: read' in workflow
+    assert '--profile soak --duration-s 1800' in workflow
+    assert 'timeout-minutes: 45' in workflow
+    assert 'if: always()' in workflow
+    assert 'ref: ${{ github.event.pull_request.head.sha || github.sha }}' in workflow

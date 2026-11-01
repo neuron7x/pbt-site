@@ -13,3 +13,20 @@ source SHA, raw latency samples and their p99, per-process RSS time-series,
 injected HTTP fault-class coverage, all storage/HMAC counters, and the predeclared
 limits. A fabricated `status: PASS` field without matching raw evidence is
 rejected. This still does not constitute external production certification.
+
+## Exact-main execution and truthful provenance (2026-11-01)
+
+The Actions workflow accepts protected `push` on `main` for runtime-relevant
+paths, an explicitly initiated `workflow_dispatch` on `main`, and PRs
+against `main`. All modes pin checkout to the event's immutable commit SHA,
+then compare the measured report's `source_sha` to the same `PBT_HEAD_SHA`.
+PR runs pin the PR source head, not the synthetic merge ref. A PR run on a
+workflow-only change is **not** evidence for the exact commit on `main`;
+it can demonstrate that application code matches by an independent tree diff,
+but the complete exact-main gate requires its own event/receipt.
+
+On CI, `tools/perf_probe.py` records actual checked-out `execution_sha`,
+the expected `branch_head_sha`, and `event_sha` separately. A mismatched
+checked-out revision fails instead of silently recording a PR synthetic merge
+SHA as the execution revision. The 1800-second soak is synthetic, not a live
+CRM receipt, production resilience proof, or field CWV/INP measurement.

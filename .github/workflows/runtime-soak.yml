@@ -10,6 +10,16 @@ on:
       - 'config/runtime-soak-budgets.json'
       - 'tests/test_runtime_soak_contract.py'
       - '.github/workflows/runtime-soak.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'ops/**'
+      - 'tools/runtime_soak.py'
+      - 'config/runtime-soak-budgets.json'
+      - 'tests/test_runtime_soak_contract.py'
+      - '.github/workflows/runtime-soak.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -48,7 +58,14 @@ jobs:
           python tools/runtime_soak.py --profile soak --duration-s 1800 \
             --report artifacts/soak/soak-evidence.json
           test -s artifacts/soak/soak-evidence.json
-          python -c 'import json; d=json.load(open("artifacts/soak/soak-evidence.json")); assert d["status"]=="PASS" and d["source_sha"]=="${{ github.event.pull_request.head.sha }}"'
+          python - <<'PY'
+          import json
+          import os
+          with open("artifacts/soak/soak-evidence.json", encoding="utf-8") as handle:
+              report = json.load(handle)
+          assert report["status"] == "PASS"
+          assert report["source_sha"] == os.environ["PBT_HEAD_SHA"], "unpinned runtime soak source"
+          PY
       - name: Independently recompute raw-sample p99, RSS bounds and fault evidence
         run: |
           python tools/verify_soak_evidence.py \
