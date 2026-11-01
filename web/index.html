@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ПБТ · ПолтаваБудТехніка — оренда спецтехніки в Полтаві: амфібії, крани, трали, сипучі матеріали</title>
-<meta name="description" content="ПолтаваБудТехніка: оренда спецтехніки з оператором у Полтаві та 9 областях. Екскаватори-амфібії для водойм, автокрани до 120 т, трали до 60 т, бульдозери, дробарки, пісок і щебінь із паспортом якості. Ціна зміни — одразу на сайті.">
+<meta name="description" content="ПолтаваБудТехніка: оренда спецтехніки з оператором у Полтаві та ще 8 областях. Екскаватори-амфібії, автокрани до 120 т, трали до 60 т, пісок і щебінь. Каталог, орієнтовний розрахунок і заявка на техніку.">
 <meta name="theme-color" content="#0D6AE0">
 <meta property="og:title" content="ПБТ · ПолтаваБудТехніка">
 <meta property="og:description" content="Техніка, що працює там, де інші не доїдуть. Полтава і ще 8 областей.">
@@ -31,6 +31,7 @@ p=(!coarse&&w>=1024&&w/h>=1.05)?'wide-fine':((coarse&&(w<760||h>w))||w<600)?'com
 d.classList.add('js');d.dataset.profile=p;
 d.dataset.quality=m('(prefers-reduced-motion: reduce)')?'static':((navigator.hardwareConcurrency||4)<=2||(navigator.connection&&navigator.connection.saveData))?'reduced':'full';
 var theme='sky';try{if(localStorage.getItem('pbt-theme')==='precision')theme='precision'}catch(_e){}
+try{if(localStorage.getItem('pbt-motion-paused')==='1')d.dataset.motion='paused'}catch(_e){}
 d.dataset.theme=theme;var meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='precision'?'#101820':'#0D6AE0';
 var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+(theme==='precision'?'IBMPlexSans-600-cyrillic.woff2':'Tektur-var-cyrillic.woff2');
 })(document.documentElement)
@@ -49,6 +50,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <body class="home">
 <a class="skip" href="#main">Перейти до змісту</a>
 <div class="glow" id="glow" aria-hidden="true"></div>
+<button class="motion-toggle" id="motionToggle" type="button" aria-pressed="false" hidden>Призупинити анімації</button>
 
 <!-- ═══ НАВІГАЦІЯ ═══ -->
 <header class="nav" id="nav">
@@ -103,10 +105,10 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <p class="hero__lead">Екскаватори-амфібії для водойм, автокрани до 120 т, трали до 60 т, бульдозери, дробарки. Пісок і щебінь із паспортом якості. З оператором і пальним.</p>
       <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Порахувати зміну</a></div>
       <ul class="hero__stats" aria-label="Коротко про парк">
-        <li><b data-count="32">0</b><span>одиниці</span></li>
-        <li><b data-count="120" data-suffix=" т">0</b><span>кран</span></li>
-        <li><b data-count="60" data-suffix=" т">0</b><span>трал</span></li>
-        <li><b data-count="9">0</b><span>областей</span></li>
+        <li><b data-count="32">32</b><span>одиниці</span></li>
+        <li><b data-count="120" data-suffix=" т">120 т</b><span>кран</span></li>
+        <li><b data-count="60" data-suffix=" т">60 т</b><span>трал</span></li>
+        <li><b data-count="9">9</b><span>областей</span></li>
       </ul>
     </div>
     <p class="hero__hint" aria-hidden="true">Гортайте</p>
@@ -143,7 +145,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   </div>
   <div class="cine__head">
     <p class="eyebrow">Масштаб робіт</p>
-    <h2 id="cineTitle">Шість завдань —<span>одна зміна</span></h2>
+    <h2 id="cineTitle">Робота різна.<span>Підхід один.</span></h2>
     <p class="cine__note">Ілюстративна зйомка, не техніка ПБТ. Наша — у розділі «Кадри з об’єктів».</p>
   </div>
   <ol class="cine__chs" id="cine"></ol>
@@ -156,7 +158,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <div class="wrap">
     <div class="sec-head rv">
       <p class="eyebrow">Техніка</p><h2>32 одиниці<span>у 8 категоріях</span></h2>
-      <p class="lead">Ціна — за годину роботи з оператором і пальним. «Договірна» — ціна залежить від об’єкта: зателефонуйте, і ми назвемо її за п’ять хвилин.</p>
+      <p class="lead">Оберіть техніку під своє завдання. Для оренди вказано погодинну ставку, для перевезень — ціну за кілометр. Договірну вартість уточнюємо за умовами об’єкта.</p>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Категорії техніки"></div>
     <div class="park" id="park" aria-live="polite"></div>
@@ -208,12 +210,12 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <div class="wrap">
     <div class="sec-head rv">
       <p class="eyebrow">Кадри з об’єктів</p><h2>Не слайди —<span>жива техніка</span></h2>
-      <p class="lead">Ми знімаємо роботу, а не рендери. Кожне відео — наша машина на реальному об’єкті; натисніть, щоб відкрити оригінал у TikTok.</p>
+      <p class="lead">Водойми, земляні роботи, доставка техніки. Кадри з каналу ПолтаваБудТехніка — відкрийте відео, щоб побачити роботу на об’єкті.</p>
     </div>
     <div class="facts rv">
-      <div class="fact"><b data-count="32">0</b><span>одиниці техніки у 8 категоріях — від мінінавантажувача до крана 120 т</span></div>
-      <div class="fact"><b data-count="9">0</b><span>областей виїзду. База — Полтава, вул. Довженка, 2А</span></div>
-      <div class="fact"><b data-count="70" data-suffix=" м">0</b><span>стріла найбільшого автокрана (Liebherr LTM 1120), трал до 60 т</span></div>
+      <div class="fact"><b data-count="32">32</b><span>одиниці техніки у 8 категоріях — від мінінавантажувача до крана 120 т</span></div>
+      <div class="fact"><b data-count="9">9</b><span>областей виїзду. База — Полтава, вул. Довженка, 2А</span></div>
+      <div class="fact"><b data-count="70" data-suffix=" м">70 м</b><span>стріла найбільшого автокрана (Liebherr LTM 1120), трал до 60 т</span></div>
     </div>
     <div class="reel" id="reel"></div>
     <p class="eyebrow" style="margin-top:clamp(36px,5vw,56px)">Нам довіряють</p>
@@ -277,10 +279,20 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <p class="eyebrow">Заявка</p><h2>Викликати<span>техніку</span></h2>
       <p class="lead">Заповніть форму — ми передзвонимо в робочий час і підтвердимо машину, дату й ціну. Або зателефонуйте: диспетчер відповість швидше.</p>
     </div>
+    <ol class="request-steps" aria-label="Як замовити техніку">
+      <li><span class="num">01</span><h3>Розкажіть про об’єкт</h3><p>Завдання, адреса, бажана дата. Можна обрати машину в каталозі або описати потрібну роботу.</p></li>
+      <li><span class="num">02</span><h3>Узгодимо деталі</h3><p>Диспетчер уточнить техніку, під’їзд, обсяг, подачу та остаточну вартість.</p></li>
+      <li><span class="num">03</span><h3>Підтвердимо виїзд</h3><p>Дата й умови роботи — після погодження. Надсилання форми ще не є бронюванням.</p></li>
+    </ol>
     <div class="act">
       <aside class="act__aside rv">
         <div class="channels" id="channels"></div>
         <p class="act__note">Якщо зв’язок обірветься під час надсилання, повторне натискання не створить дубліката заявки.</p>
+        <div class="request-faq">
+          <details><summary>Не знаю, яка техніка потрібна</summary><p>Опишіть завдання у формі: що потрібно зробити, де розташований об’єкт і чи є під’їзд. Техніку доберемо під час розмови.</p></details>
+          <details><summary>Що враховано в калькуляторі?</summary><p>Погодинну оренду й розрахункову подачу тралом. Мінімальну зміну, простій, нічну роботу, ПДВ та подачу автокрана уточнюємо окремо. Це орієнтир для планування.</p></details>
+          <details><summary>Як замовити матеріали?</summary><p>Натисніть «У заявку» біля потрібного матеріалу. Вкажіть обсяг і адресу доставки; наявність, документи партії та вартість підтверджує диспетчер.</p></details>
+        </div>
       </aside>
       <div class="rv rv--scale">
         <form class="form" id="lead" novalidate autocomplete="on">
@@ -311,8 +323,8 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
           <p class="form__msg" id="formMsg" role="alert"></p>
           <div class="form__foot"><button class="btn" type="submit" id="send">Надіслати заявку</button><small>Контакт потрібен лише для того, щоб передзвонити. Ми його не публікуємо й не передаємо третім особам.</small></div>
         </form>
-        <div class="done" id="done" tabindex="-1" role="status"><svg class="check" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="33"/><path d="M22 37 L32 47 L51 27"/></svg><p class="eyebrow">Прийнято</p><h3>Заявку записано</h3><p class="ref" id="ref">PBT-000000</p><p>Передзвонимо в робочий час: Пн–Пт 09:00–18:00, Сб до 15:00. Якщо терміново — набирай диспетчера, номери ліворуч.</p><p><button class="btn btn--sm" type="button" id="again">Ще одна заявка</button></p></div>
-        <div class="fallback" id="fallback" tabindex="-1" role="status"><p class="eyebrow">Сервер заявок недоступний</p><h3>Зателефонуй або надішли текст</h3><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="#zapyt" data-phone>097 863 77 77</a></p></div>
+        <div class="done" id="done" tabindex="-1" role="status"><svg class="check" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="33"/><path d="M22 37 L32 47 L51 27"/></svg><p class="eyebrow">Прийнято</p><h3>Заявку записано</h3><p class="ref" id="ref">PBT-000000</p><p>Передзвонимо в робочий час: Пн–Пт 09:00–18:00, Сб до 15:00. Якщо терміново — зателефонуйте диспетчеру за номерами в розділі зв’язку.</p><p><button class="btn btn--sm" type="button" id="again">Ще одна заявка</button></p></div>
+        <div class="fallback" id="fallback" tabindex="-1" role="status"><p class="eyebrow">Підтвердження не отримано</p><h3>Повторіть заявку або зателефонуйте</h3><p>Зв’язок міг обірватися після запису заявки. Повторне надсилання тих самих даних не створить дубліката.</p><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbRetry">Повернутися до заявки</button><button class="btn btn--ghost btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="#zapyt" data-phone>097 863 77 77</a></p></div>
       </div>
     </div>
   </div>

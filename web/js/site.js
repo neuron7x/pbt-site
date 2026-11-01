@@ -6,12 +6,49 @@
   const doc = document.documentElement;
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
+  let reduced = reduceQuery.matches, manualPaused = false;
+  const MOTION_KEY = 'pbt-motion-paused';
+  try { manualPaused = localStorage.getItem(MOTION_KEY) === '1'; } catch (_) { /* приватне сховище */ }
+  // Завантажений профіль static — обмеження якості; зміна системної переваги його не скасовує.
   const quality = () => doc.dataset.quality || 'full';
-  const motion = () => quality() !== 'static' && !reduced;
+  const motion = () => quality() !== 'static' && !reduced && !manualPaused;
   // CPU-constrained/Save-Data/reduced-motion devices stay poster-first.
   // Browser tests explicitly emulate the full and constrained profiles.
-  const videoAllowed = () => quality() === 'full' && !reduced;
+  const videoCapable = () => quality() === 'full' && !reduced;
+  const videoAllowed = () => videoCapable() && !manualPaused && !document.hidden;
+  const mediaSync = new Set();
+  const motionToggle = $('#motionToggle');
+  function syncMotion() {
+    const paused = !motion();
+    doc.dataset.motion = paused ? 'paused' : 'running';
+    if (motionToggle) {
+      motionToggle.hidden = false;
+      motionToggle.disabled = quality() === 'static' || reduced;
+      motionToggle.setAttribute('aria-pressed', String(paused));
+      const label = motionToggle.disabled ? 'Анімації вимкнено' : paused ? 'Відновити анімації' : 'Призупинити анімації';
+      motionToggle.textContent = label;
+      motionToggle.setAttribute('aria-label', label);
+    }
+    if (!videoAllowed()) $$('video').forEach(video => video.pause());
+    mediaSync.forEach(sync => sync());
+    if (paused) {
+      $$('.unit').forEach(unit => { unit.style.removeProperty('--rx'); unit.style.removeProperty('--ry'); });
+      $('#glow')?.classList.remove('is-on');
+    }
+    reveal(); render();
+  }
+  motionToggle?.addEventListener('click', () => {
+    if (quality() === 'static' || reduced) return;
+    manualPaused = !manualPaused;
+    try { localStorage.setItem(MOTION_KEY, manualPaused ? '1' : '0'); } catch (_) { /* приватне сховище */ }
+    syncMotion();
+  });
+  reduceQuery.addEventListener('change', event => { reduced = event.matches; syncMotion(); });
+  // Відкладений play() не повинен обійти паузу або системне обмеження руху.
+  document.addEventListener('play', event => {
+    if (event.target.tagName === 'VIDEO' && !videoAllowed()) event.target.pause();
+  }, true);
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,21 +87,27 @@
       video.append(s1, s2);
     }
   }
-  const playing = new Set();
-  const vio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
-    const v = e.target.querySelector('video'); if (!v) return;
-    if (e.isIntersecting && videoAllowed()) {
+  const playing = new Set(), visibleCards = new Set();
+  function syncCardVideo(card) {
+    const v = $('video', card); if (!v) return;
+    if (visibleCards.has(card) && videoAllowed()) {
       if (!v.dataset.ready) attachVideo(v, v.dataset.video);
       v.preload = 'auto';
       const p = v.play(); if (p && p.catch) p.catch(() => {});
-      e.target.classList.add('is-playing'); playing.add(v);
-    } else { v.pause(); e.target.classList.remove('is-playing'); playing.delete(v); }
+      card.classList.add('is-playing'); playing.add(v);
+    } else { v.pause(); card.classList.remove('is-playing'); playing.delete(v); }
+  }
+  mediaSync.add(() => visibleCards.forEach(syncCardVideo));
+  const vio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) visibleCards.add(e.target); else visibleCards.delete(e.target);
+    syncCardVideo(e.target);
   }), { threshold: .45 }) : null;
   const watchVideo = el => { if (vio) vio.observe(el); };
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
-  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge')].filter(Boolean);
+  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge'), motionToggle, $('.skip')].filter(Boolean);
+  const menuInertBefore = new Map();
   let lastY = scrollY, navHidden = false, returnFocus = null;
   const themeButtons = Array.from(document.querySelectorAll('[data-theme-choice]'));
   const THEME_KEY = 'pbt-theme';
@@ -102,7 +145,11 @@
     document.body.style.overflow = on ? 'hidden' : '';
     if (on) nav.classList.remove('is-hidden');
     /* Модальний навігаційний шар: фон неактивний для Tab і скринридерів. */
-    menuBackdrop.forEach(el => { el.inert = on; });
+    menuBackdrop.forEach(el => {
+      if (on) { menuInertBefore.set(el, el.inert); el.inert = true; }
+      else el.inert = menuInertBefore.get(el) || false;
+    });
+    if (!on) menuInertBefore.clear();
     if (on) menuClose.focus();
     else if (restoreFocus) (returnFocus && returnFocus.isConnected ? returnFocus : burger).focus({ preventScroll: true });
   }
@@ -111,7 +158,7 @@
   Array.from(menu.querySelectorAll('a')).forEach(a => a.addEventListener('click', () => {
     const hash = a.getAttribute('href');
     openMenu(false, false);
-    if (hash && hash.startsWith('#') && hash.length > 1) {
+    if (hash && hash.startsWith('#') && hash.length > 1 && !a.hasAttribute('data-req')) {
       const target = document.getElementById(hash.slice(1));
       if (target) requestAnimationFrame(() => {
         target.setAttribute('tabindex', '-1');
@@ -147,7 +194,12 @@
       hCenter.style.transform = `translate3d(0,calc(-50% - ${(cp * 90).toFixed(1)}px),0) scale(${(1 - .06 * cp).toFixed(4)})`;
       water.style.setProperty('--wl', (seg(p, .45, .985) * 1.04).toFixed(4));
       if (p >= 1 && hVideo && !hVideo.paused) hVideo.pause();
-      else if (p < 1 && hVideo && hVideo.paused && hVideo.dataset.ready && !document.hidden) { const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      else if (p < 1 && hVideo && hVideo.paused && hVideo.dataset.ready && videoAllowed()) { const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
+    } else {
+      // Пауза посеред прокручування не залишає заголовок прозорим при поверненні нагору.
+      hCenter.style.removeProperty('opacity'); hCenter.style.removeProperty('transform');
+      if (hVideo) hVideo.style.removeProperty('transform');
+      water.style.removeProperty('--wl');
     }
     return p;
   }
@@ -166,7 +218,7 @@
   let sparkOn = false;
   const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroP < 1 && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
   function sparkLoop(t) {
-    if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || reduced || heroP >= 1 || document.hidden) { sparkOn = false; return; }
+    if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || !motion() || heroP >= 1 || document.hidden) { sparkOn = false; return; }
     requestAnimationFrame(sparkLoop);
     if (t - cLast < 33) return;
     cLast = t;
@@ -239,7 +291,7 @@
     if (el.dataset.done) return; el.dataset.done = '1';
     const to = parseFloat(el.dataset.count), suf = el.dataset.suffix || '', dur = 1400, t0 = performance.now();
     if (!motion()) { el.textContent = fmt(to) + suf; return; }
-    const step = t => { const k = ease(clamp((t - t0) / dur, 0, 1)); el.textContent = fmt(to * k) + suf; if (k < 1) requestAnimationFrame(step); };
+    const step = t => { const k = motion() ? ease(clamp((t - t0) / dur, 0, 1)) : 1; el.textContent = fmt(to * k) + suf; if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
 
@@ -255,7 +307,7 @@
       <article class="unit rv rv--scale" style="--d:${(i % 8) * 60}ms" data-cat="${u.cat}" data-id="${u.id}">
         <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__cat">${esc(catName(u.cat))}</span></figure>
         <div class="unit__body"><h3>${esc(u.name)}</h3>
-          <dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl></div>
+          ${u.specs.length ? `<dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl>` : `<p class="unit__purpose">${esc((D.cats.find(c => c.id === u.cat) || {}).lead || 'Підберемо комплектацію під ваше завдання.')}</p>`}</div>
         <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
           <button class="btn btn--sm" type="button" data-req="rent" data-subject="${esc(u.name)}">У заявку</button></div>
       </article>`).join('');
@@ -269,8 +321,8 @@
       $$('.unit', grid).forEach((u, i) => { u.hidden = !(cat === 'all' || u.dataset.cat === cat); if (!u.hidden) { u.classList.remove('is-in'); u.style.setProperty('--d', `${(i % 8) * 50}ms`); requestAnimationFrame(() => requestAnimationFrame(() => u.classList.add('is-in'))); } });
       measure();
     });
-    if (finePointer && motion()) grid.addEventListener('pointermove', e => {         /* нахил картки за вказівником */
-      if (doc.dataset.theme === 'precision') return;
+    if (finePointer) grid.addEventListener('pointermove', e => {         /* нахил картки за вказівником */
+      if (!motion() || doc.dataset.theme === 'precision') return;
       const u = e.target.closest('.unit'); if (!u) return;
       const r = u.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
       u.style.setProperty('--ry', `${(x * 7).toFixed(2)}deg`); u.style.setProperty('--rx', `${(-y * 7).toFixed(2)}deg`);
@@ -297,7 +349,7 @@
   function tweenTotal(el, to) {
     const from = totalShown, t0 = performance.now(), id = ++totalAnim;
     if (!motion()) { totalShown = to; el.innerHTML = `${fmt(to)} <small>грн</small>`; return; }
-    const step = t => { if (id !== totalAnim) return; const k = ease(clamp((t - t0) / 520, 0, 1)); totalShown = from + (to - from) * k; el.innerHTML = `${fmt(totalShown)} <small>грн</small>`; if (k < 1) requestAnimationFrame(step); };
+    const step = t => { if (id !== totalAnim) return; const k = motion() ? ease(clamp((t - t0) / 520, 0, 1)) : 1; totalShown = from + (to - from) * k; el.innerHTML = `${fmt(totalShown)} <small>грн</small>`; if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
   function renderCalc() {
@@ -358,15 +410,15 @@
   function renderMats() {
     $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
       <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
-        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p></div></article>`).join('')}</div>`;
+        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
   }
   function renderProof() {
     $('#reel').innerHTML = D.proof.map((p, i) => `<a class="rv" style="--d:${(i % 3) * 90}ms" href="${p.url}" target="_blank" rel="noopener" aria-label="${esc(p.t)}: ${esc(p.s)} — відкрити відео">
       <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
       <i aria-hidden="true"></i><figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></a>`).join('');
     $$('#reel a').forEach(watchVideo);
-    const logos = D.partners.map((p, i) => `<li><img src="${p}" alt="Логотип партнера ${i + 1}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
-    $('#partners').innerHTML = logos + logos;      /* подвоєння — для нескінченної стрічки */
+    const logos = duplicate => D.partners.map((p, i) => `<li${duplicate ? ' aria-hidden="true"' : ''}><img src="${p}" alt="${duplicate ? '' : `Логотип партнера ${i + 1}`}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
+    $('#partners').innerHTML = logos(false) + logos(true);      /* декоративний повтор не дублює доступний список */
   }
   function renderGeo() {
     const home = 'Полтавська', svg = $('#geoMap svg');
@@ -506,6 +558,7 @@
   }
   form.addEventListener('submit', async e => {
     e.preventDefault();
+    if ($('#send').disabled) return;
     const p = payload(); const err = validate(p);
     ['subject', 'hours', 'km', 'date', 'contact', 'comment'].forEach(k => setErr(k, err[k]));
     msg.classList.remove('is-on');
@@ -513,10 +566,12 @@
     const h = JSON.stringify(p);
     if (h !== idemHash) { idemHash = h; idemKey = uuid(); }
     const btn = $('#send'); btn.disabled = true; btn.textContent = 'Надсилаю…';
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 15000);
     try {
       if (window.PBT_BUNDLE) throw new Error('bundle');
-      const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey }, body: h });
-      const j = await r.json().catch(() => ({}));
+      const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey }, body: h, signal: controller.signal });
+      const j = await r.json().catch(error => { if (controller.signal.aborted) throw error; return {}; });
       if (r.status === 201 && j.ok) {
         form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = j.ref; done.focus();
       } else if (r.status === 422 && j.fields) {
@@ -529,7 +584,7 @@
     } catch (_) {
       form.hidden = true; fallback.classList.add('is-on'); $('#fbText').textContent = humanText(p);
       fallback.focus();
-    } finally { btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
+    } finally { clearTimeout(deadline); btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
   });
   $('#fbCopy').addEventListener('click', async () => {
     const t = $('#fbText').textContent; const b = $('#fbCopy');
@@ -537,25 +592,39 @@
     setTimeout(() => b.textContent = 'Скопіювати текст', 2500);
   });
   $('#again').addEventListener('click', () => { done.classList.remove('is-on'); form.hidden = false; form.reset(); idemHash = ''; $('#subject').focus(); });
+  $('#fbRetry')?.addEventListener('click', () => {
+    fallback.classList.remove('is-on'); form.hidden = false;
+    msg.textContent = 'Підтвердження не отримано. Можна повторити надсилання: незмінена заявка не дублюється.';
+    msg.classList.add('is-on'); $('#send').focus();
+  });
 
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-req]'); if (!b) return;
+    e.preventDefault();
     const t = b.dataset.req, s = b.dataset.subject;
+    // Після підтвердженого успіху CTA означає новий намір; після обриву — безпечний повтор.
+    if (done.classList.contains('is-on')) { idemHash = ''; idemKey = null; }
+    done.classList.remove('is-on'); fallback.classList.remove('is-on'); form.hidden = false;
     const radio = form.querySelector(`input[name="type"][value="${t}"]`); if (radio) radio.checked = true;
     if (s) $('#subject').value = s;
-    if (b.tagName === 'BUTTON') { e.preventDefault(); document.getElementById('zapyt').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }); }
-    setTimeout(() => $('#subject').focus({ preventScroll: true }), 700);
+    if (b.tagName === 'A' && b.getAttribute('href') === '#zapyt' && location.hash !== '#zapyt' && /^(https?:|file:)$/.test(location.protocol)) {
+      history.pushState(history.state, '', '#zapyt');
+    }
+    const subject = $('#subject');
+    subject.focus({ preventScroll: true });
+    // На вузькому екрані контакти й пояснення перед формою можуть займати кілька екранів.
+    subject.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'center' });
   });
 
   /* ───── курсорне світло ───── */
   const glow = $('#glow');
-  if (glow && finePointer && motion() && getComputedStyle(glow).display !== 'none') {
+  if (glow && finePointer && getComputedStyle(glow).display !== 'none') {
     let gx = 0, gy = 0, tx = 0, ty = 0, on = false;
-    addEventListener('pointermove', e => { tx = e.clientX; ty = e.clientY; if (!on) { on = true; glow.classList.add('is-on'); } }, { passive: true });
+    addEventListener('pointermove', e => { if (!motion()) return; tx = e.clientX; ty = e.clientY; if (!on || !glow.classList.contains('is-on')) { on = true; glow.classList.add('is-on'); } }, { passive: true });
     let run = false;                                   // цикл живе, лише поки світло доганяє курсор
-    const loop = () => { gx += (tx - gx) * .12; gy += (ty - gy) * .12; glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
+    const loop = () => { if (!motion()) { run = false; on = false; return; } gx += (tx - gx) * .12; gy += (ty - gy) * .12; glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
       if (Math.abs(tx - gx) + Math.abs(ty - gy) > .5) requestAnimationFrame(loop); else run = false; };
-    addEventListener('pointermove', () => { if (!run) { run = true; requestAnimationFrame(loop); } }, { passive: true });
+    addEventListener('pointermove', () => { if (motion() && !run) { run = true; requestAnimationFrame(loop); } }, { passive: true });
   }
 
   /* ───── МАСШТАБ: кіно-сцена з ілюстративної зйомки (window.PBT_CINE ← config/stock.json) ───── */
@@ -575,7 +644,7 @@
     const cr = $('#cineCredits');
     if (cr) cr.innerHTML = `<details class="credits"><summary>Джерела ілюстративних кадрів «Масштабу»</summary><ul>${chs.map(c =>
       `<li><a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; кадровано, виконано колірну корекцію</li>`).join('')}</ul></details>`;
-    if (!videoAllowed() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
+    if (!videoCapable() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
     sec.classList.add('is-pinned');
     rail.innerHTML = chs.map(c => `<a href="#cine-${esc(c.id)}"><span>${esc(c.word)}</span></a>`).join('');
     const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), dots = $$('a', rail);
@@ -598,20 +667,33 @@
       items.forEach((el, k) => el.classList.toggle('is-cur', k === i));
       dots.forEach((el, k) => el.classList.toggle('is-on', k === i));
       const next = layers[1 - front], prev = layers[front];
-      load(next, chs[i].id);
+      next.poster = C_BASE + chs[i].id + '-' + prof() + '.webp';
+      if (videoAllowed()) load(next, chs[i].id);
+      else {
+        // Новий розділ у паузі показує власний постер, а не кадр попереднього кліпу.
+        next.removeAttribute('src'); next.innerHTML = ''; delete next.dataset.clip; next.load();
+      }
       next.classList.add('is-on'); prev.classList.remove('is-on');
-      if (inView) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      if (inView && videoAllowed()) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
       setTimeout(() => { if (!prev.classList.contains('is-on')) prev.pause(); }, 1200);
       front = 1 - front;
-      const after = chs[i + 1]; if (after) setTimeout(() => { const spare = layers[1 - front]; if (!spare.classList.contains('is-on')) { load(spare, after.id); spare.preload = 'auto'; } }, 1400);
+      const after = chs[i + 1]; if (after) setTimeout(() => { const spare = layers[1 - front]; if (videoAllowed() && !spare.classList.contains('is-on')) { load(spare, after.id); spare.preload = 'auto'; } }, 1400);
       sec.dataset.cur = chs[i].id;
     }
+    function syncCine() {
+      if (inView && videoAllowed()) {
+        if (cur < 0) show(0);
+        const v = layers[front]; load(v, chs[cur].id);
+        const pr = v.play(); if (pr && pr.catch) pr.catch(() => {});
+        playing.add(v);
+      } else layers.forEach(v => { v.pause(); playing.delete(v); });
+    }
+    mediaSync.add(syncCine);
     const cio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) show(+e.target.dataset.i); }), { rootMargin: '-45% 0px -45% 0px' });
     items.forEach(el => cio.observe(el));
     new IntersectionObserver(es => es.forEach(e => {
       inView = e.isIntersecting;
-      if (inView) { if (cur < 0) show(0); const v = layers[front]; const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); playing.add(v); }   /* front — видимий шар */
-      else layers.forEach(x => { x.pause(); playing.delete(x); });
+      syncCine();
     }), { threshold: 0 }).observe(sec);
   }
 
@@ -629,28 +711,35 @@
        (замість прозорості — чорне тло), тому там і в однофайловій збірці лишається статичний кадр. Перший кадр анімації = статичний. */
     const logo = $('.logo-hero'), lv = $('#logoAnim');
     const ua = navigator.userAgent, appleWebKit = /AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg|CriOS|FxiOS|Android/.test(ua);
-    if (logo && lv && videoAllowed() && !D.videoData && !appleWebKit && lv.canPlayType('video/webm; codecs="vp9"')) afterLoad(() => {
-      lv.src = 'media/logo/pbt-logo.webm';
+    if (logo && lv && videoCapable() && !D.videoData && !appleWebKit && lv.canPlayType('video/webm; codecs="vp9"')) afterLoad(() => {
       lv.addEventListener('playing', () => logo.classList.add('is-anim'), { once: true });
       lv.addEventListener('ended', () => logo.classList.remove('is-anim'), { once: true });   // останній кадр = статичний
-      const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
+      const syncLogo = () => {
+        if (!videoAllowed() || heroP >= 1) { lv.pause(); return; }
+        if (lv.ended) return;
+        if (!lv.getAttribute('src')) lv.src = 'media/logo/pbt-logo.webm';
+        const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
+      };
+      mediaSync.add(syncLogo); syncLogo();
     });
-    if (videoAllowed() && hVideo) afterLoad(() => {
-      attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
+    if (videoCapable() && hVideo) afterLoad(() => {
       /* WebKit (Safari) відхиляє ранні play() з NotAllowedError навіть для muted-відео (виміряно 08.10: відмови до ~1.46 с,
          play() о 1.5 с проходить). Точну умову не встановлено ⇒ повтор із наростаючою паузою, до 8 спроб, лише поки герой у кадрі. */
       let tries = 0;
       const go = () => {
-        if (!hVideo.paused || scrollY >= innerHeight || document.hidden) return;
+        if (!videoAllowed() || scrollY >= innerHeight) { hVideo.pause(); return; }
+        if (!hVideo.paused) return;
+        attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
         const pr = hVideo.play();
         if (pr && pr.catch) pr.catch(() => { if (++tries < 8) setTimeout(go, 200 * tries); });
       };
-      go();
+      mediaSync.add(go); go();
       hVideo.addEventListener('canplay', go, { once: true });
     });
     requestAnimationFrame(() => hero.classList.add('is-lit'));
     sparkWake();
-    document.addEventListener('visibilitychange', () => { if (document.hidden) { if (hVideo) hVideo.pause(); playing.forEach(v => v.pause()); } else if (videoAllowed()) { sparkWake(); if (hVideo && heroP < 1) hVideo.play().catch(() => {}); playing.forEach(v => v.play().catch(() => {})); } });
+    syncMotion();
+    document.addEventListener('visibilitychange', () => { if (document.hidden) $$('video').forEach(v => v.pause()); else syncMotion(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
   }
