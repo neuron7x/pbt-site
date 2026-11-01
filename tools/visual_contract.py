@@ -149,6 +149,7 @@ def verify_capture_manifest(report: dict, directory: Path) -> list[str]:
         failures.append("Невідома версія маніфесту")
     names = set()
     expected = {(theme, v[0], section) for theme in THEMES for v in VIEWPORTS for section in v[4]}
+    dimensions = {v[0]: (v[1], v[2]) for v in VIEWPORTS}
     observed = set()
     for rec in report.get("captures", []):
         name = rec.get("filename", "")
@@ -168,6 +169,8 @@ def verify_capture_manifest(report: dict, directory: Path) -> list[str]:
             size = png_dimensions(raw)
             if (rec.get("width"), rec.get("height")) != size:
                 failures.append("Помилковий розмір: " + name)
+            if dimensions.get(rec.get("viewport")) != size:
+                failures.append("Розмір PNG не відповідає канонічному екрану: " + name)
             if len(raw) != rec.get("bytes") or hashlib.sha256(raw).hexdigest() != rec.get("sha256"):
                 failures.append("Помилка sha256 або кількості байтів: " + name)
         except ValueError:

@@ -83,8 +83,9 @@ def test_png_sha_crc_and_complete_two_theme_matrix(tmp_path, monkeypatch):
 
 def test_png_crc_is_actually_checked():
     content = bytearray(png())
-    content[-9] ^= 0xFF
-    with pytest.raises(ValueError):
+    # Змінюємо тільки CRC IEND: довжина, тип і дані чанка лишаються валідними.
+    content[-1] ^= 0xFF
+    with pytest.raises(ValueError, match="PNG CRC32 mismatch: IEND"):
         vc.png_dimensions(bytes(content))
     with pytest.raises(ValueError):
         vc.capture_record(b"<html>fake</html>", "sky--fake.png", "small", "top", 16, 8)
@@ -97,6 +98,30 @@ def test_png_crc_is_actually_checked():
 def test_dimensions_must_match_css_viewport():
     with pytest.raises(ValueError):
         vc.capture_record(png(12, 8), "sky--wrong.png", "small", "top", 16, 8)
+
+
+def test_manifest_rejects_complete_counterfeit_geometry_with_consistent_metadata(tmp_path):
+    """Узгоджені PNG/metadata/SHA не можуть замінити канонічні розміри екранів."""
+    records = []
+    for theme in vc.THEMES:
+        for viewport, width, height, _, sections in vc.VIEWPORTS:
+            raw = png(width, height)
+            for section in sections:
+                name = f"{theme}--{viewport}--{section}.png"
+                (tmp_path / name).write_bytes(raw)
+                records.append(vc.capture_record(raw, name, viewport, section, width, height, theme))
+    report = {"schema_version": vc.SCHEMA_VERSION, "captures": records}
+    assert len(records) == 32
+    assert vc.verify_capture_manifest(report, tmp_path) == []
+
+    raw = png(1, 1)
+    for i, rec in enumerate(records):
+        (tmp_path / rec["filename"]).write_bytes(raw)
+        # Оновлюємо і розміри, і байти, і SHA: тест має спрацювати саме на профілі.
+        records[i] = vc.capture_record(raw, rec["filename"], rec["viewport"], rec["section"], 1, 1, rec["theme"])
+    failures = vc.verify_capture_manifest(report, tmp_path)
+    assert len(failures) == len(records)
+    assert all("канонічному екрану" in failure for failure in failures)
 
 
 def test_matrix_has_exactly_six_profiles_for_each_theme():
