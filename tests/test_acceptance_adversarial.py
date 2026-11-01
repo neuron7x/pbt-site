@@ -253,6 +253,40 @@ def test_production_stays_on_hold_without_signed_receipts(world):
     assert set(d['external']) >= {'B1', 'B3', 'B4', 'R1', 'R2', 'R3', 'H1', 'F1', 'S1', 'D1'}
 
 
+
+# Release-control input binding: a dirty worktree must never override the target commit.
+def test_uncommitted_case_cannot_reclassify_external_claims(world):
+    def forge(case):
+        case['claims']['C10']['leaves'] = [{
+            'id': 'C10.fake', 'status': 'PASS', 'kind': 'engineering',
+            'obligations': ['DB-01'],
+        }]
+    world.edit_json('assurance/case.json', forge)
+    with pytest.raises(ac.Rejected, match='acceptance_control_dirty_assurance/case.json'):
+        world.accept()
+
+
+def test_uncommitted_external_policy_cannot_change_authority(world):
+    world.edit_json('config/external-evidence-policy.json',
+                    lambda policy: policy.update(namespace='forged-trust-domain'))
+    with pytest.raises(ac.Rejected, match='acceptance_control_dirty_config/external-evidence-policy.json'):
+        world.accept()
+
+
+def test_uncommitted_owner_signer_list_cannot_change_trust_root(world):
+    (world.repo / 'config/owner-allowed-signers').write_text('owner ssh-ed25519 forged-key\\n')
+    with pytest.raises(ac.Rejected, match='acceptance_control_dirty_config/owner-allowed-signers'):
+        world.accept()
+
+
+def test_uncommitted_external_receipt_cannot_affect_eligibility(world):
+    path = world.repo / 'assurance/evidence/external/D1.json'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({'schema': 'pbt-external-receipt-v1', 'class': 'D1'}))
+    with pytest.raises(ac.Rejected, match='external_receipt_set_not_at_target'):
+        world.accept()
+
+
 # ─── external receipts: authenticity, not presence ───────
 POLICY = json.loads((ROOT / 'config/external-evidence-policy.json').read_text(encoding='utf-8'))
 
