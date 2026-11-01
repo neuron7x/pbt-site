@@ -1,0 +1,398 @@
+{
+ "catalog_sha256": "6b36f4bcf4914dffec9cee774d2fe36fcdbb340b0f35ad3b3e6fefee5d6fc955",
+ "counts": {
+  "KILLED": 54,
+  "UNTESTABLE": 1
+ },
+ "failed_ids": [],
+ "head_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+ "positive_control_oracles": 40,
+ "results": [
+  {
+   "evidence": "json,sql...atabaseError(\\'foreign_keys enforcement unavailable\\')\\nsqlite3.DatabaseError: foreign_keys enforcement unavailable\\n').returncode\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.85s",
+   "id": "M-DB-01-fk-pragma",
+   "oracle_exit": 1,
+   "seconds": 1.4,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  +     'ACCEPTED',\n    ]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.35s",
+   "id": "M-DB-01-readback",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "        ),\n    ]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.82s",
+   "id": "M-DB-02-atomic-migration",
+   "oracle_exit": 1,
+   "seconds": 1.3,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "t_legacy_orphan_is_reported_never_repaired_and_never_lost - AssertionError: orphan silently repaired or deleted\nassert (777, 'pending') in []\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.26s",
+   "id": "M-DB-02-silent-orphan-repair",
+   "oracle_exit": 1,
+   "seconds": 0.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "=====\nFAILED tests/test_data_integrity.py::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement - assert 201 == 409\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.57s",
+   "id": "M-DB-03-same-key-replaces",
+   "oracle_exit": 1,
+   "seconds": 1.2,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "============\nFAILED tests/test_leads.py::test_uniqueness_is_enforced_by_the_database - Failed: DID NOT RAISE <class 'sqlite3.IntegrityError'>\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.29s",
+   "id": "M-DB-03-unique-index",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  ?     ^\n    )\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.67s",
+   "id": "M-DB-04-reply-before-commit",
+   "oracle_exit": 1,
+   "seconds": 1.2,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "        0,\n    )\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 2 passed in 0.99s",
+   "id": "M-DB-04-lead-without-outbox-atomicity",
+   "oracle_exit": 1,
+   "seconds": 1.6,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "ect at 0x7ffa93593ac0>('replayed')\n +    where <built-in method get of dict object at 0x7ffa93593ac0> = {'ok': True, 'ref': 'PBT-000002'}.get\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 4.56s",
+   "id": "M-DB-05-erase-key-on-reload",
+   "oracle_exit": 1,
+   "seconds": 5.2,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "    t\\\\\\\":\\\\\\\"0977654321\\\\\\\",\\\\\\\"comment\\\\\\\":\\\\\\\"\\\\\\\",\\\\\\\"website\\\\\\\":\\\\\\\"\\\\\\\"}\\\",\\\"x\\\":1793567318599}\"},\"l\":{}}\n  ?           ++++++++++)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 3.11s",
+   "id": "M-DB-05-store-payload",
+   "oracle_exit": 1,
+   "seconds": 3.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "quest=<Request url='http://127.0.0.1:46825/api/lead' method='POST'>> = <playwright._impl._sync_base.EventInfo object at 0x7f20c54a34d0>.value\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 4.86s",
+   "id": "M-DB-05-ignore-expiry",
+   "oracle_exit": 1,
+   "seconds": 5.3,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "or_new_generation[kill_before-clean_old] - AssertionError: kill_before at op 7: server would start on None\nassert None in ((1, 2, 3), (1, 2))\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 1.54s",
+   "id": "M-DB-06-move-old-away",
+   "oracle_exit": 1,
+   "seconds": 2.1,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "test_orphaned_journal_without_0/leads.db-journal') = Path('/tmp/pytest-of-runner/pytest-13/test_orphaned_journal_without_0/leads.db-journal')\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.19s",
+   "id": "M-DB-06-stale-sidecar",
+   "oracle_exit": 1,
+   "seconds": 1.0,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "tem_cutpoint_preserves_old_or_new_generation[kill_before-hot_journal_old] - sqlite3.DatabaseError: database disk image is malformed\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 4.37s",
+   "id": "M-DB-06-no-settle",
+   "oracle_exit": 1,
+   "seconds": 4.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "runpy, s...ytest-15/test_restore_refuses_snapshot_0/leads.db seq=2 known_RPO_gap=0 (знімок=2 журнал=None min-seq=2)\\n', stderr='').returncode\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.15s",
+   "id": "M-DB-06-fk-check",
+   "oracle_exit": 1,
+   "seconds": 0.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "s/restor...ytest-16/test_restore_outbox_snapshot_p0/leads.db seq=3 known_RPO_gap=1 (знімок=2 журнал=None min-seq=3)\\n', stderr='').returncode\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.54s",
+   "id": "M-DB-06-rpo-gap",
+   "oracle_exit": 1,
+   "seconds": 1.0,
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M-DB-06-dir-fsync",
+   "reason": "Removing a directory fsync is only observable on power loss; SIGKILL keeps the page cache. Would need a block-layer fault injector (dm-flakey) with root.",
+   "verdict": "UNTESTABLE"
+  },
+  {
+   "evidence": "e_is_parsed_not_substring_matched[text/plain; x=application/json] - AssertionError: 'text/plain; x=application/json' -> 201\nassert 201 == 415\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.29s",
+   "id": "M-NET-01-substring-media-type",
+   "oracle_exit": 1,
+   "seconds": 0.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "========\nFAILED tests/test_http_protocol.py::test_transfer_encoding_is_never_accepted_alongside_content_length[chunked] - assert (201 == 400)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.32s",
+   "id": "M-NET-01-te-accepted",
+   "oracle_exit": 1,
+   "seconds": 0.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": ".py::test_slow_clients_hold_slots_for_bounded_wall_clock_only - http.client.RemoteDisconnected: Remote end closed connection without response\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 4.58s",
+   "id": "M-NET-01-deadline",
+   "oracle_exit": 1,
+   "seconds": 5.1,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "Error: assert 201 == 429\n +  where 201 = _keyed(<test_leads.Srv object at 0x7f50529f3b90>, 'k-spoof-000002', ['198.51.100.2', '203.0.113.9'])\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.33s",
+   "id": "M-NET-02-first-xff-line",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "sts - AssertionError: assert 201 == 429\n +  where 201 = _keyed(<test_leads.Srv object at 0x7f27a4e42e10>, 'k-untrusted-02', ['198.51.100.2'])\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.25s",
+   "id": "M-NET-02-trust-without-flag",
+   "oracle_exit": 1,
+   "seconds": 0.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "+  where None = wait_for(<function test_redirect_does_not_forward_webhook_hmac_to_other_host.<locals>.<lambda> at 0x7f828ebe31a0>, timeout=5)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 5.93s",
+   "id": "M-NET-03-follow-redirect",
+   "oracle_exit": 1,
+   "seconds": 6.3,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "s/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement[408] - Failed: timeout; rows=[('failed', 1, 'HTTP 408')]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 15.34s",
+   "id": "M-NET-04-retry-class",
+   "oracle_exit": 1,
+   "seconds": 15.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "    ] and 3 == 0)\n +  where 3 = <test_outbox_state_machine.Receiver object at 0x7fa71cb46c30>.bad_hmac\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 1.20s",
+   "id": "M-NET-04-hmac-forged",
+   "oracle_exit": 1,
+   "seconds": 1.6,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "        0,\n    )\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 7.93s",
+   "id": "M-NET-04-terminal-retried",
+   "oracle_exit": 1,
+   "seconds": 8.3,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "est_outbox_state_machine.py::test_retry_budget_exhaustion_is_an_explicit_terminal_state - Failed: timeout; rows=[('pending', 9, 'HTTP 503')]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 15.47s",
+   "id": "M-NET-04-unbounded-retry",
+   "oracle_exit": 1,
+   "seconds": 15.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": ": Command '['/opt/hostedtoolcache/Python/3.12.15/x64/bin/python', '/tmp/pbt-mutation-8dq9k1cw/w0/server/app.py']' timed out after 15 seconds\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 15.26s",
+   "id": "M-NET-05-no-guard",
+   "oracle_exit": 1,
+   "seconds": 15.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "el-0001', 0), ('submit', 'k-model-0008', 1), ('submit', 'k-model-0014', 2)]\nreplay: step 3 ('submit', 'k-model-0014', 2): over quota got 201\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 11.00s",
+   "id": "M-NET-05-quota-not-charged",
+   "oracle_exit": 1,
+   "seconds": 11.4,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  +     None,\n    )\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 26 passed in 14.61s",
+   "id": "M-NET-05-ipv6-per-address",
+   "oracle_exit": 1,
+   "seconds": 15.2,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  +     'injected-script',\n  + ]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 3.78s",
+   "id": "M-NET-06-unescaped-channel",
+   "oracle_exit": 1,
+   "seconds": 5.2,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  +     'A:javascript:window.__xss=1',\n  + ]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 2.12s",
+   "id": "M-NET-06-any-scheme",
+   "oracle_exit": 1,
+   "seconds": 2.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "==========================\nFAILED tests/test_readiness_truth_table.py::test_fresh_heartbeat_with_stale_backlog_is_not_ready - assert (2 == 1)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.13s",
+   "id": "M-OPS-01-heartbeat-is-healthy",
+   "oracle_exit": 1,
+   "seconds": 1.0,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "t_clean_local_state_never_claims_receiver_or_business_truth - AssertionError: unknown mandatory evidence must block readiness\nassert (0 == 2)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.13s",
+   "id": "M-OPS-01-unknown-is-ready",
+   "oracle_exit": 1,
+   "seconds": 0.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  - FAIL\n  + PASS\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.15s",
+   "id": "M-OPS-01-receipt-subset",
+   "oracle_exit": 1,
+   "seconds": 0.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  - INTENTIONAL_POWER_GUARD_STOP\n  + SITE_DOWN_CAUSE_NOT_ESTABLISHED)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.04s",
+   "id": "M-OPS-03-invent-outage",
+   "oracle_exit": 1,
+   "seconds": 0.6,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  ?         ^  + ^\n    ]\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.19s",
+   "id": "M-ADV-05-host-date",
+   "oracle_exit": 1,
+   "seconds": 0.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "y::test_browser_validator_uses_the_same_civil_date[America/Los_Angeles] - AssertionError: America/Los_Angeles 2026-11-01\nassert False is True\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 2.18s",
+   "id": "M-ADV-05-browser-date",
+   "oracle_exit": 1,
+   "seconds": 2.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "test_meta_evidence_gate.py::test_pull_request_receipts_never_certify_main - Failed: DID NOT RAISE <class 'tools.meta_evidence_gate.Rejected'>\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.14s",
+   "id": "M-EVD-02-event-binding",
+   "oracle_exit": 1,
+   "seconds": 0.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "_v1_schema] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 16 passed in 0.30s",
+   "id": "M-EVD-02-historic-pr8",
+   "oracle_exit": 1,
+   "seconds": 1.0,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "st_removed] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 19 passed in 0.28s",
+   "id": "M-EVD-03-identity",
+   "oracle_exit": 1,
+   "seconds": 0.8,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "nt_summary] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 21 passed in 0.33s",
+   "id": "M-EVD-04-lcp-budget",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "nt_summary] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 22 passed in 0.36s",
+   "id": "M-EVD-04-cls-budget",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "itch_shift] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 24 passed in 0.33s",
+   "id": "M-EVD-04-deferred-shift",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "cution_sha] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 25 passed in 0.34s",
+   "id": "M-EVD-05-execution-sha",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "ence_collect.py::test_bytes_differing_from_provider_digest_are_rejected - Failed: DID NOT RAISE <class 'tools.evidence_collect.CollectError'>\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.05s",
+   "id": "M-EVD-06-provider-digest",
+   "oracle_exit": 1,
+   "seconds": 0.6,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "ip_tampered] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 6 passed in 0.12s",
+   "id": "M-EVD-06-zip-digest",
+   "oracle_exit": 1,
+   "seconds": 0.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "g_manifest] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 37 passed in 0.54s",
+   "id": "M-EVD-06-png-crc",
+   "oracle_exit": 1,
+   "seconds": 1.1,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  - UNKNOWN\n  + PASS\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 1 passed in 0.09s",
+   "id": "M-EVD-08-unknown-as-pass",
+   "oracle_exit": 1,
+   "seconds": 0.7,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "FAILED tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget - KeyError: 'rss_sample_epochs_kib'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.04s",
+   "id": "M-ADV-04-p99-limit",
+   "oracle_exit": 1,
+   "seconds": 0.6,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "===========\nFAILED tests/test_supply_chain.py::test_unpinned_action_is_rejected - Failed: DID NOT RAISE <class 'tools.supply_chain.Rejected'>\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.06s",
+   "id": "M-ADV-06-unpinned-action",
+   "oracle_exit": 1,
+   "seconds": 0.6,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  - FAIL\n  + PASS)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.05s",
+   "id": "M-NET-07-scanner-crash-is-pass",
+   "oracle_exit": 1,
+   "seconds": 0.6,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 107.675278",
+   "id": "M-QUOTE-unknown-delivery-as-zero",
+   "oracle_exit": 1,
+   "seconds": 0.2,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "  +  b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00'\n  +  b'\\x00\\x00\\x00\\x00')\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed in 0.54s",
+   "id": "M-NET-05-migrate-before-guard",
+   "oracle_exit": 1,
+   "seconds": 1.1,
+   "verdict": "KILLED"
+  },
+  {
+   "evidence": "og_diluted] - Failed: DID NOT RAISE any of (<class 'tools.meta_evidence_gate.Rejected'>, <class 'ValueError'>, <class 'KeyError'>)\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 31 passed in 0.37s",
+   "id": "M-EVD-03-catalog-coverage",
+   "oracle_exit": 1,
+   "seconds": 0.9,
+   "verdict": "KILLED"
+  }
+ ],
+ "schema": "pbt-mutation-ledger-v1",
+ "score_note": "Designated critical faults only: no claim about any other fault.",
+ "status": "PASS"
+}

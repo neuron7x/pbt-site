@@ -1,0 +1,51 @@
+FFFFF.F...FFFFFFFFF...F.FFF.FFF.F.FFFFFF............FFFFFFFFFFFFFFFFFFFF [100%]
+=========================== short test summary info ============================
+FAILED tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched[text/plain; x=application/json]
+FAILED tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched[multipart/form-data; boundary=application/json]
+FAILED tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched[application/jsonx]
+FAILED tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched[text/plain, application/json]
+FAILED tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched[application/json-patch+json]
+FAILED tests/test_http_protocol.py::test_json_media_type_variants_stay_accepted[Application/JSON; charset=utf-8]
+FAILED tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state[0x10]
+FAILED tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state[-1]
+FAILED tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state[1e2]
+FAILED tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state[\u0663]
+FAILED tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state[5, 5]
+FAILED tests/test_http_protocol.py::test_conflicting_duplicate_content_length_is_rejected
+FAILED tests/test_http_protocol.py::test_transfer_encoding_is_never_accepted_alongside_content_length[chunked]
+FAILED tests/test_http_protocol.py::test_transfer_encoding_is_never_accepted_alongside_content_length[gzip, chunked]
+FAILED tests/test_http_protocol.py::test_transfer_encoding_is_never_accepted_alongside_content_length[identity]
+FAILED tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity
+FAILED tests/test_http_protocol.py::test_second_server_on_same_database_fails_closed
+FAILED tests/test_http_protocol.py::test_restore_refuses_while_the_guard_is_held_even_on_another_port
+FAILED tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink
+FAILED tests/test_dom_trust_boundary.py::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink
+FAILED tests/test_lead_reload_idempotency.py::test_lost_response_then_reload_replays_the_same_lead
+FAILED tests/test_lead_reload_idempotency.py::test_storage_holds_no_contact_data_and_clears_on_confirmation
+FAILED tests/test_lead_reload_idempotency.py::test_expired_record_is_not_reused
+FAILED tests/test_readiness_truth_table.py::test_fresh_heartbeat_with_stale_backlog_is_not_ready
+FAILED tests/test_readiness_truth_table.py::test_clean_local_state_never_claims_receiver_or_business_truth
+FAILED tests/test_readiness_truth_table.py::test_no_delivery_rows_means_transport_unknown_not_pass
+FAILED tests/test_readiness_truth_table.py::test_failed_terminal_rows_fail_and_missing_heartbeat_is_unknown
+FAILED tests/test_readiness_truth_table.py::test_unreadable_database_is_unknown_and_output_has_no_payload
+FAILED tests/test_readiness_truth_table.py::test_external_receipt_requires_matching_ids_not_a_self_written_flag
+FAILED tests/test_outbox_state_machine.py::test_outbox_health_names_transport_ack_and_not_receipt
+FAILED tests/test_date_policy.py::test_server_civil_date_is_independent_of_host_timezone[UTC]
+FAILED tests/test_date_policy.py::test_server_civil_date_is_independent_of_host_timezone[America/Los_Angeles]
+FAILED tests/test_date_policy.py::test_server_civil_date_is_independent_of_host_timezone[Pacific/Auckland]
+FAILED tests/test_date_policy.py::test_server_civil_date_is_independent_of_host_timezone[Europe/Kyiv]
+FAILED tests/test_date_policy.py::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[UTC]
+FAILED tests/test_date_policy.py::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[America/Los_Angeles]
+FAILED tests/test_date_policy.py::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[Pacific/Auckland]
+FAILED tests/test_date_policy.py::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[Europe/Kyiv]
+FAILED tests/test_date_policy.py::test_browser_validator_uses_the_same_civil_date[America/Los_Angeles]
+FAILED tests/test_date_policy.py::test_browser_validator_uses_the_same_civil_date[Pacific/Auckland]
+FAILED tests/test_date_policy.py::test_browser_validator_uses_the_same_civil_date[UTC]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[2026-02-30]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[2026-13-01]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[0000-01-01]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[9999-12-32]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[\u0662\u0660\u0662\u0667-\u0660\u0661-\u0660\u0661]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[2027-1-1]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[2027-01-01T00:00]
+FAILED tests/test_date_policy.py::test_malformed_dates_rejected_by_server_when_nonempty[]

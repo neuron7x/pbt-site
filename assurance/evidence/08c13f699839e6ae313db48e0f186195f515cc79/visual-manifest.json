@@ -1,0 +1,853 @@
+{
+  "browser": {
+    "engine": "chromium",
+    "version": "143.0.7499.4"
+  },
+  "captures": [
+    {
+      "bytes": 936199,
+      "filename": "sky--desktop-1440--top.png",
+      "height": 900,
+      "section": "top",
+      "sha256": "64ae20f1bd7900376ec90932a0edc741721f8d6b3ffbfd4838c18f6919cd8c04",
+      "theme": "sky",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 799820,
+      "filename": "sky--desktop-1440--roboty.png",
+      "height": 900,
+      "section": "roboty",
+      "sha256": "e4361de8f154c588fb969937968694b9a6a8ddc963c4827a94296d9d0826ff42",
+      "theme": "sky",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 313659,
+      "filename": "sky--desktop-1440--tekhnika.png",
+      "height": 900,
+      "section": "tekhnika",
+      "sha256": "5ce218167ff69ba63b888222efa479d8af61a0f5efac376e29201967781d326f",
+      "theme": "sky",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 85309,
+      "filename": "sky--desktop-1440--cina.png",
+      "height": 900,
+      "section": "cina",
+      "sha256": "ed7d288717f46b89b8c46d8aba28f6a6eff672a8d248351cde6adb0ae4c06b3b",
+      "theme": "sky",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 192404,
+      "filename": "sky--desktop-1440--dokaz.png",
+      "height": 900,
+      "section": "dokaz",
+      "sha256": "d3663bd85064ac8bfd5faef0d50db8efd909491b704e92c5736dcf752b192c44",
+      "theme": "sky",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 94666,
+      "filename": "sky--desktop-1440--zapyt.png",
+      "height": 900,
+      "section": "zapyt",
+      "sha256": "8b1d15d4844cebff40fbb5dc6b62a17555b9474ca0c1843313789e78323692db",
+      "theme": "sky",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 675473,
+      "filename": "sky--desktop-1366-low--top.png",
+      "height": 650,
+      "section": "top",
+      "sha256": "363561f8aa1188cf8e6a18d64a53d2bcde4033c9accf0549d6eb5a7a83669d52",
+      "theme": "sky",
+      "viewport": "desktop-1366-low",
+      "width": 1366
+    },
+    {
+      "bytes": 601608,
+      "filename": "sky--desktop-1024--top.png",
+      "height": 768,
+      "section": "top",
+      "sha256": "96a6fcbf1aa5fa320eb2374870709d323226799bac9189c81cafc20f23b8b163",
+      "theme": "sky",
+      "viewport": "desktop-1024",
+      "width": 1024
+    },
+    {
+      "bytes": 227043,
+      "filename": "sky--desktop-1024--tekhnika.png",
+      "height": 768,
+      "section": "tekhnika",
+      "sha256": "be1f01971ffd844ceac3a396399ad796737de921d84f58afa0d4a989257ff265",
+      "theme": "sky",
+      "viewport": "desktop-1024",
+      "width": 1024
+    },
+    {
+      "bytes": 686129,
+      "filename": "sky--tablet-820--top.png",
+      "height": 1180,
+      "section": "top",
+      "sha256": "303d185562831bf7752c0e7bc30e324d33c8b9fc97d9fb9cc87cfa3077bcee78",
+      "theme": "sky",
+      "viewport": "tablet-820",
+      "width": 820
+    },
+    {
+      "bytes": 256230,
+      "filename": "sky--mobile-390--top.png",
+      "height": 844,
+      "section": "top",
+      "sha256": "8d4f62f018392383ea2c39c1282f5069dbd0d9011dc5169deb1fda824356c233",
+      "theme": "sky",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 197720,
+      "filename": "sky--mobile-390--roboty.png",
+      "height": 844,
+      "section": "roboty",
+      "sha256": "0e1fccb1443602b09c84a5111c91a7ecc4bc570fa828943852e5a19fcf163bfe",
+      "theme": "sky",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 122969,
+      "filename": "sky--mobile-390--tekhnika.png",
+      "height": 844,
+      "section": "tekhnika",
+      "sha256": "54909460fd13407ed706714cce8918c95a0ecd0b15a81f65416f6dc0976fb9fb",
+      "theme": "sky",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 44991,
+      "filename": "sky--mobile-390--cina.png",
+      "height": 844,
+      "section": "cina",
+      "sha256": "30cf25d62251f49e7c408d4ad27eb5d578c032690fd06a53c25f9fdfa2960ed0",
+      "theme": "sky",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 61507,
+      "filename": "sky--mobile-390--zapyt.png",
+      "height": 844,
+      "section": "zapyt",
+      "sha256": "4cc815dc85b55c6a260a98ad69290ed1076a75ca7f6ed5651f226b0a67c60218",
+      "theme": "sky",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 162854,
+      "filename": "sky--mobile-320--top.png",
+      "height": 568,
+      "section": "top",
+      "sha256": "a835f26b34a22f526cac9a52c9504e4d1164526e3987c3ab4b8230ab0ee4c86f",
+      "theme": "sky",
+      "viewport": "mobile-320",
+      "width": 320
+    },
+    {
+      "bytes": 1002137,
+      "filename": "precision--desktop-1440--top.png",
+      "height": 900,
+      "section": "top",
+      "sha256": "3d84f887a76e9a59629cbe037ad43783e54bca27264e032d7a840b4f7750d931",
+      "theme": "precision",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 763933,
+      "filename": "precision--desktop-1440--roboty.png",
+      "height": 900,
+      "section": "roboty",
+      "sha256": "2ce1d53018f93565f257a7f63f403e9a71ff13a76a13f911824460fec90899d3",
+      "theme": "precision",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 394184,
+      "filename": "precision--desktop-1440--tekhnika.png",
+      "height": 900,
+      "section": "tekhnika",
+      "sha256": "a0232c26e9f835e90968bee0a8895cefd0ae9fcce1efa3c2e5243f57abec3830",
+      "theme": "precision",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 97294,
+      "filename": "precision--desktop-1440--cina.png",
+      "height": 900,
+      "section": "cina",
+      "sha256": "13963d54c80c70b7d1142053e3f22945e3e80db62c1f58262d6a4d5af55f1e4b",
+      "theme": "precision",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 337250,
+      "filename": "precision--desktop-1440--dokaz.png",
+      "height": 900,
+      "section": "dokaz",
+      "sha256": "3932a19cfa9a047ef60c3ecd2d9f39a1b30b52b3d49e1643f8b82862ed2da9dc",
+      "theme": "precision",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 296465,
+      "filename": "precision--desktop-1440--zapyt.png",
+      "height": 900,
+      "section": "zapyt",
+      "sha256": "481dfa00e6a539683448c1090f220d4238d9f8c05ed84f186b88ec19faa8771e",
+      "theme": "precision",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "bytes": 703372,
+      "filename": "precision--desktop-1366-low--top.png",
+      "height": 650,
+      "section": "top",
+      "sha256": "c593883730d043819c2fede6b8b14c291e4ca7c6b6685cbb74f1a0e7cedc35d7",
+      "theme": "precision",
+      "viewport": "desktop-1366-low",
+      "width": 1366
+    },
+    {
+      "bytes": 627151,
+      "filename": "precision--desktop-1024--top.png",
+      "height": 768,
+      "section": "top",
+      "sha256": "f1bb9651ca1421e6c00052526d0da04fce93add96880f4d8e3d8db9bd40674ea",
+      "theme": "precision",
+      "viewport": "desktop-1024",
+      "width": 1024
+    },
+    {
+      "bytes": 229287,
+      "filename": "precision--desktop-1024--tekhnika.png",
+      "height": 768,
+      "section": "tekhnika",
+      "sha256": "1b859eca71c7201c60bdba9093a05166fadb15c0c5e3082fd899ad97ce6bd65b",
+      "theme": "precision",
+      "viewport": "desktop-1024",
+      "width": 1024
+    },
+    {
+      "bytes": 726953,
+      "filename": "precision--tablet-820--top.png",
+      "height": 1180,
+      "section": "top",
+      "sha256": "18e37670c338b931322bfd22a64b909383cd0d42ab518919a40f10791fa6f7c6",
+      "theme": "precision",
+      "viewport": "tablet-820",
+      "width": 820
+    },
+    {
+      "bytes": 267712,
+      "filename": "precision--mobile-390--top.png",
+      "height": 844,
+      "section": "top",
+      "sha256": "e5413ab6df66c69dfea691a30cc342e63b065abab45f3796eb30916f58e734cd",
+      "theme": "precision",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 199374,
+      "filename": "precision--mobile-390--roboty.png",
+      "height": 844,
+      "section": "roboty",
+      "sha256": "f001f21ecf944a5906df95b570392ded2c1e497f14c9e45b719cea643c0e9026",
+      "theme": "precision",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 133538,
+      "filename": "precision--mobile-390--tekhnika.png",
+      "height": 844,
+      "section": "tekhnika",
+      "sha256": "c017cd097ee0291e70204c9d90ba1461280f7100f06425bdd8521c06bf58f48b",
+      "theme": "precision",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 43955,
+      "filename": "precision--mobile-390--cina.png",
+      "height": 844,
+      "section": "cina",
+      "sha256": "5ca09e05af905a5015da687986a2c1cff62318e3a6480e20f89971215ec02733",
+      "theme": "precision",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 111217,
+      "filename": "precision--mobile-390--zapyt.png",
+      "height": 844,
+      "section": "zapyt",
+      "sha256": "c413fd70b2ab69d59f6f0bd11b59394612a520b0cf56e78f6f6dc7912cb5cc0c",
+      "theme": "precision",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "bytes": 155221,
+      "filename": "precision--mobile-320--top.png",
+      "height": 568,
+      "section": "top",
+      "sha256": "99c773f0f34136cd95255a1886652e5fa5024dab6551d6427902b37e817c647b",
+      "theme": "precision",
+      "viewport": "mobile-320",
+      "width": 320
+    }
+  ],
+  "failures": [],
+  "field_cls": null,
+  "field_inp_ms": null,
+  "field_lcp_ms": null,
+  "measurement_type": "laboratory screenshot audit; NOT field Core Web Vitals",
+  "revision": "08c13f699839e6ae313db48e0f186195f515cc79",
+  "schema_version": 2,
+  "viewports": [
+    {
+      "height": 900,
+      "mobile": false,
+      "probe": {
+        "appearance": {
+          "cta_radius": "999px",
+          "heading_font": "Tektur, \"Arial Black\", system-ui, sans-serif",
+          "hero": "rgb(13, 106, 224)",
+          "pressed": [
+            "sky"
+          ],
+          "surface": "rgb(234, 247, 255)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 272,
+          "load_event_ms": 340
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "sky",
+        "transfer_bytes_observed": 2333962,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "sky",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "height": 650,
+      "mobile": false,
+      "probe": {
+        "appearance": {
+          "cta_radius": "999px",
+          "heading_font": "Tektur, \"Arial Black\", system-ui, sans-serif",
+          "hero": "rgb(13, 106, 224)",
+          "pressed": [
+            "sky"
+          ],
+          "surface": "rgb(234, 247, 255)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 191,
+          "load_event_ms": 231
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "sky",
+        "transfer_bytes_observed": 2333962,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "sky",
+      "viewport": "desktop-1366-low",
+      "width": 1366
+    },
+    {
+      "height": 768,
+      "mobile": false,
+      "probe": {
+        "appearance": {
+          "cta_radius": "999px",
+          "heading_font": "Tektur, \"Arial Black\", system-ui, sans-serif",
+          "hero": "rgb(13, 106, 224)",
+          "pressed": [
+            "sky"
+          ],
+          "surface": "rgb(234, 247, 255)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 237,
+          "load_event_ms": 253
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "sky",
+        "transfer_bytes_observed": 2258138,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "sky",
+      "viewport": "desktop-1024",
+      "width": 1024
+    },
+    {
+      "height": 1180,
+      "mobile": true,
+      "probe": {
+        "appearance": {
+          "cta_radius": "999px",
+          "heading_font": "Tektur, \"Arial Black\", system-ui, sans-serif",
+          "hero": "rgb(13, 106, 224)",
+          "pressed": [
+            "sky"
+          ],
+          "surface": "rgb(234, 247, 255)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 209,
+          "load_event_ms": 271
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "sky",
+        "transfer_bytes_observed": 2730168,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "sky",
+      "viewport": "tablet-820",
+      "width": 820
+    },
+    {
+      "height": 844,
+      "mobile": true,
+      "probe": {
+        "appearance": {
+          "cta_radius": "999px",
+          "heading_font": "Tektur, \"Arial Black\", system-ui, sans-serif",
+          "hero": "rgb(13, 106, 224)",
+          "pressed": [
+            "sky"
+          ],
+          "surface": "rgb(234, 247, 255)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 205,
+          "load_event_ms": 241
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "sky",
+        "transfer_bytes_observed": 1245234,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "sky",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "height": 568,
+      "mobile": true,
+      "probe": {
+        "appearance": {
+          "cta_radius": "999px",
+          "heading_font": "Tektur, \"Arial Black\", system-ui, sans-serif",
+          "hero": "rgb(13, 106, 224)",
+          "pressed": [
+            "sky"
+          ],
+          "surface": "rgb(234, 247, 255)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 204,
+          "load_event_ms": 235
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "sky",
+        "transfer_bytes_observed": 1245234,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "sky",
+      "viewport": "mobile-320",
+      "width": 320
+    },
+    {
+      "height": 900,
+      "mobile": false,
+      "probe": {
+        "appearance": {
+          "cta_radius": "5px",
+          "heading_font": "\"IBM Plex Sans\", system-ui, sans-serif",
+          "hero": "rgb(16, 24, 32)",
+          "pressed": [
+            "precision"
+          ],
+          "surface": "rgb(245, 245, 242)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 222,
+          "load_event_ms": 283
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "precision",
+        "transfer_bytes_observed": 2333962,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "precision",
+      "viewport": "desktop-1440",
+      "width": 1440
+    },
+    {
+      "height": 650,
+      "mobile": false,
+      "probe": {
+        "appearance": {
+          "cta_radius": "5px",
+          "heading_font": "\"IBM Plex Sans\", system-ui, sans-serif",
+          "hero": "rgb(16, 24, 32)",
+          "pressed": [
+            "precision"
+          ],
+          "surface": "rgb(245, 245, 242)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 249,
+          "load_event_ms": 291
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "precision",
+        "transfer_bytes_observed": 2333962,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "precision",
+      "viewport": "desktop-1366-low",
+      "width": 1366
+    },
+    {
+      "height": 768,
+      "mobile": false,
+      "probe": {
+        "appearance": {
+          "cta_radius": "5px",
+          "heading_font": "\"IBM Plex Sans\", system-ui, sans-serif",
+          "hero": "rgb(16, 24, 32)",
+          "pressed": [
+            "precision"
+          ],
+          "surface": "rgb(245, 245, 242)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 263,
+          "load_event_ms": 276
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "precision",
+        "transfer_bytes_observed": 1758354,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "precision",
+      "viewport": "desktop-1024",
+      "width": 1024
+    },
+    {
+      "height": 1180,
+      "mobile": true,
+      "probe": {
+        "appearance": {
+          "cta_radius": "5px",
+          "heading_font": "\"IBM Plex Sans\", system-ui, sans-serif",
+          "hero": "rgb(16, 24, 32)",
+          "pressed": [
+            "precision"
+          ],
+          "surface": "rgb(245, 245, 242)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 209,
+          "load_event_ms": 263
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "precision",
+        "transfer_bytes_observed": 2258138,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "precision",
+      "viewport": "tablet-820",
+      "width": 820
+    },
+    {
+      "height": 844,
+      "mobile": true,
+      "probe": {
+        "appearance": {
+          "cta_radius": "5px",
+          "heading_font": "\"IBM Plex Sans\", system-ui, sans-serif",
+          "hero": "rgb(16, 24, 32)",
+          "pressed": [
+            "precision"
+          ],
+          "surface": "rgb(245, 245, 242)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 242,
+          "load_event_ms": 253
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "precision",
+        "transfer_bytes_observed": 1245234,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "precision",
+      "viewport": "mobile-390",
+      "width": 390
+    },
+    {
+      "height": 568,
+      "mobile": true,
+      "probe": {
+        "appearance": {
+          "cta_radius": "5px",
+          "heading_font": "\"IBM Plex Sans\", system-ui, sans-serif",
+          "hero": "rgb(16, 24, 32)",
+          "pressed": [
+            "precision"
+          ],
+          "surface": "rgb(245, 245, 242)"
+        },
+        "broken_visible_images": [],
+        "field_cwv": null,
+        "horizontal_overflow": false,
+        "navigation": {
+          "dom_content_loaded_ms": 194,
+          "load_event_ms": 226
+        },
+        "page_errors": [],
+        "quality": "static",
+        "sections": [
+          "top",
+          "roboty",
+          "masshtab",
+          "tekhnika",
+          "cina",
+          "materialy",
+          "dokaz",
+          "geo",
+          "zapyt"
+        ],
+        "theme": "precision",
+        "transfer_bytes_observed": 1245234,
+        "visible_cta": true,
+        "visible_h1": true
+      },
+      "profile": "reduced-motion / poster-only",
+      "theme": "precision",
+      "viewport": "mobile-320",
+      "width": 320
+    }
+  ]
+}

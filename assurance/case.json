@@ -14,19 +14,31 @@
    "leaves": [
     {
      "id": "C1.fk",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "DB-01",
       "DB-02"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     },
     {
      "id": "C1.atomic",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "DB-04"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -36,26 +48,44 @@
    "leaves": [
     {
      "id": "C2.linearizable",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "DB-03"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     },
     {
      "id": "C2.reload",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "DB-05"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     },
     {
      "id": "C2.stateful",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "ADV-03"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -65,11 +95,17 @@
    "leaves": [
     {
      "id": "C3.readiness",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "OPS-01",
       "OPS-03"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -79,29 +115,47 @@
    "leaves": [
     {
      "id": "C4.http",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "NET-01",
       "NET-03",
       "NET-05"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     },
     {
      "id": "C4.dom",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "NET-06",
       "ADV-01"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     },
     {
      "id": "C4.scan",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "NET-07"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -111,10 +165,16 @@
    "leaves": [
     {
      "id": "C5.restore",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "DB-06"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -124,10 +184,16 @@
    "leaves": [
     {
      "id": "C6.web",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "WEB-04"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -137,20 +203,32 @@
    "leaves": [
     {
      "id": "C7.lab",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "WEB-02",
       "WEB-05",
       "EVD-04"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     },
     {
      "id": "C7.soak",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "ADV-04"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -160,7 +238,7 @@
    "leaves": [
     {
      "id": "C8.gate",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "EVD-02",
@@ -168,14 +246,26 @@
       "EVD-05",
       "EVD-06",
       "EVD-08"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     },
     {
      "id": "C8.mutation",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "ADV-02"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]
@@ -185,13 +275,19 @@
    "leaves": [
     {
      "id": "C9.provenance",
-     "status": "UNKNOWN",
+     "status": "PASS",
      "kind": "engineering",
      "obligations": [
       "EVD-01",
       "EVD-07",
       "ADV-05",
       "ADV-06"
+     ],
+     "evidence": [
+      {
+       "sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+       "scope": "CI exact-main receipts and offline verifier, see assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79"
+      }
      ]
     }
    ]

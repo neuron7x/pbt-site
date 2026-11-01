@@ -1,0 +1,18 @@
+{
+  "evidence": {
+    "media_report": {
+      "bytes": 25846,
+      "sha256": "497f4931b8f79d7a9473c3d061e47ce647571fa60f140683e34f4d09b967ae74"
+    },
+    "shots_manifest": {
+      "bytes": 22909,
+      "sha256": "e979b6038c5ceec7d1ffb5cdd00248a8969f3e343591d559cfc651ef5c1900c9"
+    }
+  },
+  "expected_head_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+  "failures": [],
+  "measurement_type": "independent evidence integrity, NOT release approval",
+  "ok": true,
+  "schema_version": 1,
+  "screenshot_count": 32
+}

@@ -1,0 +1,1 @@
+{"boundaries": {"etc_write_blocked": true, "home_read_blocked": false, "home_write_blocked": false, "memory_limit_applied": true, "no_new_privileges": true, "task_limit_applied": true, "usr_write_blocked": true}, "kernel": "6.8.0-147-lowlatency", "manager": "user", "status": "FAIL", "uid_run_as": 1000}

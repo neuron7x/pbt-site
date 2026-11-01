@@ -1,0 +1,40 @@
+/home/neuro7/projects/pbt-site-wt/aecc/tests/test_restore_cutpoints.py:120: AssertionError: EIO at op 2: server would start on None
+E   AssertionError: EIO at op 2: server would start on None
+    assert None in ((1, 2, 3), (1, 2))
+/home/neuro7/projects/pbt-site-wt/aecc/tests/test_restore_cutpoints.py:120: AssertionError: EIO at op 2: server would start on None
+E   AssertionError: assert (0 == 4)
+     +  where 0 = CompletedProcess(args=['/home/neuro7/.cache/claude-tmp/claude-1000/-home-neuro7/81e979ca-308f-43f6-85c4-2ef0a37592d7/s...st-41795/test_restore_refuses_snapshot_0/leads.db seq=2 known_RPO_gap=0 (знімок=2 журнал=None min-seq=2)\n', stderr='').returncode
+/home/neuro7/projects/pbt-site-wt/aecc/tests/test_restore_cutpoints.py:150: AssertionError: assert (0 == 4)
+E   AssertionError: assert ['0', '2', 'ACCEPTED'] == ['1', '2', 'REJECTED']
+      
+      At index 0 diff: '0' != '1'
+      Use -v to get more diff
+/home/neuro7/projects/pbt-site-wt/aecc/tests/test_data_integrity.py:66: AssertionError: assert ['0', '2', 'ACCEPTED'] == ['1', '2', 'REJECTED']
+E   AssertionError: partial migration persisted after injected failure
+    assert [('index', 'l...e(name,seq)')] == [('table', 'l...e(name,seq)')]
+      
+      At index 0 diff: ('index', 'leads_idem_key', 'CREATE UNIQUE INDEX leads_idem_key ON leads(idem_key) WHERE idem_key IS NOT NULL') != ('table', 'leads', 'CREATE TABLE leads(id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT NOT NULL,\n                     type TEXT NOT NULL, payload TEXT NOT NULL, ip_hash TEXT, ua TEXT, delivered TEXT)')
+      Left contains 4 more items, first extra item: ('index', 'sqlite_autoindex_outbox_1', None)
+      Use -v to get more diff
+/home/neuro7/projects/pbt-site-wt/aecc/tests/test_data_integrity.py:97: AssertionError: partial migration persisted after injected failure
+E   AssertionError: assert None
+     +  where None = <function search at 0x7db74d031260>('legacy foreign key violations=1 table=outbox', '2026-11-01 20:35:37,565 INFO http client_hash=12f31aa81872a245 method=GET status=200\n2026-11-01 20:35:37,570 INFO le...d id=2 type=rent outbox=local\n2026-11-01 20:35:38,278 INFO http client_hash=12f31aa81872a245 method=POST status=201\n')
+     +    where <function search at 0x7db74d031260> = re.search
+/home/neuro7/projects/pbt-site-wt/aecc/tests/test_data_integrity.py:115: AssertionError: assert None
+E   RuntimeError: server did not start
+/home/neuro7/projects/pbt-site-wt/aecc/tests/test_leads.py:33: RuntimeError: server did not start
+=========================== short test summary info ============================
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_before-clean_old]
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_before-hot_journal_old]
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_after-clean_old]
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_after-hot_journal_old]
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[ENOSPC-clean_old]
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[ENOSPC-hot_journal_old]
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[EIO-clean_old]
+FAILED tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation[EIO-hot_journal_old]
+FAILED tests/test_restore_cutpoints.py::test_restore_refuses_snapshot_with_foreign_key_violations
+FAILED tests/test_data_integrity.py::test_server_connection_enforces_foreign_keys_and_rejects_orphan
+FAILED tests/test_data_integrity.py::test_migration_failure_rolls_back_every_schema_write_then_retry_converges
+FAILED tests/test_data_integrity.py::test_legacy_orphan_is_reported_never_repaired_and_never_lost
+FAILED tests/test_data_integrity.py::test_corrupt_database_does_not_take_down_static_site
+13 failed, 10 passed in 10.25s

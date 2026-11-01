@@ -70,6 +70,13 @@ python3 tools/meta_evidence_gate.py --manifest evidence/manifest.json --evidence
 
 `pull_request` receipts never certify `main`, and `push` receipts never certify a PR.
 
+## When the claims expire
+
+Evidence is valid for its revision. `assurance/case.json` names the evidence SHA, and only `assurance/`, `docs/` and `README.md`
+may change on top of it. A PR that changes anything else makes `tools/assurance_check.py` fail with `stale_evidence_sha`, on purpose:
+such a PR must reset the technical leaves to `UNKNOWN` and the ledger stage to `pre_integration`, then collect new exact-main
+receipts after merge (`gh workflow run` for the four dispatch workflows; the soak runs on push when its paths change, otherwise by dispatch).
+
 ## Install, test, build
 
 ```sh

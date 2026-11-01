@@ -1,0 +1,26 @@
+{
+ "C0": "UNKNOWN",
+ "claims": {
+  "C1": "UNKNOWN",
+  "C10": "UNKNOWN",
+  "C2": "UNKNOWN",
+  "C3": "UNKNOWN",
+  "C4": "UNKNOWN",
+  "C5": "UNKNOWN",
+  "C6": "UNKNOWN",
+  "C7": "UNKNOWN",
+  "C8": "UNKNOWN",
+  "C9": "UNKNOWN"
+ },
+ "dispositions": {
+  "BLOCKED_EXTERNAL": 18,
+  "UNSET": 30
+ },
+ "failed_obligations": [],
+ "production_release": "PRODUCTION HOLD",
+ "schema": "pbt-assurance-decision-v1",
+ "stage": "pre_integration",
+ "status": "VALID",
+ "target_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+ "technical_completion": "UNKNOWN"
+}

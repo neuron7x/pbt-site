@@ -1,0 +1,21 @@
+{
+  "action_commit": "1220774d901786e6f652ae159f7b6bc8fea6d266",
+  "action_failure_output": "",
+  "baseline_outcome": "success",
+  "claim_boundary": "OSV checks known dependency vulnerabilities; require-hashes checks presence, not distribution bytes; scanner version is not pinned; this is not ASVS certification",
+  "dependency_count": 11,
+  "disable_pip": true,
+  "head_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+  "input": "requirements.txt",
+  "no_deps": true,
+  "outcome": "success",
+  "require_hashes": true,
+  "requirements_match_head_blob": true,
+  "requirements_sha256": "2efb70a97edbe0b02cf44647e1e9f19cf427f1bfbfd2e3a09040035845be035a",
+  "scanner_output": "{\"dependencies\": [{\"name\": \"greenlet\", \"version\": \"3.5.6\", \"vulns\": []}, {\"name\": \"iniconfig\", \"version\": \"2.3.1\", \"vulns\": []}, {\"name\": \"numpy\", \"version\": \"2.4.6\", \"vulns\": []}, {\"name\": \"packaging\", \"version\": \"26.3\", \"vulns\": []}, {\"name\": \"pillow\", \"version\": \"13.0.0\", \"vulns\": []}, {\"name\": \"playwright\", \"version\": \"1.57.0\", \"vulns\": []}, {\"name\": \"pluggy\", \"version\": \"1.7.0\", \"vulns\": []}, {\"name\": \"pyee\", \"version\": \"13.0.1\", \"vulns\": []}, {\"name\": \"pygments\", \"version\": \"2.21.0\", \"vulns\": []}, {\"name\": \"pytest\", \"version\": \"9.0.3\", \"vulns\": []}, {\"name\": \"typing-extensions\", \"version\": \"4.16.0\", \"vulns\": []}], \"fixes\": []}\n",
+  "scanner_output_sha256": "be40b4b72a9cbc9935f49f6dca3b0e948a4ee2677fd4f495aa391a7609ce3d77",
+  "scanner_version": "2.10.1",
+  "schema": "pbt-osv-audit-receipt-v2",
+  "service": "OSV",
+  "validation_errors": []
+}

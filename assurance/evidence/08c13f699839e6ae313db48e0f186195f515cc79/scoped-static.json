@@ -1,0 +1,12 @@
+{
+  "files_scanned": 10,
+  "findings": [],
+  "head_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+  "scanned_roots": [
+    "server",
+    "ops"
+  ],
+  "schema": "pbt-scoped-static-guard-v1",
+  "scope": "AST primitive guard; not full SAST, ASVS certification or production review",
+  "status": "PASS"
+}

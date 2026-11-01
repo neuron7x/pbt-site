@@ -1,0 +1,249 @@
+{
+  "branch_head_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+  "budgets": {
+    "cls": 0.1,
+    "inp_ms": 200,
+    "lcp_ms": 2500.0
+  },
+  "event_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+  "execution_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+  "field_vitals_verified": false,
+  "inp_ms": null,
+  "kind": "synthetic_chromium_lab_not_field_data",
+  "profile": {
+    "cpu_throttle": 4,
+    "down_bytes_per_sec": 200000,
+    "dpr": 2,
+    "height": 844,
+    "latency_ms": 150,
+    "logical_cores_override": 8,
+    "runs_per_theme": 3,
+    "width": 390
+  },
+  "release_status": "UNVERIFIED_FIELD_INP_AND_VISUAL_ACCEPTANCE",
+  "schema_version": 2,
+  "themes": {
+    "precision": {
+      "max_deferred_switch_shift": 0,
+      "p75_cls": 0.01232,
+      "p75_lcp_ms": 1212.0,
+      "raw": [
+        {
+          "cls": 0.01232,
+          "lcp_ms": 1200.0,
+          "long_tasks": 13,
+          "resource_transfer_bytes": 1321058,
+          "switch_all_shift_sum": 0.00493,
+          "switch_shift_events": 1,
+          "switch_shifts": [
+            {
+              "hadRecentInput": true,
+              "sources": [
+                {
+                  "afterY": 263.21875,
+                  "beforeY": 264.609375,
+                  "element": "p.eyebrow"
+                },
+                {
+                  "afterY": 310.234375,
+                  "beforeY": 309.9375,
+                  "element": "h1#heroTitle"
+                },
+                {
+                  "afterY": 571.140625,
+                  "beforeY": 584.75,
+                  "element": "b.is-in"
+                }
+              ],
+              "start": 11178.90000000014,
+              "value": 0.004933811530672071
+            }
+          ],
+          "switch_unprompted_shift_sum": 0,
+          "theme": "precision"
+        },
+        {
+          "cls": 0.01232,
+          "lcp_ms": 1196.0,
+          "long_tasks": 13,
+          "resource_transfer_bytes": 1321058,
+          "switch_all_shift_sum": 0.00493,
+          "switch_shift_events": 1,
+          "switch_shifts": [
+            {
+              "hadRecentInput": true,
+              "sources": [
+                {
+                  "afterY": 263.21875,
+                  "beforeY": 264.609375,
+                  "element": "p.eyebrow"
+                },
+                {
+                  "afterY": 310.234375,
+                  "beforeY": 309.9375,
+                  "element": "h1#heroTitle"
+                },
+                {
+                  "afterY": 571.140625,
+                  "beforeY": 584.75,
+                  "element": "b.is-in"
+                }
+              ],
+              "start": 11173.300000000047,
+              "value": 0.004933811530672071
+            }
+          ],
+          "switch_unprompted_shift_sum": 0,
+          "theme": "precision"
+        },
+        {
+          "cls": 0.01232,
+          "lcp_ms": 1212.0,
+          "long_tasks": 13,
+          "resource_transfer_bytes": 1321058,
+          "switch_all_shift_sum": 0.00493,
+          "switch_shift_events": 1,
+          "switch_shifts": [
+            {
+              "hadRecentInput": true,
+              "sources": [
+                {
+                  "afterY": 263.21875,
+                  "beforeY": 264.609375,
+                  "element": "p.eyebrow"
+                },
+                {
+                  "afterY": 310.234375,
+                  "beforeY": 309.9375,
+                  "element": "h1#heroTitle"
+                },
+                {
+                  "afterY": 571.140625,
+                  "beforeY": 584.75,
+                  "element": "b.is-in"
+                }
+              ],
+              "start": 11209.700000000186,
+              "value": 0.004933811530672071
+            }
+          ],
+          "switch_unprompted_shift_sum": 0,
+          "theme": "precision"
+        }
+      ],
+      "switch_stable": true,
+      "synthetic_budget_met": true
+    },
+    "sky": {
+      "max_deferred_switch_shift": 0,
+      "p75_cls": 0.00749,
+      "p75_lcp_ms": 1276.0,
+      "raw": [
+        {
+          "cls": 0.00749,
+          "lcp_ms": 1272.0,
+          "long_tasks": 16,
+          "resource_transfer_bytes": 1321058,
+          "switch_all_shift_sum": 0.00493,
+          "switch_shift_events": 1,
+          "switch_shifts": [
+            {
+              "hadRecentInput": true,
+              "sources": [
+                {
+                  "afterY": 264.609375,
+                  "beforeY": 263.21875,
+                  "element": "p.eyebrow"
+                },
+                {
+                  "afterY": 309.9375,
+                  "beforeY": 310.234375,
+                  "element": "h1#heroTitle"
+                },
+                {
+                  "afterY": 584.75,
+                  "beforeY": 571.140625,
+                  "element": "b.is-in"
+                }
+              ],
+              "start": 11688.300000000047,
+              "value": 0.004933811530672071
+            }
+          ],
+          "switch_unprompted_shift_sum": 0,
+          "theme": "sky"
+        },
+        {
+          "cls": 0.00749,
+          "lcp_ms": 1272.0,
+          "long_tasks": 15,
+          "resource_transfer_bytes": 1321058,
+          "switch_all_shift_sum": 0.00493,
+          "switch_shift_events": 1,
+          "switch_shifts": [
+            {
+              "hadRecentInput": true,
+              "sources": [
+                {
+                  "afterY": 264.609375,
+                  "beforeY": 263.21875,
+                  "element": "p.eyebrow"
+                },
+                {
+                  "afterY": 309.9375,
+                  "beforeY": 310.234375,
+                  "element": "h1#heroTitle"
+                },
+                {
+                  "afterY": 584.75,
+                  "beforeY": 571.140625,
+                  "element": "b.is-in"
+                }
+              ],
+              "start": 11454.199999999953,
+              "value": 0.004933811530672071
+            }
+          ],
+          "switch_unprompted_shift_sum": 0,
+          "theme": "sky"
+        },
+        {
+          "cls": 0.00749,
+          "lcp_ms": 1276.0,
+          "long_tasks": 19,
+          "resource_transfer_bytes": 1321058,
+          "switch_all_shift_sum": 0.00493,
+          "switch_shift_events": 1,
+          "switch_shifts": [
+            {
+              "hadRecentInput": true,
+              "sources": [
+                {
+                  "afterY": 264.609375,
+                  "beforeY": 263.21875,
+                  "element": "p.eyebrow"
+                },
+                {
+                  "afterY": 309.9375,
+                  "beforeY": 310.234375,
+                  "element": "h1#heroTitle"
+                },
+                {
+                  "afterY": 584.75,
+                  "beforeY": 571.140625,
+                  "element": "b.is-in"
+                }
+              ],
+              "start": 11414.799999999814,
+              "value": 0.004933811530672071
+            }
+          ],
+          "switch_unprompted_shift_sum": 0,
+          "theme": "sky"
+        }
+      ],
+      "switch_stable": true,
+      "synthetic_budget_met": true
+    }
+  }
+}

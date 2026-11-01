@@ -1,0 +1,46 @@
+{
+ "action_pins": {
+  "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": [
+   "pr-quality.yml",
+   "runtime-hardening.yml",
+   "runtime-soak.yml",
+   "security-assurance.yml",
+   "visual-evidence.yml"
+  ],
+  "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0": [
+   "pr-quality.yml",
+   "runtime-hardening.yml",
+   "runtime-soak.yml",
+   "security-assurance.yml",
+   "visual-evidence.yml"
+  ],
+  "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9": [
+   "pr-quality.yml",
+   "runtime-hardening.yml",
+   "runtime-soak.yml",
+   "security-assurance.yml",
+   "visual-evidence.yml"
+  ],
+  "pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266": [
+   "security-assurance.yml"
+  ]
+ },
+ "event": "workflow_dispatch",
+ "event_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+ "head_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+ "kernel": "7.0.0-1017-azure",
+ "locks_sha256": {
+  "requirements-sast.txt": "2d4095933b91c31a4af604883c37acf8088c274c3feb44cf542868ab6a33f537",
+  "requirements.txt": "2efb70a97edbe0b02cf44647e1e9f19cf427f1bfbfd2e3a09040035845be035a"
+ },
+ "machine": "x86_64",
+ "python": "3.12.15",
+ "repository": "neuron7x/pbt-site",
+ "run_attempt": "1",
+ "run_id": "41347718516",
+ "schema": "pbt-provenance-v1",
+ "signed": false,
+ "slsa_level": "none_claimed",
+ "tree_sha": "3fb74617af6202acc6d92fd870362cf04df5a337",
+ "workflows_sha256": "2b4c51bf58620aebd06edbe1f96d0091211a375d915f7315f0cc18f35e556a36"
+}

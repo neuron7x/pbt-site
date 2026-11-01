@@ -1,0 +1,10 @@
+{
+ "files_scanned": 35,
+ "findings": 4,
+ "loc": 5067,
+ "open": [],
+ "scope": "bandit severity>=medium on server+ops+tools; low-severity findings are not gated; not ASVS, not DAST, no JS coverage (see tools/dom_sinks.py)",
+ "stale_waivers": [],
+ "status": "PASS",
+ "waived": 4
+}

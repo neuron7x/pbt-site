@@ -1,6 +1,6 @@
 {
  "schema": "pbt-obligation-ledger-v1",
- "stage": "pre_integration",
+ "stage": "closed",
  "source_package_sha256": "5e7510df742ec3333005050b972cb1a90b9c49667833c90219770892c9dd2f65",
  "obligations": [
   {
@@ -32,19 +32,24 @@
    ],
    "acceptance_predicate": "Any drift causes HOLD before further gate; baseline environment and real bytes captured",
    "artifact_paths": [
-    "evidence/baseline.json",
-    "evidence/runner.json",
-    "evidence/sha256sums.txt"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs",
     "tests/test_supply_chain.py::test_capture_then_verify_round_trip"
    ],
    "mutants": [],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/baseline.json",
+    "evidence/runner.json",
+    "evidence/sha256sums.txt"
+   ]
   },
   {
    "obligation_id": "EVD-02",
@@ -78,13 +83,13 @@
    ],
    "acceptance_predicate": "Valid current HEAD accepted, stale/forged/unsupported event rejected with machine-readable reason",
    "artifact_paths": [
-    "evidence/meta-positive.json",
-    "evidence/meta-negative.json",
-    "evidence/policy-digest.txt"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
     "tests/test_meta_evidence_gate.py::test_main_target_uses_push_receipts_and_needs_no_baseline",
@@ -95,7 +100,13 @@
     "M-EVD-02-event-binding",
     "M-EVD-02-historic-pr8"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/meta-positive.json",
+    "evidence/meta-negative.json",
+    "evidence/policy-digest.txt"
+   ]
   },
   {
    "obligation_id": "EVD-03",
@@ -127,12 +138,13 @@
    ],
    "acceptance_predicate": "Mandatory test identity absent => FAIL regardless total count; no silent skip/xfail",
    "artifact_paths": [
-    "evidence/test-inventory.json",
-    "evidence/mutant-test-removal.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
     "tests/test_meta_evidence_gate.py::test_required_inventory_names_tests_that_really_exist"
@@ -140,7 +152,12 @@
    "mutants": [
     "M-EVD-03-identity"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/test-inventory.json",
+    "evidence/mutant-test-removal.json"
+   ]
   },
   {
    "obligation_id": "EVD-04",
@@ -175,12 +192,13 @@
    ],
    "acceptance_predicate": "Independent verifier fails for any breach; no field INP claim",
    "artifact_paths": [
-    "evidence/mobile-recompute.json",
-    "evidence/mobile-negative.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
     "tests/test_perf_probe.py"
@@ -190,7 +208,12 @@
     "M-EVD-04-cls-budget",
     "M-EVD-04-deferred-shift"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/mobile-recompute.json",
+    "evidence/mobile-negative.json"
+   ]
   },
   {
    "obligation_id": "EVD-05",
@@ -227,12 +250,13 @@
    ],
    "acceptance_predicate": "Verifier rejects drift; PR and main receipts remain disjoint",
    "artifact_paths": [
-    "evidence/provenance.json",
-    "evidence/event-mutant.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
     "tests/test_supply_chain.py::test_github_sha_is_recorded_separately_and_cannot_stand_in_for_the_checkout",
@@ -241,7 +265,12 @@
    "mutants": [
     "M-EVD-05-execution-sha"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/provenance.json",
+    "evidence/event-mutant.json"
+   ]
   },
   {
    "obligation_id": "EVD-06",
@@ -277,12 +306,13 @@
    ],
    "acceptance_predicate": "All required artifacts checked; failures remain HOLD; provider authentication provenance recorded",
    "artifact_paths": [
-    "evidence/artifacts-verification.json",
-    "evidence/zip-negative.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected",
     "tests/test_evidence_collect.py::test_artifact_replaced_during_download_is_rejected",
@@ -294,7 +324,12 @@
     "M-EVD-06-zip-digest",
     "M-EVD-06-png-crc"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/artifacts-verification.json",
+    "evidence/zip-negative.json"
+   ]
   },
   {
    "obligation_id": "EVD-07",
@@ -327,18 +362,23 @@
    ],
    "acceptance_predicate": "Every difference classified; source build reproducibility not asserted if unverified",
    "artifact_paths": [
-    "evidence/repro-matrix.json",
-    "evidence/diff-classification.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed",
     "tests/test_reproducibility.py::test_comparison_detects_a_nondeterministic_input"
    ],
    "mutants": [],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/repro-matrix.json",
+    "evidence/diff-classification.json"
+   ]
   },
   {
    "obligation_id": "EVD-08",
@@ -377,12 +417,13 @@
    ],
    "acceptance_predicate": "Claim is PASS iff all mandatory proof leaves PASS at compatible SHA and target",
    "artifact_paths": [
-    "evidence/assurance-graph.json",
-    "evidence/release-decision.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_assurance_case.py::test_decision_logic_is_conjunctive_and_three_valued",
     "tests/test_assurance_case.py::test_green_ci_cannot_substitute_for_a_field_or_owner_fact",
@@ -391,7 +432,12 @@
    "mutants": [
     "M-EVD-08-unknown-as-pass"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/assurance-graph.json",
+    "evidence/release-decision.json"
+   ]
   },
   {
    "obligation_id": "DB-01",
@@ -424,12 +470,13 @@
    ],
    "acceptance_predicate": "Every write path rejects orphan with IntegrityError; foreign_key_check reports zero after approved remediation",
    "artifact_paths": [
-    "evidence/fk-adversarial.xml",
-    "evidence/fk-integrity.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_data_integrity.py::test_server_connection_enforces_foreign_keys_and_rejects_orphan",
     "tests/test_data_integrity.py::test_outbox_insert_inside_real_acceptance_path_keeps_fk_clean"
@@ -438,7 +485,12 @@
     "M-DB-01-fk-pragma",
     "M-DB-01-readback"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/fk-adversarial.xml",
+    "evidence/fk-integrity.json"
+   ]
   },
   {
    "obligation_id": "DB-02",
@@ -472,12 +524,13 @@
    ],
    "acceptance_predicate": "Repeated migration exact schema; no data loss; conflicts report BLOCKED and do not quietly repair",
    "artifact_paths": [
-    "evidence/migration-matrix.json",
-    "evidence/legacy-remediation.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_data_integrity.py::test_migration_failure_rolls_back_every_schema_write_then_retry_converges",
     "tests/test_data_integrity.py::test_legacy_orphan_is_reported_never_repaired_and_never_lost",
@@ -488,7 +541,12 @@
     "M-DB-02-silent-orphan-repair",
     "M-DB-06-fk-check"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/migration-matrix.json",
+    "evidence/legacy-remediation.json"
+   ]
   },
   {
    "obligation_id": "DB-03",
@@ -521,12 +579,13 @@
    ],
    "acceptance_predicate": "Same key + same body -> same id; same key + different body -> 409; accepted state atomic",
    "artifact_paths": [
-    "evidence/idempotency-linearizability.json",
-    "evidence/concurrency-junit.xml"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_data_integrity.py::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement",
     "tests/test_atomic_lead_quota.py",
@@ -536,7 +595,12 @@
     "M-DB-03-same-key-replaces",
     "M-DB-03-unique-index"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/idempotency-linearizability.json",
+    "evidence/concurrency-junit.xml"
+   ]
   },
   {
    "obligation_id": "DB-04",
@@ -570,12 +634,13 @@
    ],
    "acceptance_predicate": "For all cuts: no uncommitted 201, no lost committed lead, replay consistent",
    "artifact_paths": [
-    "evidence/crash-cutpoints.json",
-    "evidence/lead-state-db-hashes.txt"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint",
     "tests/test_data_integrity.py::test_disk_full_during_accept_is_500_with_no_partial_state"
@@ -584,7 +649,12 @@
     "M-DB-04-reply-before-commit",
     "M-DB-04-lead-without-outbox-atomicity"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/crash-cutpoints.json",
+    "evidence/lead-state-db-hashes.txt"
+   ]
   },
   {
    "obligation_id": "DB-05",
@@ -616,12 +686,13 @@
    ],
    "acceptance_predicate": "Replay semantics preserved if same user intent; explicitly documented boundary for new intent",
    "artifact_paths": [
-    "evidence/reload-e2e.json",
-    "evidence/privacy-storage-review.md"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_lead_reload_idempotency.py"
    ],
@@ -630,7 +701,12 @@
     "M-DB-05-store-payload",
     "M-DB-05-ignore-expiry"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/reload-e2e.json",
+    "evidence/privacy-storage-review.md"
+   ]
   },
   {
    "obligation_id": "DB-06",
@@ -663,12 +739,13 @@
    ],
    "acceptance_predicate": "No scenario produces irrecoverable partial state; old/new integrity and watermark checked",
    "artifact_paths": [
-    "evidence/restore-cutpoints.json",
-    "evidence/restore-replay-junit.xml"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation",
     "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars"
@@ -679,7 +756,12 @@
     "M-DB-06-no-settle",
     "M-DB-06-dir-fsync"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/restore-cutpoints.json",
+    "evidence/restore-replay-junit.xml"
+   ]
   },
   {
    "obligation_id": "DB-07",
@@ -705,17 +787,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Provider receipt + offline restore verified against source snapshot; local-only copies not counted",
-   "artifact_paths": [
-    "evidence/offsite-provider-receipt.json",
-    "evidence/crypto-check.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Off-device store, credentials and encryption key are owner decisions (R03). Local mechanism only: ops/backup.py, ops/restore_drill.py."
+   "blocker": "Off-device store, credentials and encryption key are owner decisions (R03). Local mechanism only: ops/backup.py, ops/restore_drill.py.",
+   "specified_artifacts": [
+    "evidence/offsite-provider-receipt.json",
+    "evidence/crypto-check.json"
+   ]
   },
   {
    "obligation_id": "DB-08",
@@ -748,10 +831,7 @@
     "python -m pytest -q tests/test_backup_safety.py"
    ],
    "acceptance_predicate": "No unreconciled known loss; actual RPO/RTO numbers and limitations recorded; owner adopts thresholds",
-   "artifact_paths": [
-    "evidence/restore-host.json",
-    "evidence/rpo-rto-report.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
@@ -762,7 +842,11 @@
     "M-DB-06-rpo-gap"
    ],
    "external_receipt": null,
-   "blocker": "Requires a separate host, an off-device snapshot and owner-adopted RPO/RTO. Procedure rehearsed locally by ops/restore_drill.py with off_device=false."
+   "blocker": "Requires a separate host, an off-device snapshot and owner-adopted RPO/RTO. Procedure rehearsed locally by ops/restore_drill.py with off_device=false.",
+   "specified_artifacts": [
+    "evidence/restore-host.json",
+    "evidence/rpo-rto-report.json"
+   ]
   },
   {
    "obligation_id": "NET-01",
@@ -796,12 +880,13 @@
    ],
    "acceptance_predicate": "Bound wall-clock and connection slots, correct status class, zero partial commits",
    "artifact_paths": [
-    "evidence/http-fault-matrix.json",
-    "evidence/transport-junit.xml"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched",
     "tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state",
@@ -813,7 +898,12 @@
     "M-NET-01-te-accepted",
     "M-NET-01-deadline"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/http-fault-matrix.json",
+    "evidence/transport-junit.xml"
+   ]
   },
   {
    "obligation_id": "NET-02",
@@ -847,10 +937,7 @@
     "python -m pytest -q tests/test_http_protocol.py"
    ],
    "acceptance_predicate": "No quota bypass/false HSTS with untrusted headers; actual edge evidence separate",
-   "artifact_paths": [
-    "evidence/proxy-adversarial.json",
-    "evidence/tls-edge-attestation.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
@@ -863,7 +950,11 @@
     "M-NET-02-trust-without-flag"
    ],
    "external_receipt": null,
-   "blocker": "Adversarial proxy behavior verified; real TLS edge, DNS and proxy chain need owner domain decision B4."
+   "blocker": "Adversarial proxy behavior verified; real TLS edge, DNS and proxy chain need owner domain decision B4.",
+   "specified_artifacts": [
+    "evidence/proxy-adversarial.json",
+    "evidence/tls-edge-attestation.json"
+   ]
   },
   {
    "obligation_id": "NET-03",
@@ -896,19 +987,25 @@
    ],
    "acceptance_predicate": "No signed lead crosses unapproved destination; synthetic tests isolate external network",
    "artifact_paths": [
-    "evidence/outbound-negative.json",
-    "evidence/allowed-destination-policy.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_delivery_deadline.py::test_redirect_does_not_forward_webhook_hmac_to_other_host"
    ],
    "mutants": [
     "M-NET-03-follow-redirect"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/outbound-negative.json",
+    "evidence/allowed-destination-policy.json"
+   ]
   },
   {
    "obligation_id": "NET-04",
@@ -945,10 +1042,7 @@
     "python -m pytest -q tests/test_outbox_state_machine.py"
    ],
    "acceptance_predicate": "No accepted lead lost; retries bounded; all ACK claims tied to external receipt ID",
-   "artifact_paths": [
-    "evidence/receiver-faults.json",
-    "evidence/live-receiver-receipts.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
@@ -966,7 +1060,11 @@
     "M-NET-04-unbounded-retry"
    ],
    "external_receipt": null,
-   "blocker": "Synthetic receiver contract verified; a live receiver receipt needs B3 and an authorized live test. Site never treats 2xx as receipt."
+   "blocker": "Synthetic receiver contract verified; a live receiver receipt needs B3 and an authorized live test. Site never treats 2xx as receipt.",
+   "specified_artifacts": [
+    "evidence/receiver-faults.json",
+    "evidence/live-receiver-receipts.json"
+   ]
   },
   {
    "obligation_id": "NET-05",
@@ -999,12 +1097,13 @@
    ],
    "acceptance_predicate": "No unbounded memory nor quota bypass within declared topology; unsupported topology fail closed",
    "artifact_paths": [
-    "evidence/limiter-falsification.json",
-    "evidence/process-topology.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_http_protocol.py::test_second_server_on_same_database_fails_closed",
     "tests/test_http_protocol.py::test_restore_refuses_while_the_guard_is_held_even_on_another_port",
@@ -1012,9 +1111,15 @@
    ],
    "mutants": [
     "M-NET-05-no-guard",
-    "M-NET-05-ipv6-per-address"
+    "M-NET-05-ipv6-per-address",
+    "M-NET-05-migrate-before-guard"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/limiter-falsification.json",
+    "evidence/process-topology.json"
+   ]
   },
   {
    "obligation_id": "NET-06",
@@ -1045,12 +1150,13 @@
    ],
    "acceptance_predicate": "All payloads inert, console signals captured, CSP intact, negative mutation kills regression",
    "artifact_paths": [
-    "evidence/dom-sinks-inventory.json",
-    "evidence/xss-negatives.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_dom_trust_boundary.py"
    ],
@@ -1058,7 +1164,12 @@
     "M-NET-06-unescaped-channel",
     "M-NET-06-any-scheme"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/dom-sinks-inventory.json",
+    "evidence/xss-negatives.json"
+   ]
   },
   {
    "obligation_id": "NET-07",
@@ -1094,12 +1205,13 @@
    ],
    "acceptance_predicate": "Findings and gaps machine reported; waiver requires owner rationale; no full ASVS certification claim",
    "artifact_paths": [
-    "evidence/security-findings.json",
-    "evidence/sbom.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_supply_chain.py::test_scanner_that_did_not_scan_cannot_pass",
     "tests/test_supply_chain.py::test_open_finding_fails_and_waiver_needs_rationale_and_cannot_go_stale",
@@ -1109,7 +1221,12 @@
    "mutants": [
     "M-NET-07-scanner-crash-is-pass"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/security-findings.json",
+    "evidence/sbom.json"
+   ]
   },
   {
    "obligation_id": "NET-08",
@@ -1136,8 +1253,8 @@
    "verification_commands": [],
    "acceptance_predicate": "Resource caps and file/network boundaries proven, no break of media/API/backup",
    "artifact_paths": [
-    "evidence/systemd-sandbox.json",
-    "evidence/resource-cgroup.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/sandbox-user.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/sandbox-system.json"
    ],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
@@ -1145,7 +1262,11 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "MEASURED: under systemd --user on this host, ProtectHome/ProtectSystem have no effect on home read and write (ops/sandbox_probe.py FAIL); cgroup limits hold. System-manager candidate ops/systemd/system/pbt-site.service measured PASS. Installing it is a deployment decision."
+   "blocker": "MEASURED: under systemd --user on this host, ProtectHome/ProtectSystem have no effect on home read and write (ops/sandbox_probe.py FAIL); cgroup limits hold. System-manager candidate ops/systemd/system/pbt-site.service measured PASS. Installing it is a deployment decision.",
+   "specified_artifacts": [
+    "evidence/systemd-sandbox.json",
+    "evidence/resource-cgroup.json"
+   ]
   },
   {
    "obligation_id": "WEB-01",
@@ -1178,10 +1299,7 @@
     "python -m pytest -q tests/test_web_assurance.py"
    ],
    "acceptance_predicate": "No critical WCAG A/AA finding; manual evidence named; axe alone never claimed complete",
-   "artifact_paths": [
-    "evidence/wcag-audit.json",
-    "evidence/focus-trace.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
@@ -1192,7 +1310,11 @@
    ],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Automated keyboard, reflow, spacing and axe verified. WCAG AA needs named human evaluation with a screen reader; none exists."
+   "blocker": "Automated keyboard, reflow, spacing and axe verified. WCAG AA needs named human evaluation with a screen reader; none exists.",
+   "specified_artifacts": [
+    "evidence/wcag-audit.json",
+    "evidence/focus-trace.json"
+   ]
   },
   {
    "obligation_id": "WEB-02",
@@ -1226,18 +1348,23 @@
    ],
    "acceptance_predicate": "Independent budget violation rejects; field INP remains unknown",
    "artifact_paths": [
-    "evidence/lab-vitals.json",
-    "evidence/cwv-mutant.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
     "tests/test_perf_probe.py"
    ],
    "mutants": [],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/lab-vitals.json",
+    "evidence/cwv-mutant.json"
+   ]
   },
   {
    "obligation_id": "WEB-03",
@@ -1263,17 +1390,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Measured p75 by mobile/desktop meets owner-approved objectives or release HOLD",
-   "artifact_paths": [
-    "evidence/field-cwv.json",
-    "evidence/inp-samples-meta.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "No real users yet. Field INP/CWV cannot exist before exposure; RUM or CrUX needs owner privacy decision."
+   "blocker": "No real users yet. Field INP/CWV cannot exist before exposure; RUM or CrUX needs owner privacy decision.",
+   "specified_artifacts": [
+    "evidence/field-cwv.json",
+    "evidence/inp-samples-meta.json"
+   ]
   },
   {
    "obligation_id": "WEB-04",
@@ -1308,19 +1436,24 @@
    ],
    "acceptance_predicate": "Any unprompted shift/contrast violation rejected at measured state with raw screenshots",
    "artifact_paths": [
-    "evidence/theme-layout-trace.json",
-    "evidence/frame-contrast.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_web_assurance.py::test_late_fonts_do_not_shift_layout_beyond_cls_budget",
     "tests/test_hero_video_contrast.py",
     "tests/test_themes.py"
    ],
    "mutants": [],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/theme-layout-trace.json",
+    "evidence/frame-contrast.json"
+   ]
   },
   {
    "obligation_id": "WEB-05",
@@ -1354,18 +1487,23 @@
    ],
    "acceptance_predicate": "Per-profile transfer budgets from measured baseline; no broken poster or blank hero",
    "artifact_paths": [
-    "evidence/network-waterfall.json",
-    "evidence/media-budget.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_web_assurance.py::test_page_transfer_stays_within_predeclared_budget",
     "tests/test_media_budget.py"
    ],
    "mutants": [],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/network-waterfall.json",
+    "evidence/media-budget.json"
+   ]
   },
   {
    "obligation_id": "WEB-06",
@@ -1394,17 +1532,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Canonical/schema/OG agree with owner-approved DNS+TLS; search indexing cannot be asserted absent field proof",
-   "artifact_paths": [
-    "evidence/seo-structural.json",
-    "evidence/public-indexing.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Canonical and OG URLs depend on the approved production domain (B4). Not invented."
+   "blocker": "Canonical and OG URLs depend on the approved production domain (B4). Not invented.",
+   "specified_artifacts": [
+    "evidence/seo-structural.json",
+    "evidence/public-indexing.json"
+   ]
   },
   {
    "obligation_id": "WEB-07",
@@ -1439,10 +1578,7 @@
     "python -m pytest -q tests/test_business_parity.py"
    ],
    "acceptance_predicate": "No unapproved published rate or hidden VAT semantics; arithmetic independent oracle passes",
-   "artifact_paths": [
-    "evidence/tariff-approval.json",
-    "evidence/pricing-parity.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
@@ -1454,7 +1590,11 @@
     "M-QUOTE-unknown-delivery-as-zero"
    ],
    "external_receipt": null,
-   "blocker": "Parity validator verified; approval of effective-dated prices and VAT is B1/B2."
+   "blocker": "Parity validator verified; approval of effective-dated prices and VAT is B1/B2.",
+   "specified_artifacts": [
+    "evidence/tariff-approval.json",
+    "evidence/pricing-parity.json"
+   ]
   },
   {
    "obligation_id": "WEB-08",
@@ -1481,17 +1621,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Every release asset has matched source rights and owner authorization; unresolved rights block publication",
-   "artifact_paths": [
-    "evidence/media-rights.json",
-    "evidence/brand-claims.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Media rights and footage origin are B5/B6/B9."
+   "blocker": "Media rights and footage origin are B5/B6/B9.",
+   "specified_artifacts": [
+    "evidence/media-rights.json",
+    "evidence/brand-claims.json"
+   ]
   },
   {
    "obligation_id": "OPS-01",
@@ -1528,12 +1669,13 @@
    ],
    "acceptance_predicate": "No metric implies greater assurance than observed; unknown/failed channel blocks release",
    "artifact_paths": [
-    "evidence/health-truth-table.json",
-    "evidence/readiness-junit.xml"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_readiness_truth_table.py",
     "tests/test_outbox_readiness.py"
@@ -1543,7 +1685,12 @@
     "M-OPS-01-unknown-is-ready",
     "M-OPS-01-receipt-subset"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/health-truth-table.json",
+    "evidence/readiness-junit.xml"
+   ]
   },
   {
    "obligation_id": "OPS-02",
@@ -1576,17 +1723,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Adopted pre-run SLO; no backfilled goals; actual monitored values with data-quality bounds",
-   "artifact_paths": [
-    "evidence/slo-policy.json",
-    "evidence/sli-historical.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "SLO adoption is an owner decision and needs field data; none is proposed as adopted."
+   "blocker": "SLO adoption is an owner decision and needs field data; none is proposed as adopted.",
+   "specified_artifacts": [
+    "evidence/slo-policy.json",
+    "evidence/sli-historical.json"
+   ]
   },
   {
    "obligation_id": "OPS-03",
@@ -1621,19 +1769,25 @@
    ],
    "acceptance_predicate": "Each incident has provider event ID and root-cause status; unknown remains unknown",
    "artifact_paths": [
-    "evidence/monitor-correlation.json",
-    "evidence/incident-timeline.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_incident_correlation.py"
    ],
    "mutants": [
     "M-OPS-03-invent-outage"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/monitor-correlation.json",
+    "evidence/incident-timeline.json"
+   ]
   },
   {
    "obligation_id": "OPS-04",
@@ -1659,17 +1813,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Signed/recorded policy edition and purpose/retention decision or legal HOLD",
-   "artifact_paths": [
-    "evidence/privacy-decision.json",
-    "evidence/legal-review.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Privacy notice, purpose, retention and lawful basis are B7; needs owner and legal review under current Ukrainian law."
+   "blocker": "Privacy notice, purpose, retention and lawful basis are B7; needs owner and legal review under current Ukrainian law.",
+   "specified_artifacts": [
+    "evidence/privacy-decision.json",
+    "evidence/legal-review.json"
+   ]
   },
   {
    "obligation_id": "OPS-05",
@@ -1697,17 +1852,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Data lifecycle verified; no irreversible auto-delete without approved policy",
-   "artifact_paths": [
-    "evidence/retention-drill.json",
-    "evidence/erasure-reconciliation.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Retention period needs OPS-04. No automatic deletion is implemented without an approved policy."
+   "blocker": "Retention period needs OPS-04. No automatic deletion is implemented without an approved policy.",
+   "specified_artifacts": [
+    "evidence/retention-drill.json",
+    "evidence/erasure-reconciliation.json"
+   ]
   },
   {
    "obligation_id": "OPS-06",
@@ -1734,17 +1890,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Unknown or conflicting rate => publish HOLD or label explicitly unverified; no unapproved assumptions",
-   "artifact_paths": [
-    "evidence/commercial-decision.json",
-    "evidence/quote-conformance.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Commercial rates, VAT, minimum shift, idle and dispatch policy are B1/B2."
+   "blocker": "Commercial rates, VAT, minimum shift, idle and dispatch policy are B1/B2.",
+   "specified_artifacts": [
+    "evidence/commercial-decision.json",
+    "evidence/quote-conformance.json"
+   ]
   },
   {
    "obligation_id": "OPS-07",
@@ -1771,18 +1928,19 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "DNS/TLS/rollback proof and owner authorization separate from source CI",
-   "artifact_paths": [
-    "evidence/dns-tls.json",
-    "evidence/rollback-drill.json",
-    "evidence/deploy-authorization.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Domain, TLS, rollout and rollback rehearsal on a real edge need B4 and deploy authorization."
+   "blocker": "Domain, TLS, rollout and rollback rehearsal on a real edge need B4 and deploy authorization.",
+   "specified_artifacts": [
+    "evidence/dns-tls.json",
+    "evidence/rollback-drill.json",
+    "evidence/deploy-authorization.json"
+   ]
   },
   {
    "obligation_id": "OPS-08",
@@ -1827,17 +1985,18 @@
    ],
    "verification_commands": [],
    "acceptance_predicate": "Release PASS iff all mandatory leaves are evidence-verified at target version and owner deploy authorization exists",
-   "artifact_paths": [
-    "evidence/final-release-act.json",
-    "evidence/owner-gates.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Depends on all external receipts above and explicit owner release acceptance."
+   "blocker": "Depends on all external receipts above and explicit owner release acceptance.",
+   "specified_artifacts": [
+    "evidence/final-release-act.json",
+    "evidence/owner-gates.json"
+   ]
   },
   {
    "obligation_id": "ADV-01",
@@ -1876,19 +2035,24 @@
    ],
    "acceptance_predicate": "Every high-impact path linked to at least one test and owner of risk",
    "artifact_paths": [
-    "evidence/threat-model.json",
-    "evidence/attack-trees.md"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_assurance_case.py::test_threat_model_covers_every_endpoint_and_links_real_tests",
     "tests/test_assurance_case.py::test_controls_map_names_real_tests_and_claims_no_whole_standard",
     "tests/test_dom_trust_boundary.py::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink"
    ],
    "mutants": [],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/threat-model.json",
+    "evidence/attack-trees.md"
+   ]
   },
   {
    "obligation_id": "ADV-02",
@@ -1926,17 +2090,25 @@
    ],
    "acceptance_predicate": "All designated critical mutants killed; score measured without arbitrary blanket 100% claim",
    "artifact_paths": [
-    "evidence/mutation-ledger.json",
-    "evidence/survivors-triage.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_mutation_runner.py"
    ],
-   "mutants": [],
-   "external_receipt": null
+   "mutants": [
+    "M-EVD-03-catalog-coverage"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/mutation-ledger.json",
+    "evidence/survivors-triage.json"
+   ]
   },
   {
    "obligation_id": "ADV-03",
@@ -1971,19 +2143,25 @@
    ],
    "acceptance_predicate": "Minimal counterexample recorded; no lost accepted lead or silent invariant breach",
    "artifact_paths": [
-    "evidence/state-traces.json",
-    "evidence/failure-minimization.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_stateful_model.py"
    ],
    "mutants": [
     "M-NET-05-quota-not-charged"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/state-traces.json",
+    "evidence/failure-minimization.json"
+   ]
   },
   {
    "obligation_id": "ADV-04",
@@ -2019,12 +2197,13 @@
    ],
    "acceptance_predicate": "Observed duration, integrity, backlog and process samples pass independent checker at same SHA",
    "artifact_paths": [
-    "evidence/soak-raw.json",
-    "evidence/soak-independent.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget",
     "tests/test_runtime_soak_contract.py",
@@ -2033,7 +2212,12 @@
    "mutants": [
     "M-ADV-04-p99-limit"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/soak-raw.json",
+    "evidence/soak-independent.json"
+   ]
   },
   {
    "obligation_id": "ADV-05",
@@ -2067,12 +2251,13 @@
    ],
    "acceptance_predicate": "All documented boundary cases invariant or explicit rejection; discrepancies fixed or scoped",
    "artifact_paths": [
-    "evidence/timezone-vectors.json",
-    "evidence/differential-validation.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_date_policy.py"
    ],
@@ -2080,7 +2265,12 @@
     "M-ADV-05-host-date",
     "M-ADV-05-browser-date"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/timezone-vectors.json",
+    "evidence/differential-validation.json"
+   ]
   },
   {
    "obligation_id": "ADV-06",
@@ -2117,12 +2307,13 @@
    ],
    "acceptance_predicate": "Mutation rejected; valid source/runner/dependency manifest reproducible within documented limits",
    "artifact_paths": [
-    "evidence/slsa-attestation.json",
-    "evidence/supplychain-mutants.json"
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/decision.json",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/full-junit.xml",
+    "assurance/evidence/08c13f699839e6ae313db48e0f186195f515cc79/mutation-ledger.json"
    ],
-   "execution_status": "IMPLEMENTED",
-   "verification_status": "INFERRED",
-   "disposition": null,
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
    "tests": [
     "tests/test_supply_chain.py::test_unpinned_action_is_rejected",
     "tests/test_supply_chain.py::test_weak_lock_files_are_rejected",
@@ -2131,7 +2322,12 @@
    "mutants": [
     "M-ADV-06-unpinned-action"
    ],
-   "external_receipt": null
+   "external_receipt": null,
+   "verified_at_sha": "08c13f699839e6ae313db48e0f186195f515cc79",
+   "specified_artifacts": [
+    "evidence/slsa-attestation.json",
+    "evidence/supplychain-mutants.json"
+   ]
   },
   {
    "obligation_id": "ADV-07",
@@ -2166,10 +2362,7 @@
     "python -m pytest -q tests/test_cross_engine_parity.py"
    ],
    "acceptance_predicate": "No unresolved WCAG AA critical failure and recorded field boundary; owner visual approval separate",
-   "artifact_paths": [
-    "evidence/manual-device-matrix.json",
-    "evidence/visual-approval.json"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
@@ -2178,7 +2371,11 @@
    ],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Real devices, screen reader and iOS Safari need a human and hardware; WebKit on Linux is not iOS."
+   "blocker": "Real devices, screen reader and iOS Safari need a human and hardware; WebKit on Linux is not iOS.",
+   "specified_artifacts": [
+    "evidence/manual-device-matrix.json",
+    "evidence/visual-approval.json"
+   ]
   },
   {
    "obligation_id": "ADV-08",
@@ -2225,10 +2422,7 @@
     "python -m pytest -q tests/test_assurance_case.py"
    ],
    "acceptance_predicate": "Zero mandatory unknowns, no new P0/P1, current immutable code proof, owner authorization; otherwise HOLD",
-   "artifact_paths": [
-    "evidence/assurance-final.json",
-    "evidence/release-digest.txt"
-   ],
+   "artifact_paths": [],
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
@@ -2237,7 +2431,11 @@
    ],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Signed release act needs every external receipt and owner authorization. Machine decision: PRODUCTION HOLD."
+   "blocker": "Signed release act needs every external receipt and owner authorization. Machine decision: PRODUCTION HOLD.",
+   "specified_artifacts": [
+    "evidence/assurance-final.json",
+    "evidence/release-digest.txt"
+   ]
   }
  ]
 }
