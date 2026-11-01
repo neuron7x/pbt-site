@@ -88,28 +88,79 @@ def test_not_found_surface_respects_persisted_theme(page_factory):
     assert page.evaluate("document.documentElement.dataset.theme") == "precision"
     assert page.evaluate("getComputedStyle(document.querySelector('main')).backgroundColor") == "rgb(16, 24, 32)"
 
-def test_sky_hero_logo_preserves_original_desktop_footprint(page_factory):
-    """Sky desktop must retain baseline Tektur-era logo scale; precision stays restrained."""
-    page = page_factory(1440, 900, reduced=True)
-    logo = page.locator(".logo-hero")
-    assert 500 <= logo.bounding_box()["width"] <= 550
-    page.locator('[data-theme-choice="precision"]').click()
-    # Updating a root CSS custom property can leave getComputedStyle(width)
-    # stale within the same task in Chromium, even though the token changed.
-    # Verify the committed layout frame; retain the exact size acceptance band.
-    page.wait_for_function(
-        "() => { const w = document.querySelector('.logo-hero').getBoundingClientRect().width; "
-        "return w >= 220 && w <= 265; }",
-        timeout=1500,
-    )
-    diagnostic = page.evaluate("""() => ({
-      theme: document.documentElement.dataset.theme,
-      token: getComputedStyle(document.documentElement).getPropertyValue('--t-logo-width').trim(),
-      inheritedToken: getComputedStyle(document.querySelector('.logo-hero')).getPropertyValue('--t-logo-width').trim(),
-      minWidth: getComputedStyle(document.querySelector('.logo-hero')).minWidth,
-      maxWidth: getComputedStyle(document.querySelector('.logo-hero')).maxWidth,
-      computed: getComputedStyle(document.querySelector('.logo-hero')).width,
-      box: document.querySelector('.logo-hero').getBoundingClientRect().width
-    })""")
-    assert diagnostic["theme"] == "precision", diagnostic
-    assert 220 <= diagnostic["box"] <= 265, diagnostic
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
+@pytest.mark.parametrize('width,height,mobile', [
+    (1440, 900, False), (390, 844, True), (320, 568, True), (844, 390, True),
+    (568, 320, True), (667, 375, True),
+])
+def test_hero_logo_is_compact_and_offer_is_clear(page_factory, theme, width, height, mobile):
+    """Бренд лишається в шапці, а компактний знак не перетягує увагу з оферу."""
+    page = page_factory(width, height, mobile=mobile, reduced=True)
+    page.locator(f'[data-theme-choice="{theme}"]').click()
+    page.wait_for_function("""() => {
+      const width = document.querySelector('.logo-hero').getBoundingClientRect().width;
+      return width >= 70 && width <= 104;
+    }""", timeout=1500)
+    logo = page.locator('.logo-hero').bounding_box()
+    assert logo and 70 <= logo['width'] <= 104 and logo['width'] <= width * .28
+    assert page.locator('#nav .brand__logo').is_visible()
+    heading = page.locator('#heroTitle').inner_text()
+    assert 'спецтехніка' in heading.casefold() and len(heading.split()) <= 6
+    lead = page.locator('.hero__lead').text_content()
+    assert 'оператором' in lead and 'пальним' in lead and len(lead.split()) <= 9
+    assert page.locator('.hero__lead').is_visible() is (height > 520)
+    assert '24/7' not in page.locator('#heroCenter .eyebrow').inner_text()
+    assert page.locator('#heroCenter .btn').count() == 2
+    for button in page.locator('#heroCenter .btn').all():
+        box = button.bounding_box()
+        assert box and box['height'] >= 44 and box['x'] >= 0 and box['x'] + box['width'] <= width
+        assert box['y'] >= 0 and box['y'] + box['height'] <= height - 6
+    stats = page.locator('.hero__stats li').evaluate_all(
+        'els => els.map(el => Math.round(el.getBoundingClientRect().top))')
+    assert len(stats) == 4 and len(set(stats)) == 1, stats
+    assert page.locator('.hero__stats span').evaluate_all(
+        'els => els.every(el => parseFloat(getComputedStyle(el).fontSize) >= 10)')
+    nav = page.locator('#nav').bounding_box()
+    eyebrow = page.locator('#heroCenter .eyebrow').bounding_box()
+    numbers = page.locator('.hero__stats').bounding_box()
+    assert nav and eyebrow and numbers
+    assert eyebrow['y'] >= nav['y'] + nav['height'] + 6
+    assert numbers['y'] + numbers['height'] <= height - 6
+
+
+@pytest.mark.parametrize('engine', ['chromium', 'webkit'])
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
+@pytest.mark.parametrize('width,height', [(568, 320), (667, 375)])
+@pytest.mark.parametrize('reduced', [False, True])
+def test_short_landscape_hero_is_visible_in_both_engines(pw, server, engine, theme, width, height, reduced):
+    """Короткий landscape не обрізає зміст або доступні кнопки в жодному режимі руху."""
+    browser = getattr(pw, engine).launch()
+    context = browser.new_context(viewport={'width': width, 'height': height},
+                                  is_mobile=True, has_touch=True,
+                                  reduced_motion='reduce' if reduced else 'no-preference')
+    context.add_init_script("Object.defineProperty(navigator, 'hardwareConcurrency', {configurable: true, value: 8})")
+    page = context.new_page()
+    try:
+        page.goto(server['base'] + '/', wait_until='networkidle', timeout=45000)
+        page.locator(f'[data-theme-choice="{theme}"]').click()
+        page.wait_for_timeout(1300)  # завершити вхідну анімацію першого екрану
+        hero = page.locator('#hero').bounding_box()
+        nav = page.locator('#nav').bounding_box()
+        assert hero and nav
+        elements = page.locator('#heroCenter .eyebrow,#heroTitle,#heroCenter .btn,.hero__stats').all()
+        assert len(elements) == 5
+        for element in elements:
+            box = element.bounding_box()
+            assert box and box['x'] >= 0 and box['x'] + box['width'] <= width
+            assert box['y'] >= nav['y'] + nav['height'] and box['y'] + box['height'] <= min(height, hero['y'] + hero['height']) - 6, box
+        for button in page.locator('#heroCenter .btn').all():
+            assert button.bounding_box()['height'] >= 44
+        labels = page.locator('.hero__stats span')
+        assert labels.count() == 4 and labels.evaluate_all(
+            'els => els.every(el => parseFloat(getComputedStyle(el).fontSize) >= 10)')
+        rows = page.locator('.hero__stats li').evaluate_all(
+            'els => els.map(el => Math.round(el.getBoundingClientRect().top))')
+        assert len(set(rows)) == 1, rows
+    finally:
+        context.close()
+        browser.close()

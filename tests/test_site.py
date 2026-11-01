@@ -112,7 +112,9 @@ def test_hero_video_plays_and_scene_dives(page_factory):
     assert pg.get_attribute('#heroVideo', 'poster').endswith('hero-wide.webp')
     pg.wait_for_function('() => { const v = document.getElementById("heroVideo"); return v.currentSrc && v.currentSrc.includes("hero-wide") && v.readyState >= 2 && !v.paused; }', timeout=15000)
     assert pg.evaluate('document.querySelector("#hero").classList.contains("is-lit")')
-    assert pg.locator('#heroTitle .w').count() >= 6                       # слова заголовка — окремі спани появи
+    # Кожне слово короткого заголовка зберігає окрему анімацію появи.
+    title = pg.locator('#heroTitle').inner_text().split()
+    assert title and pg.locator('#heroTitle .w').count() == len(title)
     pg.evaluate('scrollTo({top: innerHeight * 1.1, behavior: "instant"})'); pg.wait_for_timeout(300)
     wl = float(pg.evaluate('getComputedStyle(document.getElementById("heroWater")).getPropertyValue("--wl")') or 0)
     assert 0 < wl < 1, wl

@@ -243,7 +243,7 @@ def test_other_tab_selection_does_not_shift_page_and_reload_restores_choice(pw, 
           }).observe({type: 'layout-shift'});
         }""")
         second.locator(f'[data-theme-choice="{changed}"]').click()
-        first.wait_for_function('window.__storageSeen === true')
+        first.wait_for_function('() => window.__storageSeen === true')
         first.wait_for_timeout(700)
         if engine == 'chromium':
             assert first.evaluate('window.__hasLayoutShift'), 'Chromium layout-shift observer unavailable'
