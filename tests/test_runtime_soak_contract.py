@@ -178,9 +178,9 @@ def test_proc_tree_census_sees_child_of_nonleader_thread():
 
 def test_soak_workflow_can_measure_real_main_sha_not_only_a_pr():
     workflow = (ROOT / '.github/workflows/runtime-soak.yml').read_text()
-    assert "  pull_request:\\n    branches: [main]" in workflow
-    assert "  push:\\n    branches: [main]" in workflow
-    assert "  workflow_dispatch:\\n" in workflow
+    assert "  pull_request:\n    branches: [main]" in workflow
+    assert "  push:\n    branches: [main]" in workflow
+    assert "  workflow_dispatch:\n" in workflow
     assert "PBT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}" in workflow
     assert "ref: ${{ github.event.pull_request.head.sha || github.sha }}" in workflow
     assert 'report["source_sha"] == os.environ["PBT_HEAD_SHA"]' in workflow
