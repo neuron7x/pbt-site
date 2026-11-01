@@ -29,11 +29,14 @@ jobs:
       - name: Exact source provenance and diff hygiene
         run: |
           test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
+          git show "${PBT_HEAD_SHA}:requirements.txt" | cmp - requirements.txt
           git diff --check HEAD^1 HEAD
       - name: Python 3.12 for vulnerability audit
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: '3.12'
+      - name: Remove any stale runner-local audit output
+        run: rm -f /tmp/pip-audit-output.txt
       - name: Audit hash-locked requirements against OSV; no suppressions
         id: audit
         uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266
@@ -42,42 +45,33 @@ jobs:
           no-deps: true
           require-hashes: true
           vulnerability-service: osv
+      - name: Remove first audit output before complete pinned-input scan
+        run: |
+          test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
+          git show "${PBT_HEAD_SHA}:requirements.txt" | cmp - requirements.txt
+          rm -f /tmp/pip-audit-output.txt
+      - name: Audit every pinned requirement and emit JSON
+        id: complete_audit
+        uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266
+        with:
+          inputs: requirements.txt
+          no-deps: true
+          require-hashes: true
+          vulnerability-service: osv
+          # Avoid dry-run install-report omitting already installed packages.
+          # This pins the input set, not the pip-audit version; distribution
+          # hashes are verified separately by the release workflow.
+          internal-be-careful-extra-flags: --format=json --disable-pip
       - name: Record exact source and audit step outcome
         if: always()
         env:
-          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
-          AUDIT_OUTPUT_B64: ${{ steps.audit.outputs.internal-be-careful-output }}
+          AUDIT_OUTCOME: ${{ steps.complete_audit.outcome }}
+          AUDIT_BASELINE_OUTCOME: ${{ steps.audit.outcome }}
+          AUDIT_OUTPUT_B64: ${{ steps.complete_audit.outputs.internal-be-careful-output || steps.audit.outputs.internal-be-careful-output }}
         run: |
           mkdir -p artifacts/security
-          python - <<'PY'
-          import base64
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-          output_b64 = os.environ.get('AUDIT_OUTPUT_B64', '')
-          try:
-              report_text = base64.b64decode(output_b64, validate=True).decode('utf-8')
-          except (ValueError, UnicodeDecodeError) as exc:
-              raise SystemExit(f'auditor output encoding invalid: {type(exc).__name__}')
-          source = Path('requirements.txt').read_bytes()
-          record = {
-              'schema': 'pbt-osv-audit-receipt-v1',
-              'head_sha': os.environ['PBT_HEAD_SHA'],
-              'action_commit': '1220774d901786e6f652ae159f7b6bc8fea6d266',
-              'input': 'requirements.txt',
-              'requirements_sha256': hashlib.sha256(source).hexdigest(),
-              'service': 'OSV',
-              'require_hashes': True,
-              'no_deps': True,
-              'outcome': os.environ['AUDIT_OUTCOME'],
-              'scanner_output_sha256': hashlib.sha256(report_text.encode('utf-8')).hexdigest(),
-              'scanner_output': report_text,
-              'claim_boundary': 'step-success is a dependency audit, not ASVS certification',
-          }
-          Path('artifacts/security/osv-receipt.json').write_text(
-              json.dumps(record, sort_keys=True, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-          PY
+          python tools/security_receipt.py --requirements requirements.txt \
+            --report /tmp/pip-audit-output.txt --output artifacts/security/osv-receipt.json
       - name: Preserve fail-closed security evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
