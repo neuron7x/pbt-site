@@ -133,9 +133,8 @@
     requestAnimationFrame(() => { measure(); render(); sparkWake(); });
   }
   themeButtons.forEach(button => button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true)));
-  addEventListener('storage', event => {
-    if (event.key === THEME_KEY) applyTheme(event.newValue, false);
-  });
+  // Інші вкладки застосують спільний вибір під час наступної навігації:
+  // миттєва перебудова активної сторінки спричиняє непередбачений CLS.
 
   function openMenu(on, restoreFocus = true) {
     if (on === !menu.hidden) return;
