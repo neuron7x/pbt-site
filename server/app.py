@@ -135,22 +135,31 @@ for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
     time.sleep(0.5)
 
 # ─── rate limit на IP: усі запити (захист від перебору) і прийняті заявки ───
-_hits, _hits_lock = {}, threading.Lock()
+_hits, _hits_lock = {}, threading.RLock()
 # One identity per client, independently of its three quota buckets; insertion order = least recently seen first.
 _active_ips = {}
 RATE_IP_CAP = int(ENV('RATE_IP_CAP') or 8192)
 if RATE_IP_CAP < 1:
     raise ValueError('RATE_IP_CAP must be positive')
+# Keep evicted quota histories in a second bounded tier.  At its capacity a
+# new identity is refused until an existing history expires; otherwise an
+# attacker could reset another client's quota merely by rotating identities.
+RATE_OVERFLOW_CAP = int(ENV('RATE_OVERFLOW_CAP') or 32768)
+if RATE_OVERFLOW_CAP < 1:
+    raise ValueError('RATE_OVERFLOW_CAP must be positive')
+_overflow = {}
 LIMITS = {'any': (int(ENV('RATE_ANY_10MIN') or 60), 600), 'lead': (int(ENV('RATE_LEAD_10MIN') or 5), 600),
           'lead_day': (int(ENV('RATE_LEAD_DAY') or 30), 86400)}
+_BUCKETS = tuple(LIMITS)
 
 
 _last_prune = [0.0]
+_last_pressure_prune = [0.0]
 
 
-def _prune(now):
+def _prune(now, force=False):
     """S3: словник лімітів не росте без меж — ключі з порожнім вікном видаляються (не частіше ніж раз на хвилину)."""
-    if now - _last_prune[0] < 60:
+    if not force and now - _last_prune[0] < 60:
         return
     _last_prune[0] = now
     for key in [k for k, ts in _hits.items() if not ts or now - ts[-1] >= LIMITS[k[1]][1]]:
@@ -158,6 +167,13 @@ def _prune(now):
     live = {ip for ip, _ in _hits}
     for ip in [ip for ip in _active_ips if ip not in live]:
         del _active_ips[ip]
+    for ip, values in list(_overflow.items()):
+        kept = tuple(ts if ts and now - ts[-1] < LIMITS[b][1] else None
+                     for b, ts in zip(_BUCKETS, values))
+        if any(kept):
+            _overflow[ip] = kept
+        else:
+            del _overflow[ip]
 
 
 def rate_identity(ip):
@@ -174,30 +190,57 @@ def rate_identity(ip):
     return str(addr)
 
 
-def _touch(ip):
-    """Mark `ip` most recently seen. At the cardinality cap the least recently seen identity is evicted with its
-    buckets. Refusing every new identity instead (the previous behaviour) let one sender holding the table full lock
-    out all real customers; eviction costs at most a quota reset for an idle identity, which rotation buys anyway."""
-    _active_ips.pop(ip, None)
-    while len(_active_ips) >= RATE_IP_CAP:
-        old = next(iter(_active_ips))
-        del _active_ips[old]
-        for b in LIMITS:
-            _hits.pop((old, b), None)
+def _history(ip, bucket):
+    if ip in _overflow:
+        return _overflow[ip][_BUCKETS.index(bucket)] or []
+    return _hits.get((ip, bucket), [])
+
+
+def _touch(ip, now):
+    """Move an identity to the hot tier without ever discarding live quotas."""
+    if ip in _active_ips:
+        _active_ips.pop(ip)
+        _active_ips[ip] = None
+        return True
+    restored = _overflow.pop(ip, None)
+    if len(_active_ips) >= RATE_IP_CAP:
+        if len(_overflow) >= RATE_OVERFLOW_CAP and now - _last_pressure_prune[0] >= 1:
+            _last_pressure_prune[0] = now
+            _prune(now, force=True)
+        if len(_active_ips) >= RATE_IP_CAP and len(_overflow) >= RATE_OVERFLOW_CAP:
+            return False
+        if len(_active_ips) >= RATE_IP_CAP:
+            old = next(iter(_active_ips))
+            del _active_ips[old]
+            values = tuple(_hits.pop((old, b), None) for b in _BUCKETS)
+            if any(values):
+                _overflow[old] = values
     _active_ips[ip] = None
+    if restored is not None:
+        for b, values in zip(_BUCKETS, restored):
+            if values:
+                _hits[(ip, b)] = values
+    return True
 
 
 def rate_ok(ip, *buckets, commit=True):
     ip = rate_identity(ip)
-    now = time.time()
     with _hits_lock:
+        # Quota windows measure elapsed time, independent of wall-clock steps.
+        # Read after acquiring the lock to preserve timestamp ordering.
+        now = time.monotonic()
         _prune(now)
         for b in buckets:
             lim, win = LIMITS[b]
-            if len([t for t in _hits.get((ip, b), []) if now - t < win]) >= lim:
+            if len([t for t in _history(ip, b) if now - t < win]) >= lim:
+                return False
+        if commit or (ip not in _active_ips and ip not in _overflow):
+            if not _touch(ip, now):
+                return False
+        elif ip in _overflow:
+            if not _touch(ip, now):
                 return False
         if commit:
-            _touch(ip)
             for b in buckets:
                 _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
         return True
@@ -206,9 +249,10 @@ def rate_ok(ip, *buckets, commit=True):
 def rate_commit(ip, *buckets):
     """OPS-4: списати квоту після успішного запису (без повторної перевірки — заявка вже прийнята)."""
     ip = rate_identity(ip)
-    now = time.time()
     with _hits_lock:
-        _touch(ip)  # The 'any' bucket was committed for this accepted request.
+        now = time.monotonic()
+        if not _touch(ip, now):
+            raise RuntimeError('quota identity was not reserved before durable write')
         for b in buckets:
             _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
 
@@ -1019,7 +1063,9 @@ class Handler(SimpleHTTPRequestHandler):
         existing = None
         lead_id = None
         try:
-            with _db_lock:
+            # Keep the quota reservation stable across the durable insert and
+            # its charge, even while other IPs concurrently fill both tiers.
+            with _db_lock, _hits_lock:
                 c = db()
                 try:
                     c.execute('BEGIN IMMEDIATE')

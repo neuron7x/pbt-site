@@ -225,6 +225,30 @@ def test_a_flood_of_identities_at_the_cap_does_not_lock_out_a_new_client(srv):
     assert s.rows('SELECT count(*) FROM leads') == [(17,)]
 
 
+def test_quota_survives_identity_rotation_past_the_cache_capacity(srv):
+    s = srv(TRUST_PROXY='1', RATE_IP_CAP='2', RATE_ANY_10MIN='100',
+            RATE_LEAD_10MIN='1', RATE_LEAD_DAY='1')
+    assert _lead(s, 'k-rotation-a01', xff='198.51.100.1')[0] == 201
+    assert _lead(s, 'k-rotation-b01', xff='198.51.100.2')[0] == 201
+    assert _lead(s, 'k-rotation-c01', xff='198.51.100.3')[0] == 201
+    assert _lead(s, 'k-rotation-a02', xff='198.51.100.1')[0] == 429
+    assert s.rows('SELECT count(*) FROM leads') == [(3,)]
+
+
+def test_identity_storage_saturation_rejects_new_clients_without_forgetting_old_quotas(srv):
+    s = srv(TRUST_PROXY='1', RATE_IP_CAP='2', RATE_OVERFLOW_CAP='2', RATE_ANY_10MIN='100',
+            RATE_LEAD_10MIN='1', RATE_LEAD_DAY='1')
+    for i in range(4):
+        assert _lead(s, f'k-saturated-{i:04d}', xff=f'198.51.100.{i + 1}')[0] == 201
+    assert _lead(s, 'k-saturated-new1', xff='192.0.2.1')[0] == 429
+    for i in range(4):
+        assert _lead(s, f'k-saturated-retry-{i:04d}', xff=f'198.51.100.{i + 1}')[0] == 429
+    # Existing idempotent requests still work when their lead quota is full.
+    code, body = _lead(s, 'k-saturated-0000', xff='198.51.100.1')
+    assert code == 201 and body['replayed'] is True
+    assert s.rows('SELECT count(*) FROM leads') == [(4,)]
+
+
 def test_ipv6_addresses_of_one_slash64_share_one_quota(srv):
     """A sender owning a /64 cannot mint a fresh quota per address; another /64 is a different client."""
     s = srv(TRUST_PROXY='1', RATE_LEAD_10MIN='3', RATE_LEAD_DAY='30')

@@ -3,6 +3,9 @@
 
 The operator MUST supply an explicit age threshold; missing/unreadable evidence
 is UNKNOWN (exit 2), not HEALTHY. All outputs are aggregates without lead data.
+A timestamp up to one second ahead of the sampling clock is tolerated for a
+concurrent write between clock sampling and the SQLite snapshot; a greater
+offset makes the snapshot unverifiable. The one-second boundary is inclusive.
 """
 import argparse
 from datetime import datetime
@@ -15,6 +18,24 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
+CLOCK_SKEW_TOLERANCE_S = 1.0
+
+
+def _age(now, observed):
+    if not isinstance(observed, (int, float)) or not math.isfinite(observed):
+        raise ValueError('invalid timestamp')
+    if not math.isfinite(now) or observed - now > CLOCK_SKEW_TOLERANCE_S:
+        raise ValueError('timestamp is in the future')
+    return max(0.0, now - observed)
+
+
+def _display(report):
+    """Round only presentation values; policy decisions use the full precision."""
+    result = dict(report)
+    for key in ('oldest_pending_age_s', 'worker_heartbeat_age_s'):
+        if result[key] is not None:
+            result[key] = round(result[key], 3)
+    return result
 
 
 def snapshot(path, now):
@@ -24,10 +45,9 @@ def snapshot(path, now):
     try:
         db.execute('PRAGMA query_only=ON')
         db.execute('BEGIN')
-        pending, due, oldest = db.execute(
+        pending, due = db.execute(
             """SELECT count(*),
-                      coalesce(sum(CASE WHEN o.next_at <= ? THEN 1 ELSE 0 END), 0),
-                      min(l.created)
+                      coalesce(sum(CASE WHEN o.next_at <= ? THEN 1 ELSE 0 END), 0)
                FROM outbox o JOIN leads l ON l.id = o.lead_id
                WHERE o.status='pending'""", (now,)).fetchone()
         failed = db.execute("SELECT count(*) FROM outbox WHERE status='failed'").fetchone()[0]
@@ -39,12 +59,28 @@ def snapshot(path, now):
         worker_at = (db.execute(
             "SELECT observed_at FROM runtime_heartbeat WHERE name='delivery'").fetchone()
                      if has_worker_table else None)
+        # SQLite MIN on ISO-8601 text orders local wall times, not instants.
+        # Iterate the snapshot without materializing the backlog and verify every
+        # timestamp, including rows that are not the oldest.
+        age = None
+        rows = db.execute("""SELECT l.created, o.next_at FROM outbox o
+                             JOIN leads l ON l.id=o.lead_id
+                             WHERE o.status='pending'""")
+        for value, next_at in rows:
+            if not isinstance(next_at, (int, float)) or not math.isfinite(next_at):
+                raise ValueError('invalid pending due timestamp')
+            if not isinstance(value, str):
+                raise ValueError('missing pending timestamp')
+            created = datetime.fromisoformat(value)
+            if created.utcoffset() is None:
+                raise ValueError('pending timestamp has no timezone')
+            current_age = _age(now, created.timestamp())
+            age = current_age if age is None else max(age, current_age)
         db.execute('ROLLBACK')
-        age = max(0.0, now - datetime.fromisoformat(oldest).timestamp()) if oldest else None
         return {'pending': pending, 'due': due, 'failed': failed, 'delivered': delivered,
                 'unknown_status_rows': invalid_status, 'orphan_outbox_rows': orphan,
-                'oldest_pending_age_s': round(age, 3) if age is not None else None,
-                'worker_heartbeat_age_s': round(max(0.0, now - worker_at[0]), 3)
+                'oldest_pending_age_s': age,
+                'worker_heartbeat_age_s': _age(now, worker_at[0])
                 if worker_at else None}
     finally:
         db.close()
@@ -73,11 +109,11 @@ def main(argv=None):
                           'error_type': type(exc).__name__}))
         return 2
     if report['unknown_status_rows'] or report['orphan_outbox_rows']:
-        print(json.dumps({'ok': False, 'status': 'unknown', 'reason': 'outbox_integrity', **report}, sort_keys=True))
+        print(json.dumps({'ok': False, 'status': 'unknown', 'reason': 'outbox_integrity', **_display(report)}, sort_keys=True))
         return 2
     if a.max_worker_idle_s is not None and report['worker_heartbeat_age_s'] is None:
         print(json.dumps({'ok': False, 'status': 'unknown', 'reason': 'worker_liveness_unavailable',
-                          **report}, sort_keys=True))
+                          **_display(report)}, sort_keys=True))
         return 2
     stale = report['oldest_pending_age_s'] is not None and report['oldest_pending_age_s'] > a.max_pending_age_s
     overfailed = report['failed'] > a.max_failed
@@ -91,7 +127,7 @@ def main(argv=None):
     print(json.dumps({'ok': ok, 'status': state, 'scope': 'sqlite_outbox_snapshot',
                       'worker_liveness': worker_state, 'production_slo': 'not_verified',
                       'max_pending_age_s': a.max_pending_age_s, 'max_failed': a.max_failed,
-                      **report}, sort_keys=True))
+                      **_display(report)}, sort_keys=True))
     return 0 if ok else 1
 
 

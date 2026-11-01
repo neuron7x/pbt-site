@@ -133,9 +133,8 @@
     requestAnimationFrame(() => { measure(); render(); sparkWake(); });
   }
   themeButtons.forEach(button => button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true)));
-  addEventListener('storage', event => {
-    if (event.key === THEME_KEY) applyTheme(event.newValue, false);
-  });
+  // Інші вкладки застосують спільний вибір під час наступного завантаження:
+  // миттєва перебудова активної сторінки спричиняє непередбачений CLS.
 
   function openMenu(on, restoreFocus = true) {
     if (on === !menu.hidden) return;
@@ -817,6 +816,8 @@
     requestAnimationFrame(() => hero.classList.add('is-lit'));
     sparkWake();
     syncMotion();
+    // Якість може змінитися незалежно від системного налаштування руху.
+    new MutationObserver(syncMotion).observe(doc, {attributes: true, attributeFilter: ['data-quality']});
     document.addEventListener('visibilitychange', () => { if (document.hidden) $$('video').forEach(v => v.pause()); else syncMotion(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });

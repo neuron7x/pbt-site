@@ -212,3 +212,59 @@ def test_accessible_names_include_actual_visible_control_labels(page_factory):
     for control in pg.locator("a.brand").all():
         assert "полтавабудтехніка" in (control.get_attribute("aria-label") or "").casefold()
     assert "onsubmit=" not in (ROOT / "web" / "index.html").read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize('engine', ['chromium', 'webkit'])
+@pytest.mark.parametrize('initial,changed', [('sky', 'precision'), ('precision', 'sky')])
+def test_other_tab_selection_does_not_shift_page_and_reload_restores_choice(pw, server, engine, initial, changed):
+    """Тема вкладки стабільна; наступне завантаження читає спільне сховище."""
+    browser = getattr(pw, engine).launch()
+    context = browser.new_context(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
+    first, second = context.new_page(), context.new_page()
+    try:
+        response = first.goto(server['base'] + '/', wait_until='networkidle')
+        assert response.status == 200
+        csp = response.headers['content-security-policy']
+        assert "script-src 'self' " in csp and "'sha256-" in csp
+        assert "script-src 'self' 'unsafe-inline'" not in csp
+        first.locator(f'[data-theme-choice="{initial}"]').click()
+        second.goto(server['base'] + '/', wait_until='networkidle')
+        assert second.evaluate('document.documentElement.dataset.theme') == initial
+        first.wait_for_timeout(700)  # HadRecentInput в першій вкладці має минути.
+        first.evaluate("""() => {
+          window.__storageSeen = false;
+          window.__crossTabShifts = [];
+          window.addEventListener('storage', e => {
+            if (e.key === 'pbt-theme') window.__storageSeen = true;
+          });
+          window.__hasLayoutShift = PerformanceObserver.supportedEntryTypes.includes('layout-shift');
+          if (window.__hasLayoutShift) new PerformanceObserver(list => {
+            for (const e of list.getEntries()) if (!e.hadRecentInput) window.__crossTabShifts.push(e.value);
+          }).observe({type: 'layout-shift'});
+        }""")
+        second.locator(f'[data-theme-choice="{changed}"]').click()
+        first.wait_for_function('window.__storageSeen === true')
+        first.wait_for_timeout(700)
+        if engine == 'chromium':
+            assert first.evaluate('window.__hasLayoutShift'), 'Chromium layout-shift observer unavailable'
+        if first.evaluate('window.__hasLayoutShift'):
+            shifts = first.evaluate('window.__crossTabShifts')
+            assert not shifts, shifts
+        assert first.evaluate('document.documentElement.dataset.theme') == initial
+        assert first.locator(f'[data-theme-choice="{initial}"]').get_attribute('aria-pressed') == 'true'
+        assert first.locator(f'[data-theme-choice="{changed}"]').get_attribute('aria-pressed') == 'false'
+        assert first.evaluate("localStorage.getItem('pbt-theme')") == changed
+        first.reload(wait_until='networkidle')
+        assert first.evaluate('document.documentElement.dataset.theme') == changed
+        assert first.locator(f'[data-theme-choice="{changed}"]').get_attribute('aria-pressed') == 'true'
+        assert first.locator(f'[data-theme-choice="{initial}"]').get_attribute('aria-pressed') == 'false'
+        executed = first.evaluate("""() => {
+          const script = document.createElement('script');
+          script.textContent = 'window.__unexpectedInline = true';
+          document.head.appendChild(script); script.remove();
+          return window.__unexpectedInline === true;
+        }""")
+        assert not executed
+    finally:
+        context.close()
+        browser.close()
