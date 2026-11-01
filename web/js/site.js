@@ -282,7 +282,7 @@
     e.target.classList.add('is-in'); rio.unobserve(e.target);
     $$('[data-count]', e.target).forEach(countUp);
     if (e.target.dataset.count !== undefined) countUp(e.target);
-  }), { threshold: 0, rootMargin: '0px 0px 20% 0px' }) : null;   // заздалегідь: виміряно «примару» 0.8 с на кожен блок (tests/test_site.py)
+  }), { threshold: 0, rootMargin: '20% 0px 20% 0px' }) : null;   // симетрична зона появи: стрибок до центру високої сітки не пропускає заголовок
   function reveal(root) {
     $$('.rv', root || document).forEach(el => { if (!rio || !motion()) el.classList.add('is-in'); else rio.observe(el); });
     $$('[data-count]', root || document).forEach(el => { if (el.closest('.rv')) return; if (!rio || !motion()) countUp(el); else rio.observe(el); });   /* лічильники поза .rv (герой) */
