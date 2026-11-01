@@ -18,7 +18,8 @@ import tempfile
 import time
 
 ROOT = Path(__file__).resolve().parent.parent
-IGNORE = shutil.ignore_patterns('.git', 'data', 'dist', 'artifacts', '__pycache__', '*.pyc', '.pytest_cache', 'node_modules')
+# Runtime state stays behind; data/catalog.json is source and must come along.
+IGNORE = shutil.ignore_patterns('.git', '*.db', '*.db-*', '*.db.*', 'server.log', '.ip_salt', 'backups', 'dist', 'artifacts', '__pycache__', '*.pyc', '.pytest_cache', 'node_modules')
 ENV_DROP = ('PYTEST_ADDOPTS',)
 
 

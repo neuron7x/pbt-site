@@ -51,24 +51,68 @@ Delivery is at least once: a crash after the remote ack redelivers the same id, 
 ## Evidence chain
 
 ```
-tools/evidence_collect.py   GitHub API: runs, artifact ids, provider digests; bytes verified, digest refetched
+tools/evidence_collect.py    GitHub API: runs, jobs, artifact ids, provider digests; bytes checked, digest refetched
         ↓ manifest + ZIPs
-tools/meta_evidence_gate.py offline: exact SHA, target event, required test identities, raw percentiles against
-                            budgets, PNG CRC, mutation verdicts recounted, scanner and SBOM receipts
-        ↓ decision JSON
-tools/assurance_check.py    obligations + claims; three-valued; PASS only on a compatible revision
+tools/meta_evidence_gate.py  offline: exact SHA, repository, target event, every required job completed, required test
+                             identities, raw percentiles against budgets, PNG CRC, mutation verdicts recounted against
+                             the whole catalog, OSV findings from raw output, SBOM and provenance revision
+        ↓
+tools/evidence_reconcile.py  the only promotion path: each obligation bound to JUnit cases that ran and passed, and to a
+                             mutant killed at that revision; writes receipts, ledger and case
+        ↓
+tools/assurance_check.py     --require engineering: recomputes all of the above from the ZIPs and derives every claim;
+                             a status written in a file can only agree with the derivation, never cause it
 ```
 
-Roots of trust, not removed by this chain: the GitHub API answer under the operator's token, and the runner it describes.
-Nothing is signed. A receipt proves consistency with what the provider reported.
+Roots of trust this chain does not remove: the GitHub API answer under the operator's token, and the runner it describes.
+Build-platform signing is absent. A receipt proves consistency with what the provider reported.
+
+| Decision | Exit | Meaning |
+|---|---|---|
+| `SCHEMA_VALID` | 0 | Ledger and specification are well formed. Accepts nothing. Used in CI during development. |
+| `ENGINEERING_ACCEPTED` | 0 | C1–C9 derived PASS from real artifact bytes at a compatible revision. |
+| `PRODUCTION_ELIGIBLE` | 0 | Also every external class signed by an authorized owner key. Still not a deployment. |
+| `PRODUCTION_HOLD` | 3 | Engineering accepted; external receipts missing. |
+| `EVIDENCE_REJECTED` | 1 | Forged, stale, missing or inconsistent. |
+
+Evidence states are distinct: listed by GitHub → ZIP bytes downloaded → digest and CRC checked → content validated →
+claim survived negative controls. Only the last supports a verdict.
+
+Artifact categories are not interchangeable. `assurance/source/` is the normative specification, pinned by digest in
+`tools/assurance_check.py`. Only `assurance/evidence/`, the promoted fields of `assurance/ledger.json` and
+`assurance/case.json`, `docs/` and `README.md` may change after measurement. Changing a test, tool, config, threat model or
+the ledger's contract fields voids the proof (`proof_void_changed_*`). `make assurance` keeps working through such changes,
+and a code PR simply reopens the ledger: stage `pre_integration`, technical leaves `UNKNOWN`.
+
+External facts close only with a detached SSH signature from a key in `config/owner-allowed-signers`, which is deliberately
+empty: `tools/external_receipts.py`. A signature proves who stated a fact, not that it is true.
+
+**Governance limit.** `main` is not protected: branch protection and rulesets return HTTP 403 on this plan for a private
+repository (`gh api repos/neuron7x/pbt-site/rulesets`). CI cannot block a direct push. Admission is discipline: PR, exact-head
+receipts, `--match-head-commit`. It is enforceable only by a plan upgrade, which is the owner's decision.
 
 ```sh
 python3 tools/evidence_collect.py --kind push --head "$MAIN" --base "$PARENT" --out evidence/
-python3 tools/meta_evidence_gate.py --manifest evidence/manifest.json --evidence-dir evidence \
-  --policy config/runtime-soak-budgets.json --expected-head "$MAIN" --expected-base "$PARENT"
+python3 tools/assurance_check.py --require engineering --evidence-dir evidence/
 ```
 
-`pull_request` receipts never certify `main`, and `push` receipts never certify a PR.
+## Backup and restore failure model
+
+| Failure | Covered | How |
+|---|---|---|
+| Process death at any filesystem step of restore or backup | Yes | SIGKILL before and after each discovered operation |
+| ENOSPC or EIO at any filesystem step of restore | Yes | Injected at each operation |
+| Two backups at once | Yes | Kernel lock; second exits 2; deterministic barrier test |
+| A server running on the database during restore | Yes on one host | Same lock as the server; a refused server writes nothing |
+| Power loss, torn sectors, reordered writes | **No** | `M-DB-06-dir-fsync` is UNTESTABLE here. No isolated block device was used. fsync order is by reasoning only |
+| Disk or machine loss | **No** | Snapshots are local. R1 and R2 in `docs/PRODUCTION_HOLD.md` |
+| Leads after the last snapshot | **Lost** | Reported as `known_RPO_gap`; never presented as recovered |
+
+## When the claims expire
+
+Evidence is valid for its revision. After any executable change, collect new exact-main receipts:
+`gh workflow run` for the four dispatch workflows; the soak runs on push when its paths change, otherwise by dispatch. Then
+`tools/evidence_reconcile.py --close`.
 
 ## Install, test, build
 
@@ -77,7 +121,7 @@ python3 -m venv .venv && .venv/bin/pip install --require-hashes -r requirements.
 .venv/bin/python -m playwright install --with-deps chromium webkit
 PY=.venv/bin/python make gate        # full suite, offline bundle, media budget, clean tree
 PY=.venv/bin/python make mutation    # critical faults on a disposable copy
-PY=.venv/bin/python make assurance   # ledger validity and release decision
+PY=.venv/bin/python make assurance   # ledger well-formed; accepts nothing
 ```
 Python 3.12 and the versions in `requirements.txt`; no runtime dependency beyond the standard library and system tzdata.
 

@@ -71,6 +71,14 @@
       "OPS-01",
       "OPS-03"
      ]
+    },
+    {
+     "id": "C3.delivery",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "NET-04.T"
+     ]
     }
    ]
   },
@@ -83,8 +91,17 @@
      "kind": "engineering",
      "obligations": [
       "NET-01",
+      "NET-02.T",
       "NET-03",
       "NET-05"
+     ]
+    },
+    {
+     "id": "C4.sandbox_probe",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "NET-08.T"
      ]
     },
     {
@@ -114,7 +131,8 @@
      "status": "UNKNOWN",
      "kind": "engineering",
      "obligations": [
-      "DB-06"
+      "DB-06",
+      "DB-08.T"
      ]
     }
    ]
@@ -127,7 +145,8 @@
      "status": "UNKNOWN",
      "kind": "engineering",
      "obligations": [
-      "WEB-04"
+      "WEB-04",
+      "WEB-01.T"
      ]
     }
    ]
@@ -177,6 +196,15 @@
      "obligations": [
       "ADV-02"
      ]
+    },
+    {
+     "id": "C8.external_gate",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "OPS-08.T",
+      "ADV-08.T"
+     ]
     }
    ]
   },
@@ -191,7 +219,8 @@
       "EVD-01",
       "EVD-07",
       "ADV-05",
-      "ADV-06"
+      "ADV-06",
+      "WEB-07.T"
      ]
     }
    ]

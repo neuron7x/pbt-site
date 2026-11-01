@@ -10,7 +10,7 @@ actually meets a stated objective*. None is interchangeable.
    job conclusions and artifact IDs using the authenticated GitHub connector.
    Refetch before writing a receipt or changing refs. A manually authored
    manifest is **not** cryptographically authenticated provider data.
-2. **Artifact integrity:** download eight ZIP files; independently validate
+2. **Artifact integrity:** download the target's ZIP files (ten for a pull request, nine for `main`); independently validate
    SHA-256, ZIP CRC, member lists, JUnit outcomes, offline HTML hashes,
    screenshots/PNG CRCs, synthetic mobile claim boundaries, scoped AST/OSV
    receipts and the exact HEAD in every report that supplies it.
@@ -43,7 +43,7 @@ JSON manifest `pbt-exact-head-evidence-matrix-v2` with:
   `static`, `soak`, `mutation`, `sast`, plus `baseline` for pull requests, each with `id`, `run_id`,
   `filename` (`<role>.zip`) and independently computed `sha256`.
 
-After retrieving **all eight actual ZIP bytes**:
+After retrieving **all actual ZIP bytes** (`tools/evidence_collect.py`):
 
 ```sh
 python3 tools/meta_evidence_gate.py \

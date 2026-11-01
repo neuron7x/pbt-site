@@ -1,11 +1,94 @@
 {
   "schema": "pbt-evidence-policy-v1",
   "targets": {
-    "pull_request": {"run_events": ["pull_request"], "roles": ["release", "baseline", "mobile", "http", "visual", "osv", "static", "soak", "mutation", "sast"]},
-    "push": {"run_events": ["push", "workflow_dispatch"], "roles": ["release", "mobile", "http", "visual", "osv", "static", "soak", "mutation", "sast"]},
-    "workflow_dispatch": {"run_events": ["push", "workflow_dispatch"], "roles": ["release", "mobile", "http", "visual", "osv", "static", "soak", "mutation", "sast"]}
+    "pull_request": {
+      "run_events": [
+        "pull_request"
+      ],
+      "roles": [
+        "release",
+        "baseline",
+        "mobile",
+        "http",
+        "visual",
+        "osv",
+        "static",
+        "soak",
+        "mutation",
+        "sast"
+      ]
+    },
+    "push": {
+      "run_events": [
+        "push",
+        "workflow_dispatch"
+      ],
+      "roles": [
+        "release",
+        "mobile",
+        "http",
+        "visual",
+        "osv",
+        "static",
+        "soak",
+        "mutation",
+        "sast"
+      ]
+    },
+    "workflow_dispatch": {
+      "run_events": [
+        "push",
+        "workflow_dispatch"
+      ],
+      "roles": [
+        "release",
+        "mobile",
+        "http",
+        "visual",
+        "osv",
+        "static",
+        "soak",
+        "mutation",
+        "sast"
+      ]
+    }
   },
   "main_ref": "refs/heads/main",
-  "min_tests": {"release": 390, "baseline": 191, "http": 160},
-  "mobile": {"lcp_ms": 2500, "cls": 0.1, "max_deferred_switch_shift": 0.001, "min_runs": 3}
+  "min_tests": {
+    "release": 390,
+    "baseline": 191,
+    "http": 160
+  },
+  "mobile": {
+    "lcp_ms": 2500,
+    "cls": 0.1,
+    "max_deferred_switch_shift": 0.001,
+    "min_runs": 3
+  },
+  "required_jobs": {
+    "full": [
+      "Native contracts → full gate → offline bundles / lab metrics",
+      "Offline evidence verifier → positive + adversarial mutation controls",
+      "Critical fault catalog + assurance decision"
+    ],
+    "transport": [
+      "Adversarial HTTP → CRM/HMAC invariants"
+    ],
+    "visual": [
+      "Independent visual proofs → 2 themes × 6 viewports → SHA-256"
+    ],
+    "security": [
+      "SHA-pinned pip-audit / OSV → immutable receipt",
+      "Fail-closed AST policy / server + ops",
+      "Pinned broad scanner, SBOM, provenance receipt"
+    ],
+    "soak": [
+      "1800s+ real socket / SQLite / RSS / HMAC fault-injection"
+    ]
+  },
+  "required_jobs_pull_request_only": {
+    "full": [
+      "Independent exact-main make gate (no main mutation)"
+    ]
+  }
 }

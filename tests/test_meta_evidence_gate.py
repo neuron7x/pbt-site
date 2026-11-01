@@ -36,8 +36,8 @@ EVIDENCE_POLICY = json.loads((ROOT / 'config/evidence-policy.json').read_text())
 REQUIRED_TESTS = json.loads((ROOT / 'config/required-tests.json').read_text())
 
 
-def junit(n, role=None, drop=None):
-    names = []
+def junit(n, role=None, drop=None, extra=()):
+    names = list(extra)
     for rule in REQUIRED_TESTS['required'].get(role, ()):
         cls, name = rule['id'].split('::')
         if rule['id'] != drop:
@@ -65,7 +65,18 @@ def png():
 
 @pytest.fixture
 def state(tmp_path):
+    return build_state(tmp_path)
+
+
+def _jobs(role):
+    names = EVIDENCE_POLICY['required_jobs'][role] + EVIDENCE_POLICY['required_jobs_pull_request_only'].get(role, [])
+    return {name: {'id': 1000 + i, 'status': 'completed', 'conclusion': 'success'} for i, name in enumerate(names)}
+
+
+def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mutation_verdicts=None, catalog_raw=None, event='pull_request', pr=14):
     # A synthetic fixture does not claim to be an actual GitHub workflow run.
+    CATALOG_RAW_ = catalog_raw or CATALOG_RAW
+    CATALOG_ = json.loads(CATALOG_RAW_)['mutants']
     policy = {'soak':{'minimum_duration_s':1800,'minimum_accepted':3000},
               'budgets':{'maximum_p99_lead_ms':2000,'maximum_rss_kib':262144,
                          'maximum_rss_growth_kib_per_process':65536,'maximum_thread_count':96,
@@ -114,15 +125,15 @@ def state(tmp_path):
          'service':'OSV','scanner_output':osv_output,'scanner_output_sha256':sha(osv_output.encode())}
     static={'head_sha':HEAD,'status':'PASS','findings':[],'files_scanned':6,
             'scanned_roots':['server','ops']}
-    mutation={'head_sha':HEAD,'status':'PASS','catalog_sha256':sha(CATALOG_RAW),
-              'results':[{'id':m['id'],'verdict':m.get('expected','KILLED')} for m in CATALOG]}
+    mutation={'head_sha':HEAD,'status':'PASS','catalog_sha256':sha(CATALOG_RAW_),
+              'results':[{'id':m['id'],'verdict':(extra_mutation_verdicts or {}).get(m['id'],m.get('expected','KILLED'))} for m in CATALOG_]}
     sast={'sast.json':json.dumps({'status':'PASS','open':[],'stale_waivers':[],'files_scanned':30,'loc':100}).encode(),
           'provenance.json':json.dumps({'head_sha':HEAD,'signed':False,'slsa_level':'none_claimed'}).encode(),
           'sbom.json':json.dumps({'bomFormat':'CycloneDX','metadata':{'component':{'version':HEAD}},
                                   'components':[{'hashes':[1]}]*6}).encode()}
     contents={
         'mutation':{'mutation-ledger.json':json.dumps(mutation).encode()},'sast':sast,
-        'release':{'artifacts/full-junit.xml':junit(390,'release'),
+        'release':{'artifacts/full-junit.xml':junit(390,'release',extra=extra_release_cases),
                    'artifacts/offline-bundles.sha256':sha_lines,**raw_html},
         'baseline':{'base-junit.xml':junit(191),'base-commit.txt':(BASE+'\n').encode()},
         'http':{'http-junit.xml':junit(160,'http')},
@@ -134,7 +145,7 @@ def state(tmp_path):
         'mobile':{'dual-theme-mobile.json':json.dumps(mobile).encode()},
     }
     runs={x:{'id':i+1,'head_sha':HEAD,'event':'pull_request','status':'completed',
-             'conclusion':'success','attempt':1,'pull_requests':[14]} for i,x in enumerate(sorted(gate.WORKFLOWS))}
+             'conclusion':'success','attempt':1,'pull_requests':[14],'jobs':_jobs(x)} for i,x in enumerate(sorted(gate.WORKFLOWS))}
     artifacts={}
     for i,(role,owner) in enumerate(gate.ARTIFACT_TO_WORKFLOW.items()):
         path=tmp_path/(role+'.zip');path.write_bytes(pack(contents[role]))
@@ -168,6 +179,7 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     'mutant_survived_but_status_pass','mutation_catalog_diluted','mutation_other_revision','sast_open_finding','sast_scanned_nothing',
     'sbom_other_revision','provenance_other_revision','png_bad_crc_with_matching_manifest',
     'mutation_invented_rows','mutation_slice','mutation_other_catalog','mutation_killed_untestable_swap',
+    'required_job_never_completed','required_job_failed_but_run_success','required_job_missing',
     'fork_same_sha','run_of_another_pull_request','osv_vulnerability_with_success','osv_empty_output',
 ])
 def test_forged_success_is_rejected(state,mutant):
@@ -204,6 +216,12 @@ def test_forged_success_is_rejected(state,mutant):
     elif mutant=='osv_outcome':
         d=json.loads(contents['osv']['osv-receipt.json']);d['outcome']='failure'
         contents['osv']['osv-receipt.json']=json.dumps(d).encode();rewrite('osv')
+    elif mutant=='required_job_never_completed':
+        name=EVIDENCE_POLICY['required_jobs']['soak'][0];meta['runs']['soak']['jobs'][name].update(status='in_progress',conclusion=None)
+    elif mutant=='required_job_failed_but_run_success':
+        name=EVIDENCE_POLICY['required_jobs']['full'][-1];meta['runs']['full']['jobs'][name]['conclusion']='skipped'
+    elif mutant=='required_job_missing':
+        del meta['runs']['security']['jobs'][EVIDENCE_POLICY['required_jobs']['security'][2]]
     elif mutant=='fork_same_sha':meta['repository']='attacker/pbt-site'
     elif mutant=='run_of_another_pull_request':meta['runs']['soak']['pull_requests']=[99]
     elif mutant in ('osv_vulnerability_with_success','osv_empty_output'):
@@ -284,6 +302,14 @@ def test_forged_success_is_rejected(state,mutant):
         verify(meta,directory,policy)
 
 
+def test_baseline_job_is_required_for_pull_requests_and_not_for_main(state):
+    meta,policy,directory,_=state
+    meta=copy.deepcopy(meta)
+    del meta['runs']['full']['jobs']['Independent exact-main make gate (no main mutation)']
+    with pytest.raises(gate.Rejected,match='required_job_missing_full'):
+        verify(meta,directory,policy)
+
+
 def test_main_target_uses_push_receipts_and_needs_no_baseline(state):
     meta,policy,directory,_=state
     meta=copy.deepcopy(meta)
@@ -291,6 +317,7 @@ def test_main_target_uses_push_receipts_and_needs_no_baseline(state):
     del meta['artifacts']['baseline']
     for run in meta['runs'].values():
         run['event']='push'
+        run['jobs'].pop('Independent exact-main make gate (no main mutation)',None)
     meta['runs']['soak']['event']='workflow_dispatch'
     assert verify(meta,directory,policy)['status']=='PASS'
 

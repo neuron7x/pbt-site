@@ -18,4 +18,4 @@ marker, і наступний tick таймера автоматично пов�
 цих значень підвищує верхню межу пам’яті процесу. Підбирати значення слід
 за доступною пам’яттю і виміряним навантаженням; це не захист від усіх DoS.
 
-A second server on the same `LEAD_DB` refuses to start (`single_process_guard`), and restore holds the same kernel lock. Measured sandbox limits, readiness, drills and rollback: `docs/ASSURANCE.md`.
+A second server on the same `LEAD_DB` refuses to start (`single_process_guard`), and restore holds the same kernel lock; a second concurrent backup exits 2. Measured sandbox limits, readiness, drills and rollback: `docs/ASSURANCE.md`.
