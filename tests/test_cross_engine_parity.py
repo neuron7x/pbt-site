@@ -4,6 +4,7 @@ No new prices, network fixtures or snapshots: assert identical business
 contracts across both real browser engines, including persistent theme state.
 """
 from time import monotonic
+import json
 
 import pytest
 
@@ -24,7 +25,12 @@ def parity_rows(page):
 
 
 def assert_parity_rows(engine, rows, diagnostics=None):
-    assert rows and len(rows) >= 24, (engine, rows, diagnostics)
+    if not rows or len(rows) < 24:
+        raise AssertionError(
+            'Недостатньо даних для перевірки браузера: ' +
+            json.dumps({'engine': engine, 'rows': rows, 'diagnostics': diagnostics},
+                       ensure_ascii=False, indent=2)
+        )
     assert all(row['expected'] == row['actual'] for row in rows), (engine, rows)
 
 
@@ -102,3 +108,12 @@ def test_domcontentloaded_wait_does_not_extend_deadline():
 
     with pytest.raises(AssertionError, match='Таймаут навігації'):
         wait_dom_within(NoWait(), monotonic() - 1)
+
+
+def test_missing_parity_rows_preserve_full_diagnostics():
+    diagnostics = {'padding': 'x' * 5000, 'request_failure': '/js/data.js'}
+    with pytest.raises(AssertionError) as failure:
+        assert_parity_rows('webkit', None, diagnostics)
+    assert json.loads(str(failure.value).split(': ', 1)[1]) == {
+        'engine': 'webkit', 'rows': None, 'diagnostics': diagnostics,
+    }
