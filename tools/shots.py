@@ -136,6 +136,19 @@ def capture_viewport(browser, spec: tuple, theme: str) -> tuple[dict, list[dict]
                     )
                 if page.evaluate("document.scrollingElement.scrollWidth > innerWidth + 1"):
                     violations.append(f"{theme}/{key}/{section}: горизонтальне переповнення")
+                if section == "top":
+                    # overflow-x:clip може приховати виступання від scrollWidth.
+                    # Перевіряємо зміст героя, а не навмисно збільшене фонове відео.
+                    clipped = page.evaluate("""() => [...document.querySelectorAll(
+                      '#heroCenter .logo-hero,#heroTitle,#heroTitle .line,' +
+                      '#heroCenter .hero__lead,#heroCenter .btn,#heroCenter .hero__stats')]
+                      .filter(el => {
+                        const b = el.getBoundingClientRect();
+                        return b.width > 0 && b.height > 0 && (b.left < -1 || b.right > innerWidth + 1);
+                      }).map(el => el.className || el.id)
+                    """)
+                    if clipped:
+                        violations.append(f"{theme}/{key}/{section}: обрізаний зміст героя: {clipped}")
                 content = page.screenshot(
                     path=str(OUT / filename), animations="disabled",
                     caret="hide", scale="css", timeout=30000,
