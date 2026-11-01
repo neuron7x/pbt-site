@@ -79,7 +79,7 @@ def test_stalled_request_times_out_and_can_be_retried(page_factory):
 
 def test_motion_pause_survives_scroll_and_reload_then_resumes(page_factory):
     page = page_factory()
-    page.wait_for_function("document.querySelector('#heroVideo').currentTime > 0")
+    page.wait_for_function("() => document.querySelector('#heroVideo').currentTime > 0")
     page.locator("#motionToggle").click()
     expect(page.locator("html")).to_have_attribute("data-motion", "paused")
     expect(page.locator("#motionToggle")).to_have_attribute("aria-pressed", "true")
@@ -91,7 +91,7 @@ def test_motion_pause_survives_scroll_and_reload_then_resumes(page_factory):
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.locator("#motionToggle").click()
     expect(page.locator("html")).not_to_have_attribute("data-motion", "paused")
-    page.wait_for_function("!document.querySelector('#heroVideo').paused")
+    page.wait_for_function("() => !document.querySelector('#heroVideo').paused")
 
 
 def test_reduced_motion_cannot_be_overridden_by_manual_control(page_factory):
@@ -107,7 +107,7 @@ def test_pause_below_hero_keeps_returned_heading_visible(page_factory):
     page.evaluate("document.querySelector('#cine-voda').scrollIntoView({behavior:'instant'})")
     page.locator("#motionToggle").click()
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
-    page.wait_for_function("getComputedStyle(document.querySelector('#heroCenter')).opacity === '1'")
+    page.wait_for_function("() => getComputedStyle(document.querySelector('#heroCenter')).opacity === '1'")
     assert page.evaluate("getComputedStyle(document.querySelector('#partners')).animationPlayState") == "paused"
     assert page.evaluate("[...document.querySelectorAll('video')].every(video => video.paused)")
 
@@ -171,13 +171,13 @@ def test_mobile_modal_makes_motion_control_inert_and_restores_it(page_factory):
 
 def test_full_profile_tracks_system_motion_preference_without_reloading(page_factory):
     page = page_factory()
-    page.wait_for_function("!document.querySelector('#heroVideo').paused")
+    page.wait_for_function("() => !document.querySelector('#heroVideo').paused")
     page.emulate_media(reduced_motion="reduce")
     expect(page.locator("#motionToggle")).to_be_disabled()
     assert page.evaluate("[...document.querySelectorAll('video')].every(video => video.paused)")
     page.emulate_media(reduced_motion="no-preference")
     expect(page.locator("#motionToggle")).to_be_enabled()
-    page.wait_for_function("!document.querySelector('#heroVideo').paused")
+    page.wait_for_function("() => !document.querySelector('#heroVideo').paused")
 
 
 def test_explicit_static_quality_is_not_reenabled_by_system_change(page_factory):
@@ -200,7 +200,7 @@ def test_mobile_request_cta_brings_focused_subject_below_navigation(page_factory
     page = page_factory(390, 844, mobile=True, reduced=True)
     page.locator("#name").fill("Перевірка інтерфейсу")
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
-    page.wait_for_function("scrollY === 0 && document.querySelector('.burger').getBoundingClientRect().top >= 0")
+    page.wait_for_function("() => scrollY === 0 && document.querySelector('.burger').getBoundingClientRect().top >= 0")
     if open_menu:
         page.locator(".burger").click()
     page.locator(selector).click()
@@ -219,7 +219,7 @@ def test_mobile_request_cta_brings_focused_subject_below_navigation(page_factory
 def test_explicit_static_quality_stops_motion_without_system_event(page_factory, theme):
     page = page_factory()
     page.locator(f'[data-theme-choice="{theme}"]').click()
-    page.wait_for_function("!document.querySelector('#heroVideo').paused")
+    page.wait_for_function("() => !document.querySelector('#heroVideo').paused")
     page.evaluate("document.documentElement.dataset.quality = 'static'")
     expect(page.locator('html')).to_have_attribute('data-motion', 'paused')
     expect(page.locator('#motionToggle')).to_be_disabled()
@@ -227,4 +227,4 @@ def test_explicit_static_quality_stops_motion_without_system_event(page_factory,
     assert page.evaluate("document.getAnimations().every(a => a.playState != 'running')")
     page.evaluate("document.documentElement.dataset.quality = 'full'")
     expect(page.locator('html')).to_have_attribute('data-motion', 'running')
-    page.wait_for_function("!document.querySelector('#heroVideo').paused")
+    page.wait_for_function("() => !document.querySelector('#heroVideo').paused")
