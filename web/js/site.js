@@ -297,6 +297,9 @@
 
   /* ───── ПАРК ───── */
   const catName = id => (D.cats.find(c => c.id === id) || {}).name || '';
+  const unitPurpose = u => /мульчер/i.test(u.name) ? 'Мульчування порослі.' :
+    /дробарк/i.test(u.name) ? 'Дроблення бетону й каменю.' :
+      (D.cats.find(c => c.id === u.cat) || {}).lead || 'Підберемо комплектацію під ваше завдання.';
   function renderPark() {
     const grid = $('#park'), chips = $('#chips');
     const counts = {};
@@ -307,9 +310,9 @@
       <article class="unit rv rv--scale" style="--d:${(i % 8) * 60}ms" data-cat="${u.cat}" data-id="${u.id}">
         <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__cat">${esc(catName(u.cat))}</span></figure>
         <div class="unit__body"><h3>${esc(u.name)}</h3>
-          ${u.specs.length ? `<dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl>` : `<p class="unit__purpose">${esc((D.cats.find(c => c.id === u.cat) || {}).lead || 'Підберемо комплектацію під ваше завдання.')}</p>`}</div>
+          ${u.specs.length ? `<dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl>` : `<p class="unit__purpose">${esc(unitPurpose(u))}</p>`}</div>
         <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
-          <button class="btn btn--sm" type="button" data-req="rent" data-subject="${esc(u.name)}">У заявку</button></div>
+          <button class="btn btn--sm" type="button" data-req="${u.cat === 'trans' ? 'transport' : 'rent'}" data-subject="${esc(u.name)}">У заявку</button></div>
       </article>`).join('');
     const reveal1 = b => { if (chips.scrollWidth > chips.clientWidth + 1) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: motion() ? 'smooth' : 'auto' }); };
     chips.addEventListener('focusin', e => { const b = e.target.closest('.chip'); if (b) reveal1(b); });   // Tab не лишає фокус за краєм (аудит a5951a5: 107 px поза контейнером на 390)
@@ -358,13 +361,27 @@
     $('#calcForm').addEventListener('submit', event => event.preventDefault());
     const priced = D.fleet.filter(u => u.price && u.unit === 'год');
     sel.innerHTML = priced.map(u => `<option value="${u.id}">${esc(u.name)} — ${fmt(u.price)} грн/год</option>`).join('');
+    sel.disabled = !priced.length;
     const fill = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min) * 100).toFixed(1)}%`);
     const sync = (a, b) => a.addEventListener('input', () => { b.value = a.value; fill(hr); fill(km); calc(); });
     sync(hr, hrN); sync(hrN, hr); sync(km, kmN); sync(kmN, km);
     sel.addEventListener('change', calc);
     function calc() {
       const u = priced.find(x => x.id === sel.value) || priced[0];
-      const hours = clamp(parseInt(hrN.value, 10) || 0, 1, 5000), kmv = clamp(parseInt(kmN.value, 10) || 0, 0, 3000);
+      $('#cMachineSummary').textContent = sel.selectedOptions[0]?.textContent || '';
+      const crane = u?.cat === 'crane';
+      km.disabled = kmN.disabled = crane;
+      const hours = hrN.valueAsNumber, kmv = crane ? 0 : kmN.valueAsNumber;
+      const hoursValid = Number.isInteger(hours) && hours >= 1 && hours <= 5000;
+      const kmValid = Number.isInteger(kmv) && kmv >= 0 && kmv <= 3000;
+      if (!hoursValid || !kmValid) {
+        totalAnim += 1; totalShown = 0;
+        $('#cTotal').textContent = '—';
+        $('#cLines').textContent = !hoursValid ? 'Вкажіть ціле число годин від 1 до 5000.' : 'Вкажіть цілу відстань від 0 до 3000 км.';
+        $('#cOut').dataset.total = ''; $('#cOut').dataset.estimate = 'invalid';
+        $('#cOrder').disabled = true;
+        return;
+      }
       const estimate = quoteModel.quote(u, D.trailers, hours, kmv);
       if (!estimate) {
         // Невалідна модель скасовує tween і стирає ПОПЕРЕДНЮ суму.
@@ -379,7 +396,7 @@
         return;
       }
       $('#cOrder').disabled = false;
-      const crane = u.cat === 'crane', needsTrailer = !crane && kmv > 0;
+      const needsTrailer = !crane && kmv > 0;
       const tr = estimate.trailer, transportKnown = estimate.status === 'complete';
       const rent = estimate.rental, deliv = estimate.delivery, total = estimate.displayed;
       tweenTotal($('#cTotal'), total);
@@ -393,12 +410,13 @@
       $('#cLines').innerHTML = `<div><span>Оренда: ${hours} год × ${fmt(u.price)} грн</span><b>${fmt(rent)} грн</b></div>` +
         deliveryLine +
         `<div><span>${transportKnown ? 'Разом, орієнтовно' : 'Оренда без подачі'}</span><b>${fmt(total)} грн</b></div>`;
-      km.disabled = kmN.disabled = crane;
       $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км${transportKnown ? '' : ' (ціну уточнити)'}`}`;
+      $('#cOrder').dataset.calcHours = String(hours);
+      $('#cOrder').dataset.calcKm = crane ? '' : String(kmv);
       $('#cOut').dataset.total = transportKnown ? String(total) : '';
       $('#cOut').dataset.estimate = transportKnown ? 'with-delivery' : 'rent-only';
     }
-    fill(hr); fill(km); calc();
+    fill(hr); fill(km); calc(); $('#calcUnavailable').hidden = true;
     window.PBTcalc = (id, hours, kmv) => {
       const u = priced.find(x => x.id === id);
       return quoteModel.legacyTotal(u, D.trailers, hours, kmv);
@@ -479,7 +497,8 @@
   }
   function loadBusiness() {
     const fb = () => applyBusiness(D.business || {});
-    if (window.PBT_BUNDLE || location.protocol === 'file:') return fb();
+    fb();
+    if (window.PBT_BUNDLE || location.protocol === 'file:') return;
     fetch('/api/config', { cache: 'no-store' }).then(r => r.ok ? r.json() : Promise.reject()).then(j => applyBusiness(Object.keys(j).length ? j : D.business)).catch(fb);
   }
 
@@ -518,6 +537,52 @@
   const MSG = { subject: { rent: 'Вкажіть, яка техніка потрібна.', material: 'Вкажіть матеріал і фракцію.', transport: 'Вкажіть, що й куди перевезти.' },
     hours: 'Ціле число від 1 до 5000.', km: 'Ціле число від 0 до 3000.', date: 'Дата — не раніше за сьогоднішню.', contact: 'Перевірте контакт: 0XX XXX XX XX або @нік у Telegram.', comment: 'Опишіть завдання кількома словами.' };
   const form = $('#lead'), done = $('#done'), fallback = $('#fallback'), msg = $('#formMsg');
+  const method = $('#method'), contact = $('#contact');
+  // Значення калькулятора належать лише вибраній зміні. Ручний ввід має пріоритет.
+  const calcValues = new Map();
+  const hoursByType = new Map();
+  const subjectsByType = new Map();
+  let currentRequestType = form.querySelector('input[name="type"]:checked')?.value || 'rent';
+  ['subject', 'hours', 'km'].forEach(name => $(`#${name}`).addEventListener('input', () => calcValues.delete(name)));
+  function releaseCalcValues() {
+    calcValues.forEach((saved, name) => {
+      const field = $(`#${name}`);
+      if (field.value === saved.automatic) field.value = saved.previous;
+    });
+    calcValues.clear();
+  }
+  function fillCalcValue(name, value) {
+    const field = $(`#${name}`), saved = calcValues.get(name);
+    const previous = saved && field.value === saved.automatic ? saved.previous : field.value;
+    field.value = value;
+    calcValues.set(name, { previous, automatic: value });
+  }
+  function switchRequestType(next) {
+    if (!next || next === currentRequestType) return;
+    releaseCalcValues();
+    hoursByType.set(currentRequestType, $('#hours').value);
+    subjectsByType.set(currentRequestType, $('#subject').value);
+    $('#hours').value = hoursByType.get(next) || '';
+    $('#subject').value = subjectsByType.get(next) || '';
+    currentRequestType = next;
+    setErr('hours', ''); setErr('subject', '');
+  }
+  function syncContactMode() {
+    const telegram = method.value === 'telegram';
+    contact.inputMode = telegram ? 'text' : 'tel';
+    contact.autocomplete = telegram ? 'off' : 'tel';
+    contact.placeholder = telegram ? '@username або номер телефону' : '097 000 00 00';
+  }
+  method.addEventListener('change', syncContactMode);
+  form.addEventListener('change', e => { if (e.target.name === 'type') switchRequestType(e.target.value); });
+  form.addEventListener('reset', () => {
+    calcValues.clear(); hoursByType.clear(); subjectsByType.clear();
+    queueMicrotask(() => {
+      currentRequestType = form.querySelector('input[name="type"]:checked')?.value || 'rent';
+      syncContactMode();
+    });
+  });
+  syncContactMode();
   let idemKey = null, idemHash = '';
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''));
   function setErr(name, text) {
@@ -586,6 +651,8 @@
       fallback.focus();
     } finally { clearTimeout(deadline); btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
   });
+  $('#send').disabled = false;
+  $('#formUnavailable').hidden = true;
   $('#fbCopy').addEventListener('click', async () => {
     const t = $('#fbText').textContent; const b = $('#fbCopy');
     try { await navigator.clipboard.writeText(t); b.textContent = 'Скопійовано'; } catch (_) { const r = document.createRange(); r.selectNodeContents($('#fbText')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Виділено — скопіюй'; }
@@ -605,8 +672,19 @@
     // Після підтвердженого успіху CTA означає новий намір; після обриву — безпечний повтор.
     if (done.classList.contains('is-on')) { idemHash = ''; idemKey = null; }
     done.classList.remove('is-on'); fallback.classList.remove('is-on'); form.hidden = false;
+    if (b.id !== 'cOrder') releaseCalcValues();
+    switchRequestType(t);
     const radio = form.querySelector(`input[name="type"][value="${t}"]`); if (radio) radio.checked = true;
-    if (s) $('#subject').value = s;
+    if (s) {
+      if (b.id === 'cOrder') fillCalcValue('subject', s);
+      else $('#subject').value = s;
+      setErr('subject', '');
+    }
+    if (b.id === 'cOrder') {
+      fillCalcValue('hours', b.dataset.calcHours || '');
+      fillCalcValue('km', b.dataset.calcKm || '');
+      setErr('hours', ''); setErr('km', '');
+    }
     if (b.tagName === 'A' && b.getAttribute('href') === '#zapyt' && location.hash !== '#zapyt' && /^(https?:|file:)$/.test(location.protocol)) {
       history.pushState(history.state, '', '#zapyt');
     }
@@ -742,6 +820,7 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) $$('video').forEach(v => v.pause()); else syncMotion(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
+    doc.classList.add('reveal-ready');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
