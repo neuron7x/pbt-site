@@ -223,6 +223,49 @@ def _load(root, rel):
     return json.loads((root / rel).read_text(encoding='utf-8'))
 
 
+
+def check_committed_controls(root, target_sha):
+    """Reject working-tree changes to inputs that decide release eligibility.
+
+    CI artifacts live outside this tree, but release-control policy, case topology,
+    the signer trust root, and external receipts must match the evaluated commit.
+    GitHub/CI provenance must still be verified separately.
+    """
+    require(isinstance(target_sha, str) and re.fullmatch(r'[0-9a-f]{40}', target_sha),
+            'invalid_acceptance_target_sha')
+    controls = (
+        'assurance/ledger.json',
+        'assurance/case.json',
+        'config/external-evidence-policy.json',
+        'config/owner-allowed-signers',
+    )
+    for rel in controls:
+        try:
+            committed = _git(root, 'show', f'{target_sha}:{rel}')
+            actual = (root / rel).read_bytes()
+        except (OSError, subprocess.SubprocessError):
+            raise Rejected(f'acceptance_control_missing_from_target_{rel}') from None
+        require(actual == committed, f'acceptance_control_dirty_{rel}')
+
+    external_dir = 'assurance/evidence/external'
+    try:
+        committed_files = set(_git(root, 'ls-tree', '-r', '--name-only', target_sha,
+                                   '--', external_dir).decode().splitlines())
+    except (OSError, subprocess.SubprocessError):
+        raise Rejected('external_receipt_tree_unavailable') from None
+    directory = root / external_dir
+    actual_files = ({p.relative_to(root).as_posix() for p in directory.rglob('*') if p.is_file()}
+                    if directory.is_dir() else set())
+    require(actual_files == committed_files, 'external_receipt_set_not_at_target')
+    for rel in sorted(committed_files):
+        try:
+            committed = _git(root, 'show', f'{target_sha}:{rel}')
+            actual = (root / rel).read_bytes()
+        except (OSError, subprocess.SubprocessError):
+            raise Rejected(f'external_receipt_unavailable_{rel}') from None
+        require(actual == committed, f'external_receipt_dirty_{rel}')
+
+
 def schema_check(root):
     check_normative(root)
     tasks = _load(root, 'assurance/source/tasks.json')
@@ -233,6 +276,7 @@ def schema_check(root):
 
 
 def accept_engineering(root, target_sha, evidence_dir):
+    check_committed_controls(root, target_sha)
     entries = schema_check(root)
     ledger_file = _load(root, 'assurance/ledger.json')
     case_file = _load(root, 'assurance/case.json')
