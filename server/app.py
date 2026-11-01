@@ -285,7 +285,7 @@ def rate_commit(ip, *buckets):
 
 
 # ─── валідація ───────────────────────────────────────────
-CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f​-‏‪-‮⁦-⁩]')
+CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069]')  # Escapes: bidi controls must not sit literally in source.
 
 
 def clean(v, maxlen, multiline=False):
