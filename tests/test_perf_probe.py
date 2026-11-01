@@ -71,7 +71,7 @@ def test_source_identity_records_checked_out_head_not_event_merge_sha(monkeypatc
     monkeypatch.setenv("PBT_HEAD_SHA", actual)
     monkeypatch.setenv("GITHUB_SHA", event)
     monkeypatch.setattr(perf_probe.subprocess, "run", lambda *a, **kw:
-                        CompletedProcess(a, 0, stdout=actual + "\\n"))
+                        CompletedProcess(a, 0, stdout=actual + "\n"))
     identity = perf_probe.source_identity()
     assert identity == {"execution_sha": actual,
                         "branch_head_sha": actual, "event_sha": event}
@@ -82,10 +82,10 @@ def test_source_identity_rejects_checkout_head_mismatch_and_fake_sha(monkeypatch
     from tools import perf_probe
     monkeypatch.setenv("PBT_HEAD_SHA", "a" * 40)
     monkeypatch.setattr(perf_probe.subprocess, "run", lambda *a, **kw:
-                        CompletedProcess(a, 0, stdout="b" * 40 + "\\n"))
+                        CompletedProcess(a, 0, stdout="b" * 40 + "\n"))
     with pytest.raises(RuntimeError, match="differs from PBT_HEAD_SHA"):
         perf_probe.source_identity()
     monkeypatch.setattr(perf_probe.subprocess, "run", lambda *a, **kw:
-                        CompletedProcess(a, 0, stdout="not-a-sha\\n"))
+                        CompletedProcess(a, 0, stdout="not-a-sha\n"))
     with pytest.raises(RuntimeError, match="invalid checked-out commit SHA"):
         perf_probe.source_identity()
