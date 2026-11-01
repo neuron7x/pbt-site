@@ -213,3 +213,18 @@ def test_mobile_request_cta_brings_focused_subject_below_navigation(page_factory
     expect(page.locator("#name")).to_have_value("Перевірка інтерфейсу")
     if anchor:
         assert page.url.endswith("#zapyt")
+
+
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
+def test_explicit_static_quality_stops_motion_without_system_event(page_factory, theme):
+    page = page_factory()
+    page.locator(f'[data-theme-choice="{theme}"]').click()
+    page.wait_for_function("!document.querySelector('#heroVideo').paused")
+    page.evaluate("document.documentElement.dataset.quality = 'static'")
+    expect(page.locator('html')).to_have_attribute('data-motion', 'paused')
+    expect(page.locator('#motionToggle')).to_be_disabled()
+    assert page.evaluate("[...document.querySelectorAll('video')].every(video => video.paused)")
+    assert page.evaluate("document.getAnimations().every(a => a.playState != 'running')")
+    page.evaluate("document.documentElement.dataset.quality = 'full'")
+    expect(page.locator('html')).to_have_attribute('data-motion', 'running')
+    page.wait_for_function("!document.querySelector('#heroVideo').paused")

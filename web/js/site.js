@@ -817,6 +817,8 @@
     requestAnimationFrame(() => hero.classList.add('is-lit'));
     sparkWake();
     syncMotion();
+    // Якість може змінитися незалежно від системного налаштування руху.
+    new MutationObserver(syncMotion).observe(doc, {attributes: true, attributeFilter: ['data-quality']});
     document.addEventListener('visibilitychange', () => { if (document.hidden) $$('video').forEach(v => v.pause()); else syncMotion(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
