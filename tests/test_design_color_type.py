@@ -168,3 +168,28 @@ def test_text_spacing_in_moving_hero_preserves_access(page_factory, theme, width
     assert not problem, problem
     page.locator('.hero__stats').scroll_into_view_if_needed()
     assert page.locator('.hero__stats').evaluate('el => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }')
+
+
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
+@pytest.mark.parametrize('width,height', [(568, 320), (667, 375)])
+@pytest.mark.parametrize('spacing', [False, True])
+def test_landscape_motion_control_text_fits_without_covering_hero(page_factory, theme, width, height, spacing):
+    page = page_factory(w=width, h=height, mobile=True, reduced=False, bypass_csp=True)
+    page.locator(f'[data-theme-choice="{theme}"]').click()
+    if spacing:
+        page.add_style_tag(content='* { line-height: 1.5 !important; letter-spacing: .12em !important; word-spacing: .16em !important; } p { margin-bottom: 2em !important; }')
+    page.wait_for_timeout(1300)
+    problems = page.locator('#motionToggle').evaluate('''button => {
+      const problems = [], rect = button.getBoundingClientRect();
+      const range = document.createRange(); range.selectNodeContents(button);
+      for (const line of range.getClientRects()) {
+        if (line.left < rect.left - .1 || line.right > rect.right + .1 ||
+            line.top < rect.top - .1 || line.bottom > rect.bottom + .1)
+          problems.push('motion control text extends outside button');
+      }
+      const stats = document.querySelector('.hero__stats').getBoundingClientRect();
+      if (rect.left < stats.right && stats.left < rect.right && rect.top < stats.bottom && stats.top < rect.bottom)
+        problems.push('motion control covers statistics');
+      return problems;
+    }''')
+    assert not problems, problems

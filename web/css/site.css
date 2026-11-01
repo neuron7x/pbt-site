@@ -876,7 +876,7 @@ main section[id]{scroll-margin-top:88px}
   .hero__water{display:none}
 }
 @media (max-height:420px) and (orientation:landscape){
-  .motion-toggle{max-width:100px;white-space:normal;line-height:1.2}
+  .motion-toggle{max-width:100px;padding-inline:9px;white-space:normal;line-height:1.2}
 }
 
 @media (max-width:440px) and (max-height:700px) and (orientation:portrait){
