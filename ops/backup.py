@@ -42,6 +42,8 @@ def main():
     try:
         OUT.mkdir(parents=True, exist_ok=True)
         os.chmod(OUT, 0o700)
+        for stale in OUT.glob('leads-*.tmp'):  # An interrupted run must not retain customer data forever.
+            stale.unlink()
         stamp = time.strftime('%Y%m%d-%H%M%S')
         # A create-only publication also protects against clock/ID collisions.
         dst = OUT / f'leads-{stamp}-{time.time_ns() % 1_000_000_000:09d}.db'

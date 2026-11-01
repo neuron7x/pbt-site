@@ -160,3 +160,28 @@ def test_restore_negative_watermark_does_not_mutate_any_database(tmp_path):
     ], capture_output=True, text=True, timeout=15)
     assert result.returncode == 1 and 'negative' in result.stderr
     assert dest.read_bytes() == before
+
+
+def test_interrupted_backup_never_publishes_and_its_residue_is_removed(tmp_path):
+    """SIGKILL at each namespace step: published snapshots stay whole, residue does not accumulate."""
+    db, out = tmp_path / 'leads.db', tmp_path / 'backups'
+    _seed(db)
+    env = {**os.environ, 'LEAD_DB': str(db), 'BACKUP_DIR': str(out)}
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+    driver = ("import os,runpy,signal,sys\nn=int(sys.argv[1])\nc=[0]\n"
+              "def wrap(name):\n real=getattr(os,name)\n def f(*a,**k):\n"
+              "  i=c[0];c[0]+=1\n  if i==n: os.kill(os.getpid(),signal.SIGKILL)\n  return real(*a,**k)\n"
+              " setattr(os,name,f)\n"
+              "for name in ('fsync','link','unlink'): wrap(name)\n"
+              f"sys.argv=['backup.py']\nrunpy.run_path({str(ROOT / 'ops/backup.py')!r},run_name='__main__')\n")
+    killed = 0
+    for n in range(4):
+        r = subprocess.run([sys.executable, '-c', driver, str(n)], env=env, timeout=15, capture_output=True)
+        killed += r.returncode == -9
+        for f in out.glob('leads-*.db'):
+            with sqlite3.connect(f) as conn:
+                assert conn.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+                assert conn.execute('SELECT count(*) FROM leads').fetchone() == (1,)
+    assert killed >= 3, 'cutpoints were not exercised'
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+    assert not list(out.glob('*.tmp'))

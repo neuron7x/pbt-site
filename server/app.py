@@ -85,29 +85,55 @@ _db_lock = threading.Lock()
 
 def db(timeout=10):
     c = sqlite3.connect(DB, timeout=timeout)
-    c.execute('''CREATE TABLE IF NOT EXISTS leads(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT NOT NULL, type TEXT NOT NULL,
-        payload TEXT NOT NULL, ip_hash TEXT, ua TEXT, delivered TEXT)''')
+    try:
+        # Both are per-connection, no-ops inside a transaction, and must precede any statement.
+        c.execute('PRAGMA foreign_keys=ON')
+        c.execute('PRAGMA synchronous=FULL')  # HTTP 201 relies on commit durability.
+        if c.execute('PRAGMA foreign_keys').fetchone()[0] != 1:
+            raise sqlite3.DatabaseError('foreign_keys enforcement unavailable')
+        c.execute('''CREATE TABLE IF NOT EXISTS leads(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT NOT NULL, type TEXT NOT NULL,
+            payload TEXT NOT NULL, ip_hash TEXT, ua TEXT, delivered TEXT)''')
+    except BaseException:
+        c.close()
+        raise
     return c
 
 
 def migrate(timeout=10):
     """Адитивна міграція (старі рядки й старі бази лишаються валідними): ключ ідемпотентності + відбиток корисного навантаження
-    на заявці (унікальність — рівнем БД, частковий індекс: у старих рядків NULL) і outbox доставки — рядок на (заявка, канал)."""
+    на заявці (унікальність — рівнем БД, частковий індекс: у старих рядків NULL) і outbox доставки — рядок на (заявка, канал).
+
+    Atomic: SQLite DDL is transactional, so a failure leaves the previous schema intact.
+    Legacy foreign-key violations are reported, never repaired or deleted: enforcement applies
+    to new writes, and reconciling an old anomaly is an operator decision (ops/outbox_health.py).
+    """
     c = db(timeout)
-    cols = {r[1] for r in c.execute('PRAGMA table_info(leads)')}
-    for col in ('idem_key', 'payload_hash'):
-        if col not in cols:
-            c.execute(f'ALTER TABLE leads ADD COLUMN {col} TEXT')
-    c.execute('CREATE UNIQUE INDEX IF NOT EXISTS leads_idem_key ON leads(idem_key) WHERE idem_key IS NOT NULL')
-    c.execute('''CREATE TABLE IF NOT EXISTS outbox(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER NOT NULL REFERENCES leads(id), channel TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0,
-        last_at REAL, last_error TEXT, delivered_at TEXT, UNIQUE(lead_id, channel))''')
-    c.execute("CREATE INDEX IF NOT EXISTS outbox_due ON outbox(status, next_at)")
-    c.execute("""CREATE TABLE IF NOT EXISTS runtime_heartbeat(
-        name TEXT PRIMARY KEY, observed_at REAL NOT NULL)""")
-    c.commit(); c.close()
+    try:
+        c.execute('BEGIN IMMEDIATE')
+        cols = {r[1] for r in c.execute('PRAGMA table_info(leads)')}
+        for col in ('idem_key', 'payload_hash'):
+            if col not in cols:
+                c.execute(f'ALTER TABLE leads ADD COLUMN {col} TEXT')
+        c.execute('CREATE UNIQUE INDEX IF NOT EXISTS leads_idem_key ON leads(idem_key) WHERE idem_key IS NOT NULL')
+        c.execute('''CREATE TABLE IF NOT EXISTS outbox(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER NOT NULL REFERENCES leads(id), channel TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0,
+            last_at REAL, last_error TEXT, delivered_at TEXT, UNIQUE(lead_id, channel))''')
+        c.execute("CREATE INDEX IF NOT EXISTS outbox_due ON outbox(status, next_at)")
+        c.execute("""CREATE TABLE IF NOT EXISTS runtime_heartbeat(
+            name TEXT PRIMARY KEY, observed_at REAL NOT NULL)""")
+        c.commit()
+        violations = {}
+        for table, *_ in c.execute('PRAGMA foreign_key_check'):
+            violations[table] = violations.get(table, 0) + 1
+        for table, count in sorted(violations.items()):
+            log.error('legacy foreign key violations=%s table=%s', count, table)
+    except BaseException:
+        c.rollback()
+        raise
+    finally:
+        c.close()
 
 
 _schema_ok = threading.Event()   # OPS-3: міграція пройшла; до того /api/lead → 503, health → db false
@@ -118,7 +144,7 @@ def _try_migrate(timeout):
         with _db_lock:
             migrate(timeout)
         _schema_ok.set(); return True
-    except sqlite3.OperationalError as e:
+    except sqlite3.Error as e:  # Includes a corrupt file: static site stays up, /api/lead answers 503.
         log.error('migrate failed err=%s %s', type(e).__name__, e); return False
 
 
