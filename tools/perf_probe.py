@@ -11,9 +11,35 @@ import argparse
 import json
 import math
 import os
+import subprocess
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def source_identity() -> dict:
+    """The tested checkout, not the GitHub PR's synthetic event merge ref."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "HEAD"],
+            cwd=ROOT, check=True, capture_output=True, text=True, timeout=5,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("unable to verify checked-out git revision") from exc
+    actual = result.stdout.strip()
+    if len(actual) != 40 or any(char not in "0123456789abcdef" for char in actual):
+        raise RuntimeError("invalid checked-out commit SHA")
+    expected = os.getenv("PBT_HEAD_SHA")
+    if expected is not None and actual != expected:
+        raise RuntimeError("checked-out revision differs from PBT_HEAD_SHA")
+    return {
+        "execution_sha": actual,
+        "branch_head_sha": expected,
+        "event_sha": os.getenv("GITHUB_SHA"),
+    }
+
 
 THEMES = ("sky", "precision")
 LCP_LIMIT_MS = 2500.0
@@ -148,6 +174,7 @@ def sample(browser, url: str, theme: str) -> dict:
 def run(url: str, repetitions: int) -> dict:
     if repetitions < 3:
         raise ValueError("at least three runs per theme required")
+    identity = source_identity()
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
@@ -170,8 +197,7 @@ def run(url: str, repetitions: int) -> dict:
             "raw": raw,
         }
     return {
-        "schema_version": 2, "execution_sha": os.getenv("GITHUB_SHA"),
-        "branch_head_sha": os.getenv("PBT_HEAD_SHA"),
+        "schema_version": 2, **identity,
         "kind": "synthetic_chromium_lab_not_field_data",
         "profile": {"width": 390, "height": 844, "dpr": 2,
                     "cpu_throttle": 4, "logical_cores_override": 8,
@@ -200,8 +226,9 @@ def main() -> int:
             "schema_version": 2,
             "kind": "synthetic_chromium_lab_not_field_data",
             "release_status": "MEASUREMENT_FAILED",
-            "execution_sha": os.getenv("GITHUB_SHA"),
+            "execution_sha": None,
             "branch_head_sha": os.getenv("PBT_HEAD_SHA"),
+            "event_sha": os.getenv("GITHUB_SHA"),
             "error_class": type(exc).__name__, "error": str(exc),
             "field_vitals_verified": False, "inp_ms": None,
         }
