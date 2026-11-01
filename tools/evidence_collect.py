@@ -27,6 +27,7 @@ ARTIFACT_PREFIX = {
     'mobile': ('full', 'pbt-mobile-lab-'), 'http': ('transport', 'pbt-http-'),
     'visual': ('visual', 'pbt-visual-proof-'), 'osv': ('security', 'pbt-security-'),
     'static': ('security', 'pbt-static-'), 'soak': ('soak', 'pbt-soak-'),
+    'mutation': ('full', 'pbt-mutation-'), 'sast': ('security', 'pbt-sast-'),
 }
 SHA = re.compile(r'[0-9a-f]{40}\Z')
 

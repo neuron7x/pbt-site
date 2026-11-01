@@ -51,7 +51,7 @@ def _collect(provider, tmp, kind='pull_request', pr=14):
 
 def test_positive_control_writes_provider_bound_manifest(tmp_path):
     m = _collect(Provider(), tmp_path)
-    assert m['schema'] == 'pbt-exact-head-evidence-matrix-v2' and len(m['artifacts']) == 8
+    assert m['schema'] == 'pbt-exact-head-evidence-matrix-v2' and len(m['artifacts']) == 10
     assert (tmp_path / 'manifest.json').exists()
     for role, item in m['artifacts'].items():
         assert hashlib.sha256((tmp_path / f'{role}.zip').read_bytes()).hexdigest() == item['sha256']

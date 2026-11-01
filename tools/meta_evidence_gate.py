@@ -25,6 +25,7 @@ ARTIFACT_TO_WORKFLOW = {
     'release': 'full', 'baseline': 'full', 'mobile': 'full',
     'http': 'transport', 'visual': 'visual',
     'osv': 'security', 'static': 'security', 'soak': 'soak',
+    'mutation': 'full', 'sast': 'security',
 }
 ROOT = Path(__file__).resolve().parent.parent
 SHA = re.compile(r'[0-9a-f]{40}\Z')
@@ -81,7 +82,12 @@ def digest_match(raw, sha):
 
 def junit(z, path, minimum, required=()):
     raw = member(z, path)
-    require(len(raw) < 8 * 1024 * 1024 and b'<!DOCTYPE' not in raw, 'unsafe_junit')
+    # DTDs are refused before parsing; a UTF-16 document could hide the marker from a byte search.
+    try:
+        text = raw.decode('utf-8')
+    except UnicodeDecodeError:
+        raise Rejected('unsafe_junit') from None
+    require(len(raw) < 8 * 1024 * 1024 and '<!DOCTYPE' not in text and '<!ENTITY' not in text, 'unsafe_junit')
     rt = ET.fromstring(raw)
     suites = rt.findall('.//testsuite') if rt.tag == 'testsuites' else [rt]
     cases = rt.findall('.//testcase')
@@ -201,6 +207,34 @@ def verify_mobile(mobile, expected_head, budgets):
     return result
 
 
+def verify_mutation(ledger, expected_head):
+    """Verdicts are recounted row by row: the ledger's own status field is not read."""
+    require(ledger['head_sha']==expected_head, 'mutation_source_revision')
+    results=ledger['results']
+    require(isinstance(results,list) and len(results)>=40, 'mutation_catalog_diluted')
+    ids=[r['id'] for r in results]
+    require(len(ids)==len(set(ids)), 'mutation_duplicate_id')
+    counts={}
+    for row in results:
+        counts[row['verdict']]=counts.get(row['verdict'],0)+1
+        require(row['verdict'] in ('KILLED','UNTESTABLE'), 'mutant_not_killed_'+str(row['id']))
+    require(counts.get('UNTESTABLE',0)<=3, 'too_many_untestable_mutants')
+    return counts
+
+
+def verify_sast(z, expected_head):
+    provenance=json_bytes(member(z,'provenance.json'))
+    require(provenance['head_sha']==expected_head and provenance['signed'] is False
+            and provenance['slsa_level']=='none_claimed', 'provenance_receipt')
+    report=json_bytes(member(z,'sast.json'))
+    require(report['status']=='PASS' and report['open']==[] and report['stale_waivers']==[]
+            and report['files_scanned']>=20 and report['loc']>0, 'sast_receipt')
+    bom=json_bytes(member(z,'sbom.json'))
+    require(bom['bomFormat']=='CycloneDX' and bom['metadata']['component']['version']==expected_head
+            and all(c['hashes'] for c in bom['components']) and len(bom['components'])>=5, 'sbom_receipt')
+    return {'files_scanned':report['files_scanned'],'components':len(bom['components'])}
+
+
 def policy_digest(*documents):
     return hashlib.sha256(json.dumps(documents,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
@@ -267,6 +301,8 @@ def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base, ev
         require(hashlib.sha256(osv['scanner_output'].encode()).hexdigest()==osv['scanner_output_sha256'], 'osv_receipt_integrity')
         mobile=json_bytes(member(archives['mobile'],'dual-theme-mobile.json'))
         mobile_result=verify_mobile(mobile,expected_head,evidence_policy['mobile'])
+        mutation=verify_mutation(json_bytes(member(archives['mutation'],'mutation-ledger.json')),expected_head)
+        sast=verify_sast(archives['sast'],expected_head)
         manifest=json_bytes(member(archives['visual'],'shots/manifest.json'))
         media_raw=member(archives['visual'],'media-budget.json')
         media=json_bytes(media_raw)
@@ -291,7 +327,7 @@ def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base, ev
                 'policy_digest':policy_digest(policy,evidence_policy,required_tests),
                 'workflow_count':len(workflows),
                 'artifact_count':len(roles),'junit_tests':test_counts,'verified_png':32,
-                'verified_png_chunks':shot_count,'soak':soak,'mobile':mobile_result,
+                'verified_png_chunks':shot_count,'soak':soak,'mobile':mobile_result,'mutation':mutation,'sast':sast,
                 'claim_boundary':'offline cross-consistency of supplied GitHub metadata and bytes, not authenticated GitHub API, production SLO, field INP or merge authorization'}
     finally:
         for z in archives.values():

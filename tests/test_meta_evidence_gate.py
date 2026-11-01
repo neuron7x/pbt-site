@@ -109,7 +109,13 @@ def state(tmp_path):
          'service':'OSV','scanner_output':'','scanner_output_sha256':sha(b'')}
     static={'head_sha':HEAD,'status':'PASS','findings':[],'files_scanned':6,
             'scanned_roots':['server','ops']}
+    mutation={'head_sha':HEAD,'status':'PASS','results':[{'id':f'M{i}','verdict':'KILLED'} for i in range(45)]+[{'id':'U','verdict':'UNTESTABLE'}]}
+    sast={'sast.json':json.dumps({'status':'PASS','open':[],'stale_waivers':[],'files_scanned':30,'loc':100}).encode(),
+          'provenance.json':json.dumps({'head_sha':HEAD,'signed':False,'slsa_level':'none_claimed'}).encode(),
+          'sbom.json':json.dumps({'bomFormat':'CycloneDX','metadata':{'component':{'version':HEAD}},
+                                  'components':[{'hashes':[1]}]*6}).encode()}
     contents={
+        'mutation':{'mutation-ledger.json':json.dumps(mutation).encode()},'sast':sast,
         'release':{'artifacts/full-junit.xml':junit(390,'release'),
                    'artifacts/offline-bundles.sha256':sha_lines,**raw_html},
         'baseline':{'base-junit.xml':junit(191),'base-commit.txt':(BASE+'\n').encode()},
@@ -141,6 +147,7 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     assert result['policy_digest']==gate.policy_digest(policy,EVIDENCE_POLICY,REQUIRED_TESTS)
     assert result['target']['pr_number']==14
     assert result['verified_png']==32 and result['soak']['accepted']==3000
+    assert result['mutation']=={'KILLED':45,'UNTESTABLE':1} and result['sast']['components']==6
 
 
 @pytest.mark.parametrize('mutant',[
@@ -151,7 +158,9 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     'historic_pr8_v1_schema','unsupported_event','pr_number_on_main_target','required_test_removed',
     'required_test_skipped','mobile_lcp_over_budget_coherent_summary','mobile_cls_over_budget_coherent_summary',
     'mobile_forged_budget_flag','mobile_late_switch_shift','mobile_wrong_execution_sha','mobile_event_sha_as_execution',
-    'wrong_source_revision_all_artifacts',
+    'wrong_source_revision_all_artifacts','junit_utf16_doctype','soak_coherent_over_latency_budget',
+    'mutant_survived_but_status_pass','mutation_catalog_diluted','mutation_other_revision','sast_open_finding','sast_scanned_nothing',
+    'sbom_other_revision','provenance_other_revision',
 ])
 def test_forged_success_is_rejected(state,mutant):
     meta,policy,directory,contents=state
@@ -187,6 +196,28 @@ def test_forged_success_is_rejected(state,mutant):
     elif mutant=='osv_outcome':
         d=json.loads(contents['osv']['osv-receipt.json']);d['outcome']='failure'
         contents['osv']['osv-receipt.json']=json.dumps(d).encode();rewrite('osv')
+    elif mutant=='soak_coherent_over_latency_budget':
+        d=json.loads(contents['soak']['soak-evidence.json']);v=float(policy['budgets']['maximum_p99_lead_ms']+1)
+        d['api_latency_samples_ms']=[v]*d['accepted_leads']
+        d.update(api_p50_ms=v,api_p95_ms=v,api_p99_ms=v,api_max_ms=v)
+        contents['soak']['soak-evidence.json']=json.dumps(d).encode();rewrite('soak')
+    elif mutant.startswith('mutant_survived') or mutant.startswith('mutation_'):
+        d=json.loads(contents['mutation']['mutation-ledger.json'])
+        if mutant=='mutant_survived_but_status_pass':d['results'][0]['verdict']='SURVIVED'
+        if mutant=='mutation_catalog_diluted':d['results']=d['results'][:5]
+        if mutant=='mutation_other_revision':d['head_sha']='c'*40
+        contents['mutation']['mutation-ledger.json']=json.dumps(d).encode();rewrite('mutation')
+    elif mutant.startswith('sast_') or mutant.startswith('sbom_') or mutant.startswith('provenance_'):
+        name={'sast':'sast.json','sbom':'sbom.json','prov':'provenance.json'}[mutant[:4].rstrip('_')]
+        d=json.loads(contents['sast'][name])
+        if mutant=='sast_open_finding':d['open']=[{'id':'x'}]
+        if mutant=='sast_scanned_nothing':d['files_scanned']=0
+        if mutant=='sbom_other_revision':d['metadata']['component']['version']='c'*40
+        if mutant=='provenance_other_revision':d['head_sha']='c'*40
+        contents['sast'][name]=json.dumps(d).encode();rewrite('sast')
+    elif mutant=='junit_utf16_doctype':
+        raw=contents['release']['artifacts/full-junit.xml'].decode()
+        contents['release']['artifacts/full-junit.xml']=('<!DOCTYPE x>'+raw).encode('utf-16');rewrite('release')
     elif mutant=='historic_pr8_v1_schema':
         meta['schema']='pbt-exact-head-evidence-matrix-v1';meta['pr_number']=8;meta['draft']=True
     elif mutant=='unsupported_event':meta['target']['kind']='schedule'

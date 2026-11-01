@@ -42,3 +42,7 @@ tools/      media.py · shots.py · inline.py
 ops/        systemd/ (pbt-site, health, backup) · install.sh · health.py · backup.py · restore.py
 docs/       DESIGN.md · PROVENANCE.md · RELEASE_STATUS.md
 ```
+
+## Assurance
+
+What the system guarantees and what it does not: `docs/ASSURANCE.md`. Production state and missing external facts: `docs/PRODUCTION_HOLD.md`.

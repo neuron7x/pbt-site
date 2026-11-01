@@ -1,0 +1,293 @@
+{
+ "schema": "pbt-assurance-case-v1",
+ "top_claim": "C0: The integrated PBT website satisfies its defined engineering acceptance contract within the declared operating assumptions.",
+ "assumptions": [
+  "single host, single server process per database (enforced)",
+  "POSIX flock and rename semantics on a local filesystem",
+  "SIGKILL model of crash: power loss ordering is not tested",
+  "TLS proxy on loopback appends X-Forwarded-For",
+  "receiver idempotent on lead id, per CRM contract, not verified here"
+ ],
+ "claims": {
+  "C1": {
+   "statement": "Accepted-lead persistence is transactionally correct",
+   "leaves": [
+    {
+     "id": "C1.fk",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "DB-01",
+      "DB-02"
+     ]
+    },
+    {
+     "id": "C1.atomic",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "DB-04"
+     ]
+    }
+   ]
+  },
+  "C2": {
+   "statement": "Idempotency is preserved across defined failure scenarios",
+   "leaves": [
+    {
+     "id": "C2.linearizable",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "DB-03"
+     ]
+    },
+    {
+     "id": "C2.reload",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "DB-05"
+     ]
+    },
+    {
+     "id": "C2.stateful",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "ADV-03"
+     ]
+    }
+   ]
+  },
+  "C3": {
+   "statement": "Outbound delivery is bounded and observable",
+   "leaves": [
+    {
+     "id": "C3.readiness",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "OPS-01",
+      "OPS-03"
+     ]
+    }
+   ]
+  },
+  "C4": {
+   "statement": "Security controls enforce the specified trust boundaries",
+   "leaves": [
+    {
+     "id": "C4.http",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "NET-01",
+      "NET-03",
+      "NET-05"
+     ]
+    },
+    {
+     "id": "C4.dom",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "NET-06",
+      "ADV-01"
+     ]
+    },
+    {
+     "id": "C4.scan",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "NET-07"
+     ]
+    }
+   ]
+  },
+  "C5": {
+   "statement": "Backup and restore satisfy verified local recovery guarantees",
+   "leaves": [
+    {
+     "id": "C5.restore",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "DB-06"
+     ]
+    }
+   ]
+  },
+  "C6": {
+   "statement": "Browser interfaces satisfy the accepted automated contracts",
+   "leaves": [
+    {
+     "id": "C6.web",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "WEB-04"
+     ]
+    }
+   ]
+  },
+  "C7": {
+   "statement": "Resource and performance evidence satisfy predeclared limits",
+   "leaves": [
+    {
+     "id": "C7.lab",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "WEB-02",
+      "WEB-05",
+      "EVD-04"
+     ]
+    },
+    {
+     "id": "C7.soak",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "ADV-04"
+     ]
+    }
+   ]
+  },
+  "C8": {
+   "statement": "CI and evidence pipeline detect relevant falsification",
+   "leaves": [
+    {
+     "id": "C8.gate",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "EVD-02",
+      "EVD-03",
+      "EVD-05",
+      "EVD-06",
+      "EVD-08"
+     ]
+    },
+    {
+     "id": "C8.mutation",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "ADV-02"
+     ]
+    }
+   ]
+  },
+  "C9": {
+   "statement": "Integrated source, documentation, configuration and release artifacts agree",
+   "leaves": [
+    {
+     "id": "C9.provenance",
+     "status": "UNKNOWN",
+     "kind": "engineering",
+     "obligations": [
+      "EVD-01",
+      "EVD-07",
+      "ADV-05",
+      "ADV-06"
+     ]
+    }
+   ]
+  },
+  "C10": {
+   "statement": "External production and business prerequisites are independently established",
+   "leaves": [
+    {
+     "id": "C10.live_delivery",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "NET-04"
+     ]
+    },
+    {
+     "id": "C10.off_device_restore",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "DB-07",
+      "DB-08"
+     ]
+    },
+    {
+     "id": "C10.edge",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "NET-02",
+      "OPS-07",
+      "WEB-06"
+     ]
+    },
+    {
+     "id": "C10.prices_vat",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "WEB-07",
+      "OPS-06"
+     ]
+    },
+    {
+     "id": "C10.media_rights",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "WEB-08"
+     ]
+    },
+    {
+     "id": "C10.privacy",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "OPS-04",
+      "OPS-05"
+     ]
+    },
+    {
+     "id": "C10.field_inp",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "WEB-03",
+      "OPS-02"
+     ]
+    },
+    {
+     "id": "C10.accessibility_human",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "WEB-01",
+      "ADV-07"
+     ]
+    },
+    {
+     "id": "C10.sandbox",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "NET-08"
+     ]
+    },
+    {
+     "id": "C10.authorization",
+     "status": "UNKNOWN",
+     "kind": "external",
+     "obligations": [
+      "OPS-08",
+      "ADV-08"
+     ]
+    }
+   ]
+  }
+ }
+}

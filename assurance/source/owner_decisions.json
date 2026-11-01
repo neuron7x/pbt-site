@@ -1,0 +1,74 @@
+[
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B1",
+    "state": "NOT_AUTHORIZED",
+    "title": "Approved current itemized tariffs"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B2",
+    "state": "NOT_AUTHORIZED",
+    "title": "VAT and minimum shift/idle/crane policy"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B3",
+    "state": "NOT_AUTHORIZED",
+    "title": "Live lead delivery channel"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B4",
+    "state": "NOT_AUTHORIZED",
+    "title": "Domain/DNS/TLS"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B5",
+    "state": "NOT_AUTHORIZED",
+    "title": "TikTok media use"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B6",
+    "state": "NOT_AUTHORIZED",
+    "title": "Authorship and footage origin"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B7",
+    "state": "NOT_AUTHORIZED",
+    "title": "Privacy retention/lawful basis"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B8",
+    "state": "NOT_AUTHORIZED",
+    "title": "Public email/Telegram contacts"
+  },
+  {
+    "approved_by": null,
+    "effective_from": null,
+    "evidence_uri": null,
+    "id": "B9",
+    "state": "NOT_AUTHORIZED",
+    "title": "Wikimedia attribution/brand approval"
+  }
+]

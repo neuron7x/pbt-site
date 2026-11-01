@@ -1,0 +1,119 @@
+[
+  {
+    "decision_rule": "source/ref/tree/runner immutable bindings",
+    "id": "G00",
+    "primary_task": "EVD-01",
+    "required": true,
+    "slug": "immutable_source",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": "make gate and required test IDs",
+    "id": "G01",
+    "primary_task": "EVD-03",
+    "required": true,
+    "slug": "functional",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": "HTTP/HMAC/retry/timeout invariants",
+    "id": "G02",
+    "primary_task": "NET-01",
+    "required": true,
+    "slug": "transport",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": "FK, lead atomicity, idempotent commit",
+    "id": "G03",
+    "primary_task": "DB-01",
+    "required": true,
+    "slug": "data",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": ">=1800s raw synthetic resources and fault samples",
+    "id": "G04",
+    "primary_task": "ADV-04",
+    "required": true,
+    "slug": "soak",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": "scoped and broad assessed security evidence",
+    "id": "G05",
+    "primary_task": "NET-07",
+    "required": true,
+    "slug": "security",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": "dual-theme 6-viewports, 32 PNG, axe + manual",
+    "id": "G06",
+    "primary_task": "WEB-01",
+    "required": true,
+    "slug": "visual",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": "source bound independent artifact verification",
+    "id": "G07",
+    "primary_task": "EVD-08",
+    "required": true,
+    "slug": "proof_integrity",
+    "status": "NOT_EXECUTED",
+    "type": "engineering"
+  },
+  {
+    "decision_rule": "offsite provider receipt plus independent restore/RPO/RTO",
+    "id": "G08",
+    "primary_task": "DB-08",
+    "required": true,
+    "slug": "disaster_recovery",
+    "status": "BLOCKED_EXTERNAL",
+    "type": "external"
+  },
+  {
+    "decision_rule": "real authenticated receiver ACK and configuration",
+    "id": "G09",
+    "primary_task": "NET-04",
+    "required": true,
+    "slug": "external_delivery",
+    "status": "BLOCKED_EXTERNAL",
+    "type": "external"
+  },
+  {
+    "decision_rule": "approved prices/VAT, privacy, rights, contact/domain facts",
+    "id": "G10",
+    "primary_task": "OPS-08",
+    "required": true,
+    "slug": "business_privacy_rights",
+    "status": "BLOCKED_EXTERNAL",
+    "type": "external"
+  },
+  {
+    "decision_rule": "field CWV including INP, real-device accessibility",
+    "id": "G11",
+    "primary_task": "WEB-03",
+    "required": true,
+    "slug": "field_experience",
+    "status": "BLOCKED_EXTERNAL",
+    "type": "external"
+  },
+  {
+    "decision_rule": "approved domain TLS, rollback and deployment authorization",
+    "id": "G12",
+    "primary_task": "OPS-07",
+    "required": true,
+    "slug": "release_control",
+    "status": "BLOCKED_EXTERNAL",
+    "type": "external"
+  }
+]

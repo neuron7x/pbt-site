@@ -1,0 +1,1776 @@
+[
+  {
+    "acceptance": "Any drift causes HOLD before further gate; baseline environment and real bytes captured",
+    "dependencies": [],
+    "evidence_artifacts": [
+      "evidence/baseline.json",
+      "evidence/runner.json",
+      "evidence/sha256sums.txt"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-01",
+    "implementation_contract": "Define capture schema of ref, tree, toolchain, run IDs, attempt, OS/kernel, test hashes; preserve original logs",
+    "invariant": "Each assertion is tied to one immutable checkout and matching test environment",
+    "mutation": "Mutate source SHA after recording evidence",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Compare GitHub head/base/runner SHA with stale or swapped SHA",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R19"
+    ],
+    "source_paths": [
+      "AGENTS.md",
+      ".github/workflows/pr-quality.yml",
+      "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md"
+    ],
+    "standards": [
+      "SLSA",
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Freeze immutable revision, baseline and original artifacts",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "Valid current HEAD accepted, stale/forged/unsupported event rejected with machine-readable reason",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/meta-positive.json",
+      "evidence/meta-negative.json",
+      "evidence/policy-digest.txt"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-02",
+    "implementation_contract": "Implement versioned policy for target {pull_request,push,workflow_dispatch}, independent expected SHA and authorized state",
+    "invariant": "Verifier binds policy to exact target and event, not a historical PR number",
+    "mutation": "Accept forged PR type or historical PR8 proof under a new target",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Present valid PR14/main evidence to old PR8-only verifier; require negative failure",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R06"
+    ],
+    "source_paths": [
+      "tools/meta_evidence_gate.py:176-190",
+      "tests/test_meta_evidence_gate.py"
+    ],
+    "standards": [
+      "SLSA",
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Generalize PR8-only meta evidence policy",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "Mandatory test identity absent => FAIL regardless total count; no silent skip/xfail",
+    "dependencies": [
+      "EVD-02"
+    ],
+    "evidence_artifacts": [
+      "evidence/test-inventory.json",
+      "evidence/mutant-test-removal.json"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-03",
+    "implementation_contract": "Generate canonical required-test-ID inventory with versioned contract and machine-derived JUnit matching",
+    "invariant": "A removed critical test cannot be hidden by many unrelated passing tests",
+    "mutation": "Replace critical test with many passing no-op tests",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Remove lead atomicity test while retaining >= MIN_TESTS total",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R06"
+    ],
+    "source_paths": [
+      "tools/meta_evidence_gate.py:80-90",
+      "tests/test_meta_evidence_gate.py"
+    ],
+    "standards": [
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Assert compulsory test identities and minimum coverage",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "Independent verifier fails for any breach; no field INP claim",
+    "dependencies": [
+      "EVD-02"
+    ],
+    "evidence_artifacts": [
+      "evidence/mobile-recompute.json",
+      "evidence/mobile-negative.json"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-04",
+    "implementation_contract": "Recompute per-theme p75 LCP/CLS, unprompted switch shifts, exact head; distinguish lab/field",
+    "invariant": "Raw samples and independently derived p75 and budgets must agree",
+    "mutation": "Forge synthetic_budget_met=true and coherent but above-limit raw metrics",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Present raw p75 LCP above 2500 while consistent summary claims success",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R07",
+      "R13"
+    ],
+    "source_paths": [
+      "tools/meta_evidence_gate.py:223-231",
+      "tools/perf_probe.py",
+      "tests/test_perf_probe.py"
+    ],
+    "standards": [
+      "CWV",
+      "WCAG"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Independent mobile budgets and CLS adjudication",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "Verifier rejects drift; PR and main receipts remain disjoint",
+    "dependencies": [
+      "EVD-01",
+      "EVD-02"
+    ],
+    "evidence_artifacts": [
+      "evidence/provenance.json",
+      "evidence/event-mutant.json"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-05",
+    "implementation_contract": "Require actual git rev-parse, event SHA and source SHA in receipts; assert exact checkout on all event types",
+    "invariant": "Executed commit equals intended source SHA; GitHub PR synthetic merge SHA is a separate field",
+    "mutation": "Manipulate GITHUB_SHA only and claim correct execution",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Substitute merge event SHA as execution_sha or re-run with changed base",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R06",
+      "R19"
+    ],
+    "source_paths": [
+      "tools/perf_probe.py",
+      ".github/workflows/runtime-soak.yml",
+      ".github/workflows/pr-quality.yml"
+    ],
+    "standards": [
+      "SLSA"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Bind event SHA, checkout HEAD and artifact source",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "All required artifacts checked; failures remain HOLD; provider authentication provenance recorded",
+    "dependencies": [
+      "EVD-01",
+      "EVD-02"
+    ],
+    "evidence_artifacts": [
+      "evidence/artifacts-verification.json",
+      "evidence/zip-negative.json"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-06",
+    "implementation_contract": "Rehash provider downloaded ZIPs, verify member paths/CRC, JUnit, PNG/HTML, quotas and role binding",
+    "invariant": "Metadata-only SUCCESS is not sufficient without actual archive bytes",
+    "mutation": "Re-sign forged manifest with self-selected digest absent provider source",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Modify one PNG chunk/ZIP CRC/manifest SHA, preserve workflow success",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R06"
+    ],
+    "source_paths": [
+      "tools/meta_evidence_gate.py",
+      "tools/evidence_gate.py",
+      ".github/workflows/visual-evidence.yml"
+    ],
+    "standards": [
+      "SLSA",
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Independently verify provider ZIP bytes and manifests",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "Every difference classified; source build reproducibility not asserted if unverified",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/repro-matrix.json",
+      "evidence/diff-classification.json"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-07",
+    "implementation_contract": "Measure canonical hashes, browser versions, clocks, random seeds; whitelist justified expected differences",
+    "invariant": "Deterministic artifacts match within declared OS/toolchain inputs; nondeterministic fields identified",
+    "mutation": "Inject changed browser dependency or locale without recording it",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Run same fixed seed twice with locale/timezone/env variance",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R22"
+    ],
+    "source_paths": [
+      "Makefile",
+      "requirements.txt",
+      "tests/conftest.py"
+    ],
+    "standards": [
+      "SLSA",
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Reproducibility and nondeterminism inventory",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "Claim is PASS iff all mandatory proof leaves PASS at compatible SHA and target",
+    "dependencies": [
+      "EVD-02",
+      "EVD-03",
+      "EVD-04",
+      "EVD-05",
+      "EVD-06"
+    ],
+    "evidence_artifacts": [
+      "evidence/assurance-graph.json",
+      "evidence/release-decision.json"
+    ],
+    "external_prerequisite": false,
+    "id": "EVD-08",
+    "implementation_contract": "Generate release proof-graph with external UNKNOWN statuses, no weighted averaging and stale-run invalidation",
+    "invariant": "No release claim without supporting current evidence for every mandatory leaf",
+    "mutation": "Mark unknown field INP as PASS via fallback CI",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Supply a complete list with one unavailable proof",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R06",
+      "R19"
+    ],
+    "source_paths": [
+      "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md",
+      "docs/RELEASE_STATUS.md"
+    ],
+    "standards": [
+      "ISO-25010",
+      "NIST-SSDF",
+      "SLSA"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Construct reusable claim-argument-evidence graph",
+    "wave": "W0",
+    "wave_title": "Assurance spine & exact-source proof"
+  },
+  {
+    "acceptance": "Every write path rejects orphan with IntegrityError; foreign_key_check reports zero after approved remediation",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/fk-adversarial.xml",
+      "evidence/fk-integrity.json"
+    ],
+    "external_prerequisite": false,
+    "id": "DB-01",
+    "implementation_contract": "Add FK PRAGMA before any transaction on all write connections and read-back assertion; preserve legacy DB migrations",
+    "invariant": "Orphan outbox insertion is impossible when constraints are active",
+    "mutation": "Disable FK pragma in one connection",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Insert outbox with nonexistent lead_id; currently SQLite FK not enabled in db()",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R01"
+    ],
+    "source_paths": [
+      "server/app.py:86-110",
+      "ops/outbox_health.py",
+      "ops/restore.py"
+    ],
+    "standards": [
+      "SQLITE-FK"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Enable FK enforcement per SQLite connection",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "Repeated migration exact schema; no data loss; conflicts report BLOCKED and do not quietly repair",
+    "dependencies": [
+      "DB-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/migration-matrix.json",
+      "evidence/legacy-remediation.json"
+    ],
+    "external_prerequisite": false,
+    "id": "DB-02",
+    "implementation_contract": "Classify/reconcile legacy anomalies before enforcing new FK; explicit SQL transaction and rollback",
+    "invariant": "Migration is atomic/idempotent and does not silently discard legacy records",
+    "mutation": "Inject migration failure between schema writes",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Legacy database includes old schema and an intentionally orphaned row",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R01"
+    ],
+    "source_paths": [
+      "server/app.py:94-126",
+      "tests/test_leads.py",
+      "ops/restore.py"
+    ],
+    "standards": [
+      "SQLITE-FK",
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Migration and legacy-FK compatibility proof",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "Same key + same body -> same id; same key + different body -> 409; accepted state atomic",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/idempotency-linearizability.json",
+      "evidence/concurrency-junit.xml"
+    ],
+    "external_prerequisite": false,
+    "id": "DB-03",
+    "implementation_contract": "Model state machine for BEGIN IMMEDIATE, replay, conflict and outbox; test across faults",
+    "invariant": "Concurrent identical keys have exactly one durable logical lead and no double quota",
+    "mutation": "Remove DB unique index or delay quota commit",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Concurrent same key across threads/processes under near-capacity SQLite locking",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R08"
+    ],
+    "source_paths": [
+      "server/app.py:1042-1144",
+      "tests/test_atomic_lead_quota.py"
+    ],
+    "standards": [
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Linearizable idempotency and quota transaction",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "For all cuts: no uncommitted 201, no lost committed lead, replay consistent",
+    "dependencies": [
+      "DB-03"
+    ],
+    "evidence_artifacts": [
+      "evidence/crash-cutpoints.json",
+      "evidence/lead-state-db-hashes.txt"
+    ],
+    "external_prerequisite": false,
+    "id": "DB-04",
+    "implementation_contract": "Fault injection at precise cutpoints with isolated DB and restart, no live data",
+    "invariant": "201 is emitted only after persisted lead+outbox, regardless crash timing",
+    "mutation": "Swap commit and success response calls",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "SIGKILL at before BEGIN/after insert/before commit/after commit/before reply",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R08",
+      "R04"
+    ],
+    "source_paths": [
+      "server/app.py:1065-1120",
+      "tests/test_leads.py"
+    ],
+    "standards": [
+      "NIST-SSDF",
+      "SQLITE-BACKUP"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Crash cutpoints around HTTP 201 and durable commit",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "Replay semantics preserved if same user intent; explicitly documented boundary for new intent",
+    "dependencies": [
+      "DB-03",
+      "DB-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/reload-e2e.json",
+      "evidence/privacy-storage-review.md"
+    ],
+    "external_prerequisite": false,
+    "id": "DB-05",
+    "implementation_contract": "Design short-lived request-ID-only restore with opt-out/TTL and privacy-safe expiry; avoid storing contact in localStorage",
+    "invariant": "Lost HTTP response followed by reload cannot silently become duplicate intent",
+    "mutation": "Erase in-memory idemKey at reload",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Accept server-side, drop response, reload and submit unchanged form",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R08"
+    ],
+    "source_paths": [
+      "web/js/site.js:585-665",
+      "tests/test_frontend_finish.py"
+    ],
+    "standards": [
+      "HTTP",
+      "UA-PD"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Cross-reload client idempotency without PII retention",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "No scenario produces irrecoverable partial state; old/new integrity and watermark checked",
+    "dependencies": [
+      "DB-02",
+      "DB-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/restore-cutpoints.json",
+      "evidence/restore-replay-junit.xml"
+    ],
+    "external_prerequisite": false,
+    "id": "DB-06",
+    "implementation_contract": "Prepare validated alternate generation, atomic final publish strategy, sidecar controls, cleanup and rollback proof",
+    "invariant": "At every interruption either old or new consistent DB remains recoverable",
+    "mutation": "Interrupt between moving existing DB and new DB publication",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "SIGKILL/EIO/ENOSPC at each rename/fsync and metadata operation",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R02"
+    ],
+    "source_paths": [
+      "ops/restore.py:93-103",
+      "tests/test_backup_safety.py"
+    ],
+    "standards": [
+      "NIST-CP",
+      "SQLITE-BACKUP"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Crash-safe restore generation and rollback",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "Provider receipt + offline restore verified against source snapshot; local-only copies not counted",
+    "dependencies": [
+      "DB-06"
+    ],
+    "evidence_artifacts": [
+      "evidence/offsite-provider-receipt.json",
+      "evidence/crypto-check.json"
+    ],
+    "external_prerequisite": true,
+    "id": "DB-07",
+    "implementation_contract": "Use designated approved remote store, encryption, authenticated digest, minimal privilege, retention policy and receipts; no secrets in repo",
+    "invariant": "Snapshot is independently present and integrity-checked outside source host",
+    "mutation": "Replace remote receipt with stale self-generated JSON",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Destroy local root/data and backup directory in a disposable isolated environment",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R03"
+    ],
+    "source_paths": [
+      "ops/backup.py",
+      "ops/systemd/pbt-site-backup.timer"
+    ],
+    "standards": [
+      "NIST-CP",
+      "SLSA"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Authenticated encrypted off-device backup chain",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "No unreconciled known loss; actual RPO/RTO numbers and limitations recorded; owner adopts thresholds",
+    "dependencies": [
+      "DB-06",
+      "DB-07"
+    ],
+    "evidence_artifacts": [
+      "evidence/restore-host.json",
+      "evidence/rpo-rto-report.json"
+    ],
+    "external_prerequisite": true,
+    "id": "DB-08",
+    "implementation_contract": "Restore on separate host; calculate recovered vs issued IDs, outbox pending, elapsed recovery; external watermark",
+    "invariant": "Measured recovery meets preapproved RPO/RTO with accepted-lead/outbox reconciliation",
+    "mutation": "Forge RPO=0 while missing accepted IDs",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Delete original machine and restore without source disk or server.log",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R02",
+      "R03"
+    ],
+    "source_paths": [
+      "ops/restore.py",
+      "docs/OUTBOX_OBSERVABILITY.md"
+    ],
+    "standards": [
+      "NIST-CP"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Independent host restore, watermark and RPO/RTO measurement",
+    "wave": "W1",
+    "wave_title": "Data integrity, idempotency & restoration"
+  },
+  {
+    "acceptance": "Bound wall-clock and connection slots, correct status class, zero partial commits",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/http-fault-matrix.json",
+      "evidence/transport-junit.xml"
+    ],
+    "external_prerequisite": false,
+    "id": "NET-01",
+    "implementation_contract": "Preserve existing deadlines and run adversarial negative coverage from RFC 9110 mapped table",
+    "invariant": "Malformed/slow clients have bounded wall-clock and cannot persist partial leads",
+    "mutation": "Remove monotonic deadline and rely on per-recv timeout",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Trickled headers/body, early EOF, conflicting length, media range fuzz under small MAX_CONNECTIONS",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R20"
+    ],
+    "source_paths": [
+      "server/app.py:678-780",
+      "server/app.py:992-1031"
+    ],
+    "standards": [
+      "HTTP",
+      "OWASP-WSTG"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "HTTP parser absolute deadlines and protocol negative suite",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "No quota bypass/false HSTS with untrusted headers; actual edge evidence separate",
+    "dependencies": [
+      "NET-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/proxy-adversarial.json",
+      "evidence/tls-edge-attestation.json"
+    ],
+    "external_prerequisite": true,
+    "id": "NET-02",
+    "implementation_contract": "Explicit trusted hop/source and edge config with DNS/TLS independent checks; preserve internal and external boundaries",
+    "invariant": "Only authenticated configured proxy may establish client identity and TLS provenance",
+    "mutation": "Inject forged rightmost XFF while TRUST_PROXY enabled",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Spoof XFF/XFP from untrusted peer; spoof chain and IPv6 identities",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R12",
+      "R20"
+    ],
+    "source_paths": [
+      "server/app.py:866-900",
+      "ops/README.md",
+      "ops/systemd/pbt-site.service"
+    ],
+    "standards": [
+      "HTTP",
+      "OWASP-ASVS"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Reverse proxy trust and TLS edge attestation",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "No signed lead crosses unapproved destination; synthetic tests isolate external network",
+    "dependencies": [
+      "NET-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/outbound-negative.json",
+      "evidence/allowed-destination-policy.json"
+    ],
+    "external_prerequisite": false,
+    "id": "NET-03",
+    "implementation_contract": "Confirm threat model: deployment-controlled URL vs attacker-controlled input; apply approved endpoints and policy validation",
+    "invariant": "No unauthorized route/redirect exposes signed payload or Telegram token",
+    "mutation": "Permit redirect to attacker destination with original signed body",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Hostile redirects, private-IP targets, DNS rebinding, non-TLS and credentials in URL",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R15",
+      "R20"
+    ],
+    "source_paths": [
+      "server/app.py:436-461",
+      "server/delivery_transport.py:39-59"
+    ],
+    "standards": [
+      "OWASP-ASVS",
+      "OWASP-WSTG"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Constrain outbound destinations and redirects",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "No accepted lead lost; retries bounded; all ACK claims tied to external receipt ID",
+    "dependencies": [
+      "DB-03",
+      "DB-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/receiver-faults.json",
+      "evidence/live-receiver-receipts.json"
+    ],
+    "external_prerequisite": true,
+    "id": "NET-04",
+    "implementation_contract": "Create isolated fake receiver with dedup and ACK-correlation; live receipts separate authorized operation",
+    "invariant": "Transport 2xx, receiver persistence and business processing are distinguishable",
+    "mutation": "Treat any 2xx as independently verified business acceptance",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Synthetic 2xx before durable receiver acknowledgment; 408/429/5xx and timeout",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R04",
+      "R08"
+    ],
+    "source_paths": [
+      "server/delivery_transport.py",
+      "server/app.py:557-594"
+    ],
+    "standards": [
+      "HTTP",
+      "OWASP-ASVS"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "At-least-once channel/receiver contract and acknowledgment",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "No unbounded memory nor quota bypass within declared topology; unsupported topology fail closed",
+    "dependencies": [
+      "NET-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/limiter-falsification.json",
+      "evidence/process-topology.json"
+    ],
+    "external_prerequisite": false,
+    "id": "NET-05",
+    "implementation_contract": "Test actual deployment topology; enforce one-worker bound or add shared persistent limiter only if multi-process required",
+    "invariant": "Quotas cannot be reset through identity churn or unsupported process topology",
+    "mutation": "Reset one-process hits on process hop",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "25k identities, IPv6 /64 churn, wall jumps, two independently spawned servers",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R17"
+    ],
+    "source_paths": [
+      "server/app.py:138-257",
+      "tests/test_rate_resource_bound.py"
+    ],
+    "standards": [
+      "OWASP-ASVS"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Rate limit topology, clock and resource accounting",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "All payloads inert, console signals captured, CSP intact, negative mutation kills regression",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/dom-sinks-inventory.json",
+      "evidence/xss-negatives.json"
+    ],
+    "external_prerequisite": false,
+    "id": "NET-06",
+    "implementation_contract": "Replace unsafe composition where necessary with URL allowlist/DOM APIs; never invent actual exploit without repro",
+    "invariant": "Data-derived HTML attributes and URL schemes cannot execute untrusted script",
+    "mutation": "Strip escape for one data-derived attribute",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Inject malformed href, quotes, svg/javascript schemes via fake public config",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R15"
+    ],
+    "source_paths": [
+      "web/js/site.js:302-315",
+      "web/js/site.js:477-496"
+    ],
+    "standards": [
+      "OWASP-ASVS",
+      "OWASP-WSTG"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Config to DOM trust-boundary and XSS negative suite",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "Findings and gaps machine reported; waiver requires owner rationale; no full ASVS certification claim",
+    "dependencies": [
+      "EVD-06"
+    ],
+    "evidence_artifacts": [
+      "evidence/security-findings.json",
+      "evidence/sbom.json"
+    ],
+    "external_prerequisite": false,
+    "id": "NET-07",
+    "implementation_contract": "Add independently pinned broad SAST + dependency/SBOM/source provenance without replacing narrow AST gate",
+    "invariant": "Scanning covers declared in-scope source and third-party artifacts and cannot pass when engine silently fails",
+    "mutation": "Mark scanner process crash as SUCCESS",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Inject XSS/SSRF-like sink, scanner crash, omitted requirement, altered wheel hash",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R14",
+      "R22"
+    ],
+    "source_paths": [
+      "tools/security_static.py",
+      ".github/workflows/security-assurance.yml"
+    ],
+    "standards": [
+      "OWASP-ASVS",
+      "NIST-SSDF",
+      "SLSA"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Broaden security scanning and dependency provenance",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "Resource caps and file/network boundaries proven, no break of media/API/backup",
+    "dependencies": [
+      "NET-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/systemd-sandbox.json",
+      "evidence/resource-cgroup.json"
+    ],
+    "external_prerequisite": false,
+    "id": "NET-08",
+    "implementation_contract": "Review systemd restrictions and runtime file permissions; test in isolated cloned host, preserve power guard",
+    "invariant": "Site process accesses only declared DB, logs, web and network endpoints",
+    "mutation": "Remove MemoryMax or allow arbitrary read-write paths",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Attempt to read files outside sandbox, exhaust tasks/memory, abuse writable root",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R16"
+    ],
+    "source_paths": [
+      "ops/systemd/pbt-site.service",
+      "ops/systemd/pbt-site-health.service"
+    ],
+    "standards": [
+      "NIST-SSDF",
+      "OWASP-ASVS"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Least privilege and resource sandbox of site runtime",
+    "wave": "W2",
+    "wave_title": "HTTP, trust boundaries & security"
+  },
+  {
+    "acceptance": "No critical WCAG A/AA finding; manual evidence named; axe alone never claimed complete",
+    "dependencies": [
+      "EVD-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/wcag-audit.json",
+      "evidence/focus-trace.json"
+    ],
+    "external_prerequisite": false,
+    "id": "WEB-01",
+    "implementation_contract": "Keep axe; add keyboard walkthrough and manual AA checklist, video/image descriptions",
+    "invariant": "All critical user tasks available keyboard/screen reader/reduced motion in each supported viewport",
+    "mutation": "Hide focused element during switch",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Focus traps, enlarged text 200%, empty labels, error states, modal mode",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R21"
+    ],
+    "source_paths": [
+      "tests/test_themes.py",
+      "tests/test_design_color_type.py",
+      "web/index.html"
+    ],
+    "standards": [
+      "WCAG"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Manual + automated WCAG matrix across both themes",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "Independent budget violation rejects; field INP remains unknown",
+    "dependencies": [
+      "EVD-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/lab-vitals.json",
+      "evidence/cwv-mutant.json"
+    ],
+    "external_prerequisite": false,
+    "id": "WEB-02",
+    "implementation_contract": "Pin lab conditions, background CPU, cache, media and scripts, compare 3+ samples/theme; record variance",
+    "invariant": "Dual-theme LCP/CLS and interaction shifts measured from raw samples with known browser environment",
+    "mutation": "Override synthetic_budget_met with true above threshold",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Force slow LCP or late shift while internally consistent summary says PASS",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R07",
+      "R13"
+    ],
+    "source_paths": [
+      "tools/perf_probe.py",
+      "tests/test_perf_probe.py"
+    ],
+    "standards": [
+      "CWV"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Independent full lab CWV repeatability",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "Measured p75 by mobile/desktop meets owner-approved objectives or release HOLD",
+    "dependencies": [
+      "WEB-02"
+    ],
+    "evidence_artifacts": [
+      "evidence/field-cwv.json",
+      "evidence/inp-samples-meta.json"
+    ],
+    "external_prerequisite": true,
+    "id": "WEB-03",
+    "implementation_contract": "Use owner-approved privacy-conscious field monitoring or CrUX/Search Console where populated; report sample sizes and provenance",
+    "invariant": "Production CWV requires actual user data measured at p75 by device category",
+    "mutation": "Substitute synthetic INP for real-user INP",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Inject long input tasks into critical user flow",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R13"
+    ],
+    "source_paths": [
+      "web/js/site.js",
+      "docs/RELEASE_STATUS.md"
+    ],
+    "standards": [
+      "CWV",
+      "UA-PD"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Field INP/CWV with privacy-respecting RUM or CrUX",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "Any unprompted shift/contrast violation rejected at measured state with raw screenshots",
+    "dependencies": [
+      "WEB-01",
+      "WEB-02"
+    ],
+    "evidence_artifacts": [
+      "evidence/theme-layout-trace.json",
+      "evidence/frame-contrast.json"
+    ],
+    "external_prerequisite": false,
+    "id": "WEB-04",
+    "implementation_contract": "Evaluate both themes state+session CLS, motion pause and frame contrast with matched screenshots",
+    "invariant": "No unexpected post-input shifts and accessible text over all relevant video frames",
+    "mutation": "Force fallback font causing delayed layout jump",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Load font after 500ms, dark/bright sampled frames, extreme landscape viewport",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R21"
+    ],
+    "source_paths": [
+      "web/css/site.css",
+      "web/js/site.js:114-135",
+      "tests/test_hero_video_contrast.py"
+    ],
+    "standards": [
+      "WCAG",
+      "CWV"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Theme switch stability, contrast under dynamic media",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "Per-profile transfer budgets from measured baseline; no broken poster or blank hero",
+    "dependencies": [
+      "WEB-02"
+    ],
+    "evidence_artifacts": [
+      "evidence/network-waterfall.json",
+      "evidence/media-budget.json"
+    ],
+    "external_prerequisite": false,
+    "id": "WEB-05",
+    "implementation_contract": "Differentiate repository asset inventory, page transfer, cache, data-saver and format; fail over-budget on targets",
+    "invariant": "Transferrable bytes and user-perceived LCP are bounded independent of whole-repo media size",
+    "mutation": "Hide extra media transfer in media inventory total",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Add unexpected high-priority video/font preload or corrupt poster",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R13"
+    ],
+    "source_paths": [
+      "web/index.html",
+      "web/media",
+      "tools/media_budget.py",
+      "tools/visual_contract.py"
+    ],
+    "standards": [
+      "CWV",
+      "ISO-25010"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Critical media and network budget as a regression contract",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "Canonical/schema/OG agree with owner-approved DNS+TLS; search indexing cannot be asserted absent field proof",
+    "dependencies": [
+      "OPS-07"
+    ],
+    "evidence_artifacts": [
+      "evidence/seo-structural.json",
+      "evidence/public-indexing.json"
+    ],
+    "external_prerequisite": true,
+    "id": "WEB-06",
+    "implementation_contract": "Add canonical and absolute Open Graph URL based on approved domain; verify search directives and crawl",
+    "invariant": "Public URL/metadata consistent with approved live site; unapproved FQDN stays blocked",
+    "mutation": "Inject sitemap to unowned domain",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Change canonical, og image or JSON-LD to mismatched domain",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R18",
+      "R12"
+    ],
+    "source_paths": [
+      "web/index.html:1-48",
+      "config/business.json",
+      "docs/RELEASE_STATUS.md"
+    ],
+    "standards": [
+      "UA-ECOM"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Canonical metadata, SEO indexability, authoritative FQDN",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "No unapproved published rate or hidden VAT semantics; arithmetic independent oracle passes",
+    "dependencies": [
+      "EVD-03"
+    ],
+    "evidence_artifacts": [
+      "evidence/tariff-approval.json",
+      "evidence/pricing-parity.json"
+    ],
+    "external_prerequisite": true,
+    "id": "WEB-07",
+    "implementation_contract": "Define approved price/VAT/min shift/idle/dispatch snapshot; validate catalog against it without accessing CRM",
+    "invariant": "Visible price and quote are derived from effective-dated authorized canonical facts",
+    "mutation": "Change price without owner approval or date",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Make JCB rate or VAT differ across JSON/JS/HTML while math still passes",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R10",
+      "R18"
+    ],
+    "source_paths": [
+      "config/business.json",
+      "web/js/data.js",
+      "web/js/quote.js",
+      "web/index.html"
+    ],
+    "standards": [
+      "UA-ECOM",
+      "NIST-SSDF"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Business/contact and tariff single-source consistency",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "Every release asset has matched source rights and owner authorization; unresolved rights block publication",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/media-rights.json",
+      "evidence/brand-claims.json"
+    ],
+    "external_prerequisite": true,
+    "id": "WEB-08",
+    "implementation_contract": "Create source-specific license inventory; replace or disable unapproved assets only after owner decision",
+    "invariant": "Each public asset has source hash, author, license/permission, brand/claim provenance",
+    "mutation": "Forge approval using matching SHA only",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Remove permission record for one video while bytes/hash remain valid",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R11"
+    ],
+    "source_paths": [
+      "config/stock.json",
+      "docs/PROVENANCE.md",
+      "web/media"
+    ],
+    "standards": [
+      "NIST-SSDF",
+      "UA-ECOM"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Media licensing/provenance and true-claim inventory",
+    "wave": "W3",
+    "wave_title": "Product, accessibility, visual and commercial"
+  },
+  {
+    "acceptance": "No metric implies greater assurance than observed; unknown/failed channel blocks release",
+    "dependencies": [
+      "NET-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/health-truth-table.json",
+      "evidence/readiness-junit.xml"
+    ],
+    "external_prerequisite": false,
+    "id": "OPS-01",
+    "implementation_contract": "Preserve /api/health contract; define separate restricted readiness signals and telemetry truth table",
+    "invariant": "Each health status proves only a clearly defined observed subsystem",
+    "mutation": "Report HEALTHY from heartbeat while outbox failed",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Worker heartbeat fresh with 100 stale pending jobs and no receiver ACK",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R04",
+      "R05",
+      "R23"
+    ],
+    "source_paths": [
+      "server/app.py:969-981",
+      "ops/outbox_health.py",
+      "ops/health.py"
+    ],
+    "standards": [
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Separate liveness, readiness, delivery and business acceptance",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "Adopted pre-run SLO; no backfilled goals; actual monitored values with data-quality bounds",
+    "dependencies": [
+      "OPS-01",
+      "WEB-03"
+    ],
+    "evidence_artifacts": [
+      "evidence/slo-policy.json",
+      "evidence/sli-historical.json"
+    ],
+    "external_prerequisite": true,
+    "id": "OPS-02",
+    "implementation_contract": "Propose and have owner adopt accepted-lead durability, delivery latency, ack coverage, field CWV, recovery SLO",
+    "invariant": "SLO has defined population, clock, numerator, denominator, window and error budget",
+    "mutation": "Change threshold after observing a failing run",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Report 100% availability from synthetic soak with no field requests",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R04",
+      "R13",
+      "R23",
+      "R05"
+    ],
+    "source_paths": [
+      "docs/OUTBOX_OBSERVABILITY.md",
+      "docs/RELEASE_STATUS.md"
+    ],
+    "standards": [
+      "ISO-25010",
+      "NIST-SSDF",
+      "CWV"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Predeclare production SLI/SLO/alert thresholds",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "Each incident has provider event ID and root-cause status; unknown remains unknown",
+    "dependencies": [
+      "OPS-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/monitor-correlation.json",
+      "evidence/incident-timeline.json"
+    ],
+    "external_prerequisite": false,
+    "id": "OPS-03",
+    "implementation_contract": "Build correlation protocol without leaking PII; classify monitor DOWN vs actual lead loss",
+    "invariant": "Alert investigation correlates service event, host/power, SQLite, receiver ACK and monitor ID",
+    "mutation": "Translate aggregate missed heartbeats into invented app outage",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Trigger false heartbeat DOWN during intentional power guard; real failed sender",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R24",
+      "R05",
+      "R23"
+    ],
+    "source_paths": [
+      "ops/systemd/pbt-site-health.service",
+      "docs/OUTBOX_OBSERVABILITY.md"
+    ],
+    "standards": [
+      "NIST-CP"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Correlate host, power-guard and external monitoring failures",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "Signed/recorded policy edition and purpose/retention decision or legal HOLD",
+    "dependencies": [
+      "EVD-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/privacy-decision.json",
+      "evidence/legal-review.json"
+    ],
+    "external_prerequisite": true,
+    "id": "OPS-04",
+    "implementation_contract": "Owner/legal review current Ukrainian law, publish accurate notice, minimization and user rights routes; no invented law",
+    "invariant": "PII processing purpose, retention, controller/contact and lawful notice are owner-approved",
+    "mutation": "Auto-approve a policy without named owner decision",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Find contact form with no approved policy and no documented retention authorization",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R09"
+    ],
+    "source_paths": [
+      "docs/drafts/privacy-draft.md",
+      "web/index.html:299-327"
+    ],
+    "standards": [
+      "UA-PD"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Authorize actual privacy processing and notices",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "Data lifecycle verified; no irreversible auto-delete without approved policy",
+    "dependencies": [
+      "DB-08",
+      "OPS-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/retention-drill.json",
+      "evidence/erasure-reconciliation.json"
+    ],
+    "external_prerequisite": true,
+    "id": "OPS-05",
+    "implementation_contract": "Use explicit retention/delete policy, key deletion or backup expiry, audit-safe deletion receipts",
+    "invariant": "Expired data no longer available in active systems and expires from backups under approved retention policy",
+    "mutation": "Restore expired PII permanently from stale snapshot",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Insert expired and legal-hold records, simulate deletion and restoration from old backup",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R09"
+    ],
+    "source_paths": [
+      "server/app.py:86-110",
+      "ops/backup.py",
+      "ops/restore.py"
+    ],
+    "standards": [
+      "UA-PD",
+      "NIST-CP"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Retention, deletion and backup lifecycle consistency",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "Unknown or conflicting rate => publish HOLD or label explicitly unverified; no unapproved assumptions",
+    "dependencies": [
+      "WEB-07"
+    ],
+    "evidence_artifacts": [
+      "evidence/commercial-decision.json",
+      "evidence/quote-conformance.json"
+    ],
+    "external_prerequisite": true,
+    "id": "OPS-06",
+    "implementation_contract": "Import only approved rate snapshot; require owner decisions for VAT, cranes, shift, downtime, dispatch",
+    "invariant": "Price claims are effective-dated and consistent with owner approval and currency/VAT policy",
+    "mutation": "Choose lower tariff silently to satisfy test",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Compare 1C external proposed rates with site, inject conflicting quote or rounding",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R10"
+    ],
+    "source_paths": [
+      "docs/OWNER_DECISIONS.md",
+      "web/js/quote.js",
+      "data/catalog.json"
+    ],
+    "standards": [
+      "UA-ECOM"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Commercial effective-dated rates and quote semantics",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "DNS/TLS/rollback proof and owner authorization separate from source CI",
+    "dependencies": [
+      "NET-02",
+      "EVD-08"
+    ],
+    "evidence_artifacts": [
+      "evidence/dns-tls.json",
+      "evidence/rollback-drill.json",
+      "evidence/deploy-authorization.json"
+    ],
+    "external_prerequisite": true,
+    "id": "OPS-07",
+    "implementation_contract": "Use staging verification and explicit deploy plan, secrets boundary, rollback drill; do not deploy during audit",
+    "invariant": "Release only to confirmed controlled FQDN with verified edge TLS and independent authorization",
+    "mutation": "Treat successful Git merge as deployment authority",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Certificate mismatch, wrong DNS target, missing redirect/HSTS, broken new rollout",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R12"
+    ],
+    "source_paths": [
+      "ops/README.md",
+      "ops/systemd/pbt-site.service"
+    ],
+    "standards": [
+      "HTTP",
+      "NIST-CP"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Domain TLS edge, production rollout and rollback rehearsal",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "Release PASS iff all mandatory leaves are evidence-verified at target version and owner deploy authorization exists",
+    "dependencies": [
+      "EVD-08",
+      "OPS-02",
+      "OPS-04",
+      "OPS-05",
+      "OPS-06",
+      "OPS-07",
+      "WEB-08"
+    ],
+    "evidence_artifacts": [
+      "evidence/final-release-act.json",
+      "evidence/owner-gates.json"
+    ],
+    "external_prerequisite": true,
+    "id": "OPS-08",
+    "implementation_contract": "Create signed/approved owner decisions and independent evidence matrix; no automatic deployment/merge via score",
+    "invariant": "Every mandatory external fact has non-self-issued receipt; no unproven production claim",
+    "mutation": "Substitute N/A or test pass for absent business/legal gate",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Keep one source absent and run green CI",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R03",
+      "R04",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
+      "R13"
+    ],
+    "source_paths": [
+      "docs/RELEASE_STATUS.md",
+      "docs/OWNER_DECISIONS.md",
+      "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md"
+    ],
+    "standards": [
+      "ISO-25010",
+      "NIST-SSDF",
+      "UA-PD",
+      "UA-ECOM"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Conjunctive owner release acceptance B1–B9 + T1–T7",
+    "wave": "W4",
+    "wave_title": "Operational SRE, business/legal release"
+  },
+  {
+    "acceptance": "Every high-impact path linked to at least one test and owner of risk",
+    "dependencies": [
+      "NET-03",
+      "NET-06"
+    ],
+    "evidence_artifacts": [
+      "evidence/threat-model.json",
+      "evidence/attack-trees.md"
+    ],
+    "external_prerequisite": false,
+    "id": "ADV-01",
+    "implementation_contract": "Enumerate DFD, trust boundary, asset, threat, attack precondition, CWE class, non-prod falsifier",
+    "invariant": "Attack surface inventory is complete within known scope and trust boundaries testable",
+    "mutation": "Hide dynamic DOM sink or third-party process in schema",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "New data flow bypasses source-sink inventory without requiring update",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R14",
+      "R15",
+      "R20"
+    ],
+    "source_paths": [
+      "server/app.py",
+      "server/delivery_transport.py",
+      "web/js/site.js"
+    ],
+    "standards": [
+      "OWASP-ASVS",
+      "OWASP-WSTG"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Threat model with attack trees and known trust boundaries",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  },
+  {
+    "acceptance": "All designated critical mutants killed; score measured without arbitrary blanket 100% claim",
+    "dependencies": [
+      "EVD-03",
+      "EVD-04",
+      "DB-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/mutation-ledger.json",
+      "evidence/survivors-triage.json"
+    ],
+    "external_prerequisite": false,
+    "id": "ADV-02",
+    "implementation_contract": "Versioned mutation catalogue, enumerate survived/killed mutants with justified exclusions",
+    "invariant": "Critical oracle rejects deliberately unsafe behavior under controlled mutation",
+    "mutation": "Allow a high-impact mutant to survive and claim PASS",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Mutate HMAC verification, FK checks, dedup uniqueness, replay or budget bounds",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R06",
+      "R07",
+      "R14"
+    ],
+    "source_paths": [
+      "tools/meta_evidence_gate.py",
+      "tests/test_meta_evidence_gate.py",
+      "tests/test_leads.py"
+    ],
+    "standards": [
+      "NIST-SSDF",
+      "OWASP-ASVS"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Mutation score on critical safety and integrity contracts",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  },
+  {
+    "acceptance": "Minimal counterexample recorded; no lost accepted lead or silent invariant breach",
+    "dependencies": [
+      "DB-03",
+      "NET-05"
+    ],
+    "evidence_artifacts": [
+      "evidence/state-traces.json",
+      "evidence/failure-minimization.json"
+    ],
+    "external_prerequisite": false,
+    "id": "ADV-03",
+    "implementation_contract": "Property-based state machine with deterministic seeds and replay traces",
+    "invariant": "Safety properties survive network races and restarts under declared single-host topology",
+    "mutation": "Mutate order of durable commit and quota charge",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Schedule concurrent retry, quota, crash and worker states with fake time",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R17",
+      "R20"
+    ],
+    "source_paths": [
+      "server/app.py",
+      "tests/test_atomic_lead_quota.py",
+      "tests/test_leads.py"
+    ],
+    "standards": [
+      "NIST-SSDF",
+      "HTTP"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Model/state-machine cross-process and temporal fault test",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  },
+  {
+    "acceptance": "Observed duration, integrity, backlog and process samples pass independent checker at same SHA",
+    "dependencies": [
+      "EVD-05",
+      "OPS-01"
+    ],
+    "evidence_artifacts": [
+      "evidence/soak-raw.json",
+      "evidence/soak-independent.json"
+    ],
+    "external_prerequisite": false,
+    "id": "ADV-04",
+    "implementation_contract": "Run mandatory >=1800s with raw sample verification; optionally longer endurance only after cost/perf policy",
+    "invariant": "Fixed synthetic stress must respect predeclared thresholds and measure resource trees",
+    "mutation": "Replace p99 and sampled VmRSS raw arrays with forged summaries",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Inject stuck downstream, server restart, disk pressure, repeated packet faults",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R19",
+      "R24"
+    ],
+    "source_paths": [
+      "tools/runtime_soak.py",
+      "tools/verify_soak_evidence.py"
+    ],
+    "standards": [
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Extended measured soak with anti-leak and adversarial events",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  },
+  {
+    "acceptance": "All documented boundary cases invariant or explicit rejection; discrepancies fixed or scoped",
+    "dependencies": [
+      "WEB-07"
+    ],
+    "evidence_artifacts": [
+      "evidence/timezone-vectors.json",
+      "evidence/differential-validation.json"
+    ],
+    "external_prerequisite": false,
+    "id": "ADV-05",
+    "implementation_contract": "Design common canonical UTC/Kyiv date policy and differential test vectors; do not silently change API",
+    "invariant": "Client/server locale and clock behavior has explicit equivalence domain",
+    "mutation": "Force browser local date without server consistency check",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Time-zone offset around DST/day boundary, malformed Unicode and huge integer",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R10",
+      "R13"
+    ],
+    "source_paths": [
+      "server/app.py:260-374",
+      "web/js/site.js:504-525",
+      "web/js/quote.js"
+    ],
+    "standards": [
+      "ISO-25010",
+      "HTTP"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Date/locale/DST, integer precision, and boundary fuzz",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  },
+  {
+    "acceptance": "Mutation rejected; valid source/runner/dependency manifest reproducible within documented limits",
+    "dependencies": [
+      "NET-07",
+      "NET-08"
+    ],
+    "evidence_artifacts": [
+      "evidence/slsa-attestation.json",
+      "evidence/supplychain-mutants.json"
+    ],
+    "external_prerequisite": false,
+    "id": "ADV-06",
+    "implementation_contract": "Adopt SLSA-aligned provenance with precise level boundary; verify GitHub run/asset digests against outputs",
+    "invariant": "Dependency/toolchain and execution provenance independently traceable",
+    "mutation": "Trust self-authored manifest without provider resolution",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "Change action pin or wheel hash and replay stale receipt",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R16",
+      "R22"
+    ],
+    "source_paths": [
+      "requirements.txt",
+      ".github/workflows/security-assurance.yml",
+      "ops/systemd/pbt-site.service"
+    ],
+    "standards": [
+      "SLSA",
+      "NIST-SSDF"
+    ],
+    "status": "NOT_EXECUTED",
+    "title": "Supply-chain attestations and sandbox anti-tamper",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  },
+  {
+    "acceptance": "No unresolved WCAG AA critical failure and recorded field boundary; owner visual approval separate",
+    "dependencies": [
+      "WEB-01",
+      "WEB-03",
+      "WEB-04"
+    ],
+    "evidence_artifacts": [
+      "evidence/manual-device-matrix.json",
+      "evidence/visual-approval.json"
+    ],
+    "external_prerequisite": true,
+    "id": "ADV-07",
+    "implementation_contract": "Independent manual observation with actual device specs and recordings/screenshots (consent); lab baseline retained",
+    "invariant": "Critical booking lead journey works across device engines, input methods and constraints",
+    "mutation": "Change focus target to hidden element",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P2",
+    "red_test": "200% text, high contrast, reduced motion, keyboard only, screen reader, iOS Safari",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R21",
+      "R13"
+    ],
+    "source_paths": [
+      "web/index.html",
+      "web/css/site.css",
+      "tests/test_cross_engine_parity.py"
+    ],
+    "standards": [
+      "WCAG",
+      "CWV"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Real-device accessibility and UI adversarial evaluation",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  },
+  {
+    "acceptance": "Zero mandatory unknowns, no new P0/P1, current immutable code proof, owner authorization; otherwise HOLD",
+    "dependencies": [
+      "OPS-08",
+      "ADV-01",
+      "ADV-02",
+      "ADV-04",
+      "ADV-06",
+      "ADV-07"
+    ],
+    "evidence_artifacts": [
+      "evidence/assurance-final.json",
+      "evidence/release-digest.txt"
+    ],
+    "external_prerequisite": true,
+    "id": "ADV-08",
+    "implementation_contract": "Generate canonical release act with mandatory graph, signed owner/deploy decisions, unresolved facts as HOLD",
+    "invariant": "Release decision is a verifiable dependency closure, never a self-graded average",
+    "mutation": "Declare PASS on historical SHA or missing restore receipt",
+    "notes": "",
+    "owner_of_change": "future agent within codex/* PR",
+    "priority": "P1",
+    "red_test": "Withdraw one mandatory provider receipt after all code gates become green",
+    "requires_main_or_live_authorization": false,
+    "risks": [
+      "R02",
+      "R03",
+      "R04",
+      "R09",
+      "R10",
+      "R11",
+      "R12"
+    ],
+    "source_paths": [
+      "docs/RELEASE_STATUS.md",
+      "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md"
+    ],
+    "standards": [
+      "ISO-25010",
+      "OWASP-ASVS",
+      "NIST-SSDF",
+      "WCAG",
+      "SLSA"
+    ],
+    "status": "BLOCKED_EXTERNAL",
+    "title": "Final assurance case with signed release/no-release decision",
+    "wave": "W5",
+    "wave_title": "Adversarial and independent closure"
+  }
+]

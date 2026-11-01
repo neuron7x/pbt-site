@@ -185,3 +185,22 @@ def test_interrupted_backup_never_publishes_and_its_residue_is_removed(tmp_path)
     assert killed >= 3, 'cutpoints were not exercised'
     assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
     assert not list(out.glob('*.tmp'))
+
+
+def test_restore_drill_measures_rpo_gap_and_never_claims_off_device(srv, tmp_path):
+    server = srv(DELIVERY_WORKER='0', LEAD_WEBHOOK_URL='http://127.0.0.1:9/hook', LEAD_WEBHOOK_SECRET='s')
+    for i in (1, 2):
+        assert server.post(LEAD, f'k-drill-00{i:04d}')[0] == 201
+    env = {**os.environ, 'LEAD_DB': str(server.db), 'BACKUP_DIR': str(tmp_path / 'b')}
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+    snapshot = next((tmp_path / 'b').glob('leads-*.db'))
+    before = server.db.read_bytes()
+    run = subprocess.run([sys.executable, str(ROOT / 'ops/restore_drill.py'), str(snapshot), '--external-watermark', '3'],
+                         capture_output=True, text=True, timeout=30)
+    report = __import__('json').loads(run.stdout)
+    assert run.returncode == 0, run.stdout
+    assert report['rpo_gap_ids'] == 1 and report['restored_leads'] == 2 and report['pending_outbox'] == 2
+    assert report['off_device'] is False and report['rpo_rto_policy'] == 'not_adopted'
+    assert report['measured_rto_s'] >= 0
+    assert server.db.read_bytes() == before
+    assert server.post(LEAD, 'k-drill-after-1')[0] == 201  # The live server was untouched and still holds its guard.

@@ -20,7 +20,7 @@
       {"id": "tests.test_http_protocol::test_second_server_on_same_database_fails_closed", "min_cases": 1},
       {"id": "tests.test_dom_trust_boundary::test_hostile_public_config_is_inert_in_every_sink", "min_cases": 1},
       {"id": "tests.test_readiness_truth_table::test_fresh_heartbeat_with_stale_backlog_is_not_ready", "min_cases": 1},
-      {"id": "tests.test_meta_evidence_gate::test_forged_success_is_rejected", "min_cases": 25}
+      {"id": "tests.test_meta_evidence_gate::test_forged_success_is_rejected", "min_cases": 40}
     ],
     "http": [
       {"id": "tests.test_leads::test_same_key_same_payload_is_one_lead", "min_cases": 1},

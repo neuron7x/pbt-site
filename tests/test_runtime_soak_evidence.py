@@ -105,3 +105,25 @@ def test_verifier_rejects_fabricated_child_memory_peak_and_missing_sample():
     impossible_child['child_process_sample_epochs'][0][0] = -1
     with pytest.raises(ValueError):
         verify(impossible_child, budget, head)
+
+
+def test_verifier_rejects_coherent_report_over_the_latency_budget():
+    """Raw samples and summary agree with each other; only the predeclared limit can catch this."""
+    import copy
+    import inspect
+    import pytest
+    from tools.verify_soak_evidence import verify
+
+    source = inspect.getsource(test_verifier_rejects_forged_success_for_crm_integrity_and_crash_aborts)
+    assert "'api_p99_ms': 1.0" in source  # The shared shape below is copied from that positive control.
+    head = 'a' * 40
+    cfg = json.loads((ROOT / 'config/runtime-soak-budgets.json').read_text())
+    n = cfg['smoke']['minimum_accepted']
+    over = float(cfg['budgets']['maximum_p99_lead_ms'] + 1)
+    report = {
+        'profile': 'smoke', 'source_sha': head, 'status': 'PASS', 'violations': [],
+        'accepted_leads': n, 'observed_duration_s': cfg['smoke']['minimum_duration_s'],
+        'api_latency_samples_ms': [over] * n, 'api_p99_ms': over,
+    }
+    with pytest.raises(ValueError, match='latency_provenance_or_budget'):
+        verify(copy.deepcopy(report), cfg, head)
