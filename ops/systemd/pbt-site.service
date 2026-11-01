@@ -14,6 +14,9 @@ Environment=TRUST_PROXY=1
 Restart=always
 RestartSec=2
 TimeoutStopSec=10
+# Measured (ops/sandbox_probe.py --manager user): cgroup limits and NoNewPrivileges hold. Filesystem
+# isolation does NOT: without unprivileged user namespaces the process can read and write the whole home.
+# That boundary needs the system-manager candidate in ops/systemd/system/, which is an owner deployment decision.
 NoNewPrivileges=yes
 PrivateTmp=yes
 MemoryMax=512M

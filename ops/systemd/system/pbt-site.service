@@ -1,0 +1,49 @@
+# Deployment CANDIDATE (not installed by ops/install.sh; installing requires owner authorization).
+# Filesystem isolation needs a system manager: on Ubuntu 24.04 unprivileged user namespaces are
+# restricted, so ProtectHome/ProtectSystem in a `systemd --user` unit silently do nothing. Measured by
+# ops/sandbox_probe.py, not assumed. Install tree is read-only; only StateDirectory is writable.
+[Unit]
+Description=PBT site + lead API (loopback, behind TLS proxy)
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=20
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=pbt-site
+StateDirectoryMode=0700
+WorkingDirectory=/opt/pbt-site
+ExecStart=/usr/bin/python3 server/app.py
+Environment=LEAD_DB=%S/pbt-site/leads.db
+Environment=TRUST_PROXY=1
+EnvironmentFile=-/etc/pbt-site/env
+Restart=always
+RestartSec=2
+TimeoutStopSec=10
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=
+AmbientCapabilities=
+MemoryMax=512M
+TasksMax=256
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target
