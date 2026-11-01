@@ -45,6 +45,19 @@ print(json.dumps(out))
 """
 
 
+def boundaries(seen):
+    """What the process inside the unit observed, turned into claims. A missing limit is not a held one."""
+    return {
+        'home_read_blocked': seen['home_canary_readable'] is False,
+        'home_write_blocked': seen['home_writable'] is False,
+        'usr_write_blocked': seen['usr_writable'] is False,
+        'etc_write_blocked': seen['etc_writable'] is False,
+        'memory_limit_applied': seen['memory_max'] == str(128 * 1024 * 1024),
+        'task_limit_applied': seen['tasks_max'] == '32',
+        'no_new_privileges': seen['no_new_privs'] is True,
+    }
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--manager', choices=('user', 'system'), required=True)
@@ -72,15 +85,7 @@ def main(argv=None):
         seen = json.loads(r.stdout)
     finally:
         canary.unlink(missing_ok=True)
-    held = {
-        'home_read_blocked': seen['home_canary_readable'] is False,
-        'home_write_blocked': seen['home_writable'] is False,
-        'usr_write_blocked': seen['usr_writable'] is False,
-        'etc_write_blocked': seen['etc_writable'] is False,
-        'memory_limit_applied': seen['memory_max'] == str(128 * 1024 * 1024),
-        'task_limit_applied': seen['tasks_max'] == '32',
-        'no_new_privileges': seen['no_new_privs'] is True,
-    }
+    held = boundaries(seen)
     ok = all(held.values())
     print(json.dumps({'status': 'PASS' if ok else 'FAIL', 'manager': a.manager, 'boundaries': held,
                       'uid_run_as': 'dynamic' if a.manager == 'system' else os.getuid(),

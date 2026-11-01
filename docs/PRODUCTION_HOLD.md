@@ -2,7 +2,9 @@
 
 **State: PRODUCTION HOLD.** The engineering release candidate cannot leave this state by more tests.
 Each row needs a fact from outside this repository. Nothing here may be filled in by an agent.
-Templates for receipts: `assurance/source/` (decisions) and the assurance package `evidence_templates/`.
+A fact closes with a signed receipt: fields, authority and expiry per class in `config/external-evidence-policy.json`;
+`assurance/evidence/external/<CLASS>.json` plus `ssh-keygen -Y sign -n pbt-external-receipt`; the owner's public key added to
+`config/owner-allowed-signers`. Check: `python3 tools/external_receipts.py --target-sha <SHA>`.
 
 | ID | Missing fact | Who | Blocks | Closes when |
 |---|---|---|---|---|

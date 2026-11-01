@@ -219,7 +219,7 @@
   },
   {
    "id": "M-DB-06-rpo-gap",
-   "task": "DB-08",
+   "task": "DB-08.T",
    "edits": [
     {
      "file": "ops/restore.py",
@@ -281,7 +281,7 @@
   },
   {
    "id": "M-NET-02-first-xff-line",
-   "task": "NET-02",
+   "task": "NET-02.T",
    "edits": [
     {
      "file": "server/app.py",
@@ -295,7 +295,7 @@
   },
   {
    "id": "M-NET-02-trust-without-flag",
-   "task": "NET-02",
+   "task": "NET-02.T",
    "edits": [
     {
      "file": "server/app.py",
@@ -323,7 +323,7 @@
   },
   {
    "id": "M-NET-04-retry-class",
-   "task": "NET-04",
+   "task": "NET-04.T",
    "edits": [
     {
      "file": "server/delivery_transport.py",
@@ -337,7 +337,7 @@
   },
   {
    "id": "M-NET-04-hmac-forged",
-   "task": "NET-04",
+   "task": "NET-04.T",
    "edits": [
     {
      "file": "server/app.py",
@@ -351,7 +351,7 @@
   },
   {
    "id": "M-NET-04-terminal-retried",
-   "task": "NET-04",
+   "task": "NET-04.T",
    "edits": [
     {
      "file": "server/app.py",
@@ -365,7 +365,7 @@
   },
   {
    "id": "M-NET-04-unbounded-retry",
-   "task": "NET-04",
+   "task": "NET-04.T",
    "edits": [
     {
      "file": "server/app.py",
@@ -680,20 +680,6 @@
    ]
   },
   {
-   "id": "M-EVD-08-unknown-as-pass",
-   "task": "EVD-08",
-   "edits": [
-    {
-     "file": "tools/assurance_check.py",
-     "find": "    if any(s != 'PASS' for s in leaves):",
-     "replace": "    if 'FAIL' in leaves:"
-    }
-   ],
-   "oracle": [
-    "tests/test_assurance_case.py"
-   ]
-  },
-  {
    "id": "M-ADV-04-p99-limit",
    "task": "ADV-04",
    "edits": [
@@ -737,7 +723,7 @@
   },
   {
    "id": "M-QUOTE-unknown-delivery-as-zero",
-   "task": "WEB-07",
+   "task": "WEB-07.T",
    "edits": [
     {
      "file": "web/js/quote.js",
@@ -773,6 +759,216 @@
      "file": "tools/meta_evidence_gate.py",
      "find": "    require(len(ids)==len(set(ids)) and set(ids)==set(catalog), 'mutation_catalog_coverage')\n    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed='UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED'\n",
      "replace": "    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed=verdict if row['id'] not in catalog else ('UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED')\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-01-drift",
+   "task": "EVD-01",
+   "edits": [
+    {
+     "file": "tools/supply_chain.py",
+     "find": "    if identity['head_sha'] != expected_head:\n        raise Rejected('checkout_differs_from_expected_head')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs"
+   ]
+  },
+  {
+   "id": "M-EVD-07-tz-in-bundle",
+   "task": "EVD-07",
+   "edits": [
+    {
+     "file": "tools/inline.py",
+     "find": "html = (WEB / 'index.html').read_text(encoding='utf-8')\n",
+     "replace": "html = (WEB / 'index.html').read_text(encoding='utf-8') + '<!-- ' + __import__('time').strftime('%Z') + ' -->'\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed"
+   ]
+  },
+  {
+   "id": "M-WEB-02-interpolated-p75",
+   "task": "WEB-02",
+   "edits": [
+    {
+     "file": "tools/perf_probe.py",
+     "find": "    return v[math.ceil(len(v) * 0.75) - 1]\n",
+     "replace": "    return v[int(len(v) * 0.75) - 1]\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_perf_probe.py::test_p75_is_nearest_rank_not_interpolated"
+   ]
+  },
+  {
+   "id": "M-WEB-04-late-shift",
+   "task": "WEB-04",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "  const kyivToday = () => {\n",
+     "replace": "  addEventListener('load', () => setTimeout(() => { document.querySelector('main').style.marginTop = '400px'; }, 400));\n  const kyivToday = () => {\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_web_assurance.py::test_late_fonts_do_not_shift_layout_beyond_cls_budget"
+   ]
+  },
+  {
+   "id": "M-WEB-05-video-preload",
+   "task": "WEB-05",
+   "edits": [
+    {
+     "file": "web/index.html",
+     "find": "</head>",
+     "replace": "<link rel=\"preload\" as=\"video\" href=\"media/video/x.mp4\"></head>"
+    }
+   ],
+   "oracle": [
+    "tests/test_web_assurance.py::test_page_transfer_stays_within_predeclared_budget"
+   ]
+  },
+  {
+   "id": "M-ADV-01-unmodelled-endpoint",
+   "task": "ADV-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        if self.path.split('?')[0] == '/api/health':\n",
+     "replace": "        if self.path.split('?')[0] == '/api/debug':\n            return self.send_json(200, {})\n        if self.path.split('?')[0] == '/api/health':\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_assurance_case.py::test_threat_model_covers_every_endpoint_and_links_real_tests"
+   ]
+  },
+  {
+   "id": "M-WEB-01-hide-focused",
+   "task": "WEB-01.T",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "  const kyivToday = () => {\n",
+     "replace": "  document.addEventListener('focusin', e => { e.target.style.visibility = 'hidden'; });\n  const kyivToday = () => {\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey"
+   ]
+  },
+  {
+   "id": "M-NET-08-probe-ignores-home",
+   "task": "NET-08.T",
+   "edits": [
+    {
+     "file": "ops/sandbox_probe.py",
+     "find": "'home_read_blocked': seen['home_canary_readable'] is False,",
+     "replace": "'home_read_blocked': True,"
+    }
+   ],
+   "oracle": [
+    "tests/test_systemd_sandbox.py::test_probe_reports_the_measured_user_manager_failure"
+   ]
+  },
+  {
+   "id": "M-WEB-07-parity",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "data/catalog.json",
+     "find": "\"name\": \"Гусеничний екскаватор JCB JS220LC\",",
+     "replace": "\"name\": \"Інша назва\","
+    }
+   ],
+   "oracle": [
+    "tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface"
+   ]
+  },
+  {
+   "id": "M-BACKUP-no-lock",
+   "task": "DB-06",
+   "edits": [
+    {
+     "file": "ops/backup.py",
+     "find": "            fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)\n",
+     "replace": "            pass\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
+   ]
+  },
+  {
+   "id": "M-ACCEPT-status-as-evidence",
+   "task": "EVD-08",
+   "edits": [
+    {
+     "file": "tools/assurance_check.py",
+     "find": "    require(committed == recomputed, 'committed_receipts_differ_from_artifact_bytes')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected"
+   ]
+  },
+  {
+   "id": "M-ACCEPT-test-never-ran",
+   "task": "EVD-08",
+   "edits": [
+    {
+     "file": "tools/evidence_reconcile.py",
+     "find": "    if not rows:\n        raise Unbound(f'test_never_executed_{reference}')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_test_that_exists_but_never_ran_is_rejected"
+   ]
+  },
+  {
+   "id": "M-ACCEPT-normative",
+   "task": "EVD-08",
+   "edits": [
+    {
+     "file": "tools/assurance_check.py",
+     "find": "        require(hashlib.sha256((root / rel).read_bytes()).hexdigest() == digest, f'normative_specification_changed_{rel}')\n",
+     "replace": "        pass\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_changed_normative_specification_is_rejected"
+   ]
+  },
+  {
+   "id": "M-ACCEPT-external-file",
+   "task": "OPS-08.T",
+   "edits": [
+    {
+     "file": "tools/external_receipts.py",
+     "find": "    _verify_signature(path, signers, policy)\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class"
+   ]
+  },
+  {
+   "id": "M-RUNNER-job-not-completed",
+   "task": "EVD-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "            require(jobs[name]['status']=='completed' and jobs[name]['conclusion']=='success', 'required_job_not_successful_'+role)\n",
+     "replace": ""
     }
    ],
    "oracle": [

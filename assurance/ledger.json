@@ -43,7 +43,9 @@
     "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs",
     "tests/test_supply_chain.py::test_capture_then_verify_round_trip"
    ],
-   "mutants": [],
+   "mutants": [
+    "M-EVD-01-drift"
+   ],
    "external_receipt": null
   },
   {
@@ -93,7 +95,8 @@
    ],
    "mutants": [
     "M-EVD-02-event-binding",
-    "M-EVD-02-historic-pr8"
+    "M-EVD-02-historic-pr8",
+    "M-RUNNER-job-not-completed"
    ],
    "external_receipt": null
   },
@@ -337,7 +340,9 @@
     "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed",
     "tests/test_reproducibility.py::test_comparison_detects_a_nondeterministic_input"
    ],
-   "mutants": [],
+   "mutants": [
+    "M-EVD-07-tz-in-bundle"
+   ],
    "external_receipt": null
   },
   {
@@ -360,9 +365,9 @@
    "formal_invariant": "No release claim without supporting current evidence for every mandatory leaf",
    "counterexample": "Supply a complete list with one unavailable proof",
    "test_oracle": [
-    "tests/test_assurance_case.py::test_decision_logic_is_conjunctive_and_three_valued",
-    "tests/test_assurance_case.py::test_green_ci_cannot_substitute_for_a_field_or_owner_fact",
-    "tests/test_assurance_case.py::test_historical_sha_with_executable_drift_cannot_prove_the_target"
+    "tests/test_acceptance_adversarial.py::test_forged_all_pass_ledger_is_not_accepted",
+    "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected",
+    "tests/test_acceptance_adversarial.py::test_authentic_evidence_is_accepted"
    ],
    "required_change": "Generate release proof-graph with external UNKNOWN statuses, no weighted averaging and stale-run invalidation",
    "dependency_ids": [
@@ -373,7 +378,7 @@
     "EVD-06"
    ],
    "verification_commands": [
-    "python -m pytest -q tests/test_assurance_case.py"
+    "python -m pytest -q tests/test_acceptance_adversarial.py"
    ],
    "acceptance_predicate": "Claim is PASS iff all mandatory proof leaves PASS at compatible SHA and target",
    "artifact_paths": [
@@ -384,12 +389,14 @@
    "verification_status": "INFERRED",
    "disposition": null,
    "tests": [
-    "tests/test_assurance_case.py::test_decision_logic_is_conjunctive_and_three_valued",
-    "tests/test_assurance_case.py::test_green_ci_cannot_substitute_for_a_field_or_owner_fact",
-    "tests/test_assurance_case.py::test_historical_sha_with_executable_drift_cannot_prove_the_target"
+    "tests/test_acceptance_adversarial.py::test_forged_all_pass_ledger_is_not_accepted",
+    "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected",
+    "tests/test_acceptance_adversarial.py::test_authentic_evidence_is_accepted"
    ],
    "mutants": [
-    "M-EVD-08-unknown-as-pass"
+    "M-ACCEPT-status-as-evidence",
+    "M-ACCEPT-test-never-ran",
+    "M-ACCEPT-normative"
    ],
    "external_receipt": null
   },
@@ -651,7 +658,8 @@
    "counterexample": "SIGKILL/EIO/ENOSPC at each rename/fsync and metadata operation",
    "test_oracle": [
     "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation",
-    "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars"
+    "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars",
+    "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
    ],
    "required_change": "Prepare validated alternate generation, atomic final publish strategy, sidecar controls, cleanup and rollback proof",
    "dependency_ids": [
@@ -659,7 +667,7 @@
     "DB-04"
    ],
    "verification_commands": [
-    "python -m pytest -q tests/test_restore_cutpoints.py"
+    "python -m pytest -q tests/test_backup_safety.py tests/test_restore_cutpoints.py"
    ],
    "acceptance_predicate": "No scenario produces irrecoverable partial state; old/new integrity and watermark checked",
    "artifact_paths": [
@@ -671,13 +679,15 @@
    "disposition": null,
    "tests": [
     "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation",
-    "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars"
+    "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars",
+    "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
    ],
    "mutants": [
     "M-DB-06-move-old-away",
     "M-DB-06-stale-sidecar",
     "M-DB-06-no-settle",
-    "M-DB-06-dir-fsync"
+    "M-DB-06-dir-fsync",
+    "M-BACKUP-no-lock"
    ],
    "external_receipt": null
   },
@@ -715,7 +725,17 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Off-device store, credentials and encryption key are owner decisions (R03). Local mechanism only: ops/backup.py, ops/restore_drill.py."
+   "blocker": "Off-device store, credentials and encryption key are owner decisions (R03). Local mechanism only: ops/backup.py, ops/restore_drill.py.",
+   "subclaims": [
+    {
+     "id": "DB-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "R1"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "DB-08",
@@ -755,14 +775,31 @@
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
-   "tests": [
-    "tests/test_backup_safety.py::test_restore_drill_measures_rpo_gap_and_never_claims_off_device"
-   ],
-   "mutants": [
-    "M-DB-06-rpo-gap"
-   ],
+   "tests": [],
+   "mutants": [],
    "external_receipt": null,
-   "blocker": "Requires a separate host, an off-device snapshot and owner-adopted RPO/RTO. Procedure rehearsed locally by ops/restore_drill.py with off_device=false."
+   "blocker": "Requires a separate host, an off-device snapshot and owner-adopted RPO/RTO. Procedure rehearsed locally by ops/restore_drill.py with off_device=false.",
+   "subclaims": [
+    {
+     "id": "DB-08.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_backup_safety.py::test_restore_drill_measures_rpo_gap_and_never_claims_off_device"
+     ],
+     "mutants": [
+      "M-DB-06-rpo-gap"
+     ]
+    },
+    {
+     "id": "DB-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "R2"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "NET-01",
@@ -854,16 +891,33 @@
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
-   "tests": [
-    "tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity",
-    "tests/test_http_protocol.py::test_untrusted_peer_cannot_set_identity_or_hsts"
-   ],
-   "mutants": [
-    "M-NET-02-first-xff-line",
-    "M-NET-02-trust-without-flag"
-   ],
+   "tests": [],
+   "mutants": [],
    "external_receipt": null,
-   "blocker": "Adversarial proxy behavior verified; real TLS edge, DNS and proxy chain need owner domain decision B4."
+   "blocker": "Adversarial proxy behavior verified; real TLS edge, DNS and proxy chain need owner domain decision B4.",
+   "subclaims": [
+    {
+     "id": "NET-02.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity",
+      "tests/test_http_protocol.py::test_untrusted_peer_cannot_set_identity_or_hsts"
+     ],
+     "mutants": [
+      "M-NET-02-first-xff-line",
+      "M-NET-02-trust-without-flag"
+     ]
+    },
+    {
+     "id": "NET-02.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B4"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "NET-03",
@@ -952,21 +1006,38 @@
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
-   "tests": [
-    "tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart",
-    "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement",
-    "tests/test_outbox_state_machine.py::test_permanent_status_is_terminal_with_exactly_one_attempt",
-    "tests/test_outbox_state_machine.py::test_retry_budget_exhaustion_is_an_explicit_terminal_state",
-    "tests/test_outbox_state_machine.py::test_slow_receiver_times_out_then_retry_carries_same_identity"
-   ],
-   "mutants": [
-    "M-NET-04-retry-class",
-    "M-NET-04-hmac-forged",
-    "M-NET-04-terminal-retried",
-    "M-NET-04-unbounded-retry"
-   ],
+   "tests": [],
+   "mutants": [],
    "external_receipt": null,
-   "blocker": "Synthetic receiver contract verified; a live receiver receipt needs B3 and an authorized live test. Site never treats 2xx as receipt."
+   "blocker": "Synthetic receiver contract verified; a live receiver receipt needs B3 and an authorized live test. Site never treats 2xx as receipt.",
+   "subclaims": [
+    {
+     "id": "NET-04.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart",
+      "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement",
+      "tests/test_outbox_state_machine.py::test_permanent_status_is_terminal_with_exactly_one_attempt",
+      "tests/test_outbox_state_machine.py::test_retry_budget_exhaustion_is_an_explicit_terminal_state",
+      "tests/test_outbox_state_machine.py::test_slow_receiver_times_out_then_retry_carries_same_identity"
+     ],
+     "mutants": [
+      "M-NET-04-retry-class",
+      "M-NET-04-hmac-forged",
+      "M-NET-04-terminal-retried",
+      "M-NET-04-unbounded-retry"
+     ]
+    },
+    {
+     "id": "NET-04.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B3"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "NET-05",
@@ -1012,7 +1083,8 @@
    ],
    "mutants": [
     "M-NET-05-no-guard",
-    "M-NET-05-ipv6-per-address"
+    "M-NET-05-ipv6-per-address",
+    "M-NET-05-migrate-before-guard"
    ],
    "external_receipt": null
   },
@@ -1128,12 +1200,16 @@
    "preconditions": "none beyond dependencies",
    "formal_invariant": "Site process accesses only declared DB, logs, web and network endpoints",
    "counterexample": "Attempt to read files outside sandbox, exhaust tasks/memory, abuse writable root",
-   "test_oracle": [],
+   "test_oracle": [
+    "tests/test_systemd_sandbox.py"
+   ],
    "required_change": "Review systemd restrictions and runtime file permissions; test in isolated cloned host, preserve power guard",
    "dependency_ids": [
     "NET-01"
    ],
-   "verification_commands": [],
+   "verification_commands": [
+    "python -m pytest -q tests/test_systemd_sandbox.py"
+   ],
    "acceptance_predicate": "Resource caps and file/network boundaries proven, no break of media/API/backup",
    "artifact_paths": [
     "evidence/systemd-sandbox.json",
@@ -1145,7 +1221,29 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "MEASURED: under systemd --user on this host, ProtectHome/ProtectSystem have no effect on home read and write (ops/sandbox_probe.py FAIL); cgroup limits hold. System-manager candidate ops/systemd/system/pbt-site.service measured PASS. Installing it is a deployment decision."
+   "blocker": "MEASURED: under systemd --user on this host, ProtectHome/ProtectSystem have no effect on home read and write (ops/sandbox_probe.py FAIL); cgroup limits hold. System-manager candidate ops/systemd/system/pbt-site.service measured PASS. Installing it is a deployment decision.",
+   "subclaims": [
+    {
+     "id": "NET-08.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_systemd_sandbox.py"
+     ],
+     "mutants": [
+      "M-NET-08-probe-ignores-home"
+     ]
+    },
+    {
+     "id": "NET-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "R3"
+     ]
+    }
+   ],
+   "reclassification_reason": "Specification treats this as internal, but the boundary only exists on the production target and only under a system manager: measured FAIL under systemd --user. Technical part is the probe and candidate unit; the rest needs a deployment decision."
   },
   {
    "obligation_id": "WEB-01",
@@ -1185,14 +1283,34 @@
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
-   "tests": [
-    "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey",
-    "tests/test_web_assurance.py::test_wcag_text_spacing_and_320px_reflow_do_not_clip_or_scroll_sideways",
-    "tests/test_web_assurance.py::test_error_state_moves_focus_and_names_the_problem"
-   ],
+   "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Automated keyboard, reflow, spacing and axe verified. WCAG AA needs named human evaluation with a screen reader; none exists."
+   "blocker": "Automated keyboard, reflow, spacing and axe verified. WCAG AA needs named human evaluation with a screen reader; none exists.",
+   "subclaims": [
+    {
+     "id": "WEB-01.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey",
+      "tests/test_web_assurance.py::test_wcag_text_spacing_and_320px_reflow_do_not_clip_or_scroll_sideways",
+      "tests/test_web_assurance.py::test_error_state_moves_focus_and_names_the_problem"
+     ],
+     "mutants": [
+      "M-WEB-01-hide-focused"
+     ]
+    },
+    {
+     "id": "WEB-01.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "H1"
+     ]
+    }
+   ],
+   "reclassification_reason": "Specification treats this as internal, but its predicate names manual evidence and screen-reader use that automation cannot supply. Technical part is keyboard, reflow, spacing and error-state automation; the rest needs a named human."
   },
   {
    "obligation_id": "WEB-02",
@@ -1236,7 +1354,9 @@
     "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
     "tests/test_perf_probe.py"
    ],
-   "mutants": [],
+   "mutants": [
+    "M-WEB-02-interpolated-p75"
+   ],
    "external_receipt": null
   },
   {
@@ -1273,7 +1393,17 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "No real users yet. Field INP/CWV cannot exist before exposure; RUM or CrUX needs owner privacy decision."
+   "blocker": "No real users yet. Field INP/CWV cannot exist before exposure; RUM or CrUX needs owner privacy decision.",
+   "subclaims": [
+    {
+     "id": "WEB-03.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "F1"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "WEB-04",
@@ -1319,7 +1449,9 @@
     "tests/test_hero_video_contrast.py",
     "tests/test_themes.py"
    ],
-   "mutants": [],
+   "mutants": [
+    "M-WEB-04-late-shift"
+   ],
    "external_receipt": null
   },
   {
@@ -1364,7 +1496,9 @@
     "tests/test_web_assurance.py::test_page_transfer_stays_within_predeclared_budget",
     "tests/test_media_budget.py"
    ],
-   "mutants": [],
+   "mutants": [
+    "M-WEB-05-video-preload"
+   ],
    "external_receipt": null
   },
   {
@@ -1404,7 +1538,18 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Canonical and OG URLs depend on the approved production domain (B4). Not invented."
+   "blocker": "Canonical and OG URLs depend on the approved production domain (B4). Not invented.",
+   "subclaims": [
+    {
+     "id": "WEB-06.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B4",
+      "B8"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "WEB-07",
@@ -1446,15 +1591,34 @@
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
-   "tests": [
-    "tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface",
-    "tests/test_business_parity.py::test_no_price_is_fabricated_as_zero_or_negative"
-   ],
-   "mutants": [
-    "M-QUOTE-unknown-delivery-as-zero"
-   ],
+   "tests": [],
+   "mutants": [],
    "external_receipt": null,
-   "blocker": "Parity validator verified; approval of effective-dated prices and VAT is B1/B2."
+   "blocker": "Parity validator verified; approval of effective-dated prices and VAT is B1/B2.",
+   "subclaims": [
+    {
+     "id": "WEB-07.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface",
+      "tests/test_business_parity.py::test_no_price_is_fabricated_as_zero_or_negative"
+     ],
+     "mutants": [
+      "M-QUOTE-unknown-delivery-as-zero",
+      "M-WEB-07-parity"
+     ]
+    },
+    {
+     "id": "WEB-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B1",
+      "B2"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "WEB-08",
@@ -1491,7 +1655,19 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Media rights and footage origin are B5/B6/B9."
+   "blocker": "Media rights and footage origin are B5/B6/B9.",
+   "subclaims": [
+    {
+     "id": "WEB-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B5",
+      "B6",
+      "B9"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "OPS-01",
@@ -1586,7 +1762,17 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "SLO adoption is an owner decision and needs field data; none is proposed as adopted."
+   "blocker": "SLO adoption is an owner decision and needs field data; none is proposed as adopted.",
+   "subclaims": [
+    {
+     "id": "OPS-02.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "S1"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "OPS-03",
@@ -1669,7 +1855,17 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Privacy notice, purpose, retention and lawful basis are B7; needs owner and legal review under current Ukrainian law."
+   "blocker": "Privacy notice, purpose, retention and lawful basis are B7; needs owner and legal review under current Ukrainian law.",
+   "subclaims": [
+    {
+     "id": "OPS-04.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B7"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "OPS-05",
@@ -1707,7 +1903,18 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Retention period needs OPS-04. No automatic deletion is implemented without an approved policy."
+   "blocker": "Retention period needs OPS-04. No automatic deletion is implemented without an approved policy.",
+   "subclaims": [
+    {
+     "id": "OPS-05.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B7",
+      "S1"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "OPS-06",
@@ -1744,7 +1951,18 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Commercial rates, VAT, minimum shift, idle and dispatch policy are B1/B2."
+   "blocker": "Commercial rates, VAT, minimum shift, idle and dispatch policy are B1/B2.",
+   "subclaims": [
+    {
+     "id": "OPS-06.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B1",
+      "B2"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "OPS-07",
@@ -1782,7 +2000,18 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Domain, TLS, rollout and rollback rehearsal on a real edge need B4 and deploy authorization."
+   "blocker": "Domain, TLS, rollout and rollback rehearsal on a real edge need B4 and deploy authorization.",
+   "subclaims": [
+    {
+     "id": "OPS-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B4",
+      "D1"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "OPS-08",
@@ -1814,7 +2043,10 @@
    "preconditions": "external owner fact",
    "formal_invariant": "Every mandatory external fact has non-self-issued receipt; no unproven production claim",
    "counterexample": "Keep one source absent and run green CI",
-   "test_oracle": [],
+   "test_oracle": [
+    "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class",
+    "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
+   ],
    "required_change": "Create signed/approved owner decisions and independent evidence matrix; no automatic deployment/merge via score",
    "dependency_ids": [
     "EVD-08",
@@ -1825,7 +2057,9 @@
     "OPS-07",
     "WEB-08"
    ],
-   "verification_commands": [],
+   "verification_commands": [
+    "python -m pytest -q tests/test_acceptance_adversarial.py"
+   ],
    "acceptance_predicate": "Release PASS iff all mandatory leaves are evidence-verified at target version and owner deploy authorization exists",
    "artifact_paths": [
     "evidence/final-release-act.json",
@@ -1837,7 +2071,29 @@
    "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Depends on all external receipts above and explicit owner release acceptance."
+   "blocker": "Depends on all external receipts above and explicit owner release acceptance.",
+   "subclaims": [
+    {
+     "id": "OPS-08.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class",
+      "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
+     ],
+     "mutants": [
+      "M-ACCEPT-external-file"
+     ]
+    },
+    {
+     "id": "OPS-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "D1"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "ADV-01",
@@ -1887,7 +2143,9 @@
     "tests/test_assurance_case.py::test_controls_map_names_real_tests_and_claims_no_whole_standard",
     "tests/test_dom_trust_boundary.py::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink"
    ],
-   "mutants": [],
+   "mutants": [
+    "M-ADV-01-unmodelled-endpoint"
+   ],
    "external_receipt": null
   },
   {
@@ -1935,7 +2193,9 @@
    "tests": [
     "tests/test_mutation_runner.py"
    ],
-   "mutants": [],
+   "mutants": [
+    "M-EVD-03-catalog-coverage"
+   ],
    "external_receipt": null
   },
   {
@@ -2153,18 +2413,14 @@
    "preconditions": "external owner fact",
    "formal_invariant": "Critical booking lead journey works across device engines, input methods and constraints",
    "counterexample": "200% text, high contrast, reduced motion, keyboard only, screen reader, iOS Safari",
-   "test_oracle": [
-    "tests/test_cross_engine_parity.py"
-   ],
+   "test_oracle": [],
    "required_change": "Independent manual observation with actual device specs and recordings/screenshots (consent); lab baseline retained",
    "dependency_ids": [
     "WEB-01",
     "WEB-03",
     "WEB-04"
    ],
-   "verification_commands": [
-    "python -m pytest -q tests/test_cross_engine_parity.py"
-   ],
+   "verification_commands": [],
    "acceptance_predicate": "No unresolved WCAG AA critical failure and recorded field boundary; owner visual approval separate",
    "artifact_paths": [
     "evidence/manual-device-matrix.json",
@@ -2173,12 +2429,20 @@
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
-   "tests": [
-    "tests/test_cross_engine_parity.py"
-   ],
+   "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Real devices, screen reader and iOS Safari need a human and hardware; WebKit on Linux is not iOS."
+   "blocker": "Real devices, screen reader and iOS Safari need a human and hardware; WebKit on Linux is not iOS.",
+   "subclaims": [
+    {
+     "id": "ADV-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "H1"
+     ]
+    }
+   ]
   },
   {
    "obligation_id": "ADV-08",
@@ -2210,7 +2474,7 @@
    "formal_invariant": "Release decision is a verifiable dependency closure, never a self-graded average",
    "counterexample": "Withdraw one mandatory provider receipt after all code gates become green",
    "test_oracle": [
-    "tests/test_assurance_case.py::test_external_claim_stays_unknown_and_release_stays_on_hold"
+    "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
    ],
    "required_change": "Generate canonical release act with mandatory graph, signed owner/deploy decisions, unresolved facts as HOLD",
    "dependency_ids": [
@@ -2222,7 +2486,7 @@
     "ADV-07"
    ],
    "verification_commands": [
-    "python -m pytest -q tests/test_assurance_case.py"
+    "python -m pytest -q tests/test_acceptance_adversarial.py"
    ],
    "acceptance_predicate": "Zero mandatory unknowns, no new P0/P1, current immutable code proof, owner authorization; otherwise HOLD",
    "artifact_paths": [
@@ -2232,12 +2496,31 @@
    "execution_status": "BLOCKED",
    "verification_status": "UNKNOWN",
    "disposition": "BLOCKED_EXTERNAL",
-   "tests": [
-    "tests/test_assurance_case.py::test_external_claim_stays_unknown_and_release_stays_on_hold"
-   ],
+   "tests": [],
    "mutants": [],
    "external_receipt": null,
-   "blocker": "Signed release act needs every external receipt and owner authorization. Machine decision: PRODUCTION HOLD."
+   "blocker": "Signed release act needs every external receipt and owner authorization. Machine decision: PRODUCTION HOLD.",
+   "subclaims": [
+    {
+     "id": "ADV-08.T",
+     "kind": "technical",
+     "status": "IMPLEMENTED",
+     "tests": [
+      "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
+     ],
+     "mutants": [
+      "M-ACCEPT-external-file"
+     ]
+    },
+    {
+     "id": "ADV-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "D1"
+     ]
+    }
+   ]
   }
  ]
 }

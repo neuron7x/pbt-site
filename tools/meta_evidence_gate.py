@@ -281,6 +281,13 @@ def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base, ev
             require(target['pr_number'] in run['pull_requests'], 'run_not_linked_to_this_pull_request')
         require(run['head_sha'] == expected_head
                 and run['status'] == 'completed' and run['conclusion'] == 'success', 'stale_or_failed_workflow')
+        jobs=run['jobs']
+        needed=list(evidence_policy['required_jobs'][role])
+        if target['kind']=='pull_request':
+            needed+=evidence_policy['required_jobs_pull_request_only'].get(role,[])
+        for name in needed:
+            require(name in jobs, 'required_job_missing_'+role)
+            require(jobs[name]['status']=='completed' and jobs[name]['conclusion']=='success', 'required_job_not_successful_'+role)
         used_runs.append(num(run['id'], 'run_id', integer=True,min_value=1))
         num(run['attempt'], 'run_attempt', integer=True,min_value=1)
     require(len(set(used_runs))==5, 'reused_run_id')

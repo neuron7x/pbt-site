@@ -66,6 +66,9 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
     manifest_runs = {role: {'id': r['id'], 'head_sha': r['head_sha'], 'event': r['event'], 'status': r['status'],
                             'conclusion': r['conclusion'], 'attempt': r['run_attempt'],
                             'pull_requests': [x['number'] for x in r.get('pull_requests') or []]} for role, r in chosen.items()}
+    for role, record in manifest_runs.items():
+        listed = api(f"repos/{repo}/actions/runs/{record['id']}/attempts/{record['attempt']}/jobs?per_page=100")['jobs']
+        record['jobs'] = {j['name']: {'id': j['id'], 'status': j['status'], 'conclusion': j['conclusion']} for j in listed}
     artifacts = {}
     out.mkdir(parents=True, exist_ok=True)
     for role in rules['roles']:

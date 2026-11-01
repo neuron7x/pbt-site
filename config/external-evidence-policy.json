@@ -1,0 +1,24 @@
+{
+ "schema": "pbt-external-evidence-policy-v1",
+ "namespace": "pbt-external-receipt",
+ "signer_identity": "owner",
+ "note": "A receipt closes a class only with a valid detached SSH signature from a key in config/owner-allowed-signers, added by the owner. That file is deliberately empty: nothing can close until the owner acts, and neither CI nor an agent can stand in.",
+ "classes": {
+  "B1": {"title": "Approved effective-dated tariffs", "authority": "owner", "fields": ["subject", "effective_from", "document_sha256"], "expires": false, "obligations": ["OPS-06", "WEB-07"], "leaf": "C10.prices_vat"},
+  "B2": {"title": "VAT, minimum shift, idle, crane and dispatch policy", "authority": "owner", "fields": ["subject", "effective_from", "document_sha256"], "expires": false, "obligations": ["OPS-06", "WEB-07"], "leaf": "C10.prices_vat"},
+  "B3": {"title": "Live delivery channel and receiver receipt naming real lead ids", "authority": "owner on receiver records", "fields": ["subject", "receipt_id", "persisted_lead_ids"], "expires": false, "obligations": ["NET-04"], "leaf": "C10.live_delivery"},
+  "B4": {"title": "Domain, DNS, HTTPS and trusted proxy chain", "authority": "owner plus independent DNS/TLS check", "fields": ["subject", "fqdn", "certificate_sha256"], "expires": true, "obligations": ["NET-02", "OPS-07", "WEB-06"], "leaf": "C10.edge"},
+  "B5": {"title": "Rights to customer footage", "authority": "owner", "fields": ["subject", "document_sha256"], "expires": false, "obligations": ["WEB-08"], "leaf": "C10.media_rights"},
+  "B6": {"title": "Authorship and origin of frames", "authority": "owner", "fields": ["subject", "document_sha256"], "expires": false, "obligations": ["WEB-08"], "leaf": "C10.media_rights"},
+  "B7": {"title": "Privacy purpose, notice, lawful basis and retention", "authority": "owner and lawyer", "fields": ["subject", "effective_from", "document_sha256", "retention_days"], "expires": false, "obligations": ["OPS-04", "OPS-05"], "leaf": "C10.privacy"},
+  "B8": {"title": "Public communication channels", "authority": "owner", "fields": ["subject", "document_sha256"], "expires": false, "obligations": ["WEB-06"], "leaf": "C10.edge"},
+  "B9": {"title": "Illustration consent and attribution form", "authority": "owner", "fields": ["subject", "document_sha256"], "expires": false, "obligations": ["WEB-08"], "leaf": "C10.media_rights"},
+  "R1": {"title": "Off-device encrypted snapshot", "authority": "storage provider receipt, endorsed by owner", "fields": ["subject", "provider_receipt_id", "snapshot_sha256"], "expires": true, "obligations": ["DB-07"], "leaf": "C10.off_device_restore"},
+  "R2": {"title": "Separate-host restore with RPO/RTO adopted before the run", "authority": "operator, endorsed by owner", "fields": ["subject", "host_identity", "rpo_policy", "rto_policy", "measured_rto_s", "rpo_gap_ids", "snapshot_sha256"], "expires": true, "obligations": ["DB-08"], "leaf": "C10.off_device_restore"},
+  "R3": {"title": "Isolation measured on the actual production target", "authority": "operator on target", "fields": ["subject", "host_identity", "probe_output_sha256"], "expires": true, "obligations": ["NET-08"], "leaf": "C10.sandbox"},
+  "H1": {"title": "Named human accessibility evaluation with assistive technology and real devices", "authority": "named evaluator, endorsed by owner", "fields": ["subject", "evaluator", "matrix_sha256"], "expires": true, "obligations": ["WEB-01", "ADV-07"], "leaf": "C10.accessibility_human"},
+  "F1": {"title": "Field performance, or an authorized bounded pilot", "authority": "field data provider, endorsed by owner", "fields": ["subject", "sample_size", "window", "dataset_sha256"], "expires": true, "obligations": ["WEB-03"], "leaf": "C10.field_inp"},
+  "S1": {"title": "SLO adopted before measuring", "authority": "owner", "fields": ["subject", "effective_from", "document_sha256"], "expires": false, "obligations": ["OPS-02", "OPS-05"], "leaf": "C10.field_inp"},
+  "D1": {"title": "Explicit release authorization for the exact revision", "authority": "owner", "fields": ["subject", "release_sha"], "expires": true, "bound_to_target": true, "obligations": ["OPS-07", "OPS-08", "ADV-08"], "leaf": "C10.authorization"}
+ }
+}

@@ -34,6 +34,8 @@ class Provider:
     def api(self, path):
         if '/actions/runs?' in path:
             return {'workflow_runs': self.runs}
+        if '/jobs?' in path:
+            return {'jobs': [{'name': 'j', 'id': 7, 'status': 'completed', 'conclusion': 'success'}]}
         if path.endswith('/artifacts?per_page=100'):
             run = int(path.split('/runs/')[1].split('/')[0])
             return {'artifacts': [a for a in self.artifacts.values() if a['run'] == run]}

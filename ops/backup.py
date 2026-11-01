@@ -3,7 +3,10 @@
 
 A snapshot is only successful after SQLite integrity_check, an atomic
 create-only publish, and retention. No existing snapshot is ever overwritten.
+One backup at a time per directory: a kernel lock, released even by SIGKILL, makes
+removing interrupted residue and pruning old snapshots safe. A second run exits 2.
 """
+import fcntl
 import os
 import sqlite3
 import sys
@@ -39,9 +42,16 @@ def main():
         return 1
 
     tmp = None
+    guard = None
     try:
         OUT.mkdir(parents=True, exist_ok=True)
         os.chmod(OUT, 0o700)
+        guard = os.open(OUT / '.backup-lock', os.O_RDWR | os.O_CREAT, 0o600)
+        try:
+            fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            print('backup REFUSED: another backup is running in this directory', file=sys.stderr)
+            return 2
         for stale in OUT.glob('leads-*.tmp'):  # An interrupted run must not retain customer data forever.
             stale.unlink()
         stamp = time.strftime('%Y%m%d-%H%M%S')
@@ -79,6 +89,8 @@ def main():
     finally:
         if tmp is not None:
             tmp.unlink(missing_ok=True)
+        if guard is not None:
+            os.close(guard)
 
 
 if __name__ == '__main__':

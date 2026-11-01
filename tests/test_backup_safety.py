@@ -204,3 +204,64 @@ def test_restore_drill_measures_rpo_gap_and_never_claims_off_device(srv, tmp_pat
     assert report['measured_rto_s'] >= 0
     assert server.db.read_bytes() == before
     assert server.post(LEAD, 'k-drill-after-1')[0] == 201  # The live server was untouched and still holds its guard.
+
+
+BARRIER_DRIVER = r'''
+import os, runpy, sys, time
+reached, release = sys.argv[1], sys.argv[2]
+real_fsync = os.fsync
+state = {'done': False}
+def fsync(fd):
+    # First fsync is the temporary snapshot, just before create-only publication.
+    if not state['done']:
+        state['done'] = True
+        open(reached, 'w').close()
+        deadline = time.monotonic() + 20
+        while not os.path.exists(release):
+            if time.monotonic() > deadline:
+                os._exit(97)
+            time.sleep(.01)
+    return real_fsync(fd)
+os.fsync = fsync
+sys.argv = ['backup.py']
+runpy.run_path(os.environ['BACKUP_SCRIPT'], run_name='__main__')
+'''
+
+
+def test_concurrent_backup_never_destroys_a_running_backups_temporary_file(tmp_path):
+    """Deterministic interleaving by file barrier: A holds its temporary snapshot, B runs to completion, A resumes."""
+    db, out = tmp_path / 'leads.db', tmp_path / 'backups'
+    _seed(db)
+    env = {**os.environ, 'LEAD_DB': str(db), 'BACKUP_DIR': str(out), 'BACKUP_SCRIPT': str(ROOT / 'ops/backup.py')}
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+    published = sorted(out.glob('leads-*.db'))
+    before = {p: p.read_bytes() for p in published}
+    reached, release = tmp_path / 'reached', tmp_path / 'release'
+    a = subprocess.Popen([sys.executable, '-c', BARRIER_DRIVER, str(reached), str(release)], env=env,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        for _ in range(1000):
+            if reached.exists():
+                break
+            assert a.poll() is None, a.communicate()
+            __import__('time').sleep(.01)
+        assert reached.exists(), 'barrier not reached: the interleaving was not exercised'
+        held = list(out.glob('leads-*.tmp'))
+        assert len(held) == 1
+        b = subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, capture_output=True, text=True, timeout=15)
+        assert held[0].exists(), 'B removed the temporary file of a backup still running'
+        assert b.returncode == 2 and 'REFUSED' in b.stderr, (b.returncode, b.stderr)
+    finally:
+        release.write_text('')
+    stdout, stderr = a.communicate(timeout=20)
+    assert a.returncode == 0, stderr
+    assert 'backup OK' in stdout
+    for path, raw in before.items():
+        assert path.read_bytes() == raw, 'a published snapshot changed'
+    snapshots = sorted(out.glob('leads-*.db'))
+    assert len(snapshots) == 2 and not list(out.glob('*.tmp'))
+    for snapshot in snapshots:
+        with sqlite3.connect(snapshot) as conn:
+            assert conn.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+    # The lock died with its holder: nothing stale remains for the next timer tick.
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0

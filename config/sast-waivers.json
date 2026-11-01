@@ -24,6 +24,12 @@
    "test": "B310",
    "file": "tools/runtime_soak.py",
    "rationale": "Soak harness only talks to the loopback server it spawned; never shipped to runtime."
+  },
+  {
+   "fingerprint": "9f8520156bb21647311b",
+   "test": "B314",
+   "file": "tools/evidence_reconcile.py",
+   "rationale": "Operator tool; acceptance parses the same bytes only after tools/meta_evidence_gate.py refused DTDs, entities and non-UTF-8 in them, and the digest binds them."
   }
  ]
 }
