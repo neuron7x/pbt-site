@@ -29,6 +29,12 @@ media-audit:    ## fail-closed розміри і sha256 локальних ме�
 bundle:         ## одно-файлова версія (артефакт / перегляд без сервера): dist/pbt-site.html
 	$(PY) tools/inline.py
 
+mutation:       ## critical fault catalog on a disposable copy; survivor fails
+	$(PY) tools/mutation_run.py --out artifacts/mutation/mutation-ledger.json
+
+assurance:      ## obligation ledger + three-valued release decision
+	$(PY) tools/assurance_check.py
+
 gate: test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
 	@status="$$(git status --porcelain)"; test -z "$$status" || { echo "дерево брудне після гейта"; printf '%s\n' "$$status"; exit 1; }; echo "GATE PASS"
 
@@ -40,4 +46,5 @@ ops-install:    ## systemd --user: сервіс + сторож здоров'я +
 
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/ —/'
-.PHONY: run test test-api test-site media stock shots media-audit bundle gate clean ops-install help
+
+.PHONY: mutation assurance run test test-api test-site media stock shots media-audit bundle gate clean ops-install help

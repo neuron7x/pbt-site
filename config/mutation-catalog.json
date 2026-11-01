@@ -1,0 +1,783 @@
+{
+ "schema": "pbt-mutation-catalog-v1",
+ "note": "Each fault is a stated unsafe behavior; the oracle must fail on it. A survivor blocks acceptance.",
+ "mutants": [
+  {
+   "id": "M-DB-01-fk-pragma",
+   "task": "DB-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "c.execute('PRAGMA foreign_keys=ON')\n",
+     "replace": "pass\n        c.execute('PRAGMA foreign_keys=OFF')\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_server_connection_enforces_foreign_keys_and_rejects_orphan"
+   ]
+  },
+  {
+   "id": "M-DB-01-readback",
+   "task": "DB-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        if c.execute('PRAGMA foreign_keys').fetchone()[0] != 1:\n            raise sqlite3.DatabaseError('foreign_keys enforcement unavailable')\n        c.execute('''CREATE",
+     "replace": "        c.execute('PRAGMA foreign_keys=OFF')\n        c.execute('''CREATE"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_server_connection_enforces_foreign_keys_and_rejects_orphan"
+   ]
+  },
+  {
+   "id": "M-DB-02-atomic-migration",
+   "task": "DB-02",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        c.execute('BEGIN IMMEDIATE')\n        cols =",
+     "replace": "        cols ="
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_migration_failure_rolls_back_every_schema_write_then_retry_converges"
+   ]
+  },
+  {
+   "id": "M-DB-02-silent-orphan-repair",
+   "task": "DB-02",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        violations = {}\n",
+     "replace": "        c.execute('DELETE FROM outbox WHERE lead_id NOT IN (SELECT id FROM leads)'); c.commit()\n        violations = {}\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_legacy_orphan_is_reported_never_repaired_and_never_lost"
+   ]
+  },
+  {
+   "id": "M-DB-03-same-key-replaces",
+   "task": "DB-03",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        if row[1] != ph:\n",
+     "replace": "        if False:\n"
+    },
+    {
+     "file": "server/app.py",
+     "find": "            if existing[1] != ph:\n",
+     "replace": "            if False:\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement"
+   ]
+  },
+  {
+   "id": "M-DB-03-unique-index",
+   "task": "DB-03",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "CREATE UNIQUE INDEX IF NOT EXISTS leads_idem_key",
+     "replace": "CREATE INDEX IF NOT EXISTS leads_idem_key"
+    }
+   ],
+   "oracle": [
+    "tests/test_leads.py::test_uniqueness_is_enforced_by_the_database"
+   ]
+  },
+  {
+   "id": "M-DB-04-reply-before-commit",
+   "task": "DB-04",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "                            c.commit()\n                            # Charge only",
+     "replace": "                            self.send_json(201, {'ok': True, 'ref': f'PBT-{lead_id:06d}'}); self.wfile.flush()\n                            c.commit()\n                            # Charge only"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint"
+   ]
+  },
+  {
+   "id": "M-DB-04-lead-without-outbox-atomicity",
+   "task": "DB-04",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "                            lead_id = cur.lastrowid\n",
+     "replace": "                            lead_id = cur.lastrowid; c.commit()\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint"
+   ]
+  },
+  {
+   "id": "M-DB-05-erase-key-on-reload",
+   "task": "DB-05",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "      const prior = pendingRead();\n",
+     "replace": "      const prior = null;\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_lead_reload_idempotency.py::test_lost_response_then_reload_replays_the_same_lead"
+   ]
+  },
+  {
+   "id": "M-DB-05-store-payload",
+   "task": "DB-05",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "pendingWrite({ k: idemKey, d, x:",
+     "replace": "pendingWrite({ k: idemKey, d: body, x:"
+    }
+   ],
+   "oracle": [
+    "tests/test_lead_reload_idempotency.py::test_storage_holds_no_contact_data_and_clears_on_confirmation"
+   ]
+  },
+  {
+   "id": "M-DB-05-ignore-expiry",
+   "task": "DB-05",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": " && r.x > Date.now() ? r : null;",
+     "replace": " ? r : null;"
+    }
+   ],
+   "oracle": [
+    "tests/test_lead_reload_idempotency.py::test_expired_record_is_not_reused"
+   ]
+  },
+  {
+   "id": "M-DB-06-move-old-away",
+   "task": "DB-06",
+   "edits": [
+    {
+     "file": "ops/restore.py",
+     "find": "    if '' in present:\n        _settle(dst)\n",
+     "replace": "    if '' in present:\n        os.replace(dst, f'{dst}.aside')\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation"
+   ]
+  },
+  {
+   "id": "M-DB-06-stale-sidecar",
+   "task": "DB-06",
+   "edits": [
+    {
+     "file": "ops/restore.py",
+     "find": "            f.unlink()\n            removed = True\n",
+     "replace": "            removed = True\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_restore_cutpoints.py::test_orphaned_journal_without_its_database_never_reaches_the_new_generation"
+   ]
+  },
+  {
+   "id": "M-DB-06-no-settle",
+   "task": "DB-06",
+   "edits": [
+    {
+     "file": "ops/restore.py",
+     "find": "    if '' in present:\n        _settle(dst)\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation"
+   ]
+  },
+  {
+   "id": "M-DB-06-fk-check",
+   "task": "DB-02",
+   "edits": [
+    {
+     "file": "ops/restore.py",
+     "find": "            if orphans and not a.allow_fk_violations:\n",
+     "replace": "            if False:\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_restore_cutpoints.py::test_restore_refuses_snapshot_with_foreign_key_violations"
+   ]
+  },
+  {
+   "id": "M-DB-06-rpo-gap",
+   "task": "DB-08",
+   "edits": [
+    {
+     "file": "ops/restore.py",
+     "find": "            if seq > snap and not a.allow_rpo_gap:\n",
+     "replace": "            if False:\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_backup_safety.py::test_restore_outbox_snapshot_preserves_pending_jobs_and_monotonic_id"
+   ]
+  },
+  {
+   "id": "M-DB-06-dir-fsync",
+   "task": "DB-06",
+   "expected": "UNTESTABLE",
+   "reason": "Removing a directory fsync is only observable on power loss; SIGKILL keeps the page cache. Would need a block-layer fault injector (dm-flakey) with root."
+  },
+  {
+   "id": "M-NET-01-substring-media-type",
+   "task": "NET-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "self.headers.get_content_type() != 'application/json'",
+     "replace": "'application/json' not in (self.headers.get('Content-Type') or '')"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched"
+   ]
+  },
+  {
+   "id": "M-NET-01-te-accepted",
+   "task": "NET-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "self.headers.get('Transfer-Encoding') is not None or len(lengths) > 1",
+     "replace": "len(lengths) > 1"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_transfer_encoding_is_never_accepted_alongside_content_length"
+   ]
+  },
+  {
+   "id": "M-NET-01-deadline",
+   "task": "NET-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "            if remaining <= 0:\n                if header_deadline is not None:\n                    h._hdr_expired = True\n                raise TimeoutError('absolute request read deadline')\n            h.connection.settimeout(min(h.timeout, remaining))\n",
+     "replace": "            h.connection.settimeout(h.timeout)\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_slow_clients_hold_slots_for_bounded_wall_clock_only"
+   ]
+  },
+  {
+   "id": "M-NET-02-first-xff-line",
+   "task": "NET-02",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "(getattr(self, 'headers', None) and self.headers.get_all('X-Forwarded-For')) or []",
+     "replace": "[self.headers.get('X-Forwarded-For') or '']"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity"
+   ]
+  },
+  {
+   "id": "M-NET-02-trust-without-flag",
+   "task": "NET-02",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "self.client_address[0] in ('127.0.0.1', '::1') and (ENV('TRUST_PROXY') or '0') == '1'",
+     "replace": "self.client_address[0] in ('127.0.0.1', '::1')"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_untrusted_peer_cannot_set_identity_or_hsts"
+   ]
+  },
+  {
+   "id": "M-NET-03-follow-redirect",
+   "task": "NET-03",
+   "edits": [
+    {
+     "file": "server/delivery_transport.py",
+     "find": "urllib.request.build_opener(RejectRedirect)",
+     "replace": "urllib.request.build_opener()"
+    }
+   ],
+   "oracle": [
+    "tests/test_delivery_deadline.py::test_redirect_does_not_forward_webhook_hmac_to_other_host"
+   ]
+  },
+  {
+   "id": "M-NET-04-retry-class",
+   "task": "NET-04",
+   "edits": [
+    {
+     "file": "server/delivery_transport.py",
+     "find": "return 10 if 400 <= exc.code < 500 and exc.code not in (408, 429) else 11",
+     "replace": "return 10 if 400 <= exc.code < 500 else 11"
+    }
+   ],
+   "oracle": [
+    "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement"
+   ]
+  },
+  {
+   "id": "M-NET-04-hmac-forged",
+   "task": "NET-04",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "signature = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), body, hashlib.sha256).hexdigest()",
+     "replace": "signature = '0' * 64"
+    }
+   ],
+   "oracle": [
+    "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement"
+   ]
+  },
+  {
+   "id": "M-NET-04-terminal-retried",
+   "task": "NET-04",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "elif permanent or att >= DELIVERY_MAX_ATTEMPTS:",
+     "replace": "elif att >= DELIVERY_MAX_ATTEMPTS:"
+    }
+   ],
+   "oracle": [
+    "tests/test_outbox_state_machine.py::test_permanent_status_is_terminal_with_exactly_one_attempt"
+   ]
+  },
+  {
+   "id": "M-NET-04-unbounded-retry",
+   "task": "NET-04",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "elif permanent or att >= DELIVERY_MAX_ATTEMPTS:",
+     "replace": "elif permanent:"
+    }
+   ],
+   "oracle": [
+    "tests/test_outbox_state_machine.py::test_retry_budget_exhaustion_is_an_explicit_terminal_state"
+   ]
+  },
+  {
+   "id": "M-NET-05-no-guard",
+   "task": "NET-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "    if _guard_state == 'contended':\n        raise SystemExit('single_process_guard: another process holds this lead database')\n",
+     "replace": "    pass\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_second_server_on_same_database_fails_closed"
+   ]
+  },
+  {
+   "id": "M-NET-05-quota-not-charged",
+   "task": "ADV-03",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "                            rate_commit(ip, 'lead', 'lead_day')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_stateful_model.py"
+   ]
+  },
+  {
+   "id": "M-NET-05-ipv6-per-address",
+   "task": "NET-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "return str(ipaddress.ip_network(f'{addr}/64', strict=False))",
+     "replace": "return str(addr)"
+    }
+   ],
+   "oracle": [
+    "tests/test_rate_resource_bound.py",
+    "tests/test_hardening.py",
+    "tests/test_leads.py"
+   ]
+  },
+  {
+   "id": "M-NET-06-unescaped-channel",
+   "task": "NET-06",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "`<a href=\"${esc(x.href)}\"><b>",
+     "replace": "`<a href=\"${x.href}\"><b>"
+    },
+    {
+     "file": "web/js/site.js",
+     "find": "href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}`",
+     "replace": "href: `https://t.me/${String(c.telegram).replace('@', '')}`"
+    }
+   ],
+   "oracle": [
+    "tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink"
+   ],
+   "note": "Escaping alone is defense in depth: every href is already encoded, so removing only esc() is an equivalent mutant. The fault is losing both layers."
+  },
+  {
+   "id": "M-NET-06-any-scheme",
+   "task": "NET-06",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "return u.protocol === 'https:' && !/[\"'<>\\s]/.test(String(value)) ? u.href : null;",
+     "replace": "return u.href;"
+    }
+   ],
+   "oracle": [
+    "tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink"
+   ]
+  },
+  {
+   "id": "M-OPS-01-heartbeat-is-healthy",
+   "task": "OPS-01",
+   "edits": [
+    {
+     "file": "ops/readiness.py",
+     "find": "signals['delivery_backlog'] = 'FAIL' if oldest is not None and oldest > max_pending_age_s else 'PASS'",
+     "replace": "signals['delivery_backlog'] = 'PASS'"
+    }
+   ],
+   "oracle": [
+    "tests/test_readiness_truth_table.py::test_fresh_heartbeat_with_stale_backlog_is_not_ready"
+   ]
+  },
+  {
+   "id": "M-OPS-01-unknown-is-ready",
+   "task": "OPS-01",
+   "edits": [
+    {
+     "file": "ops/readiness.py",
+     "find": "ready = all(v == 'PASS' for v in signals.values())",
+     "replace": "ready = 'FAIL' not in signals.values()"
+    }
+   ],
+   "oracle": [
+    "tests/test_readiness_truth_table.py::test_clean_local_state_never_claims_receiver_or_business_truth"
+   ]
+  },
+  {
+   "id": "M-OPS-01-receipt-subset",
+   "task": "OPS-01",
+   "edits": [
+    {
+     "file": "ops/readiness.py",
+     "find": "'PASS' if acknowledged <= set(persisted) else 'FAIL'",
+     "replace": "'PASS'"
+    }
+   ],
+   "oracle": [
+    "tests/test_readiness_truth_table.py::test_external_receipt_requires_matching_ids_not_a_self_written_flag"
+   ]
+  },
+  {
+   "id": "M-OPS-03-invent-outage",
+   "task": "OPS-03",
+   "edits": [
+    {
+     "file": "ops/incident_correlate.py",
+     "find": "            out['root_cause'] = 'INTENTIONAL_POWER_GUARD_STOP'",
+     "replace": "            out['root_cause'] = 'SITE_DOWN_CAUSE_NOT_ESTABLISHED'"
+    }
+   ],
+   "oracle": [
+    "tests/test_incident_correlation.py"
+   ]
+  },
+  {
+   "id": "M-ADV-05-host-date",
+   "task": "ADV-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": ".astimezone(KYIV).date()",
+     "replace": ".astimezone().date()"
+    }
+   ],
+   "oracle": [
+    "tests/test_date_policy.py::test_server_civil_date_is_independent_of_host_timezone"
+   ]
+  },
+  {
+   "id": "M-ADV-05-browser-date",
+   "task": "ADV-05",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "return v >= kyivToday() ? v : null;",
+     "replace": "return d >= new Date(new Date().setHours(0,0,0,0)) ? v : null;"
+    }
+   ],
+   "oracle": [
+    "tests/test_date_policy.py::test_browser_validator_uses_the_same_civil_date"
+   ]
+  },
+  {
+   "id": "M-EVD-02-event-binding",
+   "task": "EVD-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(run['event'] in rules['run_events'], 'receipt_from_other_target_event')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_pull_request_receipts_never_certify_main"
+   ]
+  },
+  {
+   "id": "M-EVD-02-historic-pr8",
+   "task": "EVD-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(meta['schema'] == 'pbt-exact-head-evidence-matrix-v2', 'manifest_schema')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-03-identity",
+   "task": "EVD-03",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(seen.get(rule['id'], 0) >= max(rule['min_cases'], 1), 'required_test_missing_' + rule['id'])\n",
+     "replace": "        pass\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-04-lcp-budget",
+   "task": "EVD-04",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(p75_lcp<=budgets['lcp_ms'], 'mobile_lcp_budget')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-04-cls-budget",
+   "task": "EVD-04",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(p75_cls<=budgets['cls'], 'mobile_cls_budget')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-04-deferred-shift",
+   "task": "EVD-04",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(shift<=budgets['max_deferred_switch_shift'], 'mobile_deferred_shift_budget')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-05-execution-sha",
+   "task": "EVD-05",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(mobile['execution_sha']==expected_head and mobile['branch_head_sha'] in (expected_head,None), 'mobile_execution_sha')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-06-provider-digest",
+   "task": "EVD-06",
+   "edits": [
+    {
+     "file": "tools/evidence_collect.py",
+     "find": "        if hashlib.sha256(raw).hexdigest() != expected:\n            raise CollectError(f'provider_digest_mismatch_{role}')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-06-zip-digest",
+   "task": "EVD-06",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(hashlib.sha256(path.read_bytes()).hexdigest() == expected_sha, 'zip_sha256')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-06-png-crc",
+   "task": "EVD-06",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(zlib.crc32(typ+data)&0xffffffff == recorded, 'png_chunk_crc')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-08-unknown-as-pass",
+   "task": "EVD-08",
+   "edits": [
+    {
+     "file": "tools/assurance_check.py",
+     "find": "    if any(s != 'PASS' for s in leaves):",
+     "replace": "    if 'FAIL' in leaves:"
+    }
+   ],
+   "oracle": [
+    "tests/test_assurance_case.py"
+   ]
+  },
+  {
+   "id": "M-ADV-04-p99-limit",
+   "task": "ADV-04",
+   "edits": [
+    {
+     "file": "tools/verify_soak_evidence.py",
+     "find": " or p99 > limits['maximum_p99_lead_ms']:",
+     "replace": ":"
+    }
+   ],
+   "oracle": [
+    "tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget"
+   ]
+  },
+  {
+   "id": "M-ADV-06-unpinned-action",
+   "task": "ADV-06",
+   "edits": [
+    {
+     "file": "tools/supply_chain.py",
+     "find": "            if not FULL_SHA.fullmatch(use):\n                raise Rejected(f'unpinned_action_{path.name}_{use}')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_supply_chain.py::test_unpinned_action_is_rejected"
+   ]
+  },
+  {
+   "id": "M-NET-07-scanner-crash-is-pass",
+   "task": "NET-07",
+   "edits": [
+    {
+     "file": "tools/sast_gate.py",
+     "find": "    if returncode not in (0, 1):\n        return {'status': 'FAIL', 'reason': f'scanner_exit_{returncode}'}\n",
+     "replace": "    if returncode not in (0, 1):\n        return {'status': 'PASS', 'reason': 'ok'}\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_supply_chain.py::test_scanner_that_did_not_scan_cannot_pass"
+   ]
+  },
+  {
+   "id": "M-QUOTE-unknown-delivery-as-zero",
+   "task": "WEB-07",
+   "edits": [
+    {
+     "file": "web/js/quote.js",
+     "find": "const total = status === 'complete' ? rental + delivery : null;",
+     "replace": "const total = rental + (delivery === null ? 0 : delivery);"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/quote_engine.test.cjs"
+   ]
+  },
+  {
+   "id": "M-NET-05-migrate-before-guard",
+   "task": "NET-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "if _guard_state == 'held':\n    for _i in range",
+     "replace": "if True:\n    for _i in range"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_refused_second_server_writes_nothing_while_restore_or_a_peer_holds_the_guard"
+   ]
+  },
+  {
+   "id": "M-EVD-03-catalog-coverage",
+   "task": "ADV-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(len(ids)==len(set(ids)) and set(ids)==set(catalog), 'mutation_catalog_coverage')\n    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed='UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED'\n",
+     "replace": "    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed=verdict if row['id'] not in catalog else ('UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED')\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  }
+ ]
+}

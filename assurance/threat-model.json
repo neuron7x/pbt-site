@@ -1,0 +1,36 @@
+{
+ "schema": "pbt-threat-model-v1",
+ "scope": "Public site only. Private CRM is out of scope; webhook receiver is treated as an untrusted peer that can fail.",
+ "entry_points": ["/api/lead", "/api/health", "/api/config", "static files under web/"],
+ "assets": ["accepted lead (contact data)", "lead/outbox integrity", "webhook secret and Telegram token", "public availability", "truth of release evidence", "truth of published facts"],
+ "trust_boundaries": [
+  "internet -> TLS proxy -> loopback HTTP server (only a loopback peer with TRUST_PROXY=1 may state client identity)",
+  "public config JSON -> DOM (values are data, never markup or scheme)",
+  "server -> delivery child -> receiver (no database, no argv secrets, no redirects, absolute deadline)",
+  "CI artifact bytes -> offline verifier (bytes bound to provider digest; producer verdicts ignored)",
+  "browser sessionStorage (opaque key and digest only)"
+ ],
+ "threats": [
+  {"id": "T01", "goal": "lose or duplicate an accepted lead", "cwe": "CWE-362", "asset": "accepted lead", "precondition": "process death or concurrency at any step of acceptance", "control": "BEGIN IMMEDIATE, lead+outbox in one commit, unique idempotency index", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint", "tests/test_data_integrity.py::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement", "tests/test_stateful_model.py::test_random_walk_with_crashes_preserves_every_invariant"]},
+  {"id": "T02", "goal": "restore destroys the only good database", "cwe": "CWE-367", "asset": "lead/outbox integrity", "precondition": "interruption or full disk during restore", "control": "one atomic rename; preserved copies; sidecars settled first", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation"]},
+  {"id": "T03", "goal": "bypass per-client quota", "cwe": "CWE-770", "asset": "public availability", "precondition": "attacker rotates identities, forges proxy headers, or a second server splits memory", "control": "rightmost proxy value only from loopback, IPv6 /64, bounded tiers, single-process guard", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity", "tests/test_http_protocol.py::test_second_server_on_same_database_fails_closed", "tests/test_rate_resource_bound.py"]},
+  {"id": "T04", "goal": "request smuggling or framing confusion", "cwe": "CWE-444", "asset": "lead/outbox integrity", "precondition": "a proxy and this server disagree on message length", "control": "HTTP/1.0 close-delimited; Transfer-Encoding, duplicate and non-digit Content-Length refused", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_http_protocol.py::test_transfer_encoding_is_never_accepted_alongside_content_length", "tests/test_http_protocol.py::test_conflicting_duplicate_content_length_is_rejected"]},
+  {"id": "T05", "goal": "cross-site lead submission", "cwe": "CWE-352", "asset": "lead/outbox integrity", "precondition": "victim browser and a CORS-simple content type", "control": "Origin check plus parsed media type", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched", "tests/test_api.py::test_content_type_and_size"]},
+  {"id": "T06", "goal": "slow client exhausts connection slots", "cwe": "CWE-400", "asset": "public availability", "precondition": "attacker can open MAX_CONNECTIONS sockets", "control": "absolute header and body deadlines, bounded slots", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_http_protocol.py::test_slow_clients_hold_slots_for_bounded_wall_clock_only", "tests/test_request_body_deadline.py"]},
+  {"id": "T07", "goal": "script execution from configuration", "cwe": "CWE-79", "asset": "lead (contact data)", "precondition": "a hostile value reaches config/business.json or /api/config", "control": "escaping, https-only parsed URLs, reviewed sink inventory, CSP", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink", "tests/test_dom_trust_boundary.py::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink"]},
+  {"id": "T08", "goal": "signed lead or bot token reaches another host", "cwe": "CWE-601", "asset": "webhook secret and Telegram token", "precondition": "receiver answers with a redirect", "control": "redirects rejected in the child; URL only from deployment environment", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_delivery_deadline.py::test_redirect_does_not_forward_webhook_hmac_to_other_host"]},
+  {"id": "T09", "goal": "falsified release evidence", "cwe": "CWE-345", "asset": "truth of release evidence", "precondition": "stale commit, swapped artifact, diluted suite, forged PASS", "control": "provider digest, exact SHA, required test identities, budgets recomputed from raw samples", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_meta_evidence_gate.py::test_forged_success_is_rejected", "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected"]},
+  {"id": "T10", "goal": "site process reads secrets elsewhere in the home directory", "cwe": "CWE-250", "asset": "webhook secret and Telegram token", "precondition": "code execution inside the site process under the current systemd --user unit", "control": "NONE EFFECTIVE in user mode (measured); system-manager candidate blocks it (measured)", "risk_owner": "owner: deployment decision", "status": "OPEN_EXTERNAL", "tests": []},
+  {"id": "T11", "goal": "publish a wrong price, right or legal claim", "cwe": "CWE-1059", "asset": "truth of published facts", "precondition": "unapproved value in catalog or media", "control": "parity validator detects disagreement only; approval is outside engineering", "risk_owner": "owner", "status": "OPEN_EXTERNAL", "tests": ["tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface"]},
+  {"id": "T12", "goal": "accepted lead never reaches an operator", "cwe": "CWE-703", "asset": "accepted lead", "precondition": "receiver down, misconfigured, or acknowledging without persisting", "control": "durable outbox, bounded retry, terminal state, readiness never claims receiver truth", "risk_owner": "owner: live channel", "status": "OPEN_EXTERNAL", "tests": ["tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart", "tests/test_readiness_truth_table.py::test_clean_local_state_never_claims_receiver_or_business_truth"]}
+ ]
+}

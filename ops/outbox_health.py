@@ -126,6 +126,7 @@ def main(argv=None):
              'idle_or_local_only' if report['pending'] + report['failed'] + report['delivered'] == 0 else 'within_policy')
     print(json.dumps({'ok': ok, 'status': state, 'scope': 'sqlite_outbox_snapshot',
                       'worker_liveness': worker_state, 'production_slo': 'not_verified',
+                      'delivered_evidence': 'transport_2xx_only', 'receiver_persistence': 'not_verified',
                       'max_pending_age_s': a.max_pending_age_s, 'max_failed': a.max_failed,
                       **_display(report)}, sort_keys=True))
     return 0 if ok else 1

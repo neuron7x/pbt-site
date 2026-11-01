@@ -160,3 +160,47 @@ def test_restore_negative_watermark_does_not_mutate_any_database(tmp_path):
     ], capture_output=True, text=True, timeout=15)
     assert result.returncode == 1 and 'negative' in result.stderr
     assert dest.read_bytes() == before
+
+
+def test_interrupted_backup_never_publishes_and_its_residue_is_removed(tmp_path):
+    """SIGKILL at each namespace step: published snapshots stay whole, residue does not accumulate."""
+    db, out = tmp_path / 'leads.db', tmp_path / 'backups'
+    _seed(db)
+    env = {**os.environ, 'LEAD_DB': str(db), 'BACKUP_DIR': str(out)}
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+    driver = ("import os,runpy,signal,sys\nn=int(sys.argv[1])\nc=[0]\n"
+              "def wrap(name):\n real=getattr(os,name)\n def f(*a,**k):\n"
+              "  i=c[0];c[0]+=1\n  if i==n: os.kill(os.getpid(),signal.SIGKILL)\n  return real(*a,**k)\n"
+              " setattr(os,name,f)\n"
+              "for name in ('fsync','link','unlink'): wrap(name)\n"
+              f"sys.argv=['backup.py']\nrunpy.run_path({str(ROOT / 'ops/backup.py')!r},run_name='__main__')\n")
+    killed = 0
+    for n in range(4):
+        r = subprocess.run([sys.executable, '-c', driver, str(n)], env=env, timeout=15, capture_output=True)
+        killed += r.returncode == -9
+        for f in out.glob('leads-*.db'):
+            with sqlite3.connect(f) as conn:
+                assert conn.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+                assert conn.execute('SELECT count(*) FROM leads').fetchone() == (1,)
+    assert killed >= 3, 'cutpoints were not exercised'
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+    assert not list(out.glob('*.tmp'))
+
+
+def test_restore_drill_measures_rpo_gap_and_never_claims_off_device(srv, tmp_path):
+    server = srv(DELIVERY_WORKER='0', LEAD_WEBHOOK_URL='http://127.0.0.1:9/hook', LEAD_WEBHOOK_SECRET='s')
+    for i in (1, 2):
+        assert server.post(LEAD, f'k-drill-00{i:04d}')[0] == 201
+    env = {**os.environ, 'LEAD_DB': str(server.db), 'BACKUP_DIR': str(tmp_path / 'b')}
+    assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+    snapshot = next((tmp_path / 'b').glob('leads-*.db'))
+    before = server.db.read_bytes()
+    run = subprocess.run([sys.executable, str(ROOT / 'ops/restore_drill.py'), str(snapshot), '--external-watermark', '3'],
+                         capture_output=True, text=True, timeout=30)
+    report = __import__('json').loads(run.stdout)
+    assert run.returncode == 0, run.stdout
+    assert report['rpo_gap_ids'] == 1 and report['restored_leads'] == 2 and report['pending_outbox'] == 2
+    assert report['off_device'] is False and report['rpo_rto_policy'] == 'not_adopted'
+    assert report['measured_rto_s'] >= 0
+    assert server.db.read_bytes() == before
+    assert server.post(LEAD, 'k-drill-after-1')[0] == 201  # The live server was untouched and still holds its guard.

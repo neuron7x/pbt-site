@@ -33,14 +33,14 @@ invariant.
 ## Offline verifier
 
 The stdlib-only evaluator is `tools/meta_evidence_gate.py`. It expects a
-JSON manifest `pbt-exact-head-evidence-matrix-v1` with:
+JSON manifest `pbt-exact-head-evidence-matrix-v2` with:
 
-- `head_sha`, `base_sha`, `pr_number:8`, `draft:true`;
-- exactly five run roles: `full`, `transport`, `visual`, `security`,
-  `soak`, each with authenticated `id`, `head_sha`, `event:pull_request`,
-  `attempt`, `status:completed`, `conclusion:success`;
-- exactly eight artifacts: `release`, `baseline`, `mobile`, `http`,
-  `visual`, `osv`, `static`, `soak`, each with `id`, `run_id`,
+- `head_sha`, `base_sha`, `target` (`kind`, `pr_number`, `ref`, bound by `config/evidence-policy.json`);
+- the run roles the target requires (`full`, `transport`, `visual`, `security`,
+  `soak`), each with authenticated `id`, `head_sha`, `event`,
+  `attempt`, `status:completed`, `conclusion:success`; `event` must belong to the target's receipts: pull-request receipts never certify `main` and vice versa;
+- the artifacts the target requires: `release`, `mobile`, `http`, `visual`, `osv`,
+  `static`, `soak`, `mutation`, `sast`, plus `baseline` for pull requests, each with `id`, `run_id`,
   `filename` (`<role>.zip`) and independently computed `sha256`.
 
 After retrieving **all eight actual ZIP bytes**:

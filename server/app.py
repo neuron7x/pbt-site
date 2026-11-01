@@ -6,12 +6,13 @@
 Безпека (OWASP Input Validation / CSRF): JSON-only, ліміт тіла, allowlist для
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
-import base64, email.utils, hashlib, hmac, io, ipaddress, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
+import base64, email.utils, fcntl, hashlib, hmac, io, ipaddress, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
@@ -85,29 +86,55 @@ _db_lock = threading.Lock()
 
 def db(timeout=10):
     c = sqlite3.connect(DB, timeout=timeout)
-    c.execute('''CREATE TABLE IF NOT EXISTS leads(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT NOT NULL, type TEXT NOT NULL,
-        payload TEXT NOT NULL, ip_hash TEXT, ua TEXT, delivered TEXT)''')
+    try:
+        # Both are per-connection, no-ops inside a transaction, and must precede any statement.
+        c.execute('PRAGMA foreign_keys=ON')
+        c.execute('PRAGMA synchronous=FULL')  # HTTP 201 relies on commit durability.
+        if c.execute('PRAGMA foreign_keys').fetchone()[0] != 1:
+            raise sqlite3.DatabaseError('foreign_keys enforcement unavailable')
+        c.execute('''CREATE TABLE IF NOT EXISTS leads(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, created TEXT NOT NULL, type TEXT NOT NULL,
+            payload TEXT NOT NULL, ip_hash TEXT, ua TEXT, delivered TEXT)''')
+    except BaseException:
+        c.close()
+        raise
     return c
 
 
 def migrate(timeout=10):
     """Адитивна міграція (старі рядки й старі бази лишаються валідними): ключ ідемпотентності + відбиток корисного навантаження
-    на заявці (унікальність — рівнем БД, частковий індекс: у старих рядків NULL) і outbox доставки — рядок на (заявка, канал)."""
+    на заявці (унікальність — рівнем БД, частковий індекс: у старих рядків NULL) і outbox доставки — рядок на (заявка, канал).
+
+    Atomic: SQLite DDL is transactional, so a failure leaves the previous schema intact.
+    Legacy foreign-key violations are reported, never repaired or deleted: enforcement applies
+    to new writes, and reconciling an old anomaly is an operator decision (ops/outbox_health.py).
+    """
     c = db(timeout)
-    cols = {r[1] for r in c.execute('PRAGMA table_info(leads)')}
-    for col in ('idem_key', 'payload_hash'):
-        if col not in cols:
-            c.execute(f'ALTER TABLE leads ADD COLUMN {col} TEXT')
-    c.execute('CREATE UNIQUE INDEX IF NOT EXISTS leads_idem_key ON leads(idem_key) WHERE idem_key IS NOT NULL')
-    c.execute('''CREATE TABLE IF NOT EXISTS outbox(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER NOT NULL REFERENCES leads(id), channel TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0,
-        last_at REAL, last_error TEXT, delivered_at TEXT, UNIQUE(lead_id, channel))''')
-    c.execute("CREATE INDEX IF NOT EXISTS outbox_due ON outbox(status, next_at)")
-    c.execute("""CREATE TABLE IF NOT EXISTS runtime_heartbeat(
-        name TEXT PRIMARY KEY, observed_at REAL NOT NULL)""")
-    c.commit(); c.close()
+    try:
+        c.execute('BEGIN IMMEDIATE')
+        cols = {r[1] for r in c.execute('PRAGMA table_info(leads)')}
+        for col in ('idem_key', 'payload_hash'):
+            if col not in cols:
+                c.execute(f'ALTER TABLE leads ADD COLUMN {col} TEXT')
+        c.execute('CREATE UNIQUE INDEX IF NOT EXISTS leads_idem_key ON leads(idem_key) WHERE idem_key IS NOT NULL')
+        c.execute('''CREATE TABLE IF NOT EXISTS outbox(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, lead_id INTEGER NOT NULL REFERENCES leads(id), channel TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending', attempts INTEGER NOT NULL DEFAULT 0, next_at REAL NOT NULL DEFAULT 0,
+            last_at REAL, last_error TEXT, delivered_at TEXT, UNIQUE(lead_id, channel))''')
+        c.execute("CREATE INDEX IF NOT EXISTS outbox_due ON outbox(status, next_at)")
+        c.execute("""CREATE TABLE IF NOT EXISTS runtime_heartbeat(
+            name TEXT PRIMARY KEY, observed_at REAL NOT NULL)""")
+        c.commit()
+        violations = {}
+        for table, *_ in c.execute('PRAGMA foreign_key_check'):
+            violations[table] = violations.get(table, 0) + 1
+        for table, count in sorted(violations.items()):
+            log.error('legacy foreign key violations=%s table=%s', count, table)
+    except BaseException:
+        c.rollback()
+        raise
+    finally:
+        c.close()
 
 
 _schema_ok = threading.Event()   # OPS-3: міграція пройшла; до того /api/lead → 503, health → db false
@@ -118,7 +145,7 @@ def _try_migrate(timeout):
         with _db_lock:
             migrate(timeout)
         _schema_ok.set(); return True
-    except sqlite3.OperationalError as e:
+    except sqlite3.Error as e:  # Includes a corrupt file: static site stays up, /api/lead answers 503.
         log.error('migrate failed err=%s %s', type(e).__name__, e); return False
 
 
@@ -129,10 +156,34 @@ def migrate_retry_worker():
 
 # OPS-3: лок БД на старті не валить процес (раніше — OperationalError на імпорті, лягала й статика): обмежені спроби,
 # далі сервер стартує, а міграція повторюється у фоні (main).
-for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
-    if _try_migrate(2):
-        break
-    time.sleep(0.5)
+_single_process_guard = []
+
+
+def _take_guard():
+    """Rate limits and the delivery worker live in one process's memory. A second server on the same
+    database would silently double every quota, and ops/restore.py holds this lock while it swaps files.
+    A kernel lock: SIGKILL releases it, leaving nothing to clean up. Taken before the first write."""
+    try:
+        fd = os.open(f'{DB}.server-lock', os.O_RDWR | os.O_CREAT, 0o600)
+    except OSError as e:
+        log.error('single_process_guard unavailable err=%s', type(e).__name__)
+        return 'unavailable'
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        os.close(fd)
+        return 'contended'
+    _single_process_guard.append(fd)
+    return 'held'
+
+
+_guard_state = _take_guard()
+# Without the guard nothing may write: not schema, not leads. Static pages still serve, /api/lead answers 503.
+if _guard_state == 'held':
+    for _i in range(int(ENV('MIGRATE_BOOT_ATTEMPTS') or 3)):
+        if _try_migrate(2):
+            break
+        time.sleep(0.5)
 
 # ─── rate limit на IP: усі запити (захист від перебору) і прийняті заявки ───
 _hits, _hits_lock = {}, threading.RLock()
@@ -258,7 +309,7 @@ def rate_commit(ip, *buckets):
 
 
 # ─── валідація ───────────────────────────────────────────
-CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f​-‏‪-‮⁦-⁩]')
+CTRL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069]')  # Escapes: bidi controls must not sit literally in source.
 
 
 def clean(v, maxlen, multiline=False):
@@ -338,17 +389,30 @@ def _int(v, lo, hi):
     return int(s)
 
 
+KYIV = ZoneInfo('Europe/Kyiv')
+
+
+def kyiv_date(now=None):
+    """The business operates on the Kyiv civil date, whatever TZ the host runs in."""
+    return (now or datetime.now(timezone.utc)).astimezone(KYIV).date()
+
+
+def date_allowed(value, now=None):
+    if value == '':
+        return True
+    if not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', value):
+        return False
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date() >= kyiv_date(now)
+    except ValueError:
+        return False
+
+
 def _date(v):
     if v in (None, ''):
         return ''
     s = clean(v, 10)
-    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', s):
-        raise ValueError
-    try:
-        d = datetime.strptime(s, '%Y-%m-%d').date()
-    except ValueError:
-        raise ValueError from None
-    if d < datetime.now().date():
+    if not s or not date_allowed(s):  # Whitespace is not an absent date.
         raise ValueError
     return s
 
@@ -470,7 +534,7 @@ def send(channel, lead_id, data):
     Payload/Telegram credentials travel via stdin, never argv or logs.
     """
     if channel == 'telegram':
-        text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
+        text = f"Заявка PBT-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
         # Telegram Bot API accepts application/json. UTF-8 avoids 12-byte
         # percent-encoding per astral emoji and remains below the child 16-KiB
         # body limit for a 4000-character message (<=16000 UTF-8 bytes).
@@ -868,7 +932,9 @@ class Handler(SimpleHTTPRequestHandler):
         для всього світу. Довіряємо X-Forwarded-For ЛИШЕ від loopback-піра і беремо крайній правий запис (доданий проксі)."""
         peer = self.client_address[0]
         if self.behind_trusted_proxy():
-            xff = [p.strip() for p in ((getattr(self, 'headers', None) or {}).get('X-Forwarded-For') or '').split(',') if p.strip()]
+            # All header lines: a proxy may append its own line rather than merge into the client's.
+            lines = (getattr(self, 'headers', None) and self.headers.get_all('X-Forwarded-For')) or []
+            xff = [p.strip() for line in lines for p in line.split(',') if p.strip()]
             if xff and re.fullmatch(r'[0-9A-Fa-f:.]{2,45}', xff[-1]):
                 return xff[-1]
         return peer
@@ -976,7 +1042,10 @@ class Handler(SimpleHTTPRequestHandler):
                 c.execute('ROLLBACK'); checks['db'] = c.execute('SELECT count(*) FROM leads').fetchone()[0] >= 0 and _schema_ok.is_set(); c.close()
         except Exception as e:  # noqa: BLE001
             checks['db'] = False; log.error('health: db %s', type(e).__name__)
-        st = os.statvfs(DB.parent); checks['disk'] = st.f_bavail * st.f_frsize > HEALTH_MIN_FREE_MB * 1024 * 1024
+        try:
+            st = os.statvfs(DB.parent); checks['disk'] = st.f_bavail * st.f_frsize > HEALTH_MIN_FREE_MB * 1024 * 1024
+        except OSError as e:   # A vanished data directory must answer 503, not drop the connection.
+            checks['disk'] = False; log.error('health: disk %s', type(e).__name__)
         ok = all(checks.values())
         return self.send_json(200 if ok else 503, {'ok': ok, **checks})
 
@@ -996,12 +1065,16 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.origin_ok():
             log.warning('lead rejected: origin ip_hash=%s', _ip_hash(ip))
             return self.send_json(403, {'ok': False, 'error': 'origin'})
-        if 'application/json' not in (self.headers.get('Content-Type') or ''):
+        # Parsed media type (case-insensitive, RFC 9110 §8.3.1), never a substring of the raw header.
+        if self.headers.get('Content-Type') is None or self.headers.get_content_type() != 'application/json':
             return self.send_json(415, {'ok': False, 'error': 'content_type'})
-        try:
-            n = int(self.headers.get('Content-Length') or 0)
-        except ValueError:
-            n = -1
+        # Ambiguous framing is rejected before any body byte or quota is consumed (RFC 9112 §6.3).
+        lengths = self.headers.get_all('Content-Length') or []
+        if self.headers.get('Transfer-Encoding') is not None or len(lengths) > 1 or (
+                lengths and not re.fullmatch(r'[0-9]{1,10}', lengths[0].strip())):
+            self.close_connection = True
+            return self.send_json(400, {'ok': False, 'error': 'framing'})
+        n = int(lengths[0]) if lengths else 0
         if n <= 0 or n > MAX_BODY:
             return self.send_json(413, {'ok': False, 'error': 'size'})
         if not rate_ok(ip, 'any'):
@@ -1169,7 +1242,13 @@ class Server(ThreadingHTTPServer):
             self._slots.release()
 
 
+def acquire_single_process_guard():
+    if _guard_state == 'contended':
+        raise SystemExit('single_process_guard: another process holds this lead database')
+
+
 def main():
+    acquire_single_process_guard()
     host, port = ENV('HOST') or '127.0.0.1', int(ENV('PORT') or 4180)
     max_conn = int(ENV('MAX_CONNECTIONS') or 128)
     if not 1 <= max_conn <= 200:
@@ -1178,7 +1257,7 @@ def main():
     if not math.isfinite(slot_wait) or not 0 <= slot_wait <= 120:
         raise SystemExit('CONN_SLOT_WAIT must be finite and between 0 and 120')
     srv = Server((host, port), Handler, max_conn, slot_wait)
-    if not _schema_ok.is_set():
+    if not _schema_ok.is_set() and _guard_state == 'held':
         threading.Thread(target=migrate_retry_worker, name='migrate', daemon=True).start()
     if (ENV('DELIVERY_WORKER') or '1') != '0':      # 0 — лише для тестів («падіння до доставки»)
         threading.Thread(target=delivery_worker, name='delivery', daemon=True).start()

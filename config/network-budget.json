@@ -1,0 +1,11 @@
+{
+ "schema": "pbt-network-budget-v1",
+ "measured": "2026-11-01 local Chromium, 3 s after load, encodedDataLength, commit e296f44: mobile sky media 6157796, precision 922291, desktop media 4961310; images 982480; fonts 301485; doc+css+js 93000",
+ "rule": "Limits are the measured baseline plus about 15 percent, set before this gate ever ran. Lowering is free; raising is a contract change with its own measurement. Lab transfer, not field data.",
+ "limits_bytes": {
+  "mobile":  {"critical": 110000, "font": 350000, "image": 1150000, "media": 7100000},
+  "desktop": {"critical": 110000, "font": 350000, "image": 1150000, "media": 5800000},
+  "save_data": {"critical": 110000, "font": 350000, "image": 1150000, "media": 0}
+ },
+ "max_high_priority_media_preloads": 0
+}

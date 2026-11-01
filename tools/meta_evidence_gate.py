@@ -2,7 +2,12 @@
 """Fail-closed, offline PBT exact-HEAD evidence graph verifier.
 
 Requires real artifact ZIP bytes and an *externally fetched* GitHub run/artefact
-manifest. Proves their consistency, NOT authenticity of the provider snapshot,
+manifest (tools/evidence_collect.py). Policy is data: config/evidence-policy.json
+binds each target event to its receipts; config/required-tests.json names the
+critical tests. Measurements are recomputed from raw samples and mutation verdicts
+recounted against the catalog in this checkout, so run it from the target revision.
+Scanner receipts cannot be re-executed offline: they are the producer's statement,
+bound to the exact SHA and repository, and OSV findings are read from its raw output. Proves their consistency, NOT authenticity of the provider snapshot,
 production availability, field CWV, or correctness of the test oracles.
 """
 import argparse
@@ -23,8 +28,9 @@ ARTIFACT_TO_WORKFLOW = {
     'release': 'full', 'baseline': 'full', 'mobile': 'full',
     'http': 'transport', 'visual': 'visual',
     'osv': 'security', 'static': 'security', 'soak': 'soak',
+    'mutation': 'full', 'sast': 'security',
 }
-MIN_TESTS = {'release': 390, 'baseline': 191, 'http': 160}
+ROOT = Path(__file__).resolve().parent.parent
 SHA = re.compile(r'[0-9a-f]{40}\Z')
 DIGEST = re.compile(r'[0-9a-f]{64}\Z')
 
@@ -77,9 +83,14 @@ def digest_match(raw, sha):
     require(hashlib.sha256(raw).hexdigest() == sha, 'content_sha256')
 
 
-def junit(z, path, minimum):
+def junit(z, path, minimum, required=()):
     raw = member(z, path)
-    require(len(raw) < 8 * 1024 * 1024 and b'<!DOCTYPE' not in raw, 'unsafe_junit')
+    # DTDs are refused before parsing; a UTF-16 document could hide the marker from a byte search.
+    try:
+        text = raw.decode('utf-8')
+    except UnicodeDecodeError:
+        raise Rejected('unsafe_junit') from None
+    require(len(raw) < 8 * 1024 * 1024 and '<!DOCTYPE' not in text and '<!ENTITY' not in text, 'unsafe_junit')
     rt = ET.fromstring(raw)
     suites = rt.findall('.//testsuite') if rt.tag == 'testsuites' else [rt]
     cases = rt.findall('.//testcase')
@@ -87,6 +98,12 @@ def junit(z, path, minimum):
     require(sum(int(s.get('tests', -1)) for s in suites) == len(cases), 'junit_count_mismatch')
     require(all(int(s.get(k, -1)) == 0 for s in suites for k in ('errors','failures','skipped')), 'junit_summary_failure')
     require(not any(rt.findall('.//' + k) for k in ('error','failure','skipped')), 'junit_case_failure')
+    seen = {}
+    for case in cases:
+        identity = f"{case.get('classname', '')}::{case.get('name', '').split('[', 1)[0]}"
+        seen[identity] = seen.get(identity, 0) + 1
+    for rule in required:
+        require(seen.get(rule['id'], 0) >= max(rule['min_cases'], 1), 'required_test_missing_' + rule['id'])
     return len(cases)
 
 
@@ -173,36 +190,119 @@ def verify_png(raw, capture):
     return count
 
 
-def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base):
+def verify_mobile(mobile, expected_head, budgets):
+    """Budgets are recomputed from raw samples: a producer's own verdict field is never read."""
+    require(mobile['execution_sha']==expected_head and mobile['branch_head_sha'] in (expected_head,None), 'mobile_execution_sha')
+    require(mobile['field_vitals_verified'] is False and mobile['inp_ms'] is None
+            and mobile['kind']=='synthetic_chromium_lab_not_field_data', 'synthetic_mobile_boundary')
+    result={}
+    for theme in ('sky','precision'):
+        metric=mobile['themes'][theme];raw=metric['raw']
+        require(len(raw)>=budgets['min_runs'],'mobile_sample_count')
+        p75_lcp=nearest([num(x['lcp_ms'],'lcp_ms') for x in raw],75)
+        p75_cls=nearest([num(x['cls'],'cls') for x in raw],75)
+        shift=max(num(x['switch_unprompted_shift_sum'],'switch_shift') for x in raw)
+        require(abs(p75_lcp-metric['p75_lcp_ms'])<0.02 and abs(p75_cls-metric['p75_cls'])<0.02, 'mobile_percentile')
+        require(p75_lcp<=budgets['lcp_ms'], 'mobile_lcp_budget')
+        require(p75_cls<=budgets['cls'], 'mobile_cls_budget')
+        require(shift<=budgets['max_deferred_switch_shift'], 'mobile_deferred_shift_budget')
+        result[theme]={'p75_lcp_ms':p75_lcp,'p75_cls':p75_cls,'max_deferred_switch_shift':shift}
+    return result
+
+
+def verify_mutation(ledger, expected_head, catalog_raw):
+    """Verdicts are recounted against the whole catalog: the ledger's own status field is not read,
+    and a slice (--only) or invented rows cannot stand in for the designated faults."""
+    require(ledger['head_sha']==expected_head, 'mutation_source_revision')
+    require(ledger['catalog_sha256']==hashlib.sha256(catalog_raw).hexdigest(), 'mutation_catalog_digest')
+    catalog={m['id']:m for m in json_bytes(catalog_raw)['mutants']}
+    results=ledger['results']
+    ids=[r['id'] for r in results]
+    require(len(ids)==len(set(ids)) and set(ids)==set(catalog), 'mutation_catalog_coverage')
+    counts={}
+    for row in results:
+        verdict=row['verdict']
+        counts[verdict]=counts.get(verdict,0)+1
+        allowed='UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED'
+        require(verdict==allowed, 'mutant_not_killed_'+str(row['id']))
+    return counts
+
+
+def verify_osv(osv, expected_head):
+    require(osv['head_sha']==expected_head and osv['outcome']=='success'
+            and osv['require_hashes'] is True and osv['no_deps'] is True
+            and osv['service']=='OSV', 'osv_evidence')
+    require(hashlib.sha256(osv['scanner_output'].encode()).hexdigest()==osv['scanner_output_sha256'], 'osv_receipt_integrity')
+    deps=json_bytes(osv['scanner_output'].encode())['dependencies']
+    require(len(deps)>=1 and len(deps)==osv['dependency_count'], 'osv_scanned_nothing')
+    require(all(d['vulns']==[] for d in deps), 'osv_vulnerability_present')
+    return len(deps)
+
+
+def verify_sast(z, expected_head):
+    provenance=json_bytes(member(z,'provenance.json'))
+    require(provenance['head_sha']==expected_head and provenance['signed'] is False
+            and provenance['slsa_level']=='none_claimed', 'provenance_receipt')
+    report=json_bytes(member(z,'sast.json'))
+    require(report['status']=='PASS' and report['open']==[] and report['stale_waivers']==[]
+            and report['files_scanned']>=20 and report['loc']>0, 'sast_receipt')
+    bom=json_bytes(member(z,'sbom.json'))
+    require(bom['bomFormat']=='CycloneDX' and bom['metadata']['component']['version']==expected_head
+            and all(c['hashes'] for c in bom['components']) and len(bom['components'])>=5, 'sbom_receipt')
+    return {'files_scanned':report['files_scanned'],'components':len(bom['components'])}
+
+
+def policy_digest(*documents):
+    return hashlib.sha256(json.dumps(documents,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+
+
+def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base, evidence_policy, required_tests,
+                    mutation_catalog, expected_repo='neuron7x/pbt-site'):
     require(SHA.fullmatch(expected_head) and SHA.fullmatch(expected_base), 'expected_sha_format')
-    require(meta['schema'] == 'pbt-exact-head-evidence-matrix-v1', 'manifest_schema')
+    require(meta['schema'] == 'pbt-exact-head-evidence-matrix-v2', 'manifest_schema')
     require(meta['head_sha'] == expected_head and meta['base_sha'] == expected_base, 'manifest_sha_mismatch')
-    require(meta['pr_number'] == 8 and meta['draft'] is True, 'incorrect_target')
+    require(meta['repository']==expected_repo, 'manifest_other_repository')
+    target=meta['target']
+    rules=evidence_policy['targets'].get(target['kind'])
+    require(rules is not None, 'unsupported_target_event')
+    if target['kind']=='pull_request':
+        require(type(target['pr_number']) is int and target['pr_number']>0, 'incorrect_target')
+    else:
+        require(target['pr_number'] is None and target['ref']==evidence_policy['main_ref'], 'incorrect_target')
+    roles=set(rules['roles'])
+    workflows={ARTIFACT_TO_WORKFLOW[r] for r in roles}
     runs=meta['runs']; artifacts=meta['artifacts']
-    require(set(runs) == WORKFLOWS and set(artifacts) == set(ARTIFACT_TO_WORKFLOW), 'missing_or_extra_gate')
+    require(set(runs) == workflows and set(artifacts) == roles, 'missing_or_extra_gate')
     used_runs=[];used_ids=[]; archives={}
-    for role in WORKFLOWS:
+    for role in workflows:
         run=runs[role]
-        require(run['head_sha'] == expected_head and run['event'] == 'pull_request'
+        require(run['event'] in rules['run_events'], 'receipt_from_other_target_event')
+        if target['kind']=='pull_request':
+            require(target['pr_number'] in run['pull_requests'], 'run_not_linked_to_this_pull_request')
+        require(run['head_sha'] == expected_head
                 and run['status'] == 'completed' and run['conclusion'] == 'success', 'stale_or_failed_workflow')
         used_runs.append(num(run['id'], 'run_id', integer=True,min_value=1))
         num(run['attempt'], 'run_attempt', integer=True,min_value=1)
     require(len(set(used_runs))==5, 'reused_run_id')
-    for role,workflow in ARTIFACT_TO_WORKFLOW.items():
+    for role in sorted(roles):
+        workflow=ARTIFACT_TO_WORKFLOW[role]
         item=artifacts[role]
         require(item['run_id'] == runs[workflow]['id'], 'artifact_wrong_run')
         used_ids.append(num(item['id'],'artifact_id',integer=True,min_value=1))
         filename=item['filename']
         require(filename == role+'.zip', 'artifact_filename')
         archives[role]=archive(evidence_dir/filename,item['sha256'])
-    require(len(set(used_ids)) == 8, 'reused_artifact_id')
+    require(len(set(used_ids)) == len(roles), 'reused_artifact_id')
+    need=required_tests['required']
+    minimum=evidence_policy['min_tests']
     try:
         test_counts={
-            'release': junit(archives['release'],'artifacts/full-junit.xml', MIN_TESTS['release']),
-            'baseline': junit(archives['baseline'],'base-junit.xml',MIN_TESTS['baseline']),
-            'http': junit(archives['http'],'http-junit.xml',MIN_TESTS['http']),
+            'release': junit(archives['release'],'artifacts/full-junit.xml', minimum['release'], need['release']),
+            'http': junit(archives['http'],'http-junit.xml',minimum['http'], need['http']),
         }
-        require(member(archives['baseline'],'base-commit.txt').strip().decode('ascii')==expected_base,'base_commit_drift')
+        if 'baseline' in roles:
+            test_counts['baseline']=junit(archives['baseline'],'base-junit.xml',minimum['baseline'])
+            require(member(archives['baseline'],'base-commit.txt').strip().decode('ascii')==expected_base,'base_commit_drift')
         offline=member(archives['release'],'artifacts/offline-bundles.sha256').decode().splitlines()
         expected_html={'dist/pbt-site.html','dist/pbt-site.artifact.html','dist/artifact/index.html'}
         offline_paths=set()
@@ -215,20 +315,11 @@ def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base):
         scope=json_bytes(member(archives['static'],'scoped-static.json'))
         require(scope['head_sha']==expected_head and scope['status']=='PASS' and scope['findings']==[]
                 and scope['files_scanned']>=6 and set(scope['scanned_roots'])=={'server','ops'}, 'scoped_static_evidence')
-        osv=json_bytes(member(archives['osv'],'osv-receipt.json'))
-        require(osv['head_sha']==expected_head and osv['outcome']=='success'
-                and osv['require_hashes'] is True and osv['no_deps'] is True
-                and osv['service']=='OSV', 'osv_evidence')
-        require(hashlib.sha256(osv['scanner_output'].encode()).hexdigest()==osv['scanner_output_sha256'], 'osv_receipt_integrity')
+        osv_dependencies=verify_osv(json_bytes(member(archives['osv'],'osv-receipt.json')),expected_head)
         mobile=json_bytes(member(archives['mobile'],'dual-theme-mobile.json'))
-        require(mobile['branch_head_sha']==expected_head and mobile['field_vitals_verified'] is False
-                and mobile['inp_ms'] is None and mobile['kind']=='synthetic_chromium_lab_not_field_data', 'synthetic_mobile_boundary')
-        for theme in ('sky','precision'):
-            metric=mobile['themes'][theme];raw=metric['raw']
-            require(len(raw)>=3,'mobile_sample_count')
-            for pct, field, key in ((75,'p75_lcp_ms','lcp_ms'),(75,'p75_cls','cls')):
-                vals=[num(x[key],key) for x in raw]
-                require(abs(nearest(vals,pct)-metric[field])<0.02, 'mobile_percentile')
+        mobile_result=verify_mobile(mobile,expected_head,evidence_policy['mobile'])
+        mutation=verify_mutation(json_bytes(member(archives['mutation'],'mutation-ledger.json')),expected_head,mutation_catalog)
+        sast=verify_sast(archives['sast'],expected_head)
         manifest=json_bytes(member(archives['visual'],'shots/manifest.json'))
         media_raw=member(archives['visual'],'media-budget.json')
         media=json_bytes(media_raw)
@@ -248,10 +339,12 @@ def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base):
             names.add(filename)
         require(len(names)==32, 'screenshot_coverage')
         soak=verify_soak(json_bytes(member(archives['soak'],'soak-evidence.json')),policy,expected_head)
-        return {'schema':'pbt-exact-head-evidence-decision-v1','status':'PASS',
-                'head_sha':expected_head,'base_sha':expected_base,'workflow_count':5,
-                'artifact_count':8,'junit_tests':test_counts,'verified_png':32,
-                'verified_png_chunks':shot_count,'soak':soak,
+        return {'schema':'pbt-exact-head-evidence-decision-v2','status':'PASS',
+                'head_sha':expected_head,'base_sha':expected_base,'target':target,
+                'repository':expected_repo,'policy_digest':policy_digest(policy,evidence_policy,required_tests),
+                'workflow_count':len(workflows),
+                'artifact_count':len(roles),'junit_tests':test_counts,'verified_png':32,
+                'verified_png_chunks':shot_count,'soak':soak,'mobile':mobile_result,'mutation':mutation,'sast':sast,'osv_dependencies':osv_dependencies,
                 'claim_boundary':'offline cross-consistency of supplied GitHub metadata and bytes, not authenticated GitHub API, production SLO, field INP or merge authorization'}
     finally:
         for z in archives.values():
@@ -265,12 +358,18 @@ def main(argv=None):
     parser.add_argument('--policy',type=Path,required=True)
     parser.add_argument('--expected-head',required=True)
     parser.add_argument('--expected-base',required=True)
+    parser.add_argument('--evidence-policy',type=Path,default=ROOT/'config/evidence-policy.json')
+    parser.add_argument('--required-tests',type=Path,default=ROOT/'config/required-tests.json')
+    parser.add_argument('--mutation-catalog',type=Path,default=ROOT/'config/mutation-catalog.json')
+    parser.add_argument('--expected-repo',default='neuron7x/pbt-site')
     args=parser.parse_args(argv)
     try:
         result=verify_manifest(json_bytes(args.manifest.read_bytes()),args.evidence_dir,
-                               json_bytes(args.policy.read_bytes()),args.expected_head,args.expected_base)
+                               json_bytes(args.policy.read_bytes()),args.expected_head,args.expected_base,
+                               json_bytes(args.evidence_policy.read_bytes()),json_bytes(args.required_tests.read_bytes()),
+                               args.mutation_catalog.read_bytes(),args.expected_repo)
     except (Rejected,KeyError,TypeError,ValueError,OSError,ET.ParseError,zipfile.BadZipFile,UnicodeError,OverflowError,IndexError) as e:
-        print(json.dumps({'status':'FAIL','reason':str(e)[:150]},sort_keys=True))
+        print(json.dumps({'status':'FAIL','reason':str(e)[:150],'error_type':type(e).__name__},sort_keys=True))
         return 1
     print(json.dumps(result,sort_keys=True,separators=(',',':')))
     return 0

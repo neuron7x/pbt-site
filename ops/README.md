@@ -17,3 +17,5 @@ marker, і наступний tick таймера автоматично пов�
 запити нових ідентичностей отримують HTTP 429 до звільнення місця. Збільшення
 цих значень підвищує верхню межу пам’яті процесу. Підбирати значення слід
 за доступною пам’яттю і виміряним навантаженням; це не захист від усіх DoS.
+
+A second server on the same `LEAD_DB` refuses to start (`single_process_guard`), and restore holds the same kernel lock. Measured sandbox limits, readiness, drills and rollback: `docs/ASSURANCE.md`.

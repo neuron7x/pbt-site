@@ -1,0 +1,29 @@
+{
+ "schema": "pbt-sast-waivers-v1",
+ "waivers": [
+  {
+   "fingerprint": "565c79ff4a4ba1e97355",
+   "test": "B310",
+   "file": "ops/health.py",
+   "rationale": "HEALTH_URL is operator-set in the unit environment; request data never reaches it."
+  },
+  {
+   "fingerprint": "b551ae2887f88516b4f2",
+   "test": "B314",
+   "file": "tools/meta_evidence_gate.py",
+   "rationale": "Run on an operator machine over provider artifacts; input must decode as UTF-8 and contain no DTD or entity declaration before parsing (tests: junit_utf16_doctype), size capped at 8 MiB."
+  },
+  {
+   "fingerprint": "1036c19176b5a11d34e5",
+   "test": "B310",
+   "file": "tools/runtime_soak.py",
+   "rationale": "Soak harness only talks to the loopback server it spawned; never shipped to runtime."
+  },
+  {
+   "fingerprint": "66b0a65c009fb133cc03",
+   "test": "B310",
+   "file": "tools/runtime_soak.py",
+   "rationale": "Soak harness only talks to the loopback server it spawned; never shipped to runtime."
+  }
+ ]
+}

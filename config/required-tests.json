@@ -1,0 +1,33 @@
+{
+  "schema": "pbt-required-tests-v1",
+  "note": "Critical test identities. A green JUnit that omits, skips or renames one is rejected, whatever its total count.",
+  "required": {
+    "release": [
+      {"id": "tests.test_data_integrity::test_server_connection_enforces_foreign_keys_and_rejects_orphan", "min_cases": 1},
+      {"id": "tests.test_data_integrity::test_migration_failure_rolls_back_every_schema_write_then_retry_converges", "min_cases": 1},
+      {"id": "tests.test_data_integrity::test_legacy_orphan_is_reported_never_repaired_and_never_lost", "min_cases": 1},
+      {"id": "tests.test_data_integrity::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement", "min_cases": 1},
+      {"id": "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint", "min_cases": 6},
+      {"id": "tests.test_data_integrity::test_disk_full_during_accept_is_500_with_no_partial_state", "min_cases": 1},
+      {"id": "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation", "min_cases": 8},
+      {"id": "tests.test_restore_cutpoints::test_new_generation_never_inherits_stale_sidecars", "min_cases": 1},
+      {"id": "tests.test_lead_reload_idempotency::test_lost_response_then_reload_replays_the_same_lead", "min_cases": 1},
+      {"id": "tests.test_lead_reload_idempotency::test_storage_holds_no_contact_data_and_clears_on_confirmation", "min_cases": 1},
+      {"id": "tests.test_outbox_state_machine::test_death_after_remote_ack_redelivers_same_id_after_restart", "min_cases": 1},
+      {"id": "tests.test_outbox_state_machine::test_transient_status_is_retried_to_acknowledgement", "min_cases": 4},
+      {"id": "tests.test_outbox_state_machine::test_permanent_status_is_terminal_with_exactly_one_attempt", "min_cases": 5},
+      {"id": "tests.test_http_protocol::test_media_type_is_parsed_not_substring_matched", "min_cases": 5},
+      {"id": "tests.test_http_protocol::test_second_server_on_same_database_fails_closed", "min_cases": 1},
+      {"id": "tests.test_dom_trust_boundary::test_hostile_public_config_is_inert_in_every_sink", "min_cases": 1},
+      {"id": "tests.test_readiness_truth_table::test_fresh_heartbeat_with_stale_backlog_is_not_ready", "min_cases": 1},
+      {"id": "tests.test_meta_evidence_gate::test_forged_success_is_rejected", "min_cases": 40}
+    ],
+    "http": [
+      {"id": "tests.test_leads::test_same_key_same_payload_is_one_lead", "min_cases": 1},
+      {"id": "tests.test_leads::test_same_key_different_payload_is_conflict", "min_cases": 1},
+      {"id": "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint", "min_cases": 6},
+      {"id": "tests.test_http_protocol::test_conflicting_duplicate_content_length_is_rejected", "min_cases": 1},
+      {"id": "tests.test_outbox_state_machine::test_retry_budget_exhaustion_is_an_explicit_terminal_state", "min_cases": 1}
+    ]
+  }
+}

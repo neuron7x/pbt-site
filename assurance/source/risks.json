@@ -1,0 +1,430 @@
+[
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R01",
+    "reason": "FK constraint exists but connection helper lacks PRAGMA; risk of orphan writes, not evidence of existing corruption",
+    "severity": "P2",
+    "source": "server/app.py:86-110",
+    "source_ids": [
+      "SQLITE-FK"
+    ],
+    "task_ids": [
+      "DB-01",
+      "DB-02"
+    ],
+    "title": "SQLite foreign keys not enforced by db()"
+  },
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R02",
+    "reason": "Multiple sequential rename operations; full failure atomicity not established",
+    "severity": "P1",
+    "source": "ops/restore.py:93-103",
+    "source_ids": [
+      "NIST-CP",
+      "SQLITE-BACKUP"
+    ],
+    "task_ids": [
+      "DB-06",
+      "DB-08",
+      "ADV-08"
+    ],
+    "title": "Restore filesystem cutover can be interrupted"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R03",
+    "reason": "Local integrity-checked snapshots do not survive assumed loss of storage",
+    "severity": "P1",
+    "source": "ops/backup.py:33-72;ops/systemd/pbt-site-backup.timer",
+    "source_ids": [
+      "NIST-CP"
+    ],
+    "task_ids": [
+      "DB-07",
+      "DB-08",
+      "OPS-08",
+      "ADV-08"
+    ],
+    "title": "Off-device restore and RPO/RTO unproven"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R04",
+    "reason": "2xx response is transport outcome, not business processing receipt",
+    "severity": "P1",
+    "source": "server/delivery_transport.py:86-95;server/app.py:557-594",
+    "source_ids": [
+      "OWASP-ASVS"
+    ],
+    "task_ids": [
+      "NET-04",
+      "OPS-01",
+      "OPS-02",
+      "DB-04",
+      "OPS-08",
+      "ADV-08"
+    ],
+    "title": "Live receiver acknowledgment unverified"
+  },
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R05",
+    "reason": "Existing separate operator CLI has aggregate lag; public /api/health intentionally does not",
+    "severity": "P1",
+    "source": "server/app.py:969-981;ops/outbox_health.py:89-131",
+    "source_ids": [
+      "NIST-SSDF"
+    ],
+    "task_ids": [
+      "OPS-01",
+      "OPS-02",
+      "OPS-03"
+    ],
+    "title": "Readiness conflates local DB/disk health with service delivery"
+  },
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R06",
+    "reason": "pr_number=8, draft=true, event=pull_request restrict reproducibility beyond PR8",
+    "severity": "P1",
+    "source": "tools/meta_evidence_gate.py:176-190",
+    "source_ids": [
+      "SLSA"
+    ],
+    "task_ids": [
+      "EVD-02",
+      "EVD-05",
+      "EVD-08",
+      "EVD-03",
+      "EVD-06",
+      "ADV-02"
+    ],
+    "title": "Evidence verifier hard-coded to historic PR8"
+  },
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R07",
+    "reason": "Recomputes p75 samples but does not itself reject limit violation; perf_probe has its own checks",
+    "severity": "P2",
+    "source": "tools/meta_evidence_gate.py:223-231",
+    "source_ids": [
+      "CWV"
+    ],
+    "task_ids": [
+      "EVD-04",
+      "WEB-02",
+      "ADV-02"
+    ],
+    "title": "Independent mobile verifier omits threshold oracle"
+  },
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R08",
+    "reason": "Key in JS memory; reload after accepted/undelivered response may issue new logical request",
+    "severity": "P2",
+    "source": "web/js/site.js:585-651",
+    "source_ids": [
+      "HTTP"
+    ],
+    "task_ids": [
+      "DB-05",
+      "NET-04",
+      "DB-03",
+      "DB-04"
+    ],
+    "title": "Browser idempotency lost after full reload"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R09",
+    "reason": "UI collects contact; no approved retention period and erasure policy evidence",
+    "severity": "P1",
+    "source": "docs/OWNER_DECISIONS.md;web/index.html:299-327",
+    "source_ids": [
+      "UA-PD"
+    ],
+    "task_ids": [
+      "OPS-04",
+      "OPS-05",
+      "OPS-08",
+      "ADV-08"
+    ],
+    "title": "Privacy policy and retention authorization missing"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R10",
+    "reason": "Historical JCB JS220 discrepancy; never infer which quote is valid now",
+    "severity": "P1",
+    "source": "docs/OWNER_DECISIONS.md;web/js/data.js;web/js/quote.js",
+    "source_ids": [
+      "UA-ECOM"
+    ],
+    "task_ids": [
+      "OPS-06",
+      "WEB-07",
+      "OPS-08",
+      "ADV-05",
+      "ADV-08"
+    ],
+    "title": "Pricing/VAT and dispatch policy lacks approved current SSOT"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R11",
+    "reason": "SHA hashes cannot prove commercial usage rights",
+    "severity": "P1",
+    "source": "docs/PROVENANCE.md;config/stock.json",
+    "source_ids": [
+      "NIST-SSDF"
+    ],
+    "task_ids": [
+      "WEB-08",
+      "OPS-08",
+      "ADV-08"
+    ],
+    "title": "Media licensing and provenance not owner-authorized"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R12",
+    "reason": "No production-edge certificate, DNS or authorization attestation",
+    "severity": "P1",
+    "source": "docs/RELEASE_STATUS.md;ops/README.md",
+    "source_ids": [
+      "HTTP"
+    ],
+    "task_ids": [
+      "OPS-07",
+      "NET-02",
+      "WEB-06",
+      "OPS-08",
+      "ADV-08"
+    ],
+    "title": "Domain and live edge/TLS unverified"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R13",
+    "reason": "Synthetic Chromium metrics not field measurements",
+    "severity": "P2",
+    "source": "tools/perf_probe.py;docs/RELEASE_STATUS.md",
+    "source_ids": [
+      "CWV"
+    ],
+    "task_ids": [
+      "WEB-02",
+      "WEB-03",
+      "OPS-02",
+      "EVD-04",
+      "WEB-05",
+      "OPS-08",
+      "ADV-05",
+      "ADV-07"
+    ],
+    "title": "Real-user mobile INP/CWV absent"
+  },
+  {
+    "evidence_status": "SCOPE_LIMIT_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R14",
+    "reason": "AST scans selected primitives in server/ops, not complete app/security graph",
+    "severity": "P2",
+    "source": "tools/security_static.py:63-111;.github/workflows/security-assurance.yml",
+    "source_ids": [
+      "OWASP-ASVS",
+      "OWASP-WSTG"
+    ],
+    "task_ids": [
+      "NET-07",
+      "ADV-01",
+      "ADV-02"
+    ],
+    "title": "Scoped AST scan cannot substitute broad SAST/DAST"
+  },
+  {
+    "evidence_status": "CONDITIONAL",
+    "exploitation_observed": false,
+    "id": "R15",
+    "reason": "Many innerHTML sinks; unsafe behavior not independently demonstrated",
+    "severity": "P2",
+    "source": "web/js/site.js:302-315;477-496",
+    "source_ids": [
+      "OWASP-ASVS"
+    ],
+    "task_ids": [
+      "NET-06",
+      "ADV-01",
+      "NET-03"
+    ],
+    "title": "DOM string composition and configuration URL trust surfaces"
+  },
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R16",
+    "reason": "Some systemd safeguards exist, full least-privilege file/network isolation not established",
+    "severity": "P2",
+    "source": "ops/systemd/pbt-site.service",
+    "source_ids": [
+      "NIST-SSDF"
+    ],
+    "task_ids": [
+      "NET-08",
+      "ADV-06"
+    ],
+    "title": "Process sandbox protection incomplete"
+  },
+  {
+    "evidence_status": "CONDITIONAL",
+    "exploitation_observed": false,
+    "id": "R17",
+    "reason": "Limits are per interpreter; multi-process production requires explicit policy or shared coordination",
+    "severity": "P2",
+    "source": "server/app.py:138-257",
+    "source_ids": [
+      "OWASP-ASVS"
+    ],
+    "task_ids": [
+      "NET-05",
+      "ADV-03"
+    ],
+    "title": "Rate limits in memory depend on single-process topology"
+  },
+  {
+    "evidence_status": "CODE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R18",
+    "reason": "Canonical metadata and deployed authoritative domain need consistency; no present site canonical tag",
+    "severity": "P2",
+    "source": "web/index.html:1-48;config/business.json",
+    "source_ids": [
+      "UA-ECOM"
+    ],
+    "task_ids": [
+      "WEB-06",
+      "WEB-07"
+    ],
+    "title": "SEO identity is not fully tied to confirmed production FQDN"
+  },
+  {
+    "evidence_status": "CI_STATE_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R19",
+    "reason": "PR14 30-minute soak in progress; historical PR11 soak is not latest-main proof",
+    "severity": "P1",
+    "source": ".github/workflows/runtime-soak.yml;PR14",
+    "source_ids": [
+      "SLSA"
+    ],
+    "task_ids": [
+      "EVD-01",
+      "EVD-05",
+      "EVD-08",
+      "ADV-04"
+    ],
+    "title": "Main soak evidence absent for latest main at audit time"
+  },
+  {
+    "evidence_status": "CONDITIONAL",
+    "exploitation_observed": false,
+    "id": "R20",
+    "reason": "Trust of XFF under TRUST_PROXY=1 requires verified actual proxy topology",
+    "severity": "P2",
+    "source": "server/app.py:866-900;992-1027",
+    "source_ids": [
+      "HTTP",
+      "OWASP-ASVS"
+    ],
+    "task_ids": [
+      "NET-01",
+      "NET-02",
+      "ADV-03",
+      "NET-03",
+      "ADV-01"
+    ],
+    "title": "Source/header parsing and reverse-proxy chain depend on deployment truth"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R21",
+    "reason": "Automated axe zero violations != complete WCAG audit; real mobile devices unverified",
+    "severity": "P2",
+    "source": "tests/test_themes.py;tests/test_design_color_type.py",
+    "source_ids": [
+      "WCAG"
+    ],
+    "task_ids": [
+      "WEB-01",
+      "WEB-04",
+      "ADV-07"
+    ],
+    "title": "Field visual accessibility cannot be certified with axe alone"
+  },
+  {
+    "evidence_status": "SCOPE_LIMIT_CONFIRMED",
+    "exploitation_observed": false,
+    "id": "R22",
+    "reason": "Hash-locked Python requirements and pinned Actions are useful but not comprehensive SLSA claim",
+    "severity": "P2",
+    "source": "requirements.txt;.github/workflows/security-assurance.yml",
+    "source_ids": [
+      "SLSA",
+      "NIST-SSDF"
+    ],
+    "task_ids": [
+      "NET-07",
+      "ADV-06",
+      "EVD-07"
+    ],
+    "title": "Security supply chain lacks comprehensive source/build provenance"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R23",
+    "reason": "Health heartbeat means scheduler activity, not forward progress",
+    "severity": "P1",
+    "source": "ops/outbox_health.py;server/app.py:611-636",
+    "source_ids": [
+      "NIST-SSDF"
+    ],
+    "task_ids": [
+      "OPS-01",
+      "OPS-02",
+      "OPS-03"
+    ],
+    "title": "Outbox retry, crash and queue alerts require production SLO"
+  },
+  {
+    "evidence_status": "EXTERNAL_UNVERIFIED",
+    "exploitation_observed": false,
+    "id": "R24",
+    "reason": "Historical monitoring emails report failures; no host, DB or receipt correlation in audit scope",
+    "severity": "P2",
+    "source": "docs/OUTBOX_OBSERVABILITY.md;Issue6",
+    "source_ids": [
+      "NIST-CP"
+    ],
+    "task_ids": [
+      "OPS-03",
+      "ADV-04"
+    ],
+    "title": "Operational monitoring has uncorrelated failures"
+  }
+]

@@ -430,7 +430,7 @@
         <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
   }
   function renderProof() {
-    $('#reel').innerHTML = D.proof.map((p, i) => `<a class="rv" style="--d:${(i % 3) * 90}ms" href="${p.url}" target="_blank" rel="noopener" aria-label="${esc(p.t)}: ${esc(p.s)} — відкрити відео">
+    $('#reel').innerHTML = D.proof.map((p, i) => `<a class="rv" style="--d:${(i % 3) * 90}ms" href="${esc(httpsUrl(p.url) || '#roboty')}" target="_blank" rel="noopener" aria-label="${esc(p.t)}: ${esc(p.s)} — відкрити відео">
       <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
       <i aria-hidden="true"></i><figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></a>`).join('');
     $$('#reel a').forEach(watchVideo);
@@ -473,10 +473,15 @@
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
   }
 
+  /* External links from configuration: https only, parsed by the platform, not by a prefix check. */
+  function httpsUrl(value) {
+    try { const u = new URL(String(value)); return u.protocol === 'https:' && !/["'<>\s]/.test(String(value)) ? u.href : null; } catch (_) { return null; }
+  }
+
   /* ───── КОНФІГУРАЦІЯ БІЗНЕСУ: /api/config → канали, підвал (fallback — вбудовані дані) ───── */
   function applyBusiness(b) {
     const c = b.contacts || {};
-    const tel = p => p ? `tel:${p}` : '#zapyt';
+    const tel = p => p ? `tel:${String(p).replace(/[^+\d]/g, '')}` : '#zapyt';
     $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = tel(c.phone); });
     $$('[data-phone2]').forEach(a => { a.textContent = phoneHuman(c.phone2) || ''; if (a.tagName === 'A') a.href = tel(c.phone2); });
     $$('[data-address]').forEach(e => e.textContent = b.address || 'Адреса уточнюється');
@@ -485,14 +490,14 @@
     const h = b.hours || {};
     $$('[data-hours]').forEach(e => e.textContent = h['mo-fr'] ? `Пн–Пт ${h['mo-fr']} · Сб ${h.sa || '—'} · Нд ${h.su || '—'}` : 'Години роботи уточнюються');
     const ch = [];
-    if (c.phone) ch.push({ k: 'Телефон', v: phoneHuman(c.phone), href: `tel:${c.phone}` });
-    if (c.phone2) ch.push({ k: 'Телефон', v: phoneHuman(c.phone2), href: `tel:${c.phone2}` });
+    if (c.phone) ch.push({ k: 'Телефон', v: phoneHuman(c.phone), href: tel(c.phone) });
+    if (c.phone2) ch.push({ k: 'Телефон', v: phoneHuman(c.phone2), href: tel(c.phone2) });
     if (c.viber) ch.push({ k: 'Viber', v: phoneHuman(c.viber), href: `viber://chat?number=${encodeURIComponent(c.viber)}` });
-    if (c.telegram) ch.push({ k: 'Telegram', v: c.telegram, href: `https://t.me/${c.telegram.replace('@', '')}` });
-    if (c.email) ch.push({ k: 'Email', v: c.email, href: `mailto:${c.email}` });
-    $('#channels').innerHTML = ch.map(x => `<a href="${x.href}"><b>${esc(x.v)}</b><span>${x.k}</span></a>`).join('') || '<div><b>Канали зв’язку</b><span>уточнюються</span></div>';
-    const soc = [['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['youtube', 'YouTube']].filter(([k]) => c[k]);
-    $$('[data-social]').forEach(ul => ul.innerHTML = soc.map(([k, n]) => `<li><a href="${c[k]}" target="_blank" rel="noopener">${n}</a></li>`).join(''));
+    if (c.telegram) ch.push({ k: 'Telegram', v: c.telegram, href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}` });
+    if (c.email && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email)) ch.push({ k: 'Email', v: c.email, href: `mailto:${c.email}` });
+    $('#channels').innerHTML = ch.map(x => `<a href="${esc(x.href)}"><b>${esc(x.v)}</b><span>${x.k}</span></a>`).join('') || '<div><b>Канали зв’язку</b><span>уточнюються</span></div>';
+    const soc = [['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['youtube', 'YouTube']].filter(([k]) => httpsUrl(c[k]));
+    $$('[data-social]').forEach(ul => ul.innerHTML = soc.map(([k, n]) => `<li><a href="${esc(httpsUrl(c[k]))}" target="_blank" rel="noopener">${n}</a></li>`).join(''));
   }
   function loadBusiness() {
     const fb = () => applyBusiness(D.business || {});
@@ -502,6 +507,14 @@
   }
 
   /* ───── ВАЛІДАЦІЯ ЗАЯВКИ: той самий контракт, що й сервер ───── */
+  const kyivToday = () => {
+    const opts = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    // Browsers with tzdata older than 2022b know only the old zone name; a RangeError here would silently block the form.
+    for (const timeZone of ['Europe/Kyiv', 'Europe/Kiev']) {
+      try { return new Intl.DateTimeFormat('en-CA', { ...opts, timeZone }).format(new Date()); } catch (_) { /* next name */ }
+    }
+    return new Intl.DateTimeFormat('en-CA', opts).format(new Date());
+  };
   const V = {
     contact(method, s) {
       s = (s || '').trim(); if (!s) return null;
@@ -517,10 +530,9 @@
     date(v) {
       v = (v || '').trim(); if (!v) return '';
       const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/); if (!m) return null;
-      const d = new Date(+m[1], +m[2] - 1, +m[3]);
-      if (d.getFullYear() !== +m[1] || d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) return null;
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      return d >= today ? v : null;
+      const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+      if (d.getUTCFullYear() !== +m[1] || d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3]) return null;
+      return v >= kyivToday() ? v : null;   // ISO dates order lexicographically; same civil date as the server.
     }
   };
   window.PBTv = (field, value, type, method) => {
@@ -583,6 +595,30 @@
   });
   syncContactMode();
   let idemKey = null, idemHash = '';
+  /* A reload loses in-memory state, so a lost response would mint a second lead. Only an opaque key,
+     a keyed digest of the request and an expiry are kept: no field value, per tab, for 30 minutes. */
+  const PENDING = 'pbt.pendingLead', PENDING_TTL_MS = 30 * 60 * 1000;
+  const pendingRead = () => {
+    try { const r = JSON.parse(sessionStorage.getItem(PENDING)); return r && typeof r.k === 'string' && typeof r.d === 'string' && r.x > Date.now() ? r : null; } catch (_) { return null; }
+  };
+  const pendingWrite = r => { try { sessionStorage.setItem(PENDING, JSON.stringify(r)); } catch (_) { /* blocked storage: in-memory idempotency only */ } };
+  const pendingClear = () => { try { sessionStorage.removeItem(PENDING); } catch (_) { /* nothing was stored */ } };
+  async function leadDigest(key, body) {
+    try {
+      const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${key}\n${body}`));
+      return Array.from(new Uint8Array(raw), b => b.toString(16).padStart(2, '0')).join('');
+    } catch (_) { return null; }   // crypto.subtle needs a secure context; plain HTTP degrades to in-memory.
+  }
+  async function bindIdempotencyKey(body) {
+    if (body !== idemHash) {
+      const prior = pendingRead();
+      const same = prior && await leadDigest(prior.k, body) === prior.d;
+      idemKey = same ? prior.k : uuid();
+      idemHash = body;
+    }
+    const d = await leadDigest(idemKey, body);
+    if (d) pendingWrite({ k: idemKey, d, x: Date.now() + PENDING_TTL_MS });
+  }
   const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join(''));
   function setErr(name, text) {
     const group = form.querySelector(`[data-field="${name}"]`);
@@ -628,8 +664,8 @@
     msg.classList.remove('is-on');
     if (Object.keys(err).length) { const first = form.querySelector('.is-err input, .is-err textarea'); if (first) first.focus(); return; }
     const h = JSON.stringify(p);
-    if (h !== idemHash) { idemHash = h; idemKey = uuid(); }
     const btn = $('#send'); btn.disabled = true; btn.textContent = 'Надсилаю…';
+    await bindIdempotencyKey(h);
     const controller = new AbortController();
     const deadline = setTimeout(() => controller.abort(), 15000);
     try {
@@ -637,8 +673,10 @@
       const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey }, body: h, signal: controller.signal });
       const j = await r.json().catch(error => { if (controller.signal.aborted) throw error; return {}; });
       if (r.status === 201 && j.ok) {
+        pendingClear();
         form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = j.ref; done.focus();
       } else if (r.status === 422 && j.fields) {
+        pendingClear();   // Definitively not committed.
         Object.entries(j.fields).forEach(([k, v]) => setErr(k, v));
         msg.textContent = 'Перевірте позначені поля.'; msg.classList.add('is-on');
         const first = form.querySelector('.is-err input, .is-err select, .is-err textarea');
@@ -657,7 +695,7 @@
     try { await navigator.clipboard.writeText(t); b.textContent = 'Скопійовано'; } catch (_) { const r = document.createRange(); r.selectNodeContents($('#fbText')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Виділено — скопіюй'; }
     setTimeout(() => b.textContent = 'Скопіювати текст', 2500);
   });
-  $('#again').addEventListener('click', () => { done.classList.remove('is-on'); form.hidden = false; form.reset(); idemHash = ''; $('#subject').focus(); });
+  $('#again').addEventListener('click', () => { done.classList.remove('is-on'); form.hidden = false; form.reset(); idemHash = ''; pendingClear(); $('#subject').focus(); });
   $('#fbRetry')?.addEventListener('click', () => {
     fallback.classList.remove('is-on'); form.hidden = false;
     msg.textContent = 'Підтвердження не отримано. Можна повторити надсилання: незмінена заявка не дублюється.';
@@ -669,7 +707,7 @@
     e.preventDefault();
     const t = b.dataset.req, s = b.dataset.subject;
     // Після підтвердженого успіху CTA означає новий намір; після обриву — безпечний повтор.
-    if (done.classList.contains('is-on')) { idemHash = ''; idemKey = null; }
+    if (done.classList.contains('is-on')) { idemHash = ''; idemKey = null; pendingClear(); }
     done.classList.remove('is-on'); fallback.classList.remove('is-on'); form.hidden = false;
     if (b.id !== 'cOrder') releaseCalcValues();
     switchRequestType(t);
