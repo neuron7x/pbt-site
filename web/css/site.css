@@ -796,7 +796,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 
 /* Фокус не перекривається закріпленою навігацією. */
 html{scroll-padding-top:88px;scroll-padding-bottom:72px}
-main section[id]{scroll-margin-top:0}
+main section[id]{scroll-margin-top:88px}
 .chip,.unit .btn--sm{min-height:44px}
 .field .err{line-height:1.45}
 .field.is-err input[aria-invalid=true],.field.is-err select[aria-invalid=true],
@@ -824,7 +824,7 @@ main section[id]{scroll-margin-top:0}
 }
 @media(max-width:699px){
   html{scroll-padding-top:76px}
-  main section[id]{scroll-margin-top:0}
+  main section[id]{scroll-margin-top:76px}
   .hero__center{left:var(--gut);right:var(--gut);width:auto;justify-items:center;text-align:center}
   .hero__center .row{justify-content:center}
   .hero__stats{justify-content:center}
