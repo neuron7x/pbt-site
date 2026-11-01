@@ -2,6 +2,9 @@ name: PBT / Перевірка якості PR
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,6 +16,7 @@ concurrency:
 jobs:
   baseline-control:
     name: Independent exact-main make gate (no main mutation)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     env:
@@ -181,19 +185,19 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
           git diff --check HEAD^1 HEAD
-          python -m compileall -q tools/meta_evidence_gate.py tests/test_meta_evidence_gate.py
+          python -m compileall -q tools/meta_evidence_gate.py tools/evidence_collect.py tests/test_meta_evidence_gate.py tests/test_evidence_collect.py
           python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt
-      - name: Self-falsification (17 positive and negative controls)
+      - name: Self-falsification (positive and adversarial controls, identities from config/required-tests.json)
         run: |
           mkdir -p artifacts/meta
-          python -m pytest -q -p no:cacheprovider --junitxml=artifacts/meta/junit.xml tests/test_meta_evidence_gate.py
+          python -m pytest -q -p no:cacheprovider --junitxml=artifacts/meta/junit.xml tests/test_meta_evidence_gate.py tests/test_evidence_collect.py
           python - <<'PY'
           import xml.etree.ElementTree as ET
           from pathlib import Path
           root = ET.parse('artifacts/meta/junit.xml').getroot()
           suites = root.findall('.//testsuite')
           tests = root.findall('.//testcase')
-          assert len(tests) == 17 and sum(int(s.attrib['tests']) for s in suites) == 17
+          assert len(tests) >= 40 and sum(int(s.attrib['tests']) for s in suites) == len(tests)
           assert all(all(int(s.attrib[k]) == 0 for k in ('failures','errors','skipped')) for s in suites)
           assert not root.findall('.//failure') and not root.findall('.//error')
           Path('artifacts/meta/exact-head.txt').write_text(__import__('os').environ['PBT_HEAD_SHA'] + '\n')

@@ -1,0 +1,11 @@
+{
+  "schema": "pbt-evidence-policy-v1",
+  "targets": {
+    "pull_request": {"run_events": ["pull_request"], "roles": ["release", "baseline", "mobile", "http", "visual", "osv", "static", "soak"]},
+    "push": {"run_events": ["push", "workflow_dispatch"], "roles": ["release", "mobile", "http", "visual", "osv", "static", "soak"]},
+    "workflow_dispatch": {"run_events": ["push", "workflow_dispatch"], "roles": ["release", "mobile", "http", "visual", "osv", "static", "soak"]}
+  },
+  "main_ref": "refs/heads/main",
+  "min_tests": {"release": 390, "baseline": 191, "http": 160},
+  "mobile": {"lcp_ms": 2500, "cls": 0.1, "max_deferred_switch_shift": 0.001, "min_runs": 3}
+}

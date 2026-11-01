@@ -33,12 +33,12 @@ invariant.
 ## Offline verifier
 
 The stdlib-only evaluator is `tools/meta_evidence_gate.py`. It expects a
-JSON manifest `pbt-exact-head-evidence-matrix-v1` with:
+JSON manifest `pbt-exact-head-evidence-matrix-v2` with:
 
-- `head_sha`, `base_sha`, `pr_number:8`, `draft:true`;
+- `head_sha`, `base_sha`, `target` (`kind`, `pr_number`, `ref`, bound by `config/evidence-policy.json`);
 - exactly five run roles: `full`, `transport`, `visual`, `security`,
   `soak`, each with authenticated `id`, `head_sha`, `event:pull_request`,
-  `attempt`, `status:completed`, `conclusion:success`;
+  `attempt`, `status:completed`, `conclusion:success`; `event` must belong to the target's receipts: pull-request receipts never certify `main` and vice versa;
 - exactly eight artifacts: `release`, `baseline`, `mobile`, `http`,
   `visual`, `osv`, `static`, `soak`, each with `id`, `run_id`,
   `filename` (`<role>.zip`) and independently computed `sha256`.

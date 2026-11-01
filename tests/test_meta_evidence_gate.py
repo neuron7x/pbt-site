@@ -16,6 +16,7 @@ from tools import meta_evidence_gate as gate
 
 HEAD = 'a' * 40
 BASE = 'b' * 40
+ZIP_ROLES = None
 
 
 def sha(raw):
@@ -30,9 +31,25 @@ def pack(files):
     return stream.getvalue()
 
 
-def junit(n):
-    cases = ''.join(f'<testcase classname="T" name="case_{i}" />' for i in range(n))
-    return f'<testsuites><testsuite tests="{n}" errors="0" failures="0" skipped="0">{cases}</testsuite></testsuites>'.encode()
+ROOT = Path(__file__).resolve().parents[1]
+EVIDENCE_POLICY = json.loads((ROOT / 'config/evidence-policy.json').read_text())
+REQUIRED_TESTS = json.loads((ROOT / 'config/required-tests.json').read_text())
+
+
+def junit(n, role=None, drop=None):
+    names = []
+    for rule in REQUIRED_TESTS['required'].get(role, ()):
+        cls, name = rule['id'].split('::')
+        if rule['id'] != drop:
+            names += [(cls, f'{name}[{i}]') for i in range(max(rule['min_cases'], 1))]
+    names += [('T', f'case_{i}') for i in range(max(n - len(names), 0))]
+    cases = ''.join(f'<testcase classname="{c}" name="{m}" />' for c, m in names)
+    return (f'<testsuites><testsuite tests="{len(names)}" errors="0" failures="0" skipped="0">'
+            f'{cases}</testsuite></testsuites>').encode()
+
+
+def verify(meta, directory, policy, head=HEAD, base=BASE, evidence_policy=None):
+    return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY, REQUIRED_TESTS)
 
 
 def png():
@@ -84,19 +101,19 @@ def state(tmp_path):
                                 'screenshot_count':32,'evidence':{
                                 'shots_manifest':{'bytes':len(manifest),'sha256':sha(manifest)},
                                 'media_report':{'bytes':len(media),'sha256':sha(media)}}}).encode()
-    mobile={'branch_head_sha':HEAD,'field_vitals_verified':False,'inp_ms':None,
+    mobile={'execution_sha':HEAD,'branch_head_sha':HEAD,'event_sha':'e'*40,'field_vitals_verified':False,'inp_ms':None,
             'kind':'synthetic_chromium_lab_not_field_data',
-            'themes':{theme:{'raw':[{'lcp_ms':1200,'cls':0.01}]*3,
-                              'p75_lcp_ms':1200,'p75_cls':0.01} for theme in ('sky','precision')}}
+            'themes':{theme:{'raw':[{'lcp_ms':1200,'cls':0.01,'switch_unprompted_shift_sum':0.0}]*3,
+                              'p75_lcp_ms':1200,'p75_cls':0.01,'synthetic_budget_met':True} for theme in ('sky','precision')}}
     osv={'head_sha':HEAD,'outcome':'success','require_hashes':True,'no_deps':True,
          'service':'OSV','scanner_output':'','scanner_output_sha256':sha(b'')}
     static={'head_sha':HEAD,'status':'PASS','findings':[],'files_scanned':6,
             'scanned_roots':['server','ops']}
     contents={
-        'release':{'artifacts/full-junit.xml':junit(390),
+        'release':{'artifacts/full-junit.xml':junit(390,'release'),
                    'artifacts/offline-bundles.sha256':sha_lines,**raw_html},
         'baseline':{'base-junit.xml':junit(191),'base-commit.txt':(BASE+'\n').encode()},
-        'http':{'http-junit.xml':junit(160)},
+        'http':{'http-junit.xml':junit(160,'http')},
         'visual':{'shots/manifest.json':manifest,'media-budget.json':media,
                   'evidence-verification.json':visual_receipt,**shots},
         'static':{'scoped-static.json':json.dumps(static).encode()},
@@ -111,16 +128,18 @@ def state(tmp_path):
         path=tmp_path/(role+'.zip');path.write_bytes(pack(contents[role]))
         artifacts[role]={'id':100+i,'run_id':runs[owner]['id'],
                          'filename':role+'.zip','sha256':sha(path.read_bytes())}
-    meta={'schema':'pbt-exact-head-evidence-matrix-v1','head_sha':HEAD,'base_sha':BASE,
-          'pr_number':8,'draft':True,'runs':runs,'artifacts':artifacts}
+    meta={'schema':'pbt-exact-head-evidence-matrix-v2','head_sha':HEAD,'base_sha':BASE,
+          'target':{'kind':'pull_request','pr_number':14,'ref':'refs/pull/14/head'},'runs':runs,'artifacts':artifacts}
     return meta,policy,tmp_path,contents
 
 
 def test_complete_matrix_accepts_consistent_evidence(state):
     meta,policy,directory,_=state
-    result=gate.verify_manifest(meta,directory,policy,HEAD,BASE)
+    result=verify(meta,directory,policy)
     assert result['status']=='PASS'
-    assert result['junit_tests']=={'release':390,'baseline':191,'http':160}
+    assert result['junit_tests']['baseline']==191 and result['junit_tests']['release']>=390
+    assert result['policy_digest']==gate.policy_digest(policy,EVIDENCE_POLICY,REQUIRED_TESTS)
+    assert result['target']['pr_number']==14
     assert result['verified_png']==32 and result['soak']['accepted']==3000
 
 
@@ -129,6 +148,10 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     'artifact_reused','zip_tampered','junit_falsified','latency_forged',
     'tree_rss_forged','child_rss_missing','outbox_lost','hmac_failure',
     'field_inp_forged','visual_crc_corruption','osv_outcome',
+    'historic_pr8_v1_schema','unsupported_event','pr_number_on_main_target','required_test_removed',
+    'required_test_skipped','mobile_lcp_over_budget_coherent_summary','mobile_cls_over_budget_coherent_summary',
+    'mobile_forged_budget_flag','mobile_late_switch_shift','mobile_wrong_execution_sha','mobile_event_sha_as_execution',
+    'wrong_source_revision_all_artifacts',
 ])
 def test_forged_success_is_rejected(state,mutant):
     meta,policy,directory,contents=state
@@ -164,5 +187,76 @@ def test_forged_success_is_rejected(state,mutant):
     elif mutant=='osv_outcome':
         d=json.loads(contents['osv']['osv-receipt.json']);d['outcome']='failure'
         contents['osv']['osv-receipt.json']=json.dumps(d).encode();rewrite('osv')
-    with pytest.raises((gate.Rejected,ValueError)):
-        gate.verify_manifest(meta,directory,policy,HEAD,BASE)
+    elif mutant=='historic_pr8_v1_schema':
+        meta['schema']='pbt-exact-head-evidence-matrix-v1';meta['pr_number']=8;meta['draft']=True
+    elif mutant=='unsupported_event':meta['target']['kind']='schedule'
+    elif mutant=='pr_number_on_main_target':meta['target']={'kind':'push','pr_number':14,'ref':'refs/heads/main'}
+    elif mutant=='required_test_removed':
+        # Total count stays far above the minimum: only identity can catch this.
+        contents['release']['artifacts/full-junit.xml']=junit(2000,'release',
+            'tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint')
+        rewrite('release')
+    elif mutant=='required_test_skipped':
+        raw=contents['release']['artifacts/full-junit.xml'].decode()
+        raw=raw.replace('name="test_process_death_at_each_acceptance_cutpoint[0]" />',
+                        'name="test_process_death_at_each_acceptance_cutpoint[0]"><skipped/></testcase>')
+        contents['release']['artifacts/full-junit.xml']=raw.encode();rewrite('release')
+    elif mutant.startswith('mobile_'):
+        d=json.loads(contents['mobile']['dual-theme-mobile.json']);m=d['themes']['sky']
+        if mutant=='mobile_lcp_over_budget_coherent_summary':
+            m['raw']=[{**x,'lcp_ms':2700} for x in m['raw']];m['p75_lcp_ms']=2700
+        if mutant=='mobile_cls_over_budget_coherent_summary':
+            m['raw']=[{**x,'cls':0.2} for x in m['raw']];m['p75_cls']=0.2
+        if mutant=='mobile_forged_budget_flag':
+            m['raw']=[{**x,'lcp_ms':9000} for x in m['raw']];m['p75_lcp_ms']=9000;m['synthetic_budget_met']=True
+        if mutant=='mobile_late_switch_shift':
+            m['raw']=[{**x,'switch_unprompted_shift_sum':0.2} for x in m['raw']]
+        if mutant=='mobile_wrong_execution_sha':d['execution_sha']='c'*40
+        if mutant=='mobile_event_sha_as_execution':d['execution_sha']=d['event_sha']
+        contents['mobile']['dual-theme-mobile.json']=json.dumps(d).encode();rewrite('mobile')
+    elif mutant=='wrong_source_revision_all_artifacts':
+        for role,member_name,key in (('soak','soak-evidence.json','source_sha'),('static','scoped-static.json','head_sha'),
+                                     ('osv','osv-receipt.json','head_sha')):
+            d=json.loads(contents[role][member_name]);d[key]='c'*40
+            contents[role][member_name]=json.dumps(d).encode();rewrite(role)
+    with pytest.raises((gate.Rejected,ValueError,KeyError)):
+        verify(meta,directory,policy)
+
+
+def test_main_target_uses_push_receipts_and_needs_no_baseline(state):
+    meta,policy,directory,_=state
+    meta=copy.deepcopy(meta)
+    meta['target']={'kind':'push','pr_number':None,'ref':'refs/heads/main'}
+    del meta['artifacts']['baseline']
+    for run in meta['runs'].values():
+        run['event']='push'
+    meta['runs']['soak']['event']='workflow_dispatch'
+    assert verify(meta,directory,policy)['status']=='PASS'
+
+
+def test_pull_request_receipts_never_certify_main(state):
+    meta,policy,directory,_=state
+    meta=copy.deepcopy(meta)
+    meta['target']={'kind':'push','pr_number':None,'ref':'refs/heads/main'}
+    del meta['artifacts']['baseline']
+    with pytest.raises(gate.Rejected,match='receipt_from_other_target_event'):
+        verify(meta,directory,policy)
+
+
+def test_main_receipts_never_certify_a_pull_request(state):
+    meta,policy,directory,_=state
+    meta=copy.deepcopy(meta)
+    for run in meta['runs'].values():
+        run['event']='push'
+    with pytest.raises(gate.Rejected,match='receipt_from_other_target_event'):
+        verify(meta,directory,policy)
+
+
+def test_required_inventory_names_tests_that_really_exist():
+    """A typo here would make the gate reject everything, or an empty rule certify nothing."""
+    for rules in REQUIRED_TESTS['required'].values():
+        for rule in rules:
+            module,name=rule['id'].split('::')
+            source=(ROOT/(module.replace('.','/')+'.py')).read_text(encoding='utf-8')
+            assert f'def {name}(' in source,rule['id']
+            assert rule['min_cases']>=1,rule['id']
