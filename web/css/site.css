@@ -130,7 +130,7 @@
   --t-map-ring-animation: ring 2.2s var(--ease) infinite;
   --t-footer-bg: var(--ink);
   --t-tag-bg:var(--grad-gold); --t-tag-fg:var(--ink);
-  --t-logo-width:min(720px,72vw,58svh); --t-logo-mobile:min(440px,86vw); --t-fact-bg:rgba(255,255,255,.1);
+  --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:rgba(255,255,255,.1);
   --t-cine-veil:radial-gradient(62% 34% at 50% 52%,rgba(4,31,69,.66),rgba(4,31,69,.46) 55%,transparent),linear-gradient(180deg,rgba(4,31,69,.82),rgba(4,31,69,.12) 30%,rgba(4,31,69,.12) 62%,rgba(4,31,69,.9));
   --t-marquee-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
   --t-hero-stats-border:1px solid rgba(255,255,255,.28); --t-hero-stats-padding:16px; --t-footer-legal:#A9C3E3;
@@ -253,7 +253,7 @@
   --t-map-ring-animation: none;
   --t-footer-bg: #0B1218;
   --t-tag-bg:rgba(16,24,32,.88); --t-tag-fg:#FFFFFF;
-  --t-logo-width:min(248px,27vw,34svh); --t-logo-mobile:min(210px,54vw,30svh); --t-fact-bg:transparent;
+  --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:transparent;
   --t-cine-veil:radial-gradient(ellipse 65% 43% at 50% 52%,rgba(8,16,24,.79),rgba(8,16,24,.6) 55%,transparent 86%),linear-gradient(90deg,rgba(10,17,24,.48),rgba(10,17,24,.24)),linear-gradient(0deg,rgba(10,17,24,.8),transparent 35%,transparent 70%,rgba(10,17,24,.68));
   --t-marquee-mask:none; --t-hero-stats-border:1px solid rgba(255,255,255,.32); --t-hero-stats-padding:17px; --t-footer-legal:#A6B4BF;
   --t-404-bg: #101820;
@@ -405,7 +405,8 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 @keyframes dip{0%{transform:translateY(-6px);opacity:0}30%{opacity:1}100%{transform:translateY(10px);opacity:0}}
 @media (prefers-reduced-motion:reduce){.hero__hint::after,.hero__beams,.logo-hero{animation:none}}
 @media (max-height:820px){.hero__hint{display:none}}   /* низький екран: декоративна підказка «Гортайте» налазила на цифри героя */
-@media (max-height:620px),(max-width:480px) and (max-height:700px){.hero__lead{display:none}.hero__center{gap:8px}}   /* < 620 px: підзаголовок дублює заголовок і цифри — без нього блок вміщується під шапкою */
+@media (max-height:620px),(max-width:480px) and (max-height:700px){.hero__center{gap:8px}}
+@media (max-height:520px){.hero__lead{display:none}}   /* Дуже низький landscape: лишити місце кнопкам і показникам. */
 
 /* секції */
 .sec{position:relative;padding:var(--sec) var(--gut)}
@@ -761,7 +762,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .s-cine.is-pinned::after{content:"";display:block;clear:both}
 @media (max-width:699px){.s-cine.is-pinned .cine__rail{display:none}}
 /* наприкінці: має перекрити мобільний блок вище з тією ж специфічністю */
-@media (max-width:380px){.hero__stats{gap:10px}.hero__stats li{min-width:60px}.hero__stats span{letter-spacing:.12em}}   /* 360 px: 4 цифри в один ряд, без «сироти» 3 + 1 */
+@media (max-width:380px){.hero__stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:8px}.hero__stats li{min-width:0}.hero__stats b{font-size:clamp(19px,6vw,22px)}.hero__stats span{font-size:10px;letter-spacing:.1em}}   /* 320 px: усі чотири показники лишаються в одному рядку */
 
 
 /* ── Issue #4: перемикач у спільній навігації; розміри не залежать від теми. ── */
@@ -848,4 +849,16 @@ main section[id]{scroll-margin-top:88px}
 }
 @media(prefers-reduced-motion:reduce){
   .theme-switch__button{transition:none}
+}
+
+/* Низький landscape: всі дії та показники мають вміститись під навігацією. */
+@media(max-height:420px) and (orientation:landscape){
+  .hero__center{gap:4px}
+  .hero__center h1{font-size:clamp(22px,4vw,30px);line-height:1.02}
+  .hero__center .row{gap:8px}
+  .hero__center .btn{min-height:44px;padding:10px 20px}
+  .hero__stats{padding-top:6px;margin-top:2px}
+  .hero__stats b{font-size:22px}
+  .hero__stats span{font-size:10px}
+  [data-quality=static] .hero__center{padding:88px 0 10px}
 }
