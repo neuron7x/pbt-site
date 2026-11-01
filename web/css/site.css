@@ -713,7 +713,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 [data-quality=static] .s-hero{height:auto}
 [data-quality=static] .hero{position:relative;height:auto;min-height:100svh}
 [data-quality=static] .hero__water,[data-quality=static] .hero__hint,[data-quality=static] .hero__spark,[data-quality=static] .hero__beams{display:none}
-[data-quality=static] .hero__center{position:relative;top:auto;transform:none;padding:120px 0 80px}
+[data-quality=static] .hero__center{position:relative;top:auto;transform:none;max-width:calc(100% - 2 * var(--gut));padding:120px 0 80px}
 @media print{.nav,.gauge,.menu,.hero__water,.hero__spark,.glow{display:none!important}.s-hero{height:auto}.hero{position:static;height:auto}}
 
 /* ── S02b МАСШТАБ: кіно-сцена. Спокій: стрічка постерів із підписами. Рух: сцена липне, розділи прокручуються поверх,

@@ -38,3 +38,20 @@ def test_request_content_contrast_on_every_gradient_stop(page_factory, theme):
         assert len(stops) >= 2, sample
         for stop in stops:
             assert contrast(foreground, tuple(map(int, stop))) >= 4.5, sample
+
+
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
+@pytest.mark.parametrize('width', [320, 390])
+def test_static_mobile_hero_content_is_not_clipped(page_factory, theme, width):
+    """overflow-x:clip маскує дефект від перевірки scrollWidth."""
+    page = page_factory(width, 844, mobile=True, reduced=True)
+    page.locator(f'[data-theme-choice="{theme}"]').click()
+    boxes = page.locator('#heroCenter .logo-hero,#heroTitle,#heroTitle .line,'
+                         '#heroCenter .hero__lead,#heroCenter .btn,#heroCenter .hero__stats').evaluate_all("""els =>
+      els.map(el => ({name: el.className || el.id, box: el.getBoundingClientRect().toJSON()}))
+         .filter(item => item.box.width > 0 && item.box.height > 0)
+    """)
+    assert len(boxes) >= 7
+    for item in boxes:
+        assert item['box']['left'] >= 12, item
+        assert item['box']['right'] <= width - 12, item
