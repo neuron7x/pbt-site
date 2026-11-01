@@ -361,10 +361,10 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 /* ── поява секцій (стаггер); без JS або в статичній якості усе видно одразу ── */
 .rv{--d:0ms}
 /* поява стартує ще під краєм екрана (site.js: rootMargin +20%) — на звичайному скролі блок не «примара» в кадрі; затримка стаггера ≤ 160 мс */
-.js .rv{opacity:0;transform:translateY(18px);transition:opacity .38s cubic-bezier(.2,.75,.25,1) min(var(--d),160ms),transform .8s var(--spring) min(var(--d),160ms)}   /* непрозорість швидко, рух — довше: рух видно вже на щільному блоці */
-.js .rv--scale{transform:translateY(18px) scale(.96)}
-.js .rv.is-in,.js[data-quality=static] .rv{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){.js .rv{opacity:1;transform:none;transition:none}}
+.js.reveal-ready .rv{opacity:0;transform:translateY(18px);transition:opacity .38s cubic-bezier(.2,.75,.25,1) min(var(--d),160ms),transform .8s var(--spring) min(var(--d),160ms)}   /* приховуємо лише після успішної ініціалізації */
+.js.reveal-ready .rv--scale{transform:translateY(18px) scale(.96)}
+.js.reveal-ready .rv.is-in,.js.reveal-ready[data-quality=static] .rv{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.js.reveal-ready .rv{opacity:1;transform:none;transition:none}}
 
 /* ═══ S01 ГЕРОЙ: небо, золото, власні кадри ═══ */
 .s-hero{position:relative;height:260vh;color:var(--white)}
@@ -457,6 +457,8 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .chip[aria-pressed=true]{background:var(--t-chip-active-bg);box-shadow:var(--t-btn-shadow);color:var(--t-chip-active-fg)}
 .chip[aria-pressed=true] .num{opacity:.8}
 .park{display:grid;gap:16px}
+.content-fallback{grid-column:1/-1;padding:20px 24px;border:1px solid currentColor;border-radius:var(--t-card-radius);line-height:1.6}
+.content-fallback a{color:inherit;text-decoration:underline;text-underline-offset:3px}
 @media (min-width:560px){.park{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1000px){.park{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (min-width:1360px){.park{grid-template-columns:repeat(4,minmax(0,1fr))}}
@@ -485,6 +487,8 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .calc{display:grid;gap:0;border-radius:var(--t-calc-radius);overflow:hidden;box-shadow:var(--sh-card);background:var(--white);max-width:var(--t-calc-max);margin:var(--t-calc-margin)}
 @media (min-width:1024px){.calc{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
 .calc__form{padding:clamp(24px,3.4vw,48px);display:grid;gap:24px;align-content:start}
+.calc__selection{display:none}
+@media(max-width:699px){.calc__selection{display:block;color:var(--ink);font-size:13px;line-height:1.45;overflow-wrap:anywhere}}
 .field{display:grid;gap:8px;min-width:0}
 .field label,.field .lab{font:600 12px/1 var(--f-m);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 .field input,.field select,.field textarea{width:100%;background:var(--sky-50);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--ink);font:400 16px/1.3 var(--f-b);transition:border-color .3s,box-shadow .3s,background .3s}

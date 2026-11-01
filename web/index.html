@@ -58,7 +58,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <nav class="nav__links" aria-label="Розділи">
     <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Ціна</a><a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a>
   </nav>
-  <a class="nav__phone" href="#zapyt" data-phone>097 863 77 77</a>
+  <a class="nav__phone" href="tel:+380978637777" data-phone>097 863 77 77</a>
   <a class="btn btn--sm nav__cta" href="#zapyt" data-req="rent">Викликати техніку</a>
   <div class="theme-switch" role="group" aria-label="Візуальна тема сайту">
     <button class="theme-switch__button" type="button" data-theme-choice="sky" aria-label="Тема Небо і золото" aria-pressed="true">Небо</button>
@@ -74,7 +74,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <a href="#roboty"><span>01</span>Роботи</a><a href="#tekhnika"><span>02</span>Техніка</a><a href="#cina"><span>03</span>Ціна</a>
     <a href="#materialy"><span>04</span>Матеріали</a><a href="#dokaz"><span>05</span>Кадри</a><a href="#geo"><span>06</span>Де працюємо</a><a href="#zapyt" data-req="rent"><span>07</span>Заявка</a>
   </nav>
-  <div class="menu__foot"><a href="#zapyt" data-phone>097 863 77 77</a><a href="#zapyt" data-phone2>095 863 77 77</a><span data-address>36002, м. Полтава, вул. Довженка, 2А</span></div>
+  <div class="menu__foot"><a href="tel:+380978637777" data-phone>097 863 77 77</a><a href="tel:+380958637777" data-phone2>095 863 77 77</a><span data-address>36002, м. Полтава, вул. Довженка, 2А</span></div>
 </div>
 
 <!-- ═══ ГЛИБИНОМІР: рейка прогресу як шкала глибини ═══ -->
@@ -161,7 +161,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <p class="lead">Оберіть техніку під своє завдання. Для оренди вказано погодинну ставку, для перевезень — ціну за кілометр. Договірну вартість уточнюємо за умовами об’єкта.</p>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Категорії техніки"></div>
-    <div class="park" id="park" aria-live="polite"></div>
+    <div class="park" id="park" aria-live="polite"><p class="content-fallback">Каталог тимчасово недоступний. <a href="tel:+380978637777">Зателефонуйте диспетчеру</a>.</p></div>
     <p class="park__note">Ціни з прайсу pbt-spectehnika.com.ua станом на 03.10.2026. Остаточна вартість — після уточнення об’єкта, обсягу й строків.</p>
   </div>
 </section>
@@ -176,16 +176,17 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     </div>
     <div class="calc rv rv--scale">
       <form class="calc__form" id="calcForm" aria-label="Калькулятор зміни">
-        <div class="field"><label for="cMachine">Машина</label><select id="cMachine" name="machine"></select></div>
+        <div class="field"><label for="cMachine">Машина</label><select id="cMachine" name="machine" disabled></select><p class="calc__selection" id="cMachineSummary" aria-hidden="true"></p></div>
         <div class="field"><label for="cHoursN">Годин роботи</label><div class="pair"><input type="range" id="cHours" min="1" max="240" step="1" value="8" aria-label="Годин роботи, повзунок"><input type="number" id="cHoursN" min="1" max="5000" step="1" value="8" inputmode="numeric"></div></div>
         <div class="field"><label for="cKmN">Подача, км в один бік</label><div class="pair"><input type="range" id="cKm" min="0" max="300" step="5" value="30" aria-label="Подача, км, повзунок"><input type="number" id="cKmN" min="0" max="3000" step="1" value="30" inputmode="numeric"></div></div>
       </form>
       <div class="calc__out" id="cOut" aria-live="polite">
         <p class="eyebrow">Орієнтовна вартість</p>
-        <p class="total" id="cTotal">0<small>грн</small></p>
+        <p class="total" id="cTotal">—</p>
         <div class="lines" id="cLines"></div>
         <p class="calc__note">Орієнтовно, за прайсом від 03.10.2026. Мінімальна зміна, простій, нічна робота та ПДВ — уточнюємо під час підтвердження заявки.</p>
-        <p class="calc__cta"><button class="btn" type="button" id="cOrder" data-req="rent">Замовити цю зміну</button></p>
+        <p class="content-fallback" id="calcUnavailable">Розрахунок тимчасово недоступний. <a href="tel:+380978637777">Зателефонуйте диспетчеру</a>.</p>
+        <p class="calc__cta"><button class="btn" type="button" id="cOrder" data-req="rent" disabled>Замовити цю зміну</button></p>
       </div>
     </div>
   </div>
@@ -199,7 +200,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <p class="eyebrow">Матеріали</p><h2>Сипучі матеріали<span>з паспортом якості</span></h2>
       <p class="lead">Пісок, гранітний щебінь усіх фракцій, відсів, ЩПС і бут. Доставка самоскидами на об’єкт. На кожну фракцію — паспорт якості й радіаційний сертифікат.</p>
     </div>
-    <div class="mats" id="mats"></div>
+    <div class="mats" id="mats"><p class="content-fallback">Каталог матеріалів тимчасово недоступний. <a href="tel:+380978637777">Зателефонуйте диспетчеру</a>.</p></div>
     <div class="mats__note rv"><b>Документи йдуть із партією</b><span>Паспорт якості фракції, сертифікат відповідності ЩПС, протоколи випробувань піску, радіаційний сертифікат — надсилаємо до відвантаження, щоб технагляд не зупиняв роботу.</span></div>
   </div>
 </section>
@@ -220,7 +221,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div class="reel" id="reel"></div>
     <p class="eyebrow" style="margin-top:clamp(36px,5vw,56px)">Нам довіряють</p>
     <div class="marquee" role="group" aria-label="Партнери"><ul id="partners"></ul></div>
-    <p class="proof__src">Логотипи партнерів — з публічного сайту компанії. Відео — власна зйомка ПБТ, TikTok @poltavabudtehnika.</p>
+    <p class="proof__src">Логотипи партнерів — з публічного сайту компанії. Відео — з каналу ПБТ, TikTok @poltavabudtehnika.</p>
   </div>
 </section>
 
@@ -286,7 +287,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     </ol>
     <div class="act">
       <aside class="act__aside rv">
-        <div class="channels" id="channels"></div>
+        <div class="channels" id="channels"><a href="tel:+380978637777"><b>097 863 77 77</b><span>Телефон</span></a><a href="tel:+380958637777"><b>095 863 77 77</b><span>Телефон</span></a></div>
         <p class="act__note">Якщо зв’язок обірветься під час надсилання, повторне натискання не створить дубліката заявки.</p>
         <div class="request-faq">
           <details><summary>Не знаю, яка техніка потрібна</summary><p>Опишіть завдання у формі: що потрібно зробити, де розташований об’єкт і чи є під’їзд. Техніку доберемо під час розмови.</p></details>
@@ -295,7 +296,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
         </div>
       </aside>
       <div class="rv rv--scale">
-        <form class="form" id="lead" novalidate autocomplete="on">
+        <form class="form" id="lead" method="post" action="/api/lead" novalidate autocomplete="on">
           <fieldset class="field" data-field="type"><legend class="lab">Що потрібно</legend>
             <div class="seg">
               <label><input type="radio" name="type" value="rent" checked><span>Оренда техніки</span></label>
@@ -321,10 +322,11 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
           <div class="field" data-field="comment"><label for="comment">Коментар</label><textarea id="comment" name="comment" maxlength="1000" placeholder="Опишіть об’єкт: тип ґрунту, чи є під’їзд для трала"></textarea><p class="err" aria-live="polite"></p></div>
           <div class="hp" aria-hidden="true"><label for="website">Сайт</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
           <p class="form__msg" id="formMsg" role="alert"></p>
-          <div class="form__foot"><button class="btn" type="submit" id="send">Надіслати заявку</button><small>Контакт потрібен лише для того, щоб передзвонити. Ми його не публікуємо й не передаємо третім особам.</small></div>
+          <p class="content-fallback" id="formUnavailable">Надсилання форми тимчасово недоступне. <a href="tel:+380978637777">Зателефонуйте диспетчеру</a>.</p>
+          <div class="form__foot"><button class="btn" type="submit" id="send" disabled>Надіслати заявку</button><small>Контакт потрібен для зв’язку щодо вашої заявки.</small></div>
         </form>
         <div class="done" id="done" tabindex="-1" role="status"><svg class="check" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="33"/><path d="M22 37 L32 47 L51 27"/></svg><p class="eyebrow">Прийнято</p><h3>Заявку записано</h3><p class="ref" id="ref">PBT-000000</p><p>Передзвонимо в робочий час: Пн–Пт 09:00–18:00, Сб до 15:00. Якщо терміново — зателефонуйте диспетчеру за номерами в розділі зв’язку.</p><p><button class="btn btn--sm" type="button" id="again">Ще одна заявка</button></p></div>
-        <div class="fallback" id="fallback" tabindex="-1" role="status"><p class="eyebrow">Підтвердження не отримано</p><h3>Повторіть заявку або зателефонуйте</h3><p>Зв’язок міг обірватися після запису заявки. Повторне надсилання тих самих даних не створить дубліката.</p><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbRetry">Повернутися до заявки</button><button class="btn btn--ghost btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="#zapyt" data-phone>097 863 77 77</a></p></div>
+        <div class="fallback" id="fallback" tabindex="-1" role="status"><p class="eyebrow">Підтвердження не отримано</p><h3>Повторіть заявку або зателефонуйте</h3><p>Зв’язок міг обірватися після запису заявки. Повторне надсилання тих самих даних не створить дубліката.</p><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbRetry">Повернутися до заявки</button><button class="btn btn--ghost btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="tel:+380978637777" data-phone>097 863 77 77</a></p></div>
       </div>
     </div>
   </div>
@@ -335,14 +337,14 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <footer class="foot">
   <div class="foot__grid">
     <div><a class="brand" href="#top" aria-label="ПолтаваБудТехніка оренда спецтехніки — на початок сторінки"><img class="brand__logo" src="media/logo/pbt-logo-nav.webp" width="84" height="31" alt="" aria-hidden="true"><span class="brand__name"><b>ПолтаваБудТехніка</b><span>оренда спецтехніки</span></span></a><p style="margin-top:16px"><span data-legal>ТОВ «ПолтаваБудТехніка»</span><br><span class="num" data-edrpou>ЄДРПОУ 45383082</span><br><span data-address>36002, м. Полтава, вул. Довженка, 2А</span></p></div>
-    <div><h4>Зв’язок</h4><ul><li><a class="num" href="#zapyt" data-phone>097 863 77 77</a></li><li><a class="num" href="#zapyt" data-phone2>095 863 77 77</a></li><li data-hours>Пн–Пт 09:00–18:00 · Сб 09:00–15:00</li></ul></div>
+    <div><h4>Зв’язок</h4><ul><li><a class="num" href="tel:+380978637777" data-phone>097 863 77 77</a></li><li><a class="num" href="tel:+380958637777" data-phone2>095 863 77 77</a></li><li data-hours>Пн–Пт 09:00–18:00 · Сб 09:00–15:00</li></ul></div>
     <div><h4>Соцмережі</h4><ul data-social></ul></div>
     <div><h4>Розділи</h4><ul><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Ціна зміни</a></li><li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Де працюємо</a></li><li><a href="#zapyt">Заявка</a></li></ul></div>
   </div>
   <div class="foot__credits" id="cineCredits"></div>
   <div class="foot__legal">
     <span>© 2026 ТОВ «ПолтаваБудТехніка». Ціни орієнтовні, не є публічною офертою.</span>
-    <span>Відео й фото — власна зйомка ПБТ, крім розділу «Масштаб»: там ілюстративні кадри з Wikimedia Commons (вільні ліцензії, джерела — нижче); карта — <a href="https://www.geoboundaries.org" target="_blank" rel="noopener">geoBoundaries, ODbL</a>.</span>
+    <span>Відео й фото — з матеріалів ПБТ, крім розділу «Масштаб»: там ілюстративні кадри з Wikimedia Commons (вільні ліцензії, джерела — нижче); карта — <a href="https://www.geoboundaries.org" target="_blank" rel="noopener">geoBoundaries, ODbL</a>.</span>
   </div>
 </footer>
 

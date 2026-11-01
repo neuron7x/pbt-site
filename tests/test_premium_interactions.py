@@ -24,11 +24,17 @@ def test_every_material_opens_its_request_without_sending(page_factory):
 def test_fleet_without_specs_has_existing_category_purpose(page_factory):
     page = page_factory(reduced=True)
     assert page.locator("#park dl:empty").count() == 0
-    missing = page.evaluate("PBT.fleet.filter(unit => !unit.specs.length).map(unit => ({id: unit.id, purpose: PBT.cats.find(cat => cat.id === unit.cat).lead}))")
-    assert missing
+    missing = page.evaluate("PBT.fleet.filter(unit => !unit.specs.length).map(unit => ({id: unit.id, name: unit.name}))")
+    assert len(missing) == 4
     for unit in missing:
         card = page.locator(f'#park [data-id="{unit["id"]}"]')
-        expect(card.locator(".unit__purpose")).to_have_text(unit["purpose"])
+        if 'мульчер' in unit['name'].lower():
+            expect(card.locator(".unit__purpose")).to_have_text('Мульчування порослі.')
+            assert 'бетон' not in card.locator('.unit__purpose').inner_text().lower()
+        else:
+            assert 'дробарк' in unit['name'].lower()
+            expect(card.locator(".unit__purpose")).to_have_text('Дроблення бетону й каменю.')
+            assert 'мульч' not in card.locator('.unit__purpose').inner_text().lower()
         expect(card.get_by_role("button", name="У заявку", exact=True)).to_be_visible()
 
 
