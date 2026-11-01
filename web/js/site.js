@@ -541,8 +541,9 @@
   // Значення калькулятора належать лише вибраній зміні. Ручний ввід має пріоритет.
   const calcValues = new Map();
   const hoursByType = new Map();
+  const subjectsByType = new Map();
   let currentRequestType = form.querySelector('input[name="type"]:checked')?.value || 'rent';
-  ['hours', 'km'].forEach(name => $(`#${name}`).addEventListener('input', () => calcValues.delete(name)));
+  ['subject', 'hours', 'km'].forEach(name => $(`#${name}`).addEventListener('input', () => calcValues.delete(name)));
   function releaseCalcValues() {
     calcValues.forEach((saved, name) => {
       const field = $(`#${name}`);
@@ -560,9 +561,11 @@
     if (!next || next === currentRequestType) return;
     releaseCalcValues();
     hoursByType.set(currentRequestType, $('#hours').value);
+    subjectsByType.set(currentRequestType, $('#subject').value);
     $('#hours').value = hoursByType.get(next) || '';
+    $('#subject').value = subjectsByType.get(next) || '';
     currentRequestType = next;
-    setErr('hours', '');
+    setErr('hours', ''); setErr('subject', '');
   }
   function syncContactMode() {
     const telegram = method.value === 'telegram';
@@ -573,7 +576,7 @@
   method.addEventListener('change', syncContactMode);
   form.addEventListener('change', e => { if (e.target.name === 'type') switchRequestType(e.target.value); });
   form.addEventListener('reset', () => {
-    calcValues.clear(); hoursByType.clear();
+    calcValues.clear(); hoursByType.clear(); subjectsByType.clear();
     queueMicrotask(() => {
       currentRequestType = form.querySelector('input[name="type"]:checked')?.value || 'rent';
       syncContactMode();
@@ -672,7 +675,11 @@
     if (b.id !== 'cOrder') releaseCalcValues();
     switchRequestType(t);
     const radio = form.querySelector(`input[name="type"][value="${t}"]`); if (radio) radio.checked = true;
-    if (s) $('#subject').value = s;
+    if (s) {
+      if (b.id === 'cOrder') fillCalcValue('subject', s);
+      else $('#subject').value = s;
+      setErr('subject', '');
+    }
     if (b.id === 'cOrder') {
       fillCalcValue('hours', b.dataset.calcHours || '');
       fillCalcValue('km', b.dataset.calcKm || '');

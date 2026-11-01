@@ -1,5 +1,6 @@
 """Перевірка реальних переходів від каталогу і калькулятора до заявки."""
 from playwright.sync_api import expect
+import pytest
 
 
 def test_no_javascript_cannot_submit_contact_in_url(browser, server):
@@ -121,6 +122,65 @@ def test_manual_quantities_follow_their_request_type(page_factory):
     page.locator('#lead input[name="type"][value="material"]').check(force=True)
     expect(page.locator('#hours')).to_have_value('24')
     expect(page.locator('#km')).to_have_value('33')
+
+
+@pytest.mark.parametrize('mobile', [False, True])
+def test_generic_request_restores_subject_for_its_own_type(page_factory, mobile):
+    page = page_factory(390 if mobile else 1440, 844 if mobile else 900,
+                        mobile=mobile, reduced=True)
+    page.locator('#subject').fill('Ручне завдання оренди')
+    page.locator('#name').fill('Олена')
+    material = page.locator('#mats .tile:first-child')
+    selected = material.locator('h4').text_content()
+    material.locator('[data-req]').click()
+    expect(page.locator('#subject')).to_have_value(selected)
+    page.evaluate('window.scrollTo({top:0,behavior:"instant"})')
+    page.wait_for_function('scrollY === 0 && !document.querySelector("#nav").classList.contains("is-hidden")')
+    if mobile:
+        page.locator('.burger').click()
+        page.locator('#menu a[href="#zapyt"]').click()
+    else:
+        page.locator('.nav__cta[data-req="rent"]').click()
+    expect(page.locator('input[name="type"][value="rent"]')).to_be_checked()
+    expect(page.locator('#subject')).to_have_value('Ручне завдання оренди')
+    expect(page.locator('#name')).to_have_value('Олена')
+    # Ручне перемикання також не переносить тему між видами заявки.
+    page.locator('#lead input[name="type"][value="material"]').check(force=True)
+    expect(page.locator('#subject')).to_have_value(selected)
+    page.locator('#lead input[name="type"][value="transport"]').check(force=True)
+    expect(page.locator('#subject')).to_have_value('')
+    page.locator('#subject').fill('Маршрут Полтава — Київ')
+    page.locator('#lead input[name="type"][value="rent"]').check(force=True)
+    expect(page.locator('#subject')).to_have_value('Ручне завдання оренди')
+    page.locator('#lead input[name="type"][value="transport"]').check(force=True)
+    expect(page.locator('#subject')).to_have_value('Маршрут Полтава — Київ')
+
+
+def test_first_generic_request_clears_subject_from_other_type(page_factory):
+    page = page_factory(reduced=True)
+    page.locator('#mats .tile:first-child [data-req]').click()
+    page.evaluate('window.scrollTo({top:0,behavior:"instant"})')
+    page.wait_for_function('scrollY === 0 && !document.querySelector("#nav").classList.contains("is-hidden")')
+    page.locator('.nav__cta[data-req="rent"]').click()
+    expect(page.locator('input[name="type"][value="rent"]')).to_be_checked()
+    expect(page.locator('#subject')).to_have_value('')
+
+
+def test_generic_request_does_not_leave_a_stale_calculator_subject(page_factory):
+    page = page_factory(reduced=True)
+    page.locator('#subject').fill('Ручне завдання')
+    page.locator('#hours').fill('7')
+    page.locator('#km').fill('8')
+    page.locator('#cHoursN').fill('12')
+    page.locator('#cKmN').fill('45')
+    page.locator('#cOrder').click()
+    assert '12 год' in page.locator('#subject').input_value()
+    page.evaluate('window.scrollTo({top:0,behavior:"instant"})')
+    page.wait_for_function('scrollY === 0 && !document.querySelector("#nav").classList.contains("is-hidden")')
+    page.locator('.nav__cta[data-req="rent"]').click()
+    expect(page.locator('#subject')).to_have_value('Ручне завдання')
+    expect(page.locator('#hours')).to_have_value('7')
+    expect(page.locator('#km')).to_have_value('8')
 
 
 def test_calculator_invalid_numbers_fail_closed_and_scientific_input_is_exact(page_factory):
