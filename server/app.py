@@ -6,12 +6,13 @@
 Безпека (OWASP Input Validation / CSRF): JSON-only, ліміт тіла, allowlist для
 скінченних полів, нормалізація, довжини, honeypot, rate limit, перевірка Origin.
 """
-import base64, email.utils, hashlib, hmac, io, ipaddress, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
+import base64, email.utils, fcntl, hashlib, hmac, io, ipaddress, json, logging, math, os, posixpath, re, sqlite3, subprocess, sys, threading, time, unicodedata, urllib.parse, urllib.request
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed, wait
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
@@ -364,17 +365,30 @@ def _int(v, lo, hi):
     return int(s)
 
 
+KYIV = ZoneInfo('Europe/Kyiv')
+
+
+def kyiv_date(now=None):
+    """The business operates on the Kyiv civil date, whatever TZ the host runs in."""
+    return (now or datetime.now(timezone.utc)).astimezone(KYIV).date()
+
+
+def date_allowed(value, now=None):
+    if value == '':
+        return True
+    if not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', value):
+        return False
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date() >= kyiv_date(now)
+    except ValueError:
+        return False
+
+
 def _date(v):
     if v in (None, ''):
         return ''
     s = clean(v, 10)
-    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', s):
-        raise ValueError
-    try:
-        d = datetime.strptime(s, '%Y-%m-%d').date()
-    except ValueError:
-        raise ValueError from None
-    if d < datetime.now().date():
+    if not date_allowed(s):
         raise ValueError
     return s
 
@@ -496,7 +510,7 @@ def send(channel, lead_id, data):
     Payload/Telegram credentials travel via stdin, never argv or logs.
     """
     if channel == 'telegram':
-        text = f"Заявка LA-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
+        text = f"Заявка PBT-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
         # Telegram Bot API accepts application/json. UTF-8 avoids 12-byte
         # percent-encoding per astral emoji and remains below the child 16-KiB
         # body limit for a 4000-character message (<=16000 UTF-8 bytes).
@@ -894,7 +908,9 @@ class Handler(SimpleHTTPRequestHandler):
         для всього світу. Довіряємо X-Forwarded-For ЛИШЕ від loopback-піра і беремо крайній правий запис (доданий проксі)."""
         peer = self.client_address[0]
         if self.behind_trusted_proxy():
-            xff = [p.strip() for p in ((getattr(self, 'headers', None) or {}).get('X-Forwarded-For') or '').split(',') if p.strip()]
+            # All header lines: a proxy may append its own line rather than merge into the client's.
+            lines = (getattr(self, 'headers', None) and self.headers.get_all('X-Forwarded-For')) or []
+            xff = [p.strip() for line in lines for p in line.split(',') if p.strip()]
             if xff and re.fullmatch(r'[0-9A-Fa-f:.]{2,45}', xff[-1]):
                 return xff[-1]
         return peer
@@ -1022,12 +1038,16 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.origin_ok():
             log.warning('lead rejected: origin ip_hash=%s', _ip_hash(ip))
             return self.send_json(403, {'ok': False, 'error': 'origin'})
-        if 'application/json' not in (self.headers.get('Content-Type') or ''):
+        # Parsed media type (case-insensitive, RFC 9110 §8.3.1), never a substring of the raw header.
+        if self.headers.get('Content-Type') is None or self.headers.get_content_type() != 'application/json':
             return self.send_json(415, {'ok': False, 'error': 'content_type'})
-        try:
-            n = int(self.headers.get('Content-Length') or 0)
-        except ValueError:
-            n = -1
+        # Ambiguous framing is rejected before any body byte or quota is consumed (RFC 9112 §6.3).
+        lengths = self.headers.get_all('Content-Length') or []
+        if self.headers.get('Transfer-Encoding') is not None or len(lengths) > 1 or (
+                lengths and not re.fullmatch(r'[0-9]{1,10}', lengths[0].strip())):
+            self.close_connection = True
+            return self.send_json(400, {'ok': False, 'error': 'framing'})
+        n = int(lengths[0]) if lengths else 0
         if n <= 0 or n > MAX_BODY:
             return self.send_json(413, {'ok': False, 'error': 'size'})
         if not rate_ok(ip, 'any'):
@@ -1195,7 +1215,24 @@ class Server(ThreadingHTTPServer):
             self._slots.release()
 
 
+_single_process_guard = []
+
+
+def acquire_single_process_guard():
+    """Rate limits and the delivery worker live in one process's memory. A second server on the same
+    database would silently double every quota, so the unsupported topology refuses to start.
+    A kernel lock: SIGKILL releases it, leaving nothing to clean up. ops/restore.py takes it too."""
+    fd = os.open(f'{DB}.server-lock', os.O_RDWR | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        os.close(fd)
+        raise SystemExit('single_process_guard: another process holds this lead database') from None
+    _single_process_guard.append(fd)
+
+
 def main():
+    acquire_single_process_guard()
     host, port = ENV('HOST') or '127.0.0.1', int(ENV('PORT') or 4180)
     max_conn = int(ENV('MAX_CONNECTIONS') or 128)
     if not 1 <= max_conn <= 200:
