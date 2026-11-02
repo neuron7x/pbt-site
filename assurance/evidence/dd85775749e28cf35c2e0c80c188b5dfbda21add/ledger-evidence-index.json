@@ -1,0 +1,836 @@
+{
+  "schema": "pbt-source-scoped-evidence-index-v1",
+  "policy": "evidence-only; does not replace normative ledger or authorize release/deployment",
+  "repository": "neuron7x/pbt-site",
+  "verified_source_sha": "dd85775749e28cf35c2e0c80c188b5dfbda21add",
+  "verified_source_tree_sha": "d2044164e10501e8f9e069308725b73d88b274a3",
+  "normative_ledger_blob_sha": "ed926d781b7d11cd4cd2f3c59ab6f952ef4c4032",
+  "normative_case_blob_sha": "ddd4ac21c81503c9e7edaa9ab09717ff11b4b797",
+  "normative_files_unmodified": [
+    "assurance/ledger.json",
+    "assurance/case.json"
+  ],
+  "source_ledger_stage": "pre_integration",
+  "proof_scope": {
+    "decision": "ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY",
+    "criteria": "C1-C9 PASS; C0/C10 UNKNOWN; finite GitHub Actions/CI-synthetic scope",
+    "dispositions": {
+      "VERIFIED": 30,
+      "BLOCKED_EXTERNAL": 18
+    },
+    "technical_leaves_pass": 19,
+    "external_leaves_unknown": 10,
+    "no_field_data": true,
+    "no_production_release": true,
+    "field_inp": "NOT_MEASURED",
+    "provider_integrity_independently_checked": true,
+    "provider_api_root_of_trust_unsigned": true
+  },
+  "independent_audit": {
+    "byte_checks": 4132,
+    "failures": 0,
+    "junit": {
+      "release": 976,
+      "http": 271,
+      "meta": 87,
+      "unique_all": true,
+      "required_release_rules": 21,
+      "required_http_rules": 5
+    },
+    "mutation": {
+      "KILLED": 68,
+      "UNTESTABLE": 1,
+      "SURVIVED": 0
+    },
+    "visual": {
+      "png_files": 32,
+      "verified_png_chunk_crcs": 2921
+    },
+    "synthetic_soak": {
+      "duration_seconds": 1800.045,
+      "accepted": 3999,
+      "delivered": 3999,
+      "idempotent_replays": 133,
+      "failed": 0,
+      "pending": 0,
+      "raw_p99_ms": 7.069
+    }
+  },
+  "workflow_runs": [
+    {
+      "role": "full",
+      "run_id": 41519202147,
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "role": "transport",
+      "run_id": 41519202274,
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "role": "visual",
+      "run_id": 41519202068,
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "role": "security",
+      "run_id": 41519202139,
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "role": "soak",
+      "run_id": 41519202063,
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "role": "closure",
+      "run_id": 41519202095,
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "original_github_zip_artifacts": [
+    {
+      "role": "http",
+      "artifact_id": 13176322725,
+      "run_id": 41519202274,
+      "github_provider_sha256": "f0d55398aadf2ab5a931db2b1e68f4e6d462e018de81ff943b6c0be2096c2c55"
+    },
+    {
+      "role": "visual",
+      "artifact_id": 13175859097,
+      "run_id": 41519202068,
+      "github_provider_sha256": "1e00a8b20b5e805d92afbe9fc28e5ec2fddacbe965599b5039a020f92c379c50"
+    },
+    {
+      "role": "static",
+      "artifact_id": 13176597049,
+      "run_id": 41519202139,
+      "github_provider_sha256": "d36810629ad4da2c23f21c38f0b0a07e2df3415d78484eeb976bd2f717aa9053"
+    },
+    {
+      "role": "sast",
+      "artifact_id": 13176392266,
+      "run_id": 41519202139,
+      "github_provider_sha256": "a24180d8384ac0c68831a7589cd3148e4993cdd04292ea63896769b62fb13afc"
+    },
+    {
+      "role": "osv",
+      "artifact_id": 13175953794,
+      "run_id": 41519202139,
+      "github_provider_sha256": "c2c8cd5a318dcd4efffce591043a315b6253d9b71697d079943a83f24ad7cd33"
+    },
+    {
+      "role": "mobile",
+      "artifact_id": 13178008287,
+      "run_id": 41519202147,
+      "github_provider_sha256": "51f912d72bcf70a3cfefccd49f55a8c18963c4758487426ede7ccf2179c6e36a"
+    },
+    {
+      "role": "release",
+      "artifact_id": 13178003243,
+      "run_id": 41519202147,
+      "github_provider_sha256": "e0f6ad251103ac2d7f8b158c624f2fa33de40e83abeb7ab26d01269641e957cc"
+    },
+    {
+      "role": "mutation",
+      "artifact_id": 13177032511,
+      "run_id": 41519202147,
+      "github_provider_sha256": "83e68a0fcc639f4d5d9754c7ba7d5351aa491f6bac0cf8c4461592f6d7492184"
+    },
+    {
+      "role": "meta",
+      "artifact_id": 13176447231,
+      "run_id": 41519202147,
+      "github_provider_sha256": "9de543149225c397ef078f663b035f64d58856e509dbfa1858ad78247c2636ae"
+    },
+    {
+      "role": "soak",
+      "artifact_id": 13179430724,
+      "run_id": 41519202063,
+      "github_provider_sha256": "9583942a7ebdfbe02b78fc81bfcba50c59e53758a86b721c894ea55dfd2502d9"
+    },
+    {
+      "role": "closure",
+      "artifact_id": 13179201236,
+      "run_id": 41519202095,
+      "github_provider_sha256": "514254197cb260a2dc23c6ca57450384c5a738e71e16351f3b4ac35a46e68b50"
+    }
+  ],
+  "closure_proof": {
+    "artifact_id": 13179201236,
+    "artifact_sha256": "514254197cb260a2dc23c6ca57450384c5a738e71e16351f3b4ac35a46e68b50",
+    "provider_manifest_sha256": "a7a200d603910ef5adff638304327257002005a21a9cfe4dcda8e3d7872c41bf",
+    "source_bound_receipts_sha256": "35033a7657006aa357ce93d28cbaf3e7062b46945544f7d9eba94f414bd32d01",
+    "reconciled_ledger_sha256": "77589ebeccb32502b9f7cdcc4e9f280b3bfab9a92eccfd8b8157161b6052346a",
+    "reconciled_case_sha256": "b2ac129ec5fe69ff2ed1cd197c7568b679daf2df15277549f1a6b82b67d30acb",
+    "generated_commit": "c00ba891d6442cd2c8bc2e58e5169b25da695c46",
+    "generated_commit_is_temporary_ci_only": true
+  },
+  "obligation_index": [
+    {
+      "id": "EVD-01",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "EVD-02",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "EVD-03",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "EVD-04",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "EVD-05",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "EVD-06",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "EVD-07",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "EVD-08",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "DB-01",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "DB-02",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "DB-03",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "DB-04",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "DB-05",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "DB-06",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "DB-07",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "DB-07.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "DB-08",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "DB-08.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "DB-08.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "NET-01",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "NET-02",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "NET-02.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "NET-02.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "NET-03",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "NET-04",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "NET-04.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "NET-04.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "NET-05",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "NET-06",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "NET-07",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "NET-08",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "NET-08.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "NET-08.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "WEB-01",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "WEB-01.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "WEB-01.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "WEB-02",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "WEB-03",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "WEB-03.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "WEB-04",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "WEB-05",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "WEB-06",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "WEB-06.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "WEB-07",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "WEB-07.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "WEB-07.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "WEB-08",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "WEB-08.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "OPS-01",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "OPS-02",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "OPS-02.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "OPS-03",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "OPS-04",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "OPS-04.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "OPS-05",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "OPS-05.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "OPS-06",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "OPS-06.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "OPS-07",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "OPS-07.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "OPS-08",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "OPS-08.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "OPS-08.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "ADV-01",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "ADV-02",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "ADV-03",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "ADV-04",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "ADV-05",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "ADV-06",
+      "disposition": "VERIFIED_SOURCE_SCOPED",
+      "external_receipt": null,
+      "subclaims": []
+    },
+    {
+      "id": "ADV-07",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "ADV-07.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    },
+    {
+      "id": "ADV-08",
+      "disposition": "BLOCKED_EXTERNAL",
+      "external_receipt": null,
+      "subclaims": [
+        {
+          "id": "ADV-08.T",
+          "kind": "technical",
+          "status": "IMPLEMENTED"
+        },
+        {
+          "id": "ADV-08.E",
+          "kind": "external",
+          "status": "UNKNOWN"
+        }
+      ]
+    }
+  ],
+  "claim_index": [
+    {
+      "id": "C1",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C1.fk",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C1.atomic",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C2",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C2.linearizable",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C2.reload",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C2.stateful",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C3",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C3.readiness",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C3.delivery",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C4",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C4.http",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C4.sandbox_probe",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C4.dom",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C4.scan",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C5",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C5.restore",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C6",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C6.web",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C7",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C7.lab",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C7.soak",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C8",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C8.gate",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C8.mutation",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        },
+        {
+          "id": "C8.external_gate",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C9",
+      "disposition": "PASS_SOURCE_SCOPED",
+      "leaves": [
+        {
+          "id": "C9.provenance",
+          "kind": "engineering",
+          "disposition": "PASS_SOURCE_SCOPED"
+        }
+      ]
+    },
+    {
+      "id": "C10",
+      "disposition": "UNKNOWN",
+      "leaves": [
+        {
+          "id": "C10.live_delivery",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.off_device_restore",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.edge",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.prices_vat",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.media_rights",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.privacy",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.field_inp",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.accessibility_human",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.sandbox",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        },
+        {
+          "id": "C10.authorization",
+          "kind": "external",
+          "disposition": "UNKNOWN"
+        }
+      ]
+    }
+  ],
+  "external_status": {
+    "B1_B9": "UNKNOWN",
+    "R1_R3": "UNKNOWN",
+    "H1": "UNKNOWN",
+    "F1": "UNKNOWN",
+    "S1": "UNKNOWN",
+    "D1": "UNKNOWN"
+  },
+  "archival_limit": "GitHub Actions original ZIP artifacts are retained for a limited period; hash index is not a substitute for durable underlying receipt bytes.",
+  "next_gate": "Persist original canonical full receipts/ledger/case from closure output in a separate verified change; never reinterpret this index as authenticated future-head acceptance."
+}
