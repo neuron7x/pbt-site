@@ -86,7 +86,8 @@ def assert_audit_policy(workflow):
     assert 'continue-on-error:' not in workflow
     assert 'ignore-vulns:' not in workflow
     assert 'internal-be-careful-allow-failure:' not in workflow
-    assert 'push:' not in workflow
+    assert "  pull_request:\n    branches: [main]\n" in workflow
+    assert "  push:\n    branches: [main]\n" in workflow
     assert 'git rev-parse HEAD' in workflow
     assert 'head.sha' in workflow
 

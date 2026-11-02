@@ -3,30 +3,8 @@ name: PBT / 30-minute runtime soak — measured synthetic R2/R3 evidence
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'server/**'
-      - 'ops/**'
-      - 'web/**'
-      - 'tools/**'
-      - 'tests/**'
-      - 'config/**'
-      - 'assurance/**'
-      - 'Makefile'
-      - 'requirements*.txt'
-      - '.github/workflows/**'
   push:
     branches: [main]
-    paths:
-      - 'server/**'
-      - 'ops/**'
-      - 'web/**'
-      - 'tools/**'
-      - 'tests/**'
-      - 'config/**'
-      - 'assurance/**'
-      - 'Makefile'
-      - 'requirements*.txt'
-      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:

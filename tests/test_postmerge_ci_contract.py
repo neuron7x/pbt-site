@@ -1,51 +1,69 @@
-"""Fail-closed verification: a merged main SHA must trigger real CI, not reuse PR evidence.
+"""Fail-closed required evidence-role triggers across PR, exact-main and dispatch.
 
-These checks guard the event configuration (including the soak's path selection).
-They do not fabricate post-merge CI receipts or claim workflow completion.
+The evidence policy requires all five workflows for every source revision.
+Path filters on required roles suppress GitHub Actions entirely for some diffs,
+so a docs-only or tools-only change must not make an unconditional role vanish.
+This tests workflow configuration, not the existence of completed CI receipts.
 """
 from pathlib import Path
 import re
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1] / ".github" / "workflows"
 MAIN_GATES = ("pr-quality.yml", "runtime-hardening.yml",
               "visual-evidence.yml", "security-assurance.yml",
               "runtime-soak.yml")
-SOURCE_PATTERNS = {
-    "server/**", "ops/**", "web/**", "tools/**", "tests/**",
-    "config/**", "assurance/**", "Makefile", "requirements*.txt",
-    ".github/workflows/**",
-}
+EVENTS_REQUIRED = ("pull_request", "push")
+EVENT_FILTER = re.compile(
+    r"(?m)^    (?:paths|paths-ignore|branches-ignore|tags|tags-ignore):"
+)
 
 
-def _events(name):
-    source = (ROOT / name).read_text(encoding="utf-8")
+def _events(name, source=None):
+    if source is None:
+        source = (ROOT / name).read_text(encoding="utf-8")
     assert "\non:\n" in source, name
     assert "\npermissions:\n" in source, name
     return source.split("\non:\n", 1)[1].split("\npermissions:\n", 1)[0]
 
 
 def _event(events, event):
-    match = re.search(r"(?ms)^  " + re.escape(event) + r":\n(.*?)(?=^  [a-z][a-z_]*:|\Z)", events)
+    match = re.search(
+        r"(?ms)^  " + re.escape(event) + r":\n(.*?)(?=^  [a-z][a-z_]*:|\Z)",
+        events,
+    )
     assert match is not None, f"missing event: {event}"
     return match.group(1)
 
 
-def test_main_push_executes_all_five_evidence_workflows():
-    for name in MAIN_GATES:
-        events = _events(name)
-        assert "  pull_request:\n" in events, name
-        assert "  workflow_dispatch:\n" in events, name
-        push = _event(events, "push")
-        assert re.search(r"(?m)^    branches: \[main\]$", push), name
-
-
-def test_runtime_soak_covers_source_and_assurance_mutations_both_events():
-    events = _events("runtime-soak.yml")
-    for event in ("pull_request", "push"):
+def _assert_unfiltered_required_roles(name, source=None):
+    events = _events(name, source)
+    assert "  workflow_dispatch:\n" in events, name
+    for event in EVENTS_REQUIRED:
         block = _event(events, event)
-        patterns = set(re.findall(r"(?m)^      - '([^']+)'$", block))
-        assert SOURCE_PATTERNS <= patterns, (
-            f"{event} cannot produce exact-source soak for {SOURCE_PATTERNS - patterns}")
+        assert re.search(r"(?m)^    branches: \[main\]$", block), (name, event)
+        assert not EVENT_FILTER.search(block), (
+            f"{name} {event} suppresses mandatory evidence for some revisions"
+        )
+
+
+@pytest.mark.parametrize("name", MAIN_GATES)
+def test_every_required_role_can_run_on_every_pr_and_main_push(name):
+    _assert_unfiltered_required_roles(name)
+
+
+@pytest.mark.parametrize("name", MAIN_GATES)
+@pytest.mark.parametrize("event", EVENTS_REQUIRED)
+@pytest.mark.parametrize("filter_key", ("paths", "paths-ignore"))
+def test_required_role_path_filter_mutant_is_rejected(name, event, filter_key):
+    source = (ROOT / name).read_text(encoding="utf-8")
+    anchor = f"  {event}:\n    branches: [main]\n"
+    assert anchor in source, (name, event)
+    mutant = source.replace(anchor, anchor + f"    {filter_key}:\n      - 'server/**'\n", 1)
+    assert mutant != source
+    with pytest.raises(AssertionError):
+        _assert_unfiltered_required_roles(name, mutant)
 
 
 def test_push_jobs_checkout_the_actual_merged_sha():

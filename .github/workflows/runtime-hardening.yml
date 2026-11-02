@@ -3,11 +3,6 @@ name: PBT / Transport reliability gate
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'server/**'
-      - 'ops/**'
-      - 'tests/**'
-      - '.github/workflows/runtime-hardening.yml'
   push:
     branches: [main]
   workflow_dispatch:
