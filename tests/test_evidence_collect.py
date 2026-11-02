@@ -1,4 +1,5 @@
 """EVD-06: the collector binds bytes to the provider's digest, with a stubbed authenticated API."""
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -232,6 +233,136 @@ def test_closure_watcher_is_base_checkout_compatible_and_attempt_ordered():
     assert 'AMBIGUOUS_ATTEMPT_ORDER_' in code
     assert 'select_runs' not in code
     assert "key=lambda r: (r['created_at'], r['run_attempt'])" not in code
+
+
+def test_stable_run_snapshot_is_refetched_at_publication(tmp_path):
+    p = Provider()
+    original = p.api
+    calls = []
+
+    def observed(path):
+        if '/actions/runs?' in path:
+            calls.append(path)
+        return original(path)
+
+    p.api = observed
+    manifest = _collect(p, tmp_path)
+    assert len(calls) == 2  # initial discovery and final publication barrier
+    assert manifest['runs']['full']['conclusion'] == 'success'
+    assert (tmp_path / 'manifest.json').is_file()
+
+
+@pytest.mark.parametrize('status,conclusion', [
+    ('in_progress', None), ('completed', 'failure'), ('completed', 'cancelled'),
+])
+def test_rerun_after_initial_listing_cannot_publish_stale_success(tmp_path, status, conclusion):
+    p = Provider()
+    original = p.api
+    seen = 0
+
+    def transition(path):
+        nonlocal seen
+        result = original(path)
+        if '/actions/runs?' in path:
+            seen += 1
+            if seen == 1:
+                # The old attempt's ZIPs remain authentic and downloadable.
+                # Only the provider's live run attempt moves AFTER the first GET.
+                initial = copy.deepcopy(result)
+                p.runs[0] = {
+                    **p.runs[0], 'run_attempt': 2,
+                    'run_started_at': '2026-11-02T12:30:00Z',
+                    'status': status, 'conclusion': conclusion,
+                }
+                return initial
+        return result
+
+    p.api = transition
+    with pytest.raises(ec.CollectError, match='run_snapshot_drift'):
+        _collect(p, tmp_path)
+    assert seen == 2
+    assert not (tmp_path / 'manifest.json').exists()
+
+
+def test_newer_required_role_after_listing_blocks_old_manifest(tmp_path):
+    p = Provider()
+    original = p.api
+    seen = 0
+
+    def transition(path):
+        nonlocal seen
+        result = original(path)
+        if '/actions/runs?' in path:
+            seen += 1
+            if seen == 1:
+                initial = copy.deepcopy(result)
+                p.runs.append({
+                    **p.runs[0], 'id': 999, 'run_attempt': 1,
+                    'created_at': '2026-11-02T13:00:00Z',
+                    'run_started_at': '2026-11-02T13:00:00Z',
+                    'status': 'completed', 'conclusion': 'failure',
+                })
+                return initial
+        return result
+
+    p.api = transition
+    with pytest.raises(ec.CollectError, match='run_snapshot_drift'):
+        _collect(p, tmp_path)
+    assert seen == 2
+    assert not (tmp_path / 'manifest.json').exists()
+
+
+def test_truncated_final_listing_is_not_publishable(tmp_path):
+    p = Provider()
+    original = p.api
+    seen = 0
+
+    def truncated(path):
+        nonlocal seen
+        result = original(path)
+        if '/actions/runs?' in path:
+            seen += 1
+            if seen == 2:
+                return {**result, 'total_count': len(result['workflow_runs']) + 1}
+        return result
+
+    p.api = truncated
+    with pytest.raises(ec.CollectError, match='run_snapshot_drift_listing_truncated'):
+        _collect(p, tmp_path)
+    assert not (tmp_path / 'manifest.json').exists()
+
+
+def test_inflight_rerun_does_not_overwrite_previously_verified_archives(tmp_path):
+    p = Provider()
+    _collect(p, tmp_path)
+    original_bytes = {
+        role: (tmp_path / f'{role}.zip').read_bytes()
+        for role in POLICY['targets']['pull_request']['roles']
+    }
+    original = p.api
+    seen = 0
+
+    def transition(path):
+        nonlocal seen
+        result = original(path)
+        if '/actions/runs?' in path:
+            seen += 1
+            if seen == 1:
+                initial = copy.deepcopy(result)
+                p.runs[0] = {**p.runs[0], 'status': 'in_progress',
+                             'conclusion': None, 'run_attempt': 2,
+                             'run_started_at': '2026-11-02T12:30:00Z'}
+                return initial
+        return result
+
+    p.api = transition
+    with pytest.raises(ec.CollectError, match='run_snapshot_drift'):
+        _collect(p, tmp_path)
+    assert not (tmp_path / 'manifest.json').exists()
+    assert all(
+        (tmp_path / f'{role}.zip').read_bytes() == original_bytes[role]
+        for role in original_bytes
+    )
 
 
 def test_failed_refresh_invalidates_previously_successful_manifest(tmp_path):
