@@ -87,6 +87,13 @@ def select_runs(runs, rules, head):
     return chosen, pending
 
 
+def _execution_snapshot(run):
+    """Freeze the provider's run/attempt fact; mutable metadata must never rewrite history."""
+    return (run['id'], run['head_sha'], run['event'], run['run_attempt'],
+            run['status'], run['conclusion'], run.get('run_started_at'),
+            tuple(sorted(pr['number'] for pr in run.get('pull_requests') or [])))
+
+
 def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_bytes):
     if not (SHA.fullmatch(head) and SHA.fullmatch(base)):
         raise CollectError('expected_sha_format')
@@ -104,6 +111,7 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
     chosen, pending = select_runs(runs, rules, head)
     if pending:
         raise CollectError('incomplete_workflow_runs_' + '_'.join(sorted(pending)))
+    initial_snapshot = {role: _execution_snapshot(run) for role, run in chosen.items()}
     manifest_runs = {role: {'id': r['id'], 'head_sha': r['head_sha'], 'event': r['event'], 'status': r['status'],
                             'conclusion': r['conclusion'], 'attempt': r['run_attempt'],
                             'pull_requests': [x['number'] for x in r.get('pull_requests') or []]} for role, r in chosen.items()}
@@ -147,6 +155,18 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
             (stage / f'{role}.zip').write_bytes(downloaded[role])
         (stage / 'manifest.json').write_text(
             json.dumps(manifest, indent=1, sort_keys=True) + '\n', encoding='utf-8')
+        # Final provider-consistency barrier, as close to publication as possible.
+        # The GitHub API offers no cross-run atomic snapshot; a rerun AFTER this
+        # barrier remains out of scope and must be checked at later acceptance.
+        latest = api(f'repos/{repo}/actions/runs?head_sha={head}&per_page=100')
+        latest_runs = latest['workflow_runs']
+        if latest.get('total_count', len(latest_runs)) > len(latest_runs):
+            raise CollectError('run_snapshot_drift_listing_truncated')
+        current, newer_pending = select_runs(latest_runs, rules, head)
+        if (newer_pending or set(current) != set(initial_snapshot)
+                or any(_execution_snapshot(current[role]) != frozen
+                       for role, frozen in initial_snapshot.items())):
+            raise CollectError('run_snapshot_drift')
         for role in rules['roles']:
             os.replace(stage / f'{role}.zip', out / f'{role}.zip')
         os.replace(stage / 'manifest.json', out / 'manifest.json')
