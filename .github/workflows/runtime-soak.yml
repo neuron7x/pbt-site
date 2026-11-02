@@ -3,22 +3,8 @@ name: PBT / 30-minute runtime soak — measured synthetic R2/R3 evidence
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'server/**'
-      - 'ops/**'
-      - 'tools/runtime_soak.py'
-      - 'config/runtime-soak-budgets.json'
-      - 'tests/test_runtime_soak_contract.py'
-      - '.github/workflows/runtime-soak.yml'
   push:
     branches: [main]
-    paths:
-      - 'server/**'
-      - 'ops/**'
-      - 'tools/runtime_soak.py'
-      - 'config/runtime-soak-budgets.json'
-      - 'tests/test_runtime_soak_contract.py'
-      - '.github/workflows/runtime-soak.yml'
   workflow_dispatch:
 
 permissions:

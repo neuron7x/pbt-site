@@ -15,5 +15,8 @@ def test_independent_main_baseline_gate_is_source_pinned_and_uploads_proof():
     assert 'test -s artifacts/base-junit.xml' in workflow
     assert 'artifacts/base-commit.txt' in workflow
     assert 'if-no-files-found: error' in workflow
-    assert 'push:' not in workflow
+    assert "  push:\n    branches: [main]\n" in workflow
+    assert ("  baseline-control:\n"
+            "    name: Independent exact-main make gate (no main mutation)\n"
+            "    if: github.event_name == 'pull_request'") in workflow
     assert 'force:' not in workflow
