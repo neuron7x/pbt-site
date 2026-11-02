@@ -55,26 +55,54 @@ def test_server_rejects_kyiv_yesterday_regardless_of_host_timezone(tmp_path, tz)
     assert r.stdout.split() == ['2027-01-01', 'False']
 
 
-@pytest.mark.parametrize('tz', ['America/Los_Angeles', 'Pacific/Auckland', 'UTC'])
-def test_browser_validator_uses_the_same_civil_date(browser, server, tz):
-    """Differential: a browser anywhere must agree with the server on what "not before today" means."""
+@pytest.mark.parametrize(
+    'tz, frozen_utc, kyiv_today',
+    [
+        ('UTC', '2026-12-31T22:30:00+00:00', '2027-01-01'),
+        ('America/Los_Angeles', '2026-03-29T14:30:00+00:00', '2026-03-29'),
+        ('UTC', '2026-03-28T22:30:00+00:00', '2026-03-29'),
+        ('UTC', '2026-10-24T21:30:00+00:00', '2026-10-25'),
+        ('Pacific/Auckland', '2026-12-31T11:30:00+00:00', '2026-12-31'),
+        ('Pacific/Auckland', '2026-10-25T11:30:00+00:00', '2026-10-25'),
+    ],
+    ids=['utc-new-year', 'los-angeles-spring', 'utc-spring-dst',
+         'utc-autumn-dst', 'auckland-new-year', 'auckland-autumn'],
+)
+def test_browser_validator_uses_the_same_civil_date(browser, server, tz, frozen_utc, kyiv_today):
+    """ADV-05: a fixed browser clock kills host-midnight substitutions every run.
+
+    Each instant is independent of CI wall time; the selected host zones include
+    both a local date ahead of Kyiv and one behind Kyiv. Real site JS executes.
+    """
+    from datetime import date, timedelta
+
     ctx = browser.new_context(timezone_id=tz, reduced_motion='reduce')
     page = ctx.new_page()
     try:
-        page.goto(server['base'], wait_until='networkidle')
-        out = page.evaluate("""() => {
-          const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit' });
-          const today = fmt.format(new Date());
-          const shift = n => { const [y, m, d] = today.split('-').map(Number);
-            return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
-          return { today, yesterday: shift(-1), tomorrow: shift(1) };
-        }""")
-        for value, accepted in ((out['today'], True), (out['tomorrow'], True), (out['yesterday'], False)):
+        # Install before navigation so application code sees the frozen instant.
+        # Fixed Date leaves browser timers operational for startup and network.
+        page.clock.set_fixed_time(datetime.fromisoformat(frozen_utc))
+        page.goto(server['base'], wait_until='domcontentloaded')
+        page.wait_for_function("typeof window.PBTv === 'function'")
+        seen = page.evaluate("""() => ({
+            utc: new Date().toISOString(),
+            kyiv: new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Europe/Kyiv', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date())
+        })""")
+        assert seen['utc'][:19] == frozen_utc[:19], (tz, seen)
+        assert seen['kyiv'] == kyiv_today, (tz, seen)
+        today = date.fromisoformat(kyiv_today)
+        cases = (
+            ((today - timedelta(days=1)).isoformat(), False),
+            (today.isoformat(), True),
+            ((today + timedelta(days=1)).isoformat(), True),
+        )
+        for value, accepted in cases:
             ok = page.evaluate("v => window.PBTv('date', v)", value)
-            assert ok is accepted, f'{tz} {value}'
+            assert ok is accepted, f'{tz} at {frozen_utc}: {value} -> {ok}, expected {accepted}'
     finally:
         ctx.close()
-
 
 @pytest.mark.parametrize('value', ['2026-02-30', '2026-13-01', '0000-01-01', '9999-12-32', '٢٠٢٧-٠١-٠١', '2027-1-1', '2027-01-01T00:00', ''])
 def test_malformed_dates_rejected_by_server_when_nonempty(tmp_path, value):
