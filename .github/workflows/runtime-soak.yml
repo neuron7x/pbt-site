@@ -6,19 +6,27 @@ on:
     paths:
       - 'server/**'
       - 'ops/**'
-      - 'tools/runtime_soak.py'
-      - 'config/runtime-soak-budgets.json'
-      - 'tests/test_runtime_soak_contract.py'
-      - '.github/workflows/runtime-soak.yml'
+      - 'web/**'
+      - 'tools/**'
+      - 'tests/**'
+      - 'config/**'
+      - 'assurance/**'
+      - 'Makefile'
+      - 'requirements*.txt'
+      - '.github/workflows/**'
   push:
     branches: [main]
     paths:
       - 'server/**'
       - 'ops/**'
-      - 'tools/runtime_soak.py'
-      - 'config/runtime-soak-budgets.json'
-      - 'tests/test_runtime_soak_contract.py'
-      - '.github/workflows/runtime-soak.yml'
+      - 'web/**'
+      - 'tools/**'
+      - 'tests/**'
+      - 'config/**'
+      - 'assurance/**'
+      - 'Makefile'
+      - 'requirements*.txt'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 permissions:
