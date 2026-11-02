@@ -348,3 +348,47 @@ def test_required_inventory_names_tests_that_really_exist():
             source=(ROOT/(module.replace('.','/')+'.py')).read_text(encoding='utf-8')
             assert f'def {name}(' in source,rule['id']
             assert rule['min_cases']>=1,rule['id']
+
+
+def _single_junit_zip(case_rows):
+    """Small XML JUnit fixture with internally consistent totals (negative-control input)."""
+    rows = ''.join(case_rows)
+    data = (f'<testsuites><testsuite tests="{len(case_rows)}" errors="0" failures="0" skipped="0">'
+            f'{rows}</testsuite></testsuites>').encode('utf-8')
+    return pack({'junit.xml': data})
+
+
+def test_distinct_parameterized_junit_identities_meet_required_case_minimum():
+    test_id = 'tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint'
+    classname, function = test_id.split('::', 1)
+    archive = _single_junit_zip([
+        f'<testcase classname="{classname}" name="{function}[{i}]" />'
+        for i in range(6)
+    ])
+    with zipfile.ZipFile(io.BytesIO(archive)) as z:
+        assert gate.junit(z, 'junit.xml', 6, [{'id': test_id, 'min_cases': 6}]) == 6
+
+
+def test_duplicate_parameterized_junit_identity_must_not_inflate_required_minimum():
+    test_id = 'tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint'
+    classname, function = test_id.split('::', 1)
+    archive = _single_junit_zip([
+        f'<testcase classname="{classname}" name="{function}[0]" />'
+        for _ in range(6)
+    ])
+    with zipfile.ZipFile(io.BytesIO(archive)) as z:
+        with pytest.raises(gate.Rejected, match='duplicate_junit_testcase_identity'):
+            gate.junit(z, 'junit.xml', 6, [{'id': test_id, 'min_cases': 6}])
+
+
+@pytest.mark.parametrize('missing', ['classname', 'name'])
+def test_junit_without_complete_case_identity_is_rejected(missing):
+    test_id = 'tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint'
+    classname, function = test_id.split('::', 1)
+    rows = [f'<testcase classname="{classname}" name="{function}[{i}]" />'
+            for i in range(6)]
+    rows[0] = rows[0].replace(f' {missing}="' + (classname if missing == 'classname' else function + '[0]') + '"', '')
+    archive = _single_junit_zip(rows)
+    with zipfile.ZipFile(io.BytesIO(archive)) as z:
+        with pytest.raises(gate.Rejected, match='junit_testcase_identity_missing'):
+            gate.junit(z, 'junit.xml', 6, [{'id': test_id, 'min_cases': 6}])
