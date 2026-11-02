@@ -25,8 +25,6 @@ jobs:
       PYTHONDONTWRITEBYTECODE: '1'
       SOURCE_SHA: ${{ github.event.pull_request.base.sha || github.sha }}
       GH_TOKEN: ${{ github.token }}
-      EVID_DIR: ${{ runner.temp }}/pbt-authenticated-zips
-      REPORT_DIR: ${{ runner.temp }}/pbt-proof-reports
     steps:
       - name: Checkout immutable current main (not synthetic PR merge)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -41,9 +39,11 @@ jobs:
       - name: Verify exact source checkout and create fail-closed reporting slot
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          mkdir -p "$REPORT_DIR" "$EVID_DIR"
-          printf '%s\n' 'NOT_ACCEPTED' > "$REPORT_DIR/status.txt"
-          printf '%s\n' "$SOURCE_SHA" > "$REPORT_DIR/source-sha.txt"
+          printf 'EVID_DIR=%s\n' "$RUNNER_TEMP/pbt-authenticated-zips" >> "$GITHUB_ENV"
+          printf 'REPORT_DIR=%s\n' "$RUNNER_TEMP/pbt-proof-reports" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/pbt-proof-reports" "$RUNNER_TEMP/pbt-authenticated-zips"
+          printf '%s\n' 'NOT_ACCEPTED' > "$RUNNER_TEMP/pbt-proof-reports/status.txt"
+          printf '%s\n' "$SOURCE_SHA" > "$RUNNER_TEMP/pbt-proof-reports/source-sha.txt"
           command -v gh
       - name: Wait boundedly for all five exact-main push workflows
         run: |
