@@ -223,6 +223,88 @@ def _load(root, rel):
     return json.loads((root / rel).read_text(encoding='utf-8'))
 
 
+
+def check_committed_controls(root, target_sha):
+    """Reject working-tree changes to inputs that decide release eligibility.
+
+    CI artifacts live outside this tree, but release-control policy, case topology,
+    the signer trust root, and external receipts must match the evaluated commit.
+    GitHub/CI provenance must still be verified separately.
+    """
+    require(isinstance(target_sha, str) and re.fullmatch(r'[0-9a-f]{40}', target_sha),
+            'invalid_acceptance_target_sha')
+    controls = (
+        'assurance/ledger.json',
+        'assurance/case.json',
+        'config/external-evidence-policy.json',
+        'config/owner-allowed-signers',
+    )
+    for rel in controls:
+        try:
+            committed = _git(root, 'show', f'{target_sha}:{rel}')
+            actual = (root / rel).read_bytes()
+        except (OSError, subprocess.SubprocessError):
+            raise Rejected(f'acceptance_control_missing_from_target_{rel}') from None
+        require(actual == committed, f'acceptance_control_dirty_{rel}')
+
+    external_dir = 'assurance/evidence/external'
+    try:
+        committed_files = set(_git(root, 'ls-tree', '-r', '--name-only', target_sha,
+                                   '--', external_dir).decode().splitlines())
+    except (OSError, subprocess.SubprocessError):
+        raise Rejected('external_receipt_tree_unavailable') from None
+    directory = root / external_dir
+    actual_files = ({p.relative_to(root).as_posix() for p in directory.rglob('*') if p.is_file()}
+                    if directory.is_dir() else set())
+    require(actual_files == committed_files, 'external_receipt_set_not_at_target')
+    for rel in sorted(committed_files):
+        try:
+            committed = _git(root, 'show', f'{target_sha}:{rel}')
+            actual = (root / rel).read_bytes()
+        except (OSError, subprocess.SubprocessError):
+            raise Rejected(f'external_receipt_unavailable_{rel}') from None
+        require(actual == committed, f'external_receipt_dirty_{rel}')
+
+
+
+def evaluate_external_attestations(root, target_sha, policy, external_dir=None, owner_trust_file=None):
+    """D1 can name a frozen release SHA only when the signed receipt is OUTSIDE that Git tree.
+
+    Trust is provisioned independently of the code-writing worktree. The operator supplies
+    an out-of-repository owner trust file; its bytes must exactly match the signer root
+    already committed BEFORE the candidate revision was frozen. No supplied trust/receipts
+    means UNKNOWN, not a synthesized authorization.
+    """
+    classes = policy['classes']
+    if external_dir is None and owner_trust_file is None:
+        return {cid: 'UNKNOWN:external_attestation_not_supplied' for cid in classes}
+    require(external_dir is not None and owner_trust_file is not None,
+            'external_attestation_and_owner_trust_required_together')
+    root_path = root.resolve()
+    try:
+        external_dir = Path(external_dir).resolve(strict=True)
+        owner_trust_file = Path(owner_trust_file).resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise Rejected('external_attestation_or_owner_trust_missing') from None
+    require(external_dir.is_dir() and owner_trust_file.is_file(),
+            'external_attestation_or_owner_trust_wrong_type')
+    for path in (external_dir, owner_trust_file):
+        require(path != root_path and root_path not in path.parents,
+                'external_attestation_and_trust_must_be_outside_repository')
+    pinned_signers = _git(root, 'show', f'{target_sha}:config/owner-allowed-signers')
+    require(bool(pinned_signers.strip()), 'owner_trust_not_registered_at_target')
+    require(owner_trust_file.read_bytes() == pinned_signers, 'owner_trust_root_mismatch')
+    result = {}
+    for cid in classes:
+        try:
+            external_receipts.validate(external_dir / f'{cid}.json', cid, policy,
+                                       owner_trust_file, target_sha)
+            result[cid] = 'PASS'
+        except (external_receipts.ReceiptRejected, OSError, subprocess.SubprocessError) as exc:
+            result[cid] = f'UNKNOWN:{exc}'
+    return result
+
+
 def schema_check(root):
     check_normative(root)
     tasks = _load(root, 'assurance/source/tasks.json')
@@ -232,7 +314,8 @@ def schema_check(root):
     return check_ledger(_load(root, 'assurance/ledger.json'), tasks, root, catalog, classes)
 
 
-def accept_engineering(root, target_sha, evidence_dir):
+def accept_engineering(root, target_sha, evidence_dir, *, external_attestations_dir=None, owner_trust_file=None):
+    check_committed_controls(root, target_sha)
     entries = schema_check(root)
     ledger_file = _load(root, 'assurance/ledger.json')
     case_file = _load(root, 'assurance/case.json')
@@ -240,7 +323,7 @@ def accept_engineering(root, target_sha, evidence_dir):
     require(ledger_file['stage'] == 'closed', 'ledger_not_closed')
     evidence_sha = ledger_file.get('evidence_sha')
     require(evidence_sha == case_file.get('evidence_sha'), 'evidence_sha_disagrees')
-    check_proof_source(root, evidence_sha, target_sha)
+    ledger_file, case_file = check_proof_source(root, evidence_sha, target_sha)
     manifest = gate.json_bytes((evidence_dir / 'manifest.json').read_bytes())
     require(manifest['head_sha'] == evidence_sha, 'evidence_for_other_revision')
     require(manifest['target']['kind'] in ('push', 'workflow_dispatch'), 'evidence_not_from_main')
@@ -261,7 +344,8 @@ def accept_engineering(root, target_sha, evidence_dir):
     leaves = {}
     for class_id, rule in policy['classes'].items():
         leaves.setdefault(rule['leaf'], []).append(class_id)
-    external = {'status': external_receipts.status_all(root, target_sha), 'leaves': leaves}
+    external = {'status': evaluate_external_attestations(root, target_sha, policy, external_attestations_dir,
+                                                        owner_trust_file), 'leaves': leaves}
     claims = derive_claims(case_file, units, external)
     technical = decide_claim([claims[c] for c in TECHNICAL])
     require(technical == 'PASS', f'technical_claims_{technical}_{[c for c in TECHNICAL if claims[c] != "PASS"]}')
@@ -281,6 +365,10 @@ def main(argv=None):
     p.add_argument('--target-sha', default=None)
     p.add_argument('--require', choices=('schema', 'engineering', 'production'), default='schema')
     p.add_argument('--evidence-dir', type=Path, default=None)
+    p.add_argument('--external-attestations-dir', type=Path, default=None,
+                   help='Owner-signed receipts outside the measured Git tree (never CI fixtures)')
+    p.add_argument('--owner-trust-file', type=Path, default=None,
+                   help='Independently owner-provisioned signer allowlist outside this repository')
     p.add_argument('--out', type=Path, default=None)
     a = p.parse_args(argv)
     code = 0
@@ -291,7 +379,9 @@ def main(argv=None):
                       'note': 'Well-formed only. Not an acceptance of anything.'}
         else:
             target = a.target_sha or _git(a.root, 'rev-parse', 'HEAD').decode().strip()
-            result = accept_engineering(a.root, target, a.evidence_dir)
+            result = accept_engineering(a.root, target, a.evidence_dir,
+                                        external_attestations_dir=a.external_attestations_dir,
+                                        owner_trust_file=a.owner_trust_file)
             result['decision'] = 'ENGINEERING_ACCEPTED'
             if a.require == 'production':
                 eligible = result['C0'] == 'PASS'

@@ -48,13 +48,15 @@ def _cases_for(ledger, catalog, drop=()):
 class World:
     """measured revision → CI-shaped ZIPs → reconcile → closure commit, like the real flow."""
 
-    def __init__(self, tmp, drop=(), verdicts=None):
+    def __init__(self, tmp, drop=(), verdicts=None, signers_text=None):
         self.repo, self.evidence = tmp / 'repo', tmp / 'evidence'
         self.repo.mkdir()
         self.evidence.mkdir()
         for name in ('config', 'assurance', 'tests'):
             shutil.copytree(ROOT / name, self.repo / name, ignore=shutil.ignore_patterns('__pycache__', 'evidence'))
         (self.repo / 'assurance/evidence').mkdir()
+        if signers_text is not None:
+            (self.repo / 'config/owner-allowed-signers').write_text(signers_text)
         _git(self.repo, 'init', '-q')
         self.base = _commit(self.repo, 'base')
         (self.repo / 'marker').write_text('source')
@@ -83,8 +85,10 @@ class World:
         self.target = _commit(self.repo, 'closure')
         return self.target
 
-    def accept(self, target=None):
-        return ac.accept_engineering(self.repo, target or self.target, self.evidence)
+    def accept(self, target=None, *, external_attestations_dir=None, owner_trust_file=None):
+        return ac.accept_engineering(self.repo, target or self.target, self.evidence,
+                                     external_attestations_dir=external_attestations_dir,
+                                     owner_trust_file=owner_trust_file)
 
     def edit_json(self, rel, fn):
         path = self.repo / rel
@@ -251,6 +255,92 @@ def test_production_stays_on_hold_without_signed_receipts(world):
     assert d['C0'] == 'UNKNOWN' and d['claims']['C10'] == 'UNKNOWN'
     assert all(v.startswith('UNKNOWN') for v in d['external'].values())
     assert set(d['external']) >= {'B1', 'B3', 'B4', 'R1', 'R2', 'R3', 'H1', 'F1', 'S1', 'D1'}
+
+
+
+# Release-control input binding: a dirty worktree must never override the target commit.
+def test_uncommitted_case_cannot_reclassify_external_claims(world):
+    def forge(case):
+        case['claims']['C10']['leaves'] = [{
+            'id': 'C10.fake', 'status': 'PASS', 'kind': 'engineering',
+            'obligations': ['DB-01'],
+        }]
+    world.edit_json('assurance/case.json', forge)
+    with pytest.raises(ac.Rejected, match='acceptance_control_dirty_assurance/case.json'):
+        world.accept()
+
+
+def test_uncommitted_external_policy_cannot_change_authority(world):
+    world.edit_json('config/external-evidence-policy.json',
+                    lambda policy: policy.update(namespace='forged-trust-domain'))
+    with pytest.raises(ac.Rejected, match='acceptance_control_dirty_config/external-evidence-policy.json'):
+        world.accept()
+
+
+def test_uncommitted_owner_signer_list_cannot_change_trust_root(world):
+    (world.repo / 'config/owner-allowed-signers').write_text('owner ssh-ed25519 forged-key\\n')
+    with pytest.raises(ac.Rejected, match='acceptance_control_dirty_config/owner-allowed-signers'):
+        world.accept()
+
+
+def test_uncommitted_external_receipt_cannot_affect_eligibility(world):
+    path = world.repo / 'assurance/evidence/external/D1.json'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({'schema': 'pbt-external-receipt-v1', 'class': 'D1'}))
+    with pytest.raises(ac.Rejected, match='external_receipt_set_not_at_target'):
+        world.accept()
+
+
+
+def test_owner_signed_d1_can_authorize_exact_frozen_target_without_self_reference(tmp_path):
+    """Synthetic owner key is registered BEFORE measurement. External D1 is signed AFTER freezing A."""
+    owner = _key(tmp_path, 'synthetic-owner')
+    trust = _signers(tmp_path, owner)
+    w = World(tmp_path, signers_text=trust.read_text())
+    a = w.close()
+    external = tmp_path / 'independent-attestations'
+    external.mkdir()
+    receipt = _receipt(external, 'D1', subject='synthetic-fixture', release_sha=a, expires_on='2999-01-01')
+    _sign(owner, receipt)
+    accepted = w.accept(external_attestations_dir=external, owner_trust_file=trust)
+    assert accepted['target_sha'] == a
+    assert accepted['external']['D1'] == 'PASS'
+    assert accepted['claims']['C10'] == 'UNKNOWN'  # No B1-B9, R/H/F/S owner evidence.
+    assert accepted['C0'] == 'UNKNOWN'
+    assert not (w.repo / 'assurance/evidence/external/D1.json').exists()
+
+    # The old tracked-receipt design forces B != A. A signature naming A cannot authorize B.
+    tracked = w.repo / 'assurance/evidence/external'
+    tracked.mkdir()
+    shutil.copyfile(receipt, tracked / 'D1.json')
+    shutil.copyfile(Path(f'{receipt}.sig'), tracked / 'D1.json.sig')
+    b = _commit(w.repo, 'demonstrate self-reference')
+    assert b != a
+    assert ac.check_committed_controls(w.repo, b) is None
+    rejected = w.accept(b, external_attestations_dir=external, owner_trust_file=trust)
+    assert rejected['external']['D1'] == 'UNKNOWN:other_revision'
+    assert rejected['claims']['C10'] == 'UNKNOWN'
+
+
+def test_external_d1_forgery_dirty_trust_and_in_tree_bundle_fail_closed(tmp_path):
+    owner, impostor = _key(tmp_path, 'owner-key'), _key(tmp_path, 'impostor-key')
+    trust = _signers(tmp_path, owner)
+    w = World(tmp_path, signers_text=trust.read_text())
+    target = w.close()
+    external = tmp_path / 'signed-receipts'
+    external.mkdir()
+    receipt = _receipt(external, 'D1', subject='synthetic-fixture', release_sha=target, expires_on='2999-01-01')
+    _sign(impostor, receipt)
+    result = w.accept(external_attestations_dir=external, owner_trust_file=trust)
+    assert result['external']['D1'] == 'UNKNOWN:bad_signature'
+    forged_trust = tmp_path / 'impostor-trust'
+    forged_trust.write_text(f"{POLICY['signer_identity']} {Path(str(impostor) + '.pub').read_text()}")
+    with pytest.raises(ac.Rejected, match='owner_trust_root_mismatch'):
+        w.accept(external_attestations_dir=external, owner_trust_file=forged_trust)
+    with pytest.raises(ac.Rejected, match='external_attestation_and_trust_must_be_outside_repository'):
+        w.accept(external_attestations_dir=w.repo / 'assurance/evidence', owner_trust_file=trust)
+    with pytest.raises(ac.Rejected, match='external_attestation_and_owner_trust_required_together'):
+        w.accept(external_attestations_dir=external)
 
 
 # ─── external receipts: authenticity, not presence ───────
