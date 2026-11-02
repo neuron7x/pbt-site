@@ -10,7 +10,9 @@ A GitHub API answer authenticated by the operator's token is the root of trust h
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import re
 import subprocess
 import sys
@@ -57,6 +59,10 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
     rules = policy['targets'].get(kind)
     if rules is None:
         raise CollectError('unsupported_target_event')
+    # A new collection attempt invalidates any earlier successful receipt immediately.
+    # A failed refetch must never leave a previously accepted manifest publishable.
+    out.mkdir(parents=True, exist_ok=True)
+    (out / 'manifest.json').unlink(missing_ok=True)
     runs = api(f'repos/{repo}/actions/runs?head_sha={head}&per_page=100')['workflow_runs']
     chosen = {}
     for run in sorted(runs, key=lambda r: (r['created_at'], r['run_attempt'])):
@@ -70,7 +76,7 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
         listed = api(f"repos/{repo}/actions/runs/{record['id']}/attempts/{record['attempt']}/jobs?per_page=100")['jobs']
         record['jobs'] = {j['name']: {'id': j['id'], 'status': j['status'], 'conclusion': j['conclusion']} for j in listed}
     artifacts = {}
-    out.mkdir(parents=True, exist_ok=True)
+    downloaded = {}
     for role in rules['roles']:
         workflow, prefix = ARTIFACT_PREFIX[role]
         if workflow not in chosen:
@@ -89,12 +95,22 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
         again = api(f"repos/{repo}/actions/artifacts/{artifact['id']}")
         if provider_digest(again) != expected:
             raise CollectError(f'provider_digest_changed_{role}')
-        (out / f'{role}.zip').write_bytes(raw)
+        downloaded[role] = raw
         artifacts[role] = {'id': artifact['id'], 'run_id': run_id, 'filename': f'{role}.zip', 'sha256': expected}
     target = {'kind': kind, 'pr_number': pr, 'ref': f'refs/pull/{pr}/head' if kind == 'pull_request' else policy['main_ref']}
     manifest = {'schema': 'pbt-exact-head-evidence-matrix-v2', 'repository': repo, 'head_sha': head, 'base_sha': base,
                 'target': target, 'runs': manifest_runs, 'artifacts': artifacts}
-    (out / 'manifest.json').write_text(json.dumps(manifest, indent=1, sort_keys=True) + '\n', encoding='utf-8')
+    # Stage the complete byte set first; the manifest is the final commit marker.
+    # On error, TemporaryDirectory removes staged bytes and no manifest can be accepted.
+    with TemporaryDirectory(prefix='.pbt-evidence-stage-', dir=out) as staging:
+        stage = Path(staging)
+        for role in rules['roles']:
+            (stage / f'{role}.zip').write_bytes(downloaded[role])
+        (stage / 'manifest.json').write_text(
+            json.dumps(manifest, indent=1, sort_keys=True) + '\n', encoding='utf-8')
+        for role in rules['roles']:
+            os.replace(stage / f'{role}.zip', out / f'{role}.zip')
+        os.replace(stage / 'manifest.json', out / 'manifest.json')
     return manifest
 
 
