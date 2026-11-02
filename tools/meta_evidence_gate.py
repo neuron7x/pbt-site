@@ -99,8 +99,15 @@ def junit(z, path, minimum, required=()):
     require(all(int(s.get(k, -1)) == 0 for s in suites for k in ('errors','failures','skipped')), 'junit_summary_failure')
     require(not any(rt.findall('.//' + k) for k in ('error','failure','skipped')), 'junit_case_failure')
     seen = {}
+    full_testcase_ids = set()
     for case in cases:
-        identity = f"{case.get('classname', '')}::{case.get('name', '').split('[', 1)[0]}"
+        classname, name = case.get('classname'), case.get('name')
+        require(bool(classname) and bool(name), 'junit_testcase_identity_missing')
+        full_identity = (classname, name)
+        # Parameterized [0] and [1] are distinct; replaying [0] is not another execution.
+        require(full_identity not in full_testcase_ids, 'duplicate_junit_testcase_identity')
+        full_testcase_ids.add(full_identity)
+        identity = f"{classname}::{name.split('[', 1)[0]}"
         seen[identity] = seen.get(identity, 0) + 1
     for rule in required:
         require(seen.get(rule['id'], 0) >= max(rule['min_cases'], 1), 'required_test_missing_' + rule['id'])
