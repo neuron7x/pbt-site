@@ -104,3 +104,48 @@ def test_later_failed_attempt_is_not_hidden_by_an_earlier_success(tmp_path):
     m = _collect(p, tmp_path)
     role = ec.WORKFLOW_ROLE[p.runs[0]['name']]
     assert m['runs'][role]['conclusion'] == 'failure'  # The offline verifier will reject it.
+
+
+def test_failed_refresh_invalidates_previously_successful_manifest(tmp_path):
+    _collect(Provider(), tmp_path)
+    assert (tmp_path / 'manifest.json').exists()
+    broken = Provider()
+    broken.bytes[101] += b'-corrupted'
+    with pytest.raises(ec.CollectError, match='provider_digest_mismatch'):
+        _collect(broken, tmp_path)
+    assert not (tmp_path / 'manifest.json').exists(), 'stale evidence must not survive an unsuccessful refresh'
+
+
+def test_failed_refresh_keeps_archives_unmodified_until_complete(tmp_path):
+    _collect(Provider(), tmp_path)
+    before = {role: (tmp_path / f'{role}.zip').read_bytes()
+              for role in POLICY['targets']['pull_request']['roles']}
+    broken = Provider()
+    broken.bytes[100] = b'valid-new-release'
+    broken.artifacts[100]['digest'] = 'sha256:' + hashlib.sha256(broken.bytes[100]).hexdigest()
+    broken.bytes[101] += b'-bad-baseline'
+    with pytest.raises(ec.CollectError, match='provider_digest_mismatch'):
+        _collect(broken, tmp_path)
+    assert not (tmp_path / 'manifest.json').exists()
+    assert all((tmp_path / f'{role}.zip').read_bytes() == previous for role, previous in before.items())
+
+
+def test_successful_refresh_publishes_complete_new_manifest(tmp_path):
+    _collect(Provider(), tmp_path)
+    fresh = Provider()
+    for aid, artifact in fresh.artifacts.items():
+        fresh.bytes[aid] = f'refreshed-{aid}'.encode()
+        artifact['digest'] = 'sha256:' + hashlib.sha256(fresh.bytes[aid]).hexdigest()
+    manifest = _collect(fresh, tmp_path)
+    assert json.loads((tmp_path / 'manifest.json').read_text()) == manifest
+    for role, item in manifest['artifacts'].items():
+        assert hashlib.sha256((tmp_path / f'{role}.zip').read_bytes()).hexdigest() == item['sha256']
+
+
+def test_missing_current_workflow_invalidates_old_manifest(tmp_path):
+    _collect(Provider(), tmp_path)
+    partial = Provider()
+    partial.runs = [run for run in partial.runs if ec.WORKFLOW_ROLE[run['name']] != 'soak']
+    with pytest.raises(ec.CollectError, match='missing_workflow_run_soak'):
+        _collect(partial, tmp_path)
+    assert not (tmp_path / 'manifest.json').exists()
