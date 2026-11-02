@@ -30,10 +30,18 @@ class Unbound(ValueError):
 def _cases(raw):
     """(module, function) -> outcomes, read from the bytes of the JUnit, one row per executed case."""
     seen = {}
+    full_testcase_ids = set()
     for case in ET.fromstring(raw).iter('testcase'):
+        classname, name = case.get('classname'), case.get('name')
+        if not classname or not name:
+            raise Unbound('junit_testcase_identity_missing')
+        full_identity = (classname, name)
+        if full_identity in full_testcase_ids:
+            raise Unbound('duplicate_junit_testcase_identity')
+        full_testcase_ids.add(full_identity)
         bad = [k for k in ('failure', 'error', 'skipped') if case.find(k) is not None]
-        seen.setdefault((case.get('classname'), case.get('name', '').split('[', 1)[0]), []).append(
-            {'name': case.get('name'), 'outcome': bad[0] if bad else 'passed'})
+        seen.setdefault((classname, name.split('[', 1)[0]), []).append(
+            {'name': name, 'outcome': bad[0] if bad else 'passed'})
     return seen
 
 

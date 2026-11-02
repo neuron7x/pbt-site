@@ -424,3 +424,22 @@ def test_receipt_for_another_class_is_rejected(tmp_path):
     _sign(owner, path)
     with pytest.raises(ex.ReceiptRejected, match='wrong_class'):
         ex.validate(path, 'B1', POLICY, _signers(tmp_path, owner), 'a' * 40)
+
+
+def test_standalone_reconciliation_rejects_duplicate_full_junit_identity(tmp_path):
+    """Do not rely solely on the meta gate: the receipts producer must reject repeats itself."""
+    import xml.etree.ElementTree as ET
+
+    w = World(tmp_path)
+    raw = w.contents['release']['artifacts/full-junit.xml']
+    document = ET.fromstring(raw)
+    cases = list(document.iter('testcase'))
+    assert len(cases) > 2
+    cases[1].set('classname', cases[0].get('classname'))
+    cases[1].set('name', cases[0].get('name'))
+    w.contents['release']['artifacts/full-junit.xml'] = ET.tostring(document)
+    _rewrite(w, 'release')  # Recompute artifact digest; ZIP hash mismatch must not mask the real falsifier.
+    ledger = json.loads((w.repo / 'assurance/ledger.json').read_text())
+    catalog = json.loads((w.repo / 'config/mutation-catalog.json').read_text())
+    with pytest.raises(er.Unbound, match='duplicate_junit_testcase_identity'):
+        er.reconcile(w.meta, w.evidence, ledger, catalog)
