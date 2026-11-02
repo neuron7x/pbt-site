@@ -49,7 +49,7 @@ jobs:
         run: |
           python - <<'PY'
           import json, os, subprocess, time
-          from tools.evidence_collect import WORKFLOW_ROLE
+          from tools.evidence_collect import WORKFLOW_ROLE, select_runs
           repo, head = os.environ['GITHUB_REPOSITORY'], os.environ['SOURCE_SHA']
           expected = set(WORKFLOW_ROLE.values())
           for attempt in range(43):
@@ -59,13 +59,12 @@ jobs:
                   raise SystemExit(f'SOURCE_DRIFT:{ref} != {head}')
               response = json.loads(subprocess.check_output(
                   ['gh','api',f'repos/{repo}/actions/runs?head_sha={head}&per_page=100'],timeout=60))
-              selected = {}
-              for run in sorted(response.get('workflow_runs',[]),
-                                key=lambda r: (r['created_at'], r['run_attempt'])):
-                  role = WORKFLOW_ROLE.get(run['name'])
-                  if role and run['head_sha'] == head and run['event'] == 'push':
-                      selected[role] = run
-              if len(selected) == len(expected):
+              runs = response.get('workflow_runs', [])
+              if response.get('total_count',len(runs)) > len(runs):
+                  raise SystemExit('WORKFLOW_RUN_LIST_TRUNCATED')
+              policy = json.load(open('config/evidence-policy.json', encoding='utf-8'))['targets']['push']
+              selected, pending = select_runs(runs, policy, head)
+              if len(selected) == len(expected) and not pending:
                   if all(r['status']=='completed' and r['conclusion']=='success' for r in selected.values()):
                       print('PROVIDER_CI_SUCCESS',json.dumps({k:v['id'] for k,v in selected.items()},sort_keys=True))
                       break

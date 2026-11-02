@@ -10,6 +10,7 @@ A GitHub API answer authenticated by the operator's token is the root of trust h
 import argparse
 import hashlib
 import json
+from datetime import datetime
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -53,6 +54,37 @@ def provider_digest(artifact):
     return digest.split(':', 1)[1]
 
 
+def _attempt_order(run):
+    """Reruns keep created_at; use current attempt execution time instead."""
+    raw = run.get('run_started_at')
+    if not raw and run.get('status') != 'completed':
+        raw = run.get('created_at')  # queued attempts still block acceptance
+    try:
+        started = datetime.fromisoformat(raw.replace('Z', '+00:00'))
+    except (AttributeError, ValueError):
+        raise CollectError('run_attempt_started_at_missing_or_invalid') from None
+    if started.tzinfo is None or type(run.get('run_attempt')) is not int or run['run_attempt'] < 1:
+        raise CollectError('run_attempt_order_invalid')
+    if type(run.get('id')) is not int or run['id'] < 1:
+        raise CollectError('run_id_invalid')
+    return (started, run['run_attempt'], run['id'])
+
+
+def select_runs(runs, rules, head):
+    """Choose newest execution per role; report all still-incomplete candidates."""
+    chosen, pending = {}, set()
+    for run in runs:
+        role = WORKFLOW_ROLE.get(run['name'])
+        if not (role and run['event'] in rules['run_events'] and run['head_sha'] == head):
+            continue
+        order = _attempt_order(run)  # validate even a role's first/only candidate
+        if run['status'] != 'completed':
+            pending.add(role)
+        if role not in chosen or order > _attempt_order(chosen[role]):
+            chosen[role] = run
+    return chosen, pending
+
+
 def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_bytes):
     if not (SHA.fullmatch(head) and SHA.fullmatch(base)):
         raise CollectError('expected_sha_format')
@@ -63,12 +95,13 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
     # A failed refetch must never leave a previously accepted manifest publishable.
     out.mkdir(parents=True, exist_ok=True)
     (out / 'manifest.json').unlink(missing_ok=True)
-    runs = api(f'repos/{repo}/actions/runs?head_sha={head}&per_page=100')['workflow_runs']
-    chosen = {}
-    for run in sorted(runs, key=lambda r: (r['created_at'], r['run_attempt'])):
-        role = WORKFLOW_ROLE.get(run['name'])
-        if role and run['event'] in rules['run_events'] and run['head_sha'] == head:
-            chosen[role] = run   # Latest wins, whatever its conclusion: a later failure is not hidden.
+    listing = api(f'repos/{repo}/actions/runs?head_sha={head}&per_page=100')
+    runs = listing['workflow_runs']
+    if listing.get('total_count', len(runs)) > len(runs):
+        raise CollectError('workflow_run_listing_truncated')
+    chosen, pending = select_runs(runs, rules, head)
+    if pending:
+        raise CollectError('incomplete_workflow_runs_' + '_'.join(sorted(pending)))
     manifest_runs = {role: {'id': r['id'], 'head_sha': r['head_sha'], 'event': r['event'], 'status': r['status'],
                             'conclusion': r['conclusion'], 'attempt': r['run_attempt'],
                             'pull_requests': [x['number'] for x in r.get('pull_requests') or []]} for role, r in chosen.items()}
