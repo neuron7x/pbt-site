@@ -115,8 +115,12 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
         if workflow not in chosen:
             raise CollectError(f'missing_workflow_run_{workflow}')
         run_id = chosen[workflow]['id']
-        listed = api(f'repos/{repo}/actions/runs/{run_id}/artifacts?per_page=100')['artifacts']
-        matches = [a for a in listed if a['name'].startswith(prefix)]
+        listing = api(f'repos/{repo}/actions/runs/{run_id}/artifacts?per_page=100')
+        listed = listing['artifacts']
+        if listing.get('total_count', len(listed)) > len(listed):
+            raise CollectError(f'artifact_listing_truncated_{role}')
+        exact_name = f"{prefix}{run_id}-{chosen[workflow]['run_attempt']}"
+        matches = [a for a in listed if a['name'] == exact_name]
         if len(matches) != 1:
             raise CollectError(f'artifact_not_unique_{role}')
         artifact = matches[0]

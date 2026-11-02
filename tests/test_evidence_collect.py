@@ -102,6 +102,7 @@ def test_later_failed_attempt_is_not_hidden_by_an_earlier_success(tmp_path):
     for a in p.artifacts.values():
         if a['run'] == p.runs[0]['id']:
             a['run'] = 999
+            a['name'] = a['name'].rsplit('-', 2)[0] + '-999-2'
     m = _collect(p, tmp_path)
     role = ec.WORKFLOW_ROLE[p.runs[0]['name']]
     assert m['runs'][role]['conclusion'] == 'failure'  # The offline verifier will reject it.
@@ -114,11 +115,59 @@ def test_older_created_failed_rerun_not_hidden_by_newer_created_success(tmp_path
     p.runs.append({**old, 'id': 999, 'created_at': '2026-11-02T11:00:00Z',
                    'run_started_at': '2026-11-02T11:00:00Z',
                    'run_attempt': 1, 'conclusion': 'success'})
+    for artifact in p.artifacts.values():
+        if artifact['run'] == old['id']:
+            artifact['name'] = artifact['name'].rsplit('-', 1)[0] + '-2'
     m = _collect(p, tmp_path)
     role = ec.WORKFLOW_ROLE[old['name']]
     assert m['runs'][role]['id'] == old['id']
     assert m['runs'][role]['attempt'] == 2
     assert m['runs'][role]['conclusion'] == 'failure'
+
+
+def test_successful_rerun_ignores_earlier_attempt_archives(tmp_path):
+    p = Provider()
+    run = p.runs[0]
+    run.update(run_attempt=2, run_started_at='2026-11-02T12:30:00Z')
+    for aid, artifact in list(p.artifacts.items()):
+        if artifact['run'] != run['id']:
+            continue
+        new_id = aid + 1000
+        raw = p.bytes[aid] + b'-attempt-2'
+        p.bytes[new_id] = raw
+        p.artifacts[new_id] = {
+            **artifact, 'id': new_id,
+            'name': artifact['name'].rsplit('-', 1)[0] + '-2',
+            'digest': 'sha256:' + hashlib.sha256(raw).hexdigest(),
+        }
+    m = _collect(p, tmp_path)
+    for role, (owner, prefix) in ec.ARTIFACT_PREFIX.items():
+        if owner == 'full':
+            expected_name = f"{prefix}{run['id']}-2"
+            expected_id = next(a['id'] for a in p.artifacts.values() if a['name'] == expected_name)
+            assert m['artifacts'][role]['id'] == expected_id
+
+
+def test_rerun_missing_latest_attempt_archive_fails_closed(tmp_path):
+    p = Provider()
+    p.runs[0].update(run_attempt=2, run_started_at='2026-11-02T12:30:00Z')
+    with pytest.raises(ec.CollectError, match='artifact_not_unique_release'):
+        _collect(p, tmp_path)
+
+
+def test_truncated_artifact_listing_fails_closed(tmp_path):
+    p = Provider()
+    original = p.api
+
+    def truncated(path):
+        response = original(path)
+        if path.endswith('/artifacts?per_page=100'):
+            return {**response, 'total_count': len(response['artifacts']) + 1}
+        return response
+
+    p.api = truncated
+    with pytest.raises(ec.CollectError, match='artifact_listing_truncated_release'):
+        _collect(p, tmp_path)
 
 
 def test_newer_pending_attempt_invalidates_old_manifest(tmp_path):
