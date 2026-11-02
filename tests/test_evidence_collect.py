@@ -22,7 +22,8 @@ class Provider:
         ids = {r: i + 1 for i, r in enumerate(NAMES)}
         for role, name in NAMES.items():
             self.runs.append({'id': ids[role], 'name': name, 'event': event, 'head_sha': HEAD, 'status': 'completed',
-                              'conclusion': 'success', 'run_attempt': 1, 'created_at': '2026-11-01T00:00:00Z', 'pull_requests': [{'number': 14}]})
+                              'conclusion': 'success', 'run_attempt': 1, 'created_at': '2026-11-01T00:00:00Z',
+                              'run_started_at': '2026-11-01T00:00:00Z', 'pull_requests': [{'number': 14}]})
         for i, (role, (workflow, prefix)) in enumerate(ec.ARTIFACT_PREFIX.items()):
             aid = 100 + i
             raw = f'zip-{role}'.encode()
@@ -97,13 +98,140 @@ def test_pull_request_runs_are_not_collected_for_a_main_target(tmp_path):
 
 def test_later_failed_attempt_is_not_hidden_by_an_earlier_success(tmp_path):
     p = Provider()
-    p.runs.append({**p.runs[0], 'id': 999, 'run_attempt': 2, 'conclusion': 'failure', 'created_at': '2026-11-02T00:00:00Z'})
+    p.runs.append({**p.runs[0], 'id': 999, 'run_attempt': 2, 'conclusion': 'failure', 'created_at': '2026-11-02T00:00:00Z', 'run_started_at': '2026-11-02T00:00:00Z'})
     for a in p.artifacts.values():
         if a['run'] == p.runs[0]['id']:
             a['run'] = 999
+            a['name'] = a['name'].rsplit('-', 2)[0] + '-999-2'
     m = _collect(p, tmp_path)
     role = ec.WORKFLOW_ROLE[p.runs[0]['name']]
     assert m['runs'][role]['conclusion'] == 'failure'  # The offline verifier will reject it.
+
+
+def test_older_created_failed_rerun_not_hidden_by_newer_created_success(tmp_path):
+    p = Provider()
+    old = p.runs[0]
+    old.update(run_attempt=2, run_started_at='2026-11-02T12:30:00Z', conclusion='failure')
+    p.runs.append({**old, 'id': 999, 'created_at': '2026-11-02T11:00:00Z',
+                   'run_started_at': '2026-11-02T11:00:00Z',
+                   'run_attempt': 1, 'conclusion': 'success'})
+    for artifact in p.artifacts.values():
+        if artifact['run'] == old['id']:
+            artifact['name'] = artifact['name'].rsplit('-', 1)[0] + '-2'
+    m = _collect(p, tmp_path)
+    role = ec.WORKFLOW_ROLE[old['name']]
+    assert m['runs'][role]['id'] == old['id']
+    assert m['runs'][role]['attempt'] == 2
+    assert m['runs'][role]['conclusion'] == 'failure'
+
+
+def test_successful_rerun_ignores_earlier_attempt_archives(tmp_path):
+    p = Provider()
+    run = p.runs[0]
+    run.update(run_attempt=2, run_started_at='2026-11-02T12:30:00Z')
+    for aid, artifact in list(p.artifacts.items()):
+        if artifact['run'] != run['id']:
+            continue
+        new_id = aid + 1000
+        raw = p.bytes[aid] + b'-attempt-2'
+        p.bytes[new_id] = raw
+        p.artifacts[new_id] = {
+            **artifact, 'id': new_id,
+            'name': artifact['name'].rsplit('-', 1)[0] + '-2',
+            'digest': 'sha256:' + hashlib.sha256(raw).hexdigest(),
+        }
+    m = _collect(p, tmp_path)
+    for role, (owner, prefix) in ec.ARTIFACT_PREFIX.items():
+        if owner == 'full':
+            expected_name = f"{prefix}{run['id']}-2"
+            expected_id = next(a['id'] for a in p.artifacts.values() if a['name'] == expected_name)
+            assert m['artifacts'][role]['id'] == expected_id
+
+
+def test_rerun_missing_latest_attempt_archive_fails_closed(tmp_path):
+    p = Provider()
+    p.runs[0].update(run_attempt=2, run_started_at='2026-11-02T12:30:00Z')
+    with pytest.raises(ec.CollectError, match='artifact_not_unique_release'):
+        _collect(p, tmp_path)
+
+
+def test_truncated_artifact_listing_fails_closed(tmp_path):
+    p = Provider()
+    original = p.api
+
+    def truncated(path):
+        response = original(path)
+        if path.endswith('/artifacts?per_page=100'):
+            return {**response, 'total_count': len(response['artifacts']) + 1}
+        return response
+
+    p.api = truncated
+    with pytest.raises(ec.CollectError, match='artifact_listing_truncated_release'):
+        _collect(p, tmp_path)
+
+
+def test_newer_pending_attempt_invalidates_old_manifest(tmp_path):
+    p = Provider()
+    _collect(p, tmp_path)
+    p.runs.append({**p.runs[0], 'id': 999, 'status': 'in_progress',
+                   'conclusion': None, 'run_attempt': 2,
+                   'run_started_at': '2026-11-02T12:30:00Z'})
+    with pytest.raises(ec.CollectError, match='incomplete_workflow_runs_full'):
+        _collect(p, tmp_path)
+    assert not (tmp_path / 'manifest.json').exists()
+
+
+def test_same_second_different_runs_are_not_arbitrarily_ordered(tmp_path):
+    p = Provider()
+    older = p.runs[0]
+    older.update(run_started_at='2026-11-02T12:00:00Z', run_attempt=2)
+    p.runs.append({**older, 'id': 999, 'created_at': '2026-11-02T12:00:00Z',
+                   'run_started_at': '2026-11-02T12:00:00Z',
+                   'run_attempt': 1, 'conclusion': 'failure'})
+    with pytest.raises(ec.CollectError, match='ambiguous_attempt_order_full'):
+        _collect(p, tmp_path)
+
+
+def test_missing_attempt_started_at_fails_closed(tmp_path):
+    p = Provider()
+    p.runs[0].pop('run_started_at')
+    with pytest.raises(ec.CollectError, match='run_attempt_started_at_missing_or_invalid'):
+        _collect(p, tmp_path)
+
+
+def test_truncated_run_list_fails_closed(tmp_path):
+    p = Provider()
+    old_api = p.api
+
+    def truncated(path):
+        result = old_api(path)
+        if '/actions/runs?' in path:
+            return {**result, 'total_count': len(p.runs) + 1}
+        return result
+
+    p.api = truncated
+    with pytest.raises(ec.CollectError, match='workflow_run_listing_truncated'):
+        _collect(p, tmp_path)
+
+
+def test_closure_watcher_is_base_checkout_compatible_and_attempt_ordered():
+    # A PR editing this YAML runs the workflow from the PR, but checks out BASE main.
+    # Do not import a NEW helper absent on that measured base: prove the embedded code compiles.
+    import textwrap
+    source = (Path(__file__).resolve().parents[1] / '.github/workflows/evidence-closure.yml').read_text()
+    marker = '      - name: Wait boundedly for all five exact-main push workflows'
+    script = source.split(marker, 1)[1].split("          python - <<'PY'\\n", 1)
+    if len(script) == 1:
+        script = source.split(marker, 1)[1].split("          python - <<'PY'\n", 1)
+    assert len(script) == 2
+    code = textwrap.dedent(script[1].split("          PY\n", 1)[0])
+    compile(code, 'pbt-evidence-closure-inline', 'exec')
+    assert 'from tools.evidence_collect import WORKFLOW_ROLE\n' in code
+    assert 'run.get(\'run_started_at\')' in code
+    assert 'and not pending' in code
+    assert 'AMBIGUOUS_ATTEMPT_ORDER_' in code
+    assert 'select_runs' not in code
+    assert "key=lambda r: (r['created_at'], r['run_attempt'])" not in code
 
 
 def test_failed_refresh_invalidates_previously_successful_manifest(tmp_path):
