@@ -181,6 +181,17 @@ def test_newer_pending_attempt_invalidates_old_manifest(tmp_path):
     assert not (tmp_path / 'manifest.json').exists()
 
 
+def test_same_second_different_runs_are_not_arbitrarily_ordered(tmp_path):
+    p = Provider()
+    older = p.runs[0]
+    older.update(run_started_at='2026-11-02T12:00:00Z', run_attempt=2)
+    p.runs.append({**older, 'id': 999, 'created_at': '2026-11-02T12:00:00Z',
+                   'run_started_at': '2026-11-02T12:00:00Z',
+                   'run_attempt': 1, 'conclusion': 'failure'})
+    with pytest.raises(ec.CollectError, match='ambiguous_attempt_order_full'):
+        _collect(p, tmp_path)
+
+
 def test_missing_attempt_started_at_fails_closed(tmp_path):
     p = Provider()
     p.runs[0].pop('run_started_at')
@@ -218,6 +229,7 @@ def test_closure_watcher_is_base_checkout_compatible_and_attempt_ordered():
     assert 'from tools.evidence_collect import WORKFLOW_ROLE\n' in code
     assert 'run.get(\'run_started_at\')' in code
     assert 'and not pending' in code
+    assert 'AMBIGUOUS_ATTEMPT_ORDER_' in code
     assert 'select_runs' not in code
     assert "key=lambda r: (r['created_at'], r['run_attempt'])" not in code
 

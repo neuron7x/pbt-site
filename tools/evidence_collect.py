@@ -80,6 +80,8 @@ def select_runs(runs, rules, head):
         order = _attempt_order(run)  # validate even a role's first/only candidate
         if run['status'] != 'completed':
             pending.add(role)
+        if role in chosen and order[0] == _attempt_order(chosen[role])[0] and run['id'] != chosen[role]['id']:
+            raise CollectError('ambiguous_attempt_order_' + role)
         if role not in chosen or order > _attempt_order(chosen[role]):
             chosen[role] = run
     return chosen, pending

@@ -80,6 +80,8 @@ jobs:
                           or run['id'] < 1):
                       raise SystemExit('RUN_ATTEMPT_ORDER_INVALID_' + role)
                   candidate = (started, run['run_attempt'], run['id'])
+                  if role in selected and candidate[0] == order[role][0] and run['id'] != selected[role]['id']:
+                      raise SystemExit('AMBIGUOUS_ATTEMPT_ORDER_' + role)
                   if role not in selected or candidate > order[role]:
                       selected[role], order[role] = run, candidate
                   if run['status'] != 'completed':
