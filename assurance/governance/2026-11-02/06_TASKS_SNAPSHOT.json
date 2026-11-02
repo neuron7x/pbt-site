@@ -1,0 +1,723 @@
+{
+  "schema": "pbt-execution-snapshot-v1",
+  "document_date_utc": "2026-11-02",
+  "source_repo": "neuron7x/pbt-site",
+  "source_sha": "dd85775749e28cf35c2e0c80c188b5dfbda21add",
+  "source_task_blob_sha": "dceb49be436bdf21fda1bd41c067ed8c5537750d",
+  "source_ledger_blob_sha": "ed926d781b7d11cd4cd2f3c59ab6f952ef4c4032",
+  "source_ledger_stage": "pre_integration",
+  "claims": {
+    "implemented_inferred": 30,
+    "blocked_unknown": 18,
+    "previous_source_scoped_closure": "ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY",
+    "production": "HOLD",
+    "C0": "UNKNOWN",
+    "C10": "UNKNOWN"
+  },
+  "precedence": "non-normative snapshot; sealed assurance/source/tasks.json and authenticated source-bound receipts override",
+  "tasks": [
+    {
+      "id": "EVD-01",
+      "wave": "W0",
+      "title": "Freeze immutable revision, baseline and original artifacts",
+      "priority": "P1",
+      "dependencies": [],
+      "red_test": "Compare GitHub head/base/runner SHA with stale or swapped SHA",
+      "acceptance": "Any drift causes HOLD before further gate; baseline environment and real bytes captured",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "EVD-02",
+      "wave": "W0",
+      "title": "Generalize PR8-only meta evidence policy",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Present valid PR14/main evidence to old PR8-only verifier; require negative failure",
+      "acceptance": "Valid current HEAD accepted, stale/forged/unsupported event rejected with machine-readable reason",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "EVD-03",
+      "wave": "W0",
+      "title": "Assert compulsory test identities and minimum coverage",
+      "priority": "P2",
+      "dependencies": [
+        "EVD-02"
+      ],
+      "red_test": "Remove lead atomicity test while retaining >= MIN_TESTS total",
+      "acceptance": "Mandatory test identity absent => FAIL regardless total count; no silent skip/xfail",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "EVD-04",
+      "wave": "W0",
+      "title": "Independent mobile budgets and CLS adjudication",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-02"
+      ],
+      "red_test": "Present raw p75 LCP above 2500 while consistent summary claims success",
+      "acceptance": "Independent verifier fails for any breach; no field INP claim",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "EVD-05",
+      "wave": "W0",
+      "title": "Bind event SHA, checkout HEAD and artifact source",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01",
+        "EVD-02"
+      ],
+      "red_test": "Substitute merge event SHA as execution_sha or re-run with changed base",
+      "acceptance": "Verifier rejects drift; PR and main receipts remain disjoint",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "EVD-06",
+      "wave": "W0",
+      "title": "Independently verify provider ZIP bytes and manifests",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01",
+        "EVD-02"
+      ],
+      "red_test": "Modify one PNG chunk/ZIP CRC/manifest SHA, preserve workflow success",
+      "acceptance": "All required artifacts checked; failures remain HOLD; provider authentication provenance recorded",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "EVD-07",
+      "wave": "W0",
+      "title": "Reproducibility and nondeterminism inventory",
+      "priority": "P2",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Run same fixed seed twice with locale/timezone/env variance",
+      "acceptance": "Every difference classified; source build reproducibility not asserted if unverified",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "EVD-08",
+      "wave": "W0",
+      "title": "Construct reusable claim-argument-evidence graph",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-02",
+        "EVD-03",
+        "EVD-04",
+        "EVD-05",
+        "EVD-06"
+      ],
+      "red_test": "Supply a complete list with one unavailable proof",
+      "acceptance": "Claim is PASS iff all mandatory proof leaves PASS at compatible SHA and target",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "DB-01",
+      "wave": "W1",
+      "title": "Enable FK enforcement per SQLite connection",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Insert outbox with nonexistent lead_id; currently SQLite FK not enabled in db()",
+      "acceptance": "Every write path rejects orphan with IntegrityError; foreign_key_check reports zero after approved remediation",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "DB-02",
+      "wave": "W1",
+      "title": "Migration and legacy-FK compatibility proof",
+      "priority": "P1",
+      "dependencies": [
+        "DB-01"
+      ],
+      "red_test": "Legacy database includes old schema and an intentionally orphaned row",
+      "acceptance": "Repeated migration exact schema; no data loss; conflicts report BLOCKED and do not quietly repair",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "DB-03",
+      "wave": "W1",
+      "title": "Linearizable idempotency and quota transaction",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Concurrent same key across threads/processes under near-capacity SQLite locking",
+      "acceptance": "Same key + same body -> same id; same key + different body -> 409; accepted state atomic",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "DB-04",
+      "wave": "W1",
+      "title": "Crash cutpoints around HTTP 201 and durable commit",
+      "priority": "P1",
+      "dependencies": [
+        "DB-03"
+      ],
+      "red_test": "SIGKILL at before BEGIN/after insert/before commit/after commit/before reply",
+      "acceptance": "For all cuts: no uncommitted 201, no lost committed lead, replay consistent",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "DB-05",
+      "wave": "W1",
+      "title": "Cross-reload client idempotency without PII retention",
+      "priority": "P2",
+      "dependencies": [
+        "DB-03",
+        "DB-04"
+      ],
+      "red_test": "Accept server-side, drop response, reload and submit unchanged form",
+      "acceptance": "Replay semantics preserved if same user intent; explicitly documented boundary for new intent",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "DB-06",
+      "wave": "W1",
+      "title": "Crash-safe restore generation and rollback",
+      "priority": "P1",
+      "dependencies": [
+        "DB-02",
+        "DB-04"
+      ],
+      "red_test": "SIGKILL/EIO/ENOSPC at each rename/fsync and metadata operation",
+      "acceptance": "No scenario produces irrecoverable partial state; old/new integrity and watermark checked",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "DB-07",
+      "wave": "W1",
+      "title": "Authenticated encrypted off-device backup chain",
+      "priority": "P1",
+      "dependencies": [
+        "DB-06"
+      ],
+      "red_test": "Destroy local root/data and backup directory in a disposable isolated environment",
+      "acceptance": "Provider receipt + offline restore verified against source snapshot; local-only copies not counted",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "DB-08",
+      "wave": "W1",
+      "title": "Independent host restore, watermark and RPO/RTO measurement",
+      "priority": "P1",
+      "dependencies": [
+        "DB-06",
+        "DB-07"
+      ],
+      "red_test": "Delete original machine and restore without source disk or server.log",
+      "acceptance": "No unreconciled known loss; actual RPO/RTO numbers and limitations recorded; owner adopts thresholds",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "NET-01",
+      "wave": "W2",
+      "title": "HTTP parser absolute deadlines and protocol negative suite",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Trickled headers/body, early EOF, conflicting length, media range fuzz under small MAX_CONNECTIONS",
+      "acceptance": "Bound wall-clock and connection slots, correct status class, zero partial commits",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "NET-02",
+      "wave": "W2",
+      "title": "Reverse proxy trust and TLS edge attestation",
+      "priority": "P1",
+      "dependencies": [
+        "NET-01"
+      ],
+      "red_test": "Spoof XFF/XFP from untrusted peer; spoof chain and IPv6 identities",
+      "acceptance": "No quota bypass/false HSTS with untrusted headers; actual edge evidence separate",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "NET-03",
+      "wave": "W2",
+      "title": "Constrain outbound destinations and redirects",
+      "priority": "P2",
+      "dependencies": [
+        "NET-01"
+      ],
+      "red_test": "Hostile redirects, private-IP targets, DNS rebinding, non-TLS and credentials in URL",
+      "acceptance": "No signed lead crosses unapproved destination; synthetic tests isolate external network",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "NET-04",
+      "wave": "W2",
+      "title": "At-least-once channel/receiver contract and acknowledgment",
+      "priority": "P1",
+      "dependencies": [
+        "DB-03",
+        "DB-04"
+      ],
+      "red_test": "Synthetic 2xx before durable receiver acknowledgment; 408/429/5xx and timeout",
+      "acceptance": "No accepted lead lost; retries bounded; all ACK claims tied to external receipt ID",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "NET-05",
+      "wave": "W2",
+      "title": "Rate limit topology, clock and resource accounting",
+      "priority": "P2",
+      "dependencies": [
+        "NET-01"
+      ],
+      "red_test": "25k identities, IPv6 /64 churn, wall jumps, two independently spawned servers",
+      "acceptance": "No unbounded memory nor quota bypass within declared topology; unsupported topology fail closed",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "NET-06",
+      "wave": "W2",
+      "title": "Config to DOM trust-boundary and XSS negative suite",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Inject malformed href, quotes, svg/javascript schemes via fake public config",
+      "acceptance": "All payloads inert, console signals captured, CSP intact, negative mutation kills regression",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "NET-07",
+      "wave": "W2",
+      "title": "Broaden security scanning and dependency provenance",
+      "priority": "P2",
+      "dependencies": [
+        "EVD-06"
+      ],
+      "red_test": "Inject XSS/SSRF-like sink, scanner crash, omitted requirement, altered wheel hash",
+      "acceptance": "Findings and gaps machine reported; waiver requires owner rationale; no full ASVS certification claim",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "NET-08",
+      "wave": "W2",
+      "title": "Least privilege and resource sandbox of site runtime",
+      "priority": "P2",
+      "dependencies": [
+        "NET-01"
+      ],
+      "red_test": "Attempt to read files outside sandbox, exhaust tasks/memory, abuse writable root",
+      "acceptance": "Resource caps and file/network boundaries proven, no break of media/API/backup",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": false
+    },
+    {
+      "id": "WEB-01",
+      "wave": "W3",
+      "title": "Manual + automated WCAG matrix across both themes",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-04"
+      ],
+      "red_test": "Focus traps, enlarged text 200%, empty labels, error states, modal mode",
+      "acceptance": "No critical WCAG A/AA finding; manual evidence named; axe alone never claimed complete",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": false
+    },
+    {
+      "id": "WEB-02",
+      "wave": "W3",
+      "title": "Independent full lab CWV repeatability",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-04"
+      ],
+      "red_test": "Force slow LCP or late shift while internally consistent summary says PASS",
+      "acceptance": "Independent budget violation rejects; field INP remains unknown",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "WEB-03",
+      "wave": "W3",
+      "title": "Field INP/CWV with privacy-respecting RUM or CrUX",
+      "priority": "P1",
+      "dependencies": [
+        "WEB-02"
+      ],
+      "red_test": "Inject long input tasks into critical user flow",
+      "acceptance": "Measured p75 by mobile/desktop meets owner-approved objectives or release HOLD",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "WEB-04",
+      "wave": "W3",
+      "title": "Theme switch stability, contrast under dynamic media",
+      "priority": "P2",
+      "dependencies": [
+        "WEB-01",
+        "WEB-02"
+      ],
+      "red_test": "Load font after 500ms, dark/bright sampled frames, extreme landscape viewport",
+      "acceptance": "Any unprompted shift/contrast violation rejected at measured state with raw screenshots",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "WEB-05",
+      "wave": "W3",
+      "title": "Critical media and network budget as a regression contract",
+      "priority": "P2",
+      "dependencies": [
+        "WEB-02"
+      ],
+      "red_test": "Add unexpected high-priority video/font preload or corrupt poster",
+      "acceptance": "Per-profile transfer budgets from measured baseline; no broken poster or blank hero",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "WEB-06",
+      "wave": "W3",
+      "title": "Canonical metadata, SEO indexability, authoritative FQDN",
+      "priority": "P2",
+      "dependencies": [
+        "OPS-07"
+      ],
+      "red_test": "Change canonical, og image or JSON-LD to mismatched domain",
+      "acceptance": "Canonical/schema/OG agree with owner-approved DNS+TLS; search indexing cannot be asserted absent field proof",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "WEB-07",
+      "wave": "W3",
+      "title": "Business/contact and tariff single-source consistency",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-03"
+      ],
+      "red_test": "Make JCB rate or VAT differ across JSON/JS/HTML while math still passes",
+      "acceptance": "No unapproved published rate or hidden VAT semantics; arithmetic independent oracle passes",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "WEB-08",
+      "wave": "W3",
+      "title": "Media licensing/provenance and true-claim inventory",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Remove permission record for one video while bytes/hash remain valid",
+      "acceptance": "Every release asset has matched source rights and owner authorization; unresolved rights block publication",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "OPS-01",
+      "wave": "W4",
+      "title": "Separate liveness, readiness, delivery and business acceptance",
+      "priority": "P1",
+      "dependencies": [
+        "NET-04"
+      ],
+      "red_test": "Worker heartbeat fresh with 100 stale pending jobs and no receiver ACK",
+      "acceptance": "No metric implies greater assurance than observed; unknown/failed channel blocks release",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "OPS-02",
+      "wave": "W4",
+      "title": "Predeclare production SLI/SLO/alert thresholds",
+      "priority": "P1",
+      "dependencies": [
+        "OPS-01",
+        "WEB-03"
+      ],
+      "red_test": "Report 100% availability from synthetic soak with no field requests",
+      "acceptance": "Adopted pre-run SLO; no backfilled goals; actual monitored values with data-quality bounds",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "OPS-03",
+      "wave": "W4",
+      "title": "Correlate host, power-guard and external monitoring failures",
+      "priority": "P1",
+      "dependencies": [
+        "OPS-01"
+      ],
+      "red_test": "Trigger false heartbeat DOWN during intentional power guard; real failed sender",
+      "acceptance": "Each incident has provider event ID and root-cause status; unknown remains unknown",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "OPS-04",
+      "wave": "W4",
+      "title": "Authorize actual privacy processing and notices",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-01"
+      ],
+      "red_test": "Find contact form with no approved policy and no documented retention authorization",
+      "acceptance": "Signed/recorded policy edition and purpose/retention decision or legal HOLD",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "OPS-05",
+      "wave": "W4",
+      "title": "Retention, deletion and backup lifecycle consistency",
+      "priority": "P1",
+      "dependencies": [
+        "DB-08",
+        "OPS-04"
+      ],
+      "red_test": "Insert expired and legal-hold records, simulate deletion and restoration from old backup",
+      "acceptance": "Data lifecycle verified; no irreversible auto-delete without approved policy",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "OPS-06",
+      "wave": "W4",
+      "title": "Commercial effective-dated rates and quote semantics",
+      "priority": "P1",
+      "dependencies": [
+        "WEB-07"
+      ],
+      "red_test": "Compare 1C external proposed rates with site, inject conflicting quote or rounding",
+      "acceptance": "Unknown or conflicting rate => publish HOLD or label explicitly unverified; no unapproved assumptions",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "OPS-07",
+      "wave": "W4",
+      "title": "Domain TLS edge, production rollout and rollback rehearsal",
+      "priority": "P1",
+      "dependencies": [
+        "NET-02",
+        "EVD-08"
+      ],
+      "red_test": "Certificate mismatch, wrong DNS target, missing redirect/HSTS, broken new rollout",
+      "acceptance": "DNS/TLS/rollback proof and owner authorization separate from source CI",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "OPS-08",
+      "wave": "W4",
+      "title": "Conjunctive owner release acceptance B1–B9 + T1–T7",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-08",
+        "OPS-02",
+        "OPS-04",
+        "OPS-05",
+        "OPS-06",
+        "OPS-07",
+        "WEB-08"
+      ],
+      "red_test": "Keep one source absent and run green CI",
+      "acceptance": "Release PASS iff all mandatory leaves are evidence-verified at target version and owner deploy authorization exists",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "ADV-01",
+      "wave": "W5",
+      "title": "Threat model with attack trees and known trust boundaries",
+      "priority": "P1",
+      "dependencies": [
+        "NET-03",
+        "NET-06"
+      ],
+      "red_test": "New data flow bypasses source-sink inventory without requiring update",
+      "acceptance": "Every high-impact path linked to at least one test and owner of risk",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "ADV-02",
+      "wave": "W5",
+      "title": "Mutation score on critical safety and integrity contracts",
+      "priority": "P1",
+      "dependencies": [
+        "EVD-03",
+        "EVD-04",
+        "DB-04"
+      ],
+      "red_test": "Mutate HMAC verification, FK checks, dedup uniqueness, replay or budget bounds",
+      "acceptance": "All designated critical mutants killed; score measured without arbitrary blanket 100% claim",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "ADV-03",
+      "wave": "W5",
+      "title": "Model/state-machine cross-process and temporal fault test",
+      "priority": "P1",
+      "dependencies": [
+        "DB-03",
+        "NET-05"
+      ],
+      "red_test": "Schedule concurrent retry, quota, crash and worker states with fake time",
+      "acceptance": "Minimal counterexample recorded; no lost accepted lead or silent invariant breach",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "ADV-04",
+      "wave": "W5",
+      "title": "Extended measured soak with anti-leak and adversarial events",
+      "priority": "P2",
+      "dependencies": [
+        "EVD-05",
+        "OPS-01"
+      ],
+      "red_test": "Inject stuck downstream, server restart, disk pressure, repeated packet faults",
+      "acceptance": "Observed duration, integrity, backlog and process samples pass independent checker at same SHA",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "ADV-05",
+      "wave": "W5",
+      "title": "Date/locale/DST, integer precision, and boundary fuzz",
+      "priority": "P2",
+      "dependencies": [
+        "WEB-07"
+      ],
+      "red_test": "Time-zone offset around DST/day boundary, malformed Unicode and huge integer",
+      "acceptance": "All documented boundary cases invariant or explicit rejection; discrepancies fixed or scoped",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "ADV-06",
+      "wave": "W5",
+      "title": "Supply-chain attestations and sandbox anti-tamper",
+      "priority": "P2",
+      "dependencies": [
+        "NET-07",
+        "NET-08"
+      ],
+      "red_test": "Change action pin or wheel hash and replay stale receipt",
+      "acceptance": "Mutation rejected; valid source/runner/dependency manifest reproducible within documented limits",
+      "execution_status": "IMPLEMENTED",
+      "verification_status": "INFERRED",
+      "external_prerequisite": false
+    },
+    {
+      "id": "ADV-07",
+      "wave": "W5",
+      "title": "Real-device accessibility and UI adversarial evaluation",
+      "priority": "P2",
+      "dependencies": [
+        "WEB-01",
+        "WEB-03",
+        "WEB-04"
+      ],
+      "red_test": "200% text, high contrast, reduced motion, keyboard only, screen reader, iOS Safari",
+      "acceptance": "No unresolved WCAG AA critical failure and recorded field boundary; owner visual approval separate",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    },
+    {
+      "id": "ADV-08",
+      "wave": "W5",
+      "title": "Final assurance case with signed release/no-release decision",
+      "priority": "P1",
+      "dependencies": [
+        "OPS-08",
+        "ADV-01",
+        "ADV-02",
+        "ADV-04",
+        "ADV-06",
+        "ADV-07"
+      ],
+      "red_test": "Withdraw one mandatory provider receipt after all code gates become green",
+      "acceptance": "Zero mandatory unknowns, no new P0/P1, current immutable code proof, owner authorization; otherwise HOLD",
+      "execution_status": "BLOCKED",
+      "verification_status": "UNKNOWN",
+      "external_prerequisite": true
+    }
+  ]
+}
