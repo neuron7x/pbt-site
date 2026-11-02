@@ -1,0 +1,138 @@
+# Bounded read-only evidence closure. Publishes a trial proof as an artifact; NEVER pushes it.
+name: PBT / Source-bound engineering evidence closure (non-deploy)
+on:
+  pull_request:
+    branches: [main]
+    paths: ['.github/workflows/evidence-closure.yml']
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: pbt-evidence-closure-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-bound-reconcile:
+    name: Provider ZIP → exact SHA → independent proof → engineering gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      SOURCE_SHA: ${{ github.event.pull_request.base.sha || github.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout immutable current main (not synthetic PR merge)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          ref: ${{ env.SOURCE_SHA }}
+          fetch-depth: 0
+      - name: Pinned Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - name: Verify exact source checkout and create fail-closed reporting slot
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          printf 'EVID_DIR=%s\n' "$RUNNER_TEMP/pbt-authenticated-zips" >> "$GITHUB_ENV"
+          printf 'REPORT_DIR=%s\n' "$RUNNER_TEMP/pbt-proof-reports" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/pbt-proof-reports" "$RUNNER_TEMP/pbt-authenticated-zips"
+          printf '%s\n' 'NOT_ACCEPTED' > "$RUNNER_TEMP/pbt-proof-reports/status.txt"
+          printf '%s\n' "$SOURCE_SHA" > "$RUNNER_TEMP/pbt-proof-reports/source-sha.txt"
+          command -v gh
+      - name: Wait boundedly for all five exact-main push workflows
+        run: |
+          python - <<'PY'
+          import json, os, subprocess, time
+          from tools.evidence_collect import WORKFLOW_ROLE
+          repo, head = os.environ['GITHUB_REPOSITORY'], os.environ['SOURCE_SHA']
+          expected = set(WORKFLOW_ROLE.values())
+          for attempt in range(43):
+              ref = json.loads(subprocess.check_output(
+                  ['gh','api',f'repos/{repo}/git/ref/heads/main'], timeout=45))['object']['sha']
+              if ref != head:
+                  raise SystemExit(f'SOURCE_DRIFT:{ref} != {head}')
+              response = json.loads(subprocess.check_output(
+                  ['gh','api',f'repos/{repo}/actions/runs?head_sha={head}&per_page=100'],timeout=60))
+              selected = {}
+              for run in sorted(response.get('workflow_runs',[]),
+                                key=lambda r: (r['created_at'], r['run_attempt'])):
+                  role = WORKFLOW_ROLE.get(run['name'])
+                  if role and run['head_sha'] == head and run['event'] == 'push':
+                      selected[role] = run
+              if len(selected) == len(expected):
+                  if all(r['status']=='completed' and r['conclusion']=='success' for r in selected.values()):
+                      print('PROVIDER_CI_SUCCESS',json.dumps({k:v['id'] for k,v in selected.items()},sort_keys=True))
+                      break
+                  if any(r['status']=='completed' and r['conclusion']!='success' for r in selected.values()):
+                      raise SystemExit('REQUIRED_MAIN_RUN_FAILED_OR_CANCELLED')
+              if attempt == 42:
+                  raise SystemExit('REQUIRED_MAIN_RUN_NOT_COMPLETED_WITHIN_BOUND')
+              time.sleep(60)
+          PY
+      - name: Collect and bind original artifact bytes to GitHub provider SHA-256
+        run: |
+          python tools/evidence_collect.py --kind push --head "$SOURCE_SHA" \
+            --base "$SOURCE_SHA" --out "$EVID_DIR"
+      - name: Independently verify all exact-main roles and original bytes
+        run: |
+          python tools/meta_evidence_gate.py \
+            --manifest "$EVID_DIR/manifest.json" --evidence-dir "$EVID_DIR" \
+            --policy config/runtime-soak-budgets.json \
+            --expected-head "$SOURCE_SHA" --expected-base "$SOURCE_SHA" \
+            > "$REPORT_DIR/meta-decision.json"
+      - name: Reconcile the actual 48-task ledger into a local proof-only tree
+        run: |
+          python tools/evidence_reconcile.py --evidence-dir "$EVID_DIR" --close
+          test -f "assurance/evidence/$SOURCE_SHA/receipts.json"
+          test -f "assurance/evidence/$SOURCE_SHA/decision.json"
+          git add -- assurance/ledger.json assurance/case.json "assurance/evidence/$SOURCE_SHA/"
+          python - <<'PY'
+          import os, subprocess
+          sha=os.environ['SOURCE_SHA']
+          changed=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          approved={'assurance/ledger.json','assurance/case.json'}
+          assert changed and all(p in approved or p.startswith(f'assurance/evidence/{sha}/') for p in changed),changed
+          PY
+          git -c user.name='PBT Evidence Reconciler' -c user.email='evidence@invalid' \
+            commit -m "proof(evidence): source-scoped technical reconciliation $SOURCE_SHA"
+          git rev-parse HEAD > "$REPORT_DIR/proof-local-commit-sha.txt"
+      - name: Independently evaluate source-constrained engineering acceptance
+        run: |
+          TARGET_SHA="$(cat "$REPORT_DIR/proof-local-commit-sha.txt")"
+          python tools/assurance_check.py --require engineering \
+            --target-sha "$TARGET_SHA" --evidence-dir "$EVID_DIR" \
+            --out "$REPORT_DIR/engineering-decision.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads((Path(os.environ['REPORT_DIR'])/'engineering-decision.json').read_text())
+          assert d['decision']=='ENGINEERING_ACCEPTED',d
+          assert d['technical_completion']=='PASS' and all(d['claims'][f'C{i}']=='PASS' for i in range(1,10)),d
+          assert d['C0']=='UNKNOWN' and d['claims']['C10']=='UNKNOWN',d
+          print('ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY; PRODUCTION_HOLD')
+          PY
+      - name: Verify main did not drift and preserve proof receipts only
+        run: |
+          ACTUAL="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          test "$ACTUAL" = "$SOURCE_SHA"
+          cp "assurance/evidence/$SOURCE_SHA/receipts.json" "$REPORT_DIR/receipts.json"
+          cp "assurance/evidence/$SOURCE_SHA/decision.json" "$REPORT_DIR/offline-decision.json"
+          cp "$EVID_DIR/manifest.json" "$REPORT_DIR/provider-manifest.json"
+          cp assurance/ledger.json "$REPORT_DIR/reconciled-ledger.json"
+          cp assurance/case.json "$REPORT_DIR/reconciled-case.json"
+          printf '%s\n' 'ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY / PRODUCTION_HOLD' > "$REPORT_DIR/status.txt"
+          (cd "$REPORT_DIR" && sha256sum *.json > SHA256SUMS)
+      - name: Upload receipt/proof evidence even when validation fails
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: pbt-evidence-closure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pbt-proof-reports/
+          if-no-files-found: warn
+          retention-days: 14
