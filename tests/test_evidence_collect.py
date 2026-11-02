@@ -154,12 +154,23 @@ def test_truncated_run_list_fails_closed(tmp_path):
         _collect(p, tmp_path)
 
 
-def test_closure_workflow_reuses_collector_attempt_oracle():
+def test_closure_watcher_is_base_checkout_compatible_and_attempt_ordered():
+    # A PR editing this YAML runs the workflow from the PR, but checks out BASE main.
+    # Do not import a NEW helper absent on that measured base: prove the embedded code compiles.
+    import textwrap
     source = (Path(__file__).resolve().parents[1] / '.github/workflows/evidence-closure.yml').read_text()
-    assert 'from tools.evidence_collect import WORKFLOW_ROLE, select_runs' in source
-    assert "selected, pending = select_runs(" in source
-    assert 'and not pending' in source
-    assert "key=lambda r: (r['created_at'], r['run_attempt'])" not in source
+    marker = '      - name: Wait boundedly for all five exact-main push workflows'
+    script = source.split(marker, 1)[1].split("          python - <<'PY'\\n", 1)
+    if len(script) == 1:
+        script = source.split(marker, 1)[1].split("          python - <<'PY'\n", 1)
+    assert len(script) == 2
+    code = textwrap.dedent(script[1].split("          PY\n", 1)[0])
+    compile(code, 'pbt-evidence-closure-inline', 'exec')
+    assert 'from tools.evidence_collect import WORKFLOW_ROLE\n' in code
+    assert 'run.get(\'run_started_at\')' in code
+    assert 'and not pending' in code
+    assert 'select_runs' not in code
+    assert "key=lambda r: (r['created_at'], r['run_attempt'])" not in code
 
 
 def test_failed_refresh_invalidates_previously_successful_manifest(tmp_path):
