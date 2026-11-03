@@ -117,27 +117,29 @@ def validate_sbom_contract(bom):
             raise Rejected('duplicate_or_missing_sbom_ref')
         refs.add(ref)
         origin = component.get('properties')
-        if (not isinstance(origin, list) or len(origin) != 1
-                or origin[0] != {'name': 'pbt:source-lockfile', 'value': origin[0].get('value')}
+        if (not isinstance(origin, list) or len(origin) != 1 or not isinstance(origin[0], dict)
+                or set(origin[0]) != {'name', 'value'}
+                or origin[0]['name'] != 'pbt:source-lockfile'
                 or origin[0]['value'] not in LOCKS):
             raise Rejected('invalid_component_lock_origin')
         hashes = component.get('hashes')
         if (not isinstance(hashes, list) or not hashes
-                or any(h.get('alg') != 'SHA-256' or not re.fullmatch(r'[0-9a-f]{64}', h.get('content', ''))
-                       for h in hashes)):
+                or any(not isinstance(h, dict) or h.get('alg') != 'SHA-256'
+                       or not isinstance(h.get('content'), str)
+                       or not re.fullmatch(r'[0-9a-f]{64}', h['content']) for h in hashes)):
             raise Rejected('invalid_component_hashes')
     return len(components)
 
 
 def sbom(root):
-    # The deployed HTTP server is stdlib-only; these hashed locks are CI/test/security tools.
+    # CI/test/security locks are required for evidence generation; the deployed server is stdlib-only.
     components = []
     for name in LOCKS:
         for item in locked_requirements(root / name):
             components.append({'type': 'library', 'name': item['name'], 'version': item['version'],
                                'bom-ref': f"{name}::{item['name']}@{item['version']}",
                                'purl': f"pkg:pypi/{item['name']}@{item['version']}",
-                               'scope': 'optional',
+                               'scope': 'required',
                                'properties': [{'name': 'pbt:source-lockfile', 'value': name}],
                                'hashes': [{'alg': 'SHA-256', 'content': h} for h in item['hashes']]})
     report = {'bomFormat': 'CycloneDX', 'specVersion': '1.5', 'components': components,
