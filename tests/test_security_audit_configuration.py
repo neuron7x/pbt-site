@@ -110,7 +110,7 @@ def assert_audit_policy(workflow):
     assert '--report /tmp/pip-audit-output.txt --output artifacts/security/osv-sast-receipt.json' in workflow
     assert 'AUDIT_OUTCOME: ${{ steps.sast_complete_audit.outcome }}' in workflow
     assert 'AUDIT_BASELINE_OUTCOME: ${{ steps.sast_audit.outcome }}' in workflow
-    assert 'artifacts/security/osv-sast-receipt.json' in workflow
+    assert workflow.count('            artifacts/security/osv-sast-receipt.json') == 1
     assert workflow.index('id: complete_audit') < workflow.index('python tools/security_receipt.py')
     assert 'AUDIT_OUTCOME: ${{ steps.complete_audit.outcome }}' in workflow
     assert 'AUDIT_BASELINE_OUTCOME: ${{ steps.audit.outcome }}' in workflow
