@@ -1,0 +1,50 @@
+{
+ "artifact_count": 9,
+ "base_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+ "claim_boundary": "offline cross-consistency of supplied GitHub metadata and bytes, not authenticated GitHub API, production SLO, field INP or merge authorization",
+ "head_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+ "junit_tests": {
+  "http": 271,
+  "release": 976
+ },
+ "mobile": {
+  "precision": {
+   "max_deferred_switch_shift": 0,
+   "p75_cls": 0.01232,
+   "p75_lcp_ms": 1364.0
+  },
+  "sky": {
+   "max_deferred_switch_shift": 0,
+   "p75_cls": 0.00749,
+   "p75_lcp_ms": 1200.0
+  }
+ },
+ "mutation": {
+  "KILLED": 68,
+  "UNTESTABLE": 1
+ },
+ "osv_dependencies": 11,
+ "policy_digest": "f89366c97190ea3640d0e77a6242150fea1cde3e01a836388a713fdcb8c6687f",
+ "repository": "neuron7x/pbt-site",
+ "sast": {
+  "components": 18,
+  "files_scanned": 37
+ },
+ "schema": "pbt-exact-head-evidence-decision-v2",
+ "soak": {
+  "accepted": 3999,
+  "api_p99_ms": 5.034,
+  "duration_s": 1800.007,
+  "sampled_child_count_max": 1,
+  "tree_rss_peak_kib": 63636
+ },
+ "status": "PASS",
+ "target": {
+  "kind": "push",
+  "pr_number": null,
+  "ref": "refs/heads/main"
+ },
+ "verified_png": 32,
+ "verified_png_chunks": 2884,
+ "workflow_count": 5
+}

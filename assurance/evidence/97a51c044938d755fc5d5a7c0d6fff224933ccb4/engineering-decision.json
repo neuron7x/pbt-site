@@ -1,0 +1,53 @@
+{
+ "C0": "UNKNOWN",
+ "bound_units": 38,
+ "claims": {
+  "C1": "PASS",
+  "C10": "UNKNOWN",
+  "C2": "PASS",
+  "C3": "PASS",
+  "C4": "PASS",
+  "C5": "PASS",
+  "C6": "PASS",
+  "C7": "PASS",
+  "C8": "PASS",
+  "C9": "PASS"
+ },
+ "decision": "ENGINEERING_ACCEPTED",
+ "dispositions": {
+  "BLOCKED_EXTERNAL": 18,
+  "VERIFIED": 30
+ },
+ "evidence_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+ "external": {
+  "B1": "UNKNOWN:external_attestation_not_supplied",
+  "B2": "UNKNOWN:external_attestation_not_supplied",
+  "B3": "UNKNOWN:external_attestation_not_supplied",
+  "B4": "UNKNOWN:external_attestation_not_supplied",
+  "B5": "UNKNOWN:external_attestation_not_supplied",
+  "B6": "UNKNOWN:external_attestation_not_supplied",
+  "B7": "UNKNOWN:external_attestation_not_supplied",
+  "B8": "UNKNOWN:external_attestation_not_supplied",
+  "B9": "UNKNOWN:external_attestation_not_supplied",
+  "D1": "UNKNOWN:external_attestation_not_supplied",
+  "F1": "UNKNOWN:external_attestation_not_supplied",
+  "H1": "UNKNOWN:external_attestation_not_supplied",
+  "R1": "UNKNOWN:external_attestation_not_supplied",
+  "R2": "UNKNOWN:external_attestation_not_supplied",
+  "R3": "UNKNOWN:external_attestation_not_supplied",
+  "S1": "UNKNOWN:external_attestation_not_supplied"
+ },
+ "gate": "PASS",
+ "junit_tests": {
+  "http": 271,
+  "release": 976
+ },
+ "mutation": {
+  "KILLED": 68,
+  "UNTESTABLE": 1
+ },
+ "schema": "pbt-assurance-decision-v2",
+ "scope": "declared envelope in docs/ASSURANCE.md; finite tests; provider API as root of trust",
+ "target_sha": "9bf4a17f6c8283fdee279f426ea839dfc85aa103",
+ "technical_completion": "PASS"
+}

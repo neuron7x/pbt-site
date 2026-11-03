@@ -1,0 +1,2257 @@
+{
+ "junit_sha256": "c73f1e64bd2ec26bfd919ac6bbd5ecc6266df21defc53318ed8a7f76b9e2a9cb",
+ "mutation_catalog_sha256": "0479a5afbf046f98033ed8f5b762cd7e363e8bbf508cc0de6429e01d73a21d27",
+ "repository": "neuron7x/pbt-site",
+ "schema": "pbt-execution-receipts-v1",
+ "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+ "target": {
+  "kind": "push",
+  "pr_number": null,
+  "ref": "refs/heads/main"
+ },
+ "units": {
+  "ADV-01": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_assurance_case::test_threat_model_covers_every_endpoint_and_links_real_tests"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-01-unmodelled-endpoint"
+    ],
+    "oracle_identifier": "tests/test_assurance_case.py::test_threat_model_covers_every_endpoint_and_links_real_tests",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_assurance_case::test_controls_map_names_real_tests_and_claims_no_whole_standard"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-01-unmodelled-endpoint"
+    ],
+    "oracle_identifier": "tests/test_assurance_case.py::test_controls_map_names_real_tests_and_claims_no_whole_standard",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_dom_trust_boundary::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-01-unmodelled-endpoint"
+    ],
+    "oracle_identifier": "tests/test_dom_trust_boundary.py::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "ADV-02": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 8,
+    "junit_testcase_ids": [
+     "tests.test_mutation_runner::test_ambiguous_edit_is_invalid",
+     "tests.test_mutation_runner::test_catalog_shape_is_complete",
+     "tests.test_mutation_runner::test_collection_error_is_invalid_not_killed",
+     "tests.test_mutation_runner::test_detected_fault_is_killed_and_tree_is_restored",
+     "tests.test_mutation_runner::test_edit_that_does_not_apply_is_invalid_not_killed",
+     "tests.test_mutation_runner::test_full_run_refuses_a_node_oracle_that_fails_on_clean_code",
+     "tests.test_mutation_runner::test_hang_is_not_reported_as_a_kill",
+     "tests.test_mutation_runner::test_undetected_fault_survives"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-03-catalog-coverage"
+    ],
+    "oracle_identifier": "tests/test_mutation_runner.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "ADV-03": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 3,
+    "junit_testcase_ids": [
+     "tests.test_stateful_model::test_random_walk_with_crashes_preserves_every_invariant[1729]",
+     "tests.test_stateful_model::test_random_walk_with_crashes_preserves_every_invariant[20261101]",
+     "tests.test_stateful_model::test_random_walk_with_crashes_preserves_every_invariant[7]"
+    ],
+    "negative_control_identifier": [
+     "M-NET-05-quota-not-charged"
+    ],
+    "oracle_identifier": "tests/test_stateful_model.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "ADV-04": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_runtime_soak_evidence::test_verifier_rejects_coherent_report_over_the_latency_budget"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-04-p99-limit"
+    ],
+    "oracle_identifier": "tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 8,
+    "junit_testcase_ids": [
+     "tests.test_runtime_soak_contract::test_crm_incomplete_transport_fails_closed_and_is_separate_from_hmac",
+     "tests.test_runtime_soak_contract::test_crm_rejects_complete_invalid_hmac_and_signed_invalid_payload",
+     "tests.test_runtime_soak_contract::test_proc_tree_census_sees_child_of_nonleader_thread",
+     "tests.test_runtime_soak_contract::test_short_smoke_real_socket_fault_recovery_and_hmac",
+     "tests.test_runtime_soak_contract::test_soak_duration_and_budgets_cannot_be_diluted",
+     "tests.test_runtime_soak_contract::test_soak_mode_refuses_tiny_duration_without_creating_evidence",
+     "tests.test_runtime_soak_contract::test_soak_workflow_can_measure_real_main_sha_not_only_a_pr",
+     "tests.test_runtime_soak_contract::test_soak_workflow_preserves_1800s_and_readonly_permissions"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-04-p99-limit"
+    ],
+    "oracle_identifier": "tests/test_runtime_soak_contract.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_disk_full_during_accept_is_500_with_no_partial_state"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-04-p99-limit"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_disk_full_during_accept_is_500_with_no_partial_state",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "ADV-05": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 24,
+    "junit_testcase_ids": [
+     "tests.test_date_policy::test_browser_validator_uses_the_same_civil_date[auckland-autumn]",
+     "tests.test_date_policy::test_browser_validator_uses_the_same_civil_date[auckland-new-year]",
+     "tests.test_date_policy::test_browser_validator_uses_the_same_civil_date[los-angeles-spring]",
+     "tests.test_date_policy::test_browser_validator_uses_the_same_civil_date[utc-autumn-dst]",
+     "tests.test_date_policy::test_browser_validator_uses_the_same_civil_date[utc-new-year]",
+     "tests.test_date_policy::test_browser_validator_uses_the_same_civil_date[utc-spring-dst]",
+     "tests.test_date_policy::test_browser_without_the_new_zone_name_can_still_validate_a_date",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[0000-01-01]",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[2026-02-30]",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[2026-13-01]",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[2027-01-01T00:00]",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[2027-1-1]",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[9999-12-32]",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[\\u0662\\u0660\\u0662\\u0667-\\u0660\\u0661-\\u0660\\u0661]",
+     "tests.test_date_policy::test_malformed_dates_rejected_by_server_when_nonempty[]",
+     "tests.test_date_policy::test_server_civil_date_is_independent_of_host_timezone[America/Los_Angeles]",
+     "tests.test_date_policy::test_server_civil_date_is_independent_of_host_timezone[Europe/Kyiv]",
+     "tests.test_date_policy::test_server_civil_date_is_independent_of_host_timezone[Pacific/Auckland]",
+     "tests.test_date_policy::test_server_civil_date_is_independent_of_host_timezone[UTC]",
+     "tests.test_date_policy::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[America/Los_Angeles]",
+     "tests.test_date_policy::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[Europe/Kyiv]",
+     "tests.test_date_policy::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[Pacific/Auckland]",
+     "tests.test_date_policy::test_server_rejects_kyiv_yesterday_regardless_of_host_timezone[UTC]",
+     "tests.test_date_policy::test_whitespace_date_through_the_real_validator_is_rejected_not_absent"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-05-host-date",
+     "M-ADV-05-browser-date"
+    ],
+    "oracle_identifier": "tests/test_date_policy.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "ADV-06": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_unpinned_action_is_rejected"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-06-unpinned-action"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_unpinned_action_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 3,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_weak_lock_files_are_rejected[-empty_lock]",
+     "tests.test_supply_chain::test_weak_lock_files_are_rejected[pkg==1.0 \\\\\\n    --hash=sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\nother>=2.0 \\\\\\n    --hash=sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\\n-unpinned_requirement]",
+     "tests.test_supply_chain::test_weak_lock_files_are_rejected[pkg==1.0\\n-requirement_without_hash]"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-06-unpinned-action"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_weak_lock_files_are_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_stale_receipt_after_pin_or_lock_change_is_rejected"
+    ],
+    "negative_control_identifier": [
+     "M-ADV-06-unpinned-action"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_stale_receipt_after_pin_or_lock_change_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "ADV-08.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_acceptance_adversarial::test_production_stays_on_hold_without_signed_receipts"
+    ],
+    "negative_control_identifier": [
+     "M-ACCEPT-external-file"
+    ],
+    "oracle_identifier": "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "DB-01": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_server_connection_enforces_foreign_keys_and_rejects_orphan"
+    ],
+    "negative_control_identifier": [
+     "M-DB-01-fk-pragma",
+     "M-DB-01-readback"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_server_connection_enforces_foreign_keys_and_rejects_orphan",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_outbox_insert_inside_real_acceptance_path_keeps_fk_clean"
+    ],
+    "negative_control_identifier": [
+     "M-DB-01-fk-pragma",
+     "M-DB-01-readback"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_outbox_insert_inside_real_acceptance_path_keeps_fk_clean",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "DB-02": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_migration_failure_rolls_back_every_schema_write_then_retry_converges"
+    ],
+    "negative_control_identifier": [
+     "M-DB-02-atomic-migration",
+     "M-DB-02-silent-orphan-repair",
+     "M-DB-06-fk-check"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_migration_failure_rolls_back_every_schema_write_then_retry_converges",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_legacy_orphan_is_reported_never_repaired_and_never_lost"
+    ],
+    "negative_control_identifier": [
+     "M-DB-02-atomic-migration",
+     "M-DB-02-silent-orphan-repair",
+     "M-DB-06-fk-check"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_legacy_orphan_is_reported_never_repaired_and_never_lost",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_restore_cutpoints::test_restore_refuses_snapshot_with_foreign_key_violations"
+    ],
+    "negative_control_identifier": [
+     "M-DB-02-atomic-migration",
+     "M-DB-02-silent-orphan-repair",
+     "M-DB-06-fk-check"
+    ],
+    "oracle_identifier": "tests/test_restore_cutpoints.py::test_restore_refuses_snapshot_with_foreign_key_violations",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "DB-03": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement"
+    ],
+    "negative_control_identifier": [
+     "M-DB-03-same-key-replaces",
+     "M-DB-03-unique-index"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 2,
+    "junit_testcase_ids": [
+     "tests.test_atomic_lead_quota::test_same_ip_parallel_distinct_leads_never_exceed_quota",
+     "tests.test_atomic_lead_quota::test_same_key_scheduled_replay_or_conflict_before_quota"
+    ],
+    "negative_control_identifier": [
+     "M-DB-03-same-key-replaces",
+     "M-DB-03-unique-index"
+    ],
+    "oracle_identifier": "tests/test_atomic_lead_quota.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_leads::test_concurrent_duplicates_are_one_lead"
+    ],
+    "negative_control_identifier": [
+     "M-DB-03-same-key-replaces",
+     "M-DB-03-unique-index"
+    ],
+    "oracle_identifier": "tests/test_leads.py::test_concurrent_duplicates_are_one_lead",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "DB-04": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint[after_commit-True]",
+     "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint[after_insert-False]",
+     "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint[after_outbox-False]",
+     "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint[before_begin-False]",
+     "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint[before_commit-False]",
+     "tests.test_data_integrity::test_process_death_at_each_acceptance_cutpoint[before_reply-True]"
+    ],
+    "negative_control_identifier": [
+     "M-DB-04-reply-before-commit",
+     "M-DB-04-lead-without-outbox-atomicity"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_data_integrity::test_disk_full_during_accept_is_500_with_no_partial_state"
+    ],
+    "negative_control_identifier": [
+     "M-DB-04-reply-before-commit",
+     "M-DB-04-lead-without-outbox-atomicity"
+    ],
+    "oracle_identifier": "tests/test_data_integrity.py::test_disk_full_during_accept_is_500_with_no_partial_state",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "DB-05": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 5,
+    "junit_testcase_ids": [
+     "tests.test_lead_reload_idempotency::test_blocked_storage_degrades_to_in_memory_idempotency",
+     "tests.test_lead_reload_idempotency::test_changed_payload_after_reload_is_a_new_intent_not_a_conflict",
+     "tests.test_lead_reload_idempotency::test_expired_record_is_not_reused",
+     "tests.test_lead_reload_idempotency::test_lost_response_then_reload_replays_the_same_lead",
+     "tests.test_lead_reload_idempotency::test_storage_holds_no_contact_data_and_clears_on_confirmation"
+    ],
+    "negative_control_identifier": [
+     "M-DB-05-erase-key-on-reload",
+     "M-DB-05-store-payload",
+     "M-DB-05-ignore-expiry"
+    ],
+    "oracle_identifier": "tests/test_lead_reload_idempotency.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "DB-06": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 8,
+    "junit_testcase_ids": [
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[EIO-clean_old]",
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[EIO-hot_journal_old]",
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[ENOSPC-clean_old]",
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[ENOSPC-hot_journal_old]",
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_after-clean_old]",
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_after-hot_journal_old]",
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_before-clean_old]",
+     "tests.test_restore_cutpoints::test_every_filesystem_cutpoint_preserves_old_or_new_generation[kill_before-hot_journal_old]"
+    ],
+    "negative_control_identifier": [
+     "M-DB-06-move-old-away",
+     "M-DB-06-stale-sidecar",
+     "M-DB-06-no-settle",
+     "M-BACKUP-no-lock"
+    ],
+    "oracle_identifier": "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_restore_cutpoints::test_new_generation_never_inherits_stale_sidecars"
+    ],
+    "negative_control_identifier": [
+     "M-DB-06-move-old-away",
+     "M-DB-06-stale-sidecar",
+     "M-DB-06-no-settle",
+     "M-BACKUP-no-lock"
+    ],
+    "oracle_identifier": "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_backup_safety::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
+    ],
+    "negative_control_identifier": [
+     "M-DB-06-move-old-away",
+     "M-DB-06-stale-sidecar",
+     "M-DB-06-no-settle",
+     "M-BACKUP-no-lock"
+    ],
+    "oracle_identifier": "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "DB-08.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_backup_safety::test_restore_drill_measures_rpo_gap_and_never_claims_off_device"
+    ],
+    "negative_control_identifier": [
+     "M-DB-06-rpo-gap"
+    ],
+    "oracle_identifier": "tests/test_backup_safety.py::test_restore_drill_measures_rpo_gap_and_never_claims_off_device",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-01": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_checkout_drift_holds_before_anything_runs"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-01-drift"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_capture_then_verify_round_trip"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-01-drift"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_capture_then_verify_round_trip",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-02": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 49,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_wrong_run]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[child_rss_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[field_inp_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[fork_same_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[historic_pr8_v1_schema]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[hmac_failure]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_falsified]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_utf16_doctype]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[latency_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[missing_role]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_cls_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_event_sha_as_execution]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_forged_budget_flag]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_late_switch_shift]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_lcp_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_wrong_execution_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutant_survived_but_status_pass]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_catalog_diluted]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_invented_rows]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_killed_untestable_swap]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_catalog]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_slice]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_empty_output]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_outcome]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_vulnerability_with_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[outbox_lost]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[png_bad_crc_with_matching_manifest]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[pr_number_on_main_target]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[provenance_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_failed_but_run_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_never_completed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_removed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_skipped]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_cancelled]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_of_another_pull_request]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_open_finding]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_scanned_nothing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sbom_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[soak_coherent_over_latency_budget]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[stale_head]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[tree_rss_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[unsupported_event]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[visual_crc_corruption]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[wrong_source_revision_all_artifacts]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[zip_tampered]"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-02-event-binding",
+     "M-EVD-02-historic-pr8",
+     "M-RUNNER-job-not-completed"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_main_target_uses_push_receipts_and_needs_no_baseline"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-02-event-binding",
+     "M-EVD-02-historic-pr8",
+     "M-RUNNER-job-not-completed"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_main_target_uses_push_receipts_and_needs_no_baseline",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_pull_request_receipts_never_certify_main"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-02-event-binding",
+     "M-EVD-02-historic-pr8",
+     "M-RUNNER-job-not-completed"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_pull_request_receipts_never_certify_main",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_main_receipts_never_certify_a_pull_request"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-02-event-binding",
+     "M-EVD-02-historic-pr8",
+     "M-RUNNER-job-not-completed"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_main_receipts_never_certify_a_pull_request",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-03": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 49,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_wrong_run]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[child_rss_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[field_inp_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[fork_same_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[historic_pr8_v1_schema]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[hmac_failure]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_falsified]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_utf16_doctype]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[latency_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[missing_role]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_cls_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_event_sha_as_execution]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_forged_budget_flag]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_late_switch_shift]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_lcp_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_wrong_execution_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutant_survived_but_status_pass]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_catalog_diluted]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_invented_rows]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_killed_untestable_swap]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_catalog]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_slice]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_empty_output]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_outcome]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_vulnerability_with_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[outbox_lost]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[png_bad_crc_with_matching_manifest]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[pr_number_on_main_target]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[provenance_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_failed_but_run_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_never_completed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_removed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_skipped]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_cancelled]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_of_another_pull_request]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_open_finding]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_scanned_nothing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sbom_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[soak_coherent_over_latency_budget]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[stale_head]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[tree_rss_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[unsupported_event]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[visual_crc_corruption]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[wrong_source_revision_all_artifacts]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[zip_tampered]"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-03-identity"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_required_inventory_names_tests_that_really_exist"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-03-identity"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_required_inventory_names_tests_that_really_exist",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-04": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 49,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_wrong_run]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[child_rss_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[field_inp_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[fork_same_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[historic_pr8_v1_schema]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[hmac_failure]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_falsified]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_utf16_doctype]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[latency_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[missing_role]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_cls_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_event_sha_as_execution]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_forged_budget_flag]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_late_switch_shift]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_lcp_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_wrong_execution_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutant_survived_but_status_pass]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_catalog_diluted]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_invented_rows]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_killed_untestable_swap]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_catalog]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_slice]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_empty_output]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_outcome]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_vulnerability_with_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[outbox_lost]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[png_bad_crc_with_matching_manifest]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[pr_number_on_main_target]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[provenance_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_failed_but_run_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_never_completed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_removed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_skipped]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_cancelled]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_of_another_pull_request]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_open_finding]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_scanned_nothing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sbom_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[soak_coherent_over_latency_budget]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[stale_head]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[tree_rss_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[unsupported_event]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[visual_crc_corruption]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[wrong_source_revision_all_artifacts]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[zip_tampered]"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-04-lcp-budget",
+     "M-EVD-04-cls-budget",
+     "M-EVD-04-deferred-shift"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 12,
+    "junit_testcase_ids": [
+     "tests.test_perf_probe::test_cls_resets_if_a_session_exceeds_five_seconds",
+     "tests.test_perf_probe::test_cls_uses_session_windows_and_excludes_recent_input",
+     "tests.test_perf_probe::test_only_input_related_shifts_do_not_contribute_to_standard_cls",
+     "tests.test_perf_probe::test_p75_is_nearest_rank_not_interpolated",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values0]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values1]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values2]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values3]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values4]",
+     "tests.test_perf_probe::test_shift_source_label_handles_document_text_and_svg_nodes",
+     "tests.test_perf_probe::test_source_identity_records_checked_out_head_not_event_merge_sha",
+     "tests.test_perf_probe::test_source_identity_rejects_checkout_head_mismatch_and_fake_sha"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-04-lcp-budget",
+     "M-EVD-04-cls-budget",
+     "M-EVD-04-deferred-shift"
+    ],
+    "oracle_identifier": "tests/test_perf_probe.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-05": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 49,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_wrong_run]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[child_rss_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[field_inp_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[fork_same_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[historic_pr8_v1_schema]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[hmac_failure]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_falsified]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_utf16_doctype]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[latency_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[missing_role]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_cls_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_event_sha_as_execution]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_forged_budget_flag]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_late_switch_shift]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_lcp_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_wrong_execution_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutant_survived_but_status_pass]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_catalog_diluted]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_invented_rows]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_killed_untestable_swap]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_catalog]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_slice]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_empty_output]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_outcome]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_vulnerability_with_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[outbox_lost]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[png_bad_crc_with_matching_manifest]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[pr_number_on_main_target]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[provenance_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_failed_but_run_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_never_completed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_removed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_skipped]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_cancelled]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_of_another_pull_request]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_open_finding]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_scanned_nothing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sbom_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[soak_coherent_over_latency_budget]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[stale_head]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[tree_rss_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[unsupported_event]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[visual_crc_corruption]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[wrong_source_revision_all_artifacts]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[zip_tampered]"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-05-execution-sha"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_github_sha_is_recorded_separately_and_cannot_stand_in_for_the_checkout"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-05-execution-sha"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_github_sha_is_recorded_separately_and_cannot_stand_in_for_the_checkout",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 12,
+    "junit_testcase_ids": [
+     "tests.test_perf_probe::test_cls_resets_if_a_session_exceeds_five_seconds",
+     "tests.test_perf_probe::test_cls_uses_session_windows_and_excludes_recent_input",
+     "tests.test_perf_probe::test_only_input_related_shifts_do_not_contribute_to_standard_cls",
+     "tests.test_perf_probe::test_p75_is_nearest_rank_not_interpolated",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values0]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values1]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values2]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values3]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values4]",
+     "tests.test_perf_probe::test_shift_source_label_handles_document_text_and_svg_nodes",
+     "tests.test_perf_probe::test_source_identity_records_checked_out_head_not_event_merge_sha",
+     "tests.test_perf_probe::test_source_identity_rejects_checkout_head_mismatch_and_fake_sha"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-05-execution-sha"
+    ],
+    "oracle_identifier": "tests/test_perf_probe.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-06": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_evidence_collect::test_bytes_differing_from_provider_digest_are_rejected"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-06-provider-digest",
+     "M-EVD-06-zip-digest",
+     "M-EVD-06-png-crc"
+    ],
+    "oracle_identifier": "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_evidence_collect::test_artifact_replaced_during_download_is_rejected"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-06-provider-digest",
+     "M-EVD-06-zip-digest",
+     "M-EVD-06-png-crc"
+    ],
+    "oracle_identifier": "tests/test_evidence_collect.py::test_artifact_replaced_during_download_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 3,
+    "junit_testcase_ids": [
+     "tests.test_evidence_collect::test_missing_expired_or_foreign_digest_is_rejected[<lambda>0]",
+     "tests.test_evidence_collect::test_missing_expired_or_foreign_digest_is_rejected[<lambda>1]",
+     "tests.test_evidence_collect::test_missing_expired_or_foreign_digest_is_rejected[<lambda>2]"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-06-provider-digest",
+     "M-EVD-06-zip-digest",
+     "M-EVD-06-png-crc"
+    ],
+    "oracle_identifier": "tests/test_evidence_collect.py::test_missing_expired_or_foreign_digest_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 49,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_wrong_run]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[child_rss_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[field_inp_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[fork_same_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[historic_pr8_v1_schema]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[hmac_failure]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_falsified]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_utf16_doctype]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[latency_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[missing_role]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_cls_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_event_sha_as_execution]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_forged_budget_flag]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_late_switch_shift]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_lcp_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_wrong_execution_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutant_survived_but_status_pass]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_catalog_diluted]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_invented_rows]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_killed_untestable_swap]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_catalog]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_slice]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_empty_output]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_outcome]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_vulnerability_with_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[outbox_lost]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[png_bad_crc_with_matching_manifest]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[pr_number_on_main_target]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[provenance_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_failed_but_run_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_never_completed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_removed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_skipped]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_cancelled]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_of_another_pull_request]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_open_finding]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_scanned_nothing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sbom_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[soak_coherent_over_latency_budget]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[stale_head]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[tree_rss_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[unsupported_event]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[visual_crc_corruption]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[wrong_source_revision_all_artifacts]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[zip_tampered]"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-06-provider-digest",
+     "M-EVD-06-zip-digest",
+     "M-EVD-06-png-crc"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-07": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_reproducibility::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-07-tz-in-bundle"
+    ],
+    "oracle_identifier": "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_reproducibility::test_comparison_detects_a_nondeterministic_input"
+    ],
+    "negative_control_identifier": [
+     "M-EVD-07-tz-in-bundle"
+    ],
+    "oracle_identifier": "tests/test_reproducibility.py::test_comparison_detects_a_nondeterministic_input",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "EVD-08": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_acceptance_adversarial::test_forged_all_pass_ledger_is_not_accepted"
+    ],
+    "negative_control_identifier": [
+     "M-ACCEPT-status-as-evidence",
+     "M-ACCEPT-test-never-ran",
+     "M-ACCEPT-normative"
+    ],
+    "oracle_identifier": "tests/test_acceptance_adversarial.py::test_forged_all_pass_ledger_is_not_accepted",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_acceptance_adversarial::test_hand_edited_receipts_are_rejected"
+    ],
+    "negative_control_identifier": [
+     "M-ACCEPT-status-as-evidence",
+     "M-ACCEPT-test-never-ran",
+     "M-ACCEPT-normative"
+    ],
+    "oracle_identifier": "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_acceptance_adversarial::test_authentic_evidence_is_accepted"
+    ],
+    "negative_control_identifier": [
+     "M-ACCEPT-status-as-evidence",
+     "M-ACCEPT-test-never-ran",
+     "M-ACCEPT-normative"
+    ],
+    "oracle_identifier": "tests/test_acceptance_adversarial.py::test_authentic_evidence_is_accepted",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-01": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 5,
+    "junit_testcase_ids": [
+     "tests.test_http_protocol::test_media_type_is_parsed_not_substring_matched[application/json-patch+json]",
+     "tests.test_http_protocol::test_media_type_is_parsed_not_substring_matched[application/jsonx]",
+     "tests.test_http_protocol::test_media_type_is_parsed_not_substring_matched[multipart/form-data; boundary=application/json]",
+     "tests.test_http_protocol::test_media_type_is_parsed_not_substring_matched[text/plain, application/json]",
+     "tests.test_http_protocol::test_media_type_is_parsed_not_substring_matched[text/plain; x=application/json]"
+    ],
+    "negative_control_identifier": [
+     "M-NET-01-substring-media-type",
+     "M-NET-01-te-accepted",
+     "M-NET-01-deadline"
+    ],
+    "oracle_identifier": "tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 7,
+    "junit_testcase_ids": [
+     "tests.test_http_protocol::test_non_rfc_content_length_is_rejected_without_state[+5]",
+     "tests.test_http_protocol::test_non_rfc_content_length_is_rejected_without_state[-1]",
+     "tests.test_http_protocol::test_non_rfc_content_length_is_rejected_without_state[0x10]",
+     "tests.test_http_protocol::test_non_rfc_content_length_is_rejected_without_state[1_0]",
+     "tests.test_http_protocol::test_non_rfc_content_length_is_rejected_without_state[1e2]",
+     "tests.test_http_protocol::test_non_rfc_content_length_is_rejected_without_state[5, 5]",
+     "tests.test_http_protocol::test_non_rfc_content_length_is_rejected_without_state[\\u0663]"
+    ],
+    "negative_control_identifier": [
+     "M-NET-01-substring-media-type",
+     "M-NET-01-te-accepted",
+     "M-NET-01-deadline"
+    ],
+    "oracle_identifier": "tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_http_protocol::test_slow_clients_hold_slots_for_bounded_wall_clock_only"
+    ],
+    "negative_control_identifier": [
+     "M-NET-01-substring-media-type",
+     "M-NET-01-te-accepted",
+     "M-NET-01-deadline"
+    ],
+    "oracle_identifier": "tests/test_http_protocol.py::test_slow_clients_hold_slots_for_bounded_wall_clock_only",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 3,
+    "junit_testcase_ids": [
+     "tests.test_request_body_deadline::test_complete_body_preserves_existing_idempotent_contract",
+     "tests.test_request_body_deadline::test_trickle_body_hits_absolute_deadline_despite_frequent_bytes",
+     "tests.test_request_body_deadline::test_truncated_but_valid_json_body_is_never_persisted"
+    ],
+    "negative_control_identifier": [
+     "M-NET-01-substring-media-type",
+     "M-NET-01-te-accepted",
+     "M-NET-01-deadline"
+    ],
+    "oracle_identifier": "tests/test_request_body_deadline.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-02.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_http_protocol::test_attacker_first_header_line_cannot_choose_rate_identity"
+    ],
+    "negative_control_identifier": [
+     "M-NET-02-first-xff-line",
+     "M-NET-02-trust-without-flag"
+    ],
+    "oracle_identifier": "tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_http_protocol::test_untrusted_peer_cannot_set_identity_or_hsts"
+    ],
+    "negative_control_identifier": [
+     "M-NET-02-first-xff-line",
+     "M-NET-02-trust-without-flag"
+    ],
+    "oracle_identifier": "tests/test_http_protocol.py::test_untrusted_peer_cannot_set_identity_or_hsts",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-03": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 5,
+    "junit_testcase_ids": [
+     "tests.test_delivery_deadline::test_redirect_does_not_forward_webhook_hmac_to_other_host[301]",
+     "tests.test_delivery_deadline::test_redirect_does_not_forward_webhook_hmac_to_other_host[302]",
+     "tests.test_delivery_deadline::test_redirect_does_not_forward_webhook_hmac_to_other_host[303]",
+     "tests.test_delivery_deadline::test_redirect_does_not_forward_webhook_hmac_to_other_host[307]",
+     "tests.test_delivery_deadline::test_redirect_does_not_forward_webhook_hmac_to_other_host[308]"
+    ],
+    "negative_control_identifier": [
+     "M-NET-03-follow-redirect"
+    ],
+    "oracle_identifier": "tests/test_delivery_deadline.py::test_redirect_does_not_forward_webhook_hmac_to_other_host",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-04.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_outbox_state_machine::test_death_after_remote_ack_redelivers_same_id_after_restart"
+    ],
+    "negative_control_identifier": [
+     "M-NET-04-retry-class",
+     "M-NET-04-hmac-forged",
+     "M-NET-04-terminal-retried",
+     "M-NET-04-unbounded-retry"
+    ],
+    "oracle_identifier": "tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 4,
+    "junit_testcase_ids": [
+     "tests.test_outbox_state_machine::test_transient_status_is_retried_to_acknowledgement[408]",
+     "tests.test_outbox_state_machine::test_transient_status_is_retried_to_acknowledgement[429]",
+     "tests.test_outbox_state_machine::test_transient_status_is_retried_to_acknowledgement[500]",
+     "tests.test_outbox_state_machine::test_transient_status_is_retried_to_acknowledgement[503]"
+    ],
+    "negative_control_identifier": [
+     "M-NET-04-retry-class",
+     "M-NET-04-hmac-forged",
+     "M-NET-04-terminal-retried",
+     "M-NET-04-unbounded-retry"
+    ],
+    "oracle_identifier": "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 5,
+    "junit_testcase_ids": [
+     "tests.test_outbox_state_machine::test_permanent_status_is_terminal_with_exactly_one_attempt[400]",
+     "tests.test_outbox_state_machine::test_permanent_status_is_terminal_with_exactly_one_attempt[403]",
+     "tests.test_outbox_state_machine::test_permanent_status_is_terminal_with_exactly_one_attempt[404]",
+     "tests.test_outbox_state_machine::test_permanent_status_is_terminal_with_exactly_one_attempt[410]",
+     "tests.test_outbox_state_machine::test_permanent_status_is_terminal_with_exactly_one_attempt[422]"
+    ],
+    "negative_control_identifier": [
+     "M-NET-04-retry-class",
+     "M-NET-04-hmac-forged",
+     "M-NET-04-terminal-retried",
+     "M-NET-04-unbounded-retry"
+    ],
+    "oracle_identifier": "tests/test_outbox_state_machine.py::test_permanent_status_is_terminal_with_exactly_one_attempt",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_outbox_state_machine::test_retry_budget_exhaustion_is_an_explicit_terminal_state"
+    ],
+    "negative_control_identifier": [
+     "M-NET-04-retry-class",
+     "M-NET-04-hmac-forged",
+     "M-NET-04-terminal-retried",
+     "M-NET-04-unbounded-retry"
+    ],
+    "oracle_identifier": "tests/test_outbox_state_machine.py::test_retry_budget_exhaustion_is_an_explicit_terminal_state",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_outbox_state_machine::test_slow_receiver_times_out_then_retry_carries_same_identity"
+    ],
+    "negative_control_identifier": [
+     "M-NET-04-retry-class",
+     "M-NET-04-hmac-forged",
+     "M-NET-04-terminal-retried",
+     "M-NET-04-unbounded-retry"
+    ],
+    "oracle_identifier": "tests/test_outbox_state_machine.py::test_slow_receiver_times_out_then_retry_carries_same_identity",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-05": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_http_protocol::test_second_server_on_same_database_fails_closed"
+    ],
+    "negative_control_identifier": [
+     "M-NET-05-no-guard",
+     "M-NET-05-ipv6-per-address",
+     "M-NET-05-migrate-before-guard"
+    ],
+    "oracle_identifier": "tests/test_http_protocol.py::test_second_server_on_same_database_fails_closed",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_http_protocol::test_restore_refuses_while_the_guard_is_held_even_on_another_port"
+    ],
+    "negative_control_identifier": [
+     "M-NET-05-no-guard",
+     "M-NET-05-ipv6-per-address",
+     "M-NET-05-migrate-before-guard"
+    ],
+    "oracle_identifier": "tests/test_http_protocol.py::test_restore_refuses_while_the_guard_is_held_even_on_another_port",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 4,
+    "junit_testcase_ids": [
+     "tests.test_rate_resource_bound::test_25000_distinct_identities_do_not_expand_active_rate_state",
+     "tests.test_rate_resource_bound::test_bounded_overflow_recovers_only_after_the_whole_quota_window",
+     "tests.test_rate_resource_bound::test_quota_clock_is_read_after_acquiring_the_state_lock",
+     "tests.test_rate_resource_bound::test_wall_clock_steps_do_not_expire_or_reset_quota"
+    ],
+    "negative_control_identifier": [
+     "M-NET-05-no-guard",
+     "M-NET-05-ipv6-per-address",
+     "M-NET-05-migrate-before-guard"
+    ],
+    "oracle_identifier": "tests/test_rate_resource_bound.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-06": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 3,
+    "junit_testcase_ids": [
+     "tests.test_dom_trust_boundary::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink",
+     "tests.test_dom_trust_boundary::test_hostile_public_config_is_inert_in_every_sink",
+     "tests.test_dom_trust_boundary::test_positive_control_real_config_keeps_working_links"
+    ],
+    "negative_control_identifier": [
+     "M-NET-06-unescaped-channel",
+     "M-NET-06-any-scheme"
+    ],
+    "oracle_identifier": "tests/test_dom_trust_boundary.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-07": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_scanner_that_did_not_scan_cannot_pass[-0-scanner_output_unparsable]",
+     "tests.test_supply_chain::test_scanner_that_did_not_scan_cannot_pass[-2-scanner_exit_2]",
+     "tests.test_supply_chain::test_scanner_that_did_not_scan_cannot_pass[Traceback-0-scanner_output_unparsable]",
+     "tests.test_supply_chain::test_scanner_that_did_not_scan_cannot_pass[{\"results\": [], \"metrics\": {\"f0.py\": {}, \"_totals\": {\"loc\": 1000}}, \"errors\": []}-0-scanner_scanned_too_little]",
+     "tests.test_supply_chain::test_scanner_that_did_not_scan_cannot_pass[{\"results\": [], \"metrics\": {\"f0.py\": {}, \"f1.py\": {}, \"f2.py\": {}, \"f3.py\": {}, \"f4.py\": {}, \"f5.py\": {}, \"f6.py\": {}, \"f7.py\": {}, \"f8.py\": {}, \"f9.py\": {}, \"f10.py\": {}, \"f11.py\": {}, \"f12.py\": {}, \"f13.py\": {}, \"f14.py\": {}, \"f15.py\": {}, \"f16.py\": {}, \"f17.py\": {}, \"f18.py\": {}, \"f19.py\": {}, \"f20.py\": {}, \"f21.py\": {}, \"f22.py\": {}, \"f23.py\": {}, \"f24.py\": {}, \"f25.py\": {}, \"f26.py\": {}, \"f27.py\": {}, \"f28.py\": {}, \"f29.py\": {}, \"_totals\": {\"loc\": 0}}, \"errors\": []}-0-scanner_scanned_too_little]",
+     "tests.test_supply_chain::test_scanner_that_did_not_scan_cannot_pass[{\"results\": [], \"metrics\": {\"f0.py\": {}, \"f1.py\": {}, \"f2.py\": {}, \"f3.py\": {}, \"f4.py\": {}, \"f5.py\": {}, \"f6.py\": {}, \"f7.py\": {}, \"f8.py\": {}, \"f9.py\": {}, \"f10.py\": {}, \"f11.py\": {}, \"f12.py\": {}, \"f13.py\": {}, \"f14.py\": {}, \"f15.py\": {}, \"f16.py\": {}, \"f17.py\": {}, \"f18.py\": {}, \"f19.py\": {}, \"f20.py\": {}, \"f21.py\": {}, \"f22.py\": {}, \"f23.py\": {}, \"f24.py\": {}, \"f25.py\": {}, \"f26.py\": {}, \"f27.py\": {}, \"f28.py\": {}, \"f29.py\": {}, \"_totals\": {\"loc\": 1000}}, \"errors\": [{\"filename\": \"a\"}]}-0-scanner_reported_errors]"
+    ],
+    "negative_control_identifier": [
+     "M-NET-07-scanner-crash-is-pass"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_scanner_that_did_not_scan_cannot_pass",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_open_finding_fails_and_waiver_needs_rationale_and_cannot_go_stale"
+    ],
+    "negative_control_identifier": [
+     "M-NET-07-scanner-crash-is-pass"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_open_finding_fails_and_waiver_needs_rationale_and_cannot_go_stale",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_real_repository_passes_and_sbom_lists_every_locked_requirement"
+    ],
+    "negative_control_identifier": [
+     "M-NET-07-scanner-crash-is-pass"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_real_repository_passes_and_sbom_lists_every_locked_requirement",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_supply_chain::test_bidi_controls_are_still_stripped_and_absent_from_source"
+    ],
+    "negative_control_identifier": [
+     "M-NET-07-scanner-crash-is-pass"
+    ],
+    "oracle_identifier": "tests/test_supply_chain.py::test_bidi_controls_are_still_stripped_and_absent_from_source",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "NET-08.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_systemd_sandbox::test_candidate_unit_declares_identity_isolation_and_limits",
+     "tests.test_systemd_sandbox::test_installer_does_not_silently_deploy_the_candidate",
+     "tests.test_systemd_sandbox::test_probe_passes_only_when_every_boundary_held",
+     "tests.test_systemd_sandbox::test_probe_reports_the_measured_user_manager_failure",
+     "tests.test_systemd_sandbox::test_probe_treats_an_absent_limit_as_not_held",
+     "tests.test_systemd_sandbox::test_user_unit_states_its_measured_limit"
+    ],
+    "negative_control_identifier": [
+     "M-NET-08-probe-ignores-home"
+    ],
+    "oracle_identifier": "tests/test_systemd_sandbox.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "OPS-01": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_readiness_truth_table::test_clean_local_state_never_claims_receiver_or_business_truth",
+     "tests.test_readiness_truth_table::test_external_receipt_requires_matching_ids_not_a_self_written_flag",
+     "tests.test_readiness_truth_table::test_failed_terminal_rows_fail_and_missing_heartbeat_is_unknown",
+     "tests.test_readiness_truth_table::test_fresh_heartbeat_with_stale_backlog_is_not_ready",
+     "tests.test_readiness_truth_table::test_no_delivery_rows_means_transport_unknown_not_pass",
+     "tests.test_readiness_truth_table::test_unreadable_database_is_unknown_and_output_has_no_payload"
+    ],
+    "negative_control_identifier": [
+     "M-OPS-01-heartbeat-is-healthy",
+     "M-OPS-01-unknown-is-ready",
+     "M-OPS-01-receipt-subset"
+    ],
+    "oracle_identifier": "tests/test_readiness_truth_table.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_outbox_readiness::test_empty_local_only_delivery_is_valid_but_not_proof_of_worker_liveness",
+     "tests.test_outbox_readiness::test_missing_database_and_unconfigured_policy_are_not_silent_success",
+     "tests.test_outbox_readiness::test_non_sqlite_database_is_unknown_not_healthy",
+     "tests.test_outbox_readiness::test_orphan_or_unknown_outbox_status_is_unknown_not_false_healthy",
+     "tests.test_outbox_readiness::test_recent_pending_delivery_is_visible_without_exposing_personal_data",
+     "tests.test_outbox_readiness::test_stale_backlog_and_terminal_failure_are_degraded"
+    ],
+    "negative_control_identifier": [
+     "M-OPS-01-heartbeat-is-healthy",
+     "M-OPS-01-unknown-is-ready",
+     "M-OPS-01-receipt-subset"
+    ],
+    "oracle_identifier": "tests/test_outbox_readiness.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "OPS-03": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_incident_correlation::test_aggregate_missed_heartbeats_without_provider_identity_stay_unknown",
+     "tests.test_incident_correlation::test_delivery_degradation_is_reported_separately_from_cause",
+     "tests.test_incident_correlation::test_intentional_power_guard_stop_is_not_an_application_outage",
+     "tests.test_incident_correlation::test_lead_loss_needs_receiver_evidence_in_both_directions",
+     "tests.test_incident_correlation::test_monitor_down_with_site_answering_locally_blames_the_path",
+     "tests.test_incident_correlation::test_unobserved_local_state_never_becomes_a_cause"
+    ],
+    "negative_control_identifier": [
+     "M-OPS-03-invent-outage"
+    ],
+    "oracle_identifier": "tests/test_incident_correlation.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "OPS-08.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_acceptance_adversarial::test_fabricated_external_receipt_never_closes_a_class"
+    ],
+    "negative_control_identifier": [
+     "M-ACCEPT-external-file"
+    ],
+    "oracle_identifier": "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_acceptance_adversarial::test_production_stays_on_hold_without_signed_receipts"
+    ],
+    "negative_control_identifier": [
+     "M-ACCEPT-external-file"
+    ],
+    "oracle_identifier": "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "WEB-01.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 4,
+    "junit_testcase_ids": [
+     "tests.test_web_assurance::test_keyboard_alone_completes_the_lead_journey[desktop-precision]",
+     "tests.test_web_assurance::test_keyboard_alone_completes_the_lead_journey[desktop-sky]",
+     "tests.test_web_assurance::test_keyboard_alone_completes_the_lead_journey[mobile-precision]",
+     "tests.test_web_assurance::test_keyboard_alone_completes_the_lead_journey[mobile-sky]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-01-hide-focused"
+    ],
+    "oracle_identifier": "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 2,
+    "junit_testcase_ids": [
+     "tests.test_web_assurance::test_wcag_text_spacing_and_320px_reflow_do_not_clip_or_scroll_sideways[precision]",
+     "tests.test_web_assurance::test_wcag_text_spacing_and_320px_reflow_do_not_clip_or_scroll_sideways[sky]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-01-hide-focused"
+    ],
+    "oracle_identifier": "tests/test_web_assurance.py::test_wcag_text_spacing_and_320px_reflow_do_not_clip_or_scroll_sideways",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 2,
+    "junit_testcase_ids": [
+     "tests.test_web_assurance::test_error_state_moves_focus_and_names_the_problem[precision]",
+     "tests.test_web_assurance::test_error_state_moves_focus_and_names_the_problem[sky]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-01-hide-focused"
+    ],
+    "oracle_identifier": "tests/test_web_assurance.py::test_error_state_moves_focus_and_names_the_problem",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "WEB-02": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 49,
+    "junit_testcase_ids": [
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[artifact_wrong_run]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[child_rss_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[field_inp_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[fork_same_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[historic_pr8_v1_schema]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[hmac_failure]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_falsified]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[junit_utf16_doctype]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[latency_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[missing_role]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_cls_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_event_sha_as_execution]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_forged_budget_flag]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_late_switch_shift]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_lcp_over_budget_coherent_summary]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mobile_wrong_execution_sha]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutant_survived_but_status_pass]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_catalog_diluted]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_invented_rows]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_killed_untestable_swap]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_catalog]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[mutation_slice]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_empty_output]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_outcome]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[osv_vulnerability_with_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[outbox_lost]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[png_bad_crc_with_matching_manifest]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[pr_number_on_main_target]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[provenance_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_failed_but_run_success]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_missing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_job_never_completed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_removed]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[required_test_skipped]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_cancelled]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_of_another_pull_request]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[run_reused]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_open_finding]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sast_scanned_nothing]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[sbom_other_revision]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[soak_coherent_over_latency_budget]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[stale_head]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[tree_rss_forged]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[unsupported_event]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[visual_crc_corruption]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[wrong_source_revision_all_artifacts]",
+     "tests.test_meta_evidence_gate::test_forged_success_is_rejected[zip_tampered]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-02-interpolated-p75"
+    ],
+    "oracle_identifier": "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 12,
+    "junit_testcase_ids": [
+     "tests.test_perf_probe::test_cls_resets_if_a_session_exceeds_five_seconds",
+     "tests.test_perf_probe::test_cls_uses_session_windows_and_excludes_recent_input",
+     "tests.test_perf_probe::test_only_input_related_shifts_do_not_contribute_to_standard_cls",
+     "tests.test_perf_probe::test_p75_is_nearest_rank_not_interpolated",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values0]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values1]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values2]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values3]",
+     "tests.test_perf_probe::test_p75_rejects_invalid_or_insufficient_evidence[values4]",
+     "tests.test_perf_probe::test_shift_source_label_handles_document_text_and_svg_nodes",
+     "tests.test_perf_probe::test_source_identity_records_checked_out_head_not_event_merge_sha",
+     "tests.test_perf_probe::test_source_identity_rejects_checkout_head_mismatch_and_fake_sha"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-02-interpolated-p75"
+    ],
+    "oracle_identifier": "tests/test_perf_probe.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "WEB-04": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 2,
+    "junit_testcase_ids": [
+     "tests.test_web_assurance::test_late_fonts_do_not_shift_layout_beyond_cls_budget[precision]",
+     "tests.test_web_assurance::test_late_fonts_do_not_shift_layout_beyond_cls_budget[sky]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-04-late-shift"
+    ],
+    "oracle_identifier": "tests/test_web_assurance.py::test_late_fonts_do_not_shift_layout_beyond_cls_budget",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_hero_video_contrast::test_contrast_sampler_rejects_white_text_on_white_hero",
+     "tests.test_hero_video_contrast::test_contrast_targets_reject_transparent_text_fill",
+     "tests.test_hero_video_contrast::test_hero_text_contrast_on_sampled_video_frames[desktop-precision]",
+     "tests.test_hero_video_contrast::test_hero_text_contrast_on_sampled_video_frames[desktop-sky]",
+     "tests.test_hero_video_contrast::test_hero_text_contrast_on_sampled_video_frames[phone-precision]",
+     "tests.test_hero_video_contrast::test_hero_text_contrast_on_sampled_video_frames[phone-sky]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-04-late-shift"
+    ],
+    "oracle_identifier": "tests/test_hero_video_contrast.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 42,
+    "junit_testcase_ids": [
+     "tests.test_themes::test_accessible_names_include_actual_visible_control_labels",
+     "tests.test_themes::test_axe_wcag22aa_checks_dynamic_interaction_states[invalid-form-precision]",
+     "tests.test_themes::test_axe_wcag22aa_checks_dynamic_interaction_states[invalid-form-sky]",
+     "tests.test_themes::test_axe_wcag22aa_checks_dynamic_interaction_states[modal-menu-precision]",
+     "tests.test_themes::test_axe_wcag22aa_checks_dynamic_interaction_states[modal-menu-sky]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[desktop-precision]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[desktop-sky]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[minimum-phone-precision]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[minimum-phone-sky]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[phone-precision]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[phone-sky]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[small-desktop-precision]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[small-desktop-sky]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[small-phone-precision]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[small-phone-sky]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[tablet-precision]",
+     "tests.test_themes::test_axe_wcag22aa_zero_violations_in_each_theme[tablet-sky]",
+     "tests.test_themes::test_csp_no_inline_script_weakening_in_backend_source",
+     "tests.test_themes::test_default_browser_chrome_color_agrees_with_sky_before_prepaint",
+     "tests.test_themes::test_no_cross_theme_media_fetches_or_dom_rebuild",
+     "tests.test_themes::test_other_tab_selection_does_not_shift_page_and_reload_restores_choice[precision-sky-chromium]",
+     "tests.test_themes::test_other_tab_selection_does_not_shift_page_and_reload_restores_choice[precision-sky-webkit]",
+     "tests.test_themes::test_other_tab_selection_does_not_shift_page_and_reload_restores_choice[sky-precision-chromium]",
+     "tests.test_themes::test_other_tab_selection_does_not_shift_page_and_reload_restores_choice[sky-precision-webkit]",
+     "tests.test_themes::test_prepaint_restores_storage_under_enforced_browser_csp[/-precision]",
+     "tests.test_themes::test_prepaint_restores_storage_under_enforced_browser_csp[/-sky]",
+     "tests.test_themes::test_prepaint_restores_storage_under_enforced_browser_csp[/missing-page-precision]",
+     "tests.test_themes::test_prepaint_restores_storage_under_enforced_browser_csp[/missing-page-sky]",
+     "tests.test_themes::test_restore_precedes_stylesheets_and_csp_stays_hash_based",
+     "tests.test_themes::test_storage_denied_still_allows_in_memory_theme_selection",
+     "tests.test_themes::test_theme_switch_has_no_delayed_unprompted_cls[desktop]",
+     "tests.test_themes::test_theme_switch_has_no_delayed_unprompted_cls[minimum-phone]",
+     "tests.test_themes::test_theme_switch_has_no_delayed_unprompted_cls[phone]",
+     "tests.test_themes::test_theme_switch_has_no_delayed_unprompted_cls[small-desktop]",
+     "tests.test_themes::test_theme_switch_has_no_delayed_unprompted_cls[small-phone]",
+     "tests.test_themes::test_theme_switch_has_no_delayed_unprompted_cls[tablet]",
+     "tests.test_themes::test_theme_toggle_keyboard_storage_and_back_forward[1024-768-False]",
+     "tests.test_themes::test_theme_toggle_keyboard_storage_and_back_forward[1440-900-False]",
+     "tests.test_themes::test_theme_toggle_keyboard_storage_and_back_forward[320-568-True]",
+     "tests.test_themes::test_theme_toggle_keyboard_storage_and_back_forward[360-640-True]",
+     "tests.test_themes::test_theme_toggle_keyboard_storage_and_back_forward[390-844-True]",
+     "tests.test_themes::test_theme_toggle_keyboard_storage_and_back_forward[820-1180-True]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-04-late-shift"
+    ],
+    "oracle_identifier": "tests/test_themes.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "WEB-05": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 6,
+    "junit_testcase_ids": [
+     "tests.test_web_assurance::test_page_transfer_stays_within_predeclared_budget[desktop-precision]",
+     "tests.test_web_assurance::test_page_transfer_stays_within_predeclared_budget[desktop-sky]",
+     "tests.test_web_assurance::test_page_transfer_stays_within_predeclared_budget[mobile-precision]",
+     "tests.test_web_assurance::test_page_transfer_stays_within_predeclared_budget[mobile-sky]",
+     "tests.test_web_assurance::test_page_transfer_stays_within_predeclared_budget[save_data-precision]",
+     "tests.test_web_assurance::test_page_transfer_stays_within_predeclared_budget[save_data-sky]"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-05-video-preload"
+    ],
+    "oracle_identifier": "tests/test_web_assurance.py::test_page_transfer_stays_within_predeclared_budget",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 4,
+    "junit_testcase_ids": [
+     "tests.test_media_budget::test_media_budget_accepts_small_valid_pack",
+     "tests.test_media_budget::test_media_budget_detects_oversize_and_missing_assets",
+     "tests.test_media_budget::test_media_budget_rejects_escape_globs_and_missing_required_categories",
+     "tests.test_media_budget::test_repository_media_pack_within_explicit_baseline_regression_caps"
+    ],
+    "negative_control_identifier": [
+     "M-WEB-05-video-preload"
+    ],
+    "oracle_identifier": "tests/test_media_budget.py",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ],
+  "WEB-07.T": [
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_business_parity::test_fleet_and_material_facts_agree_between_catalog_and_interface"
+    ],
+    "negative_control_identifier": [
+     "M-QUOTE-unknown-delivery-as-zero",
+     "M-WEB-07-parity"
+    ],
+    "oracle_identifier": "tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   },
+   {
+    "artifact_id": 13190289109,
+    "artifact_sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+    "job_id": 125629147287,
+    "junit_cases": 1,
+    "junit_testcase_ids": [
+     "tests.test_business_parity::test_no_price_is_fabricated_as_zero_or_negative"
+    ],
+    "negative_control_identifier": [
+     "M-QUOTE-unknown-delivery-as-zero",
+     "M-WEB-07-parity"
+    ],
+    "oracle_identifier": "tests/test_business_parity.py::test_no_price_is_fabricated_as_zero_or_negative",
+    "repository": "neuron7x/pbt-site",
+    "run_attempt": 1,
+    "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+    "test_outcome": "passed",
+    "workflow_run_id": 41548280395
+   }
+  ]
+ }
+}

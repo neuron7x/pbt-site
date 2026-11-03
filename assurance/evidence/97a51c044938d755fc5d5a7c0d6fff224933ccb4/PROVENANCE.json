@@ -1,0 +1,126 @@
+{
+  "schema": "pbt-evd-persist-source-closure-v1",
+  "repository": "neuron7x/pbt-site",
+  "source_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+  "scope": "read-only source-exact GitHub Actions push evidence; local synthetic testing, not deployment or field authorization",
+  "provider": {
+    "run_ids": {
+      "quality": 41548280395,
+      "http": 41548280460,
+      "visual": 41548280481,
+      "security": 41548280539,
+      "soak": 41548280587,
+      "closure": 41548280477
+    },
+    "attempt": 1,
+    "closure_artifact_id": 13193041168,
+    "closure_zip_sha256": "22a19aafd8a7e30df37b12ea857d145fc02ee433556f1d457b7ff317b2d6f8fa",
+    "artifact_zip_sha256": {
+      "13192595221": "7472c26c8a27d9df45f78147c69f01a6bad46c6f3819eeed5a06d06472bf7717",
+      "13190289109": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e",
+      "13190246188": "80bf439fc2c83c50638d966a46ba1980ef6cf0fc8776f21d2eaf2b89a5ffd145",
+      "13189562401": "1b8aa1a8f9b24e9d69461274d199833d27cfb9c6683cd1321172157c0578d2a3",
+      "13188759264": "ebee523eab137900df1b7bc16e2e9eacc630daf10fdca1d70132178d7d5eb832",
+      "13189009717": "d655d4f907bed08cd2fd50f86cee26991c179fbf1b98d765df1eb81cc4fc4528",
+      "13190220812": "5d6f05cacc6c99bce9a1ac06dfed034c4a578a60315f8ea75dc046bf9cb7cb2d",
+      "13189896419": "6bb4c367d495c931af6ed9f1d2926fb13f34bbb16631db16b1030e23b8bfef84",
+      "13189088518": "a8a13c78b934809cfa8f6a1bc364dbb6bf9b57330445e4518a63d8529bbddda4",
+      "13193110917": "5b49da6c3951f076be35a3ca865d91e08359ee8eac8fc1f0a2ee0fde3baec8eb",
+      "13193041168": "22a19aafd8a7e30df37b12ea857d145fc02ee433556f1d457b7ff317b2d6f8fa"
+    }
+  },
+  "original_members": {
+    "SHA256SUMS": {
+      "size_bytes": 610,
+      "sha256": "c84ab04e01c4e2b657d61e9827b94bf0ef2079e2011e3a7b8e1de558d343b4a0",
+      "git_blob_sha1": "1602f8b101bb129a3749a5ed7edcc73cf45146fe"
+    },
+    "engineering-decision.json": {
+      "size_bytes": 1604,
+      "sha256": "04e8cd103b874955092674d5780231ddc0a5d18022e2d3887dce5f9b59acbaf9",
+      "git_blob_sha1": "708fca2e7bffbf412a7e5bcb98abb7c1dc6bb02c"
+    },
+    "meta-decision.json": {
+      "size_bytes": 1037,
+      "sha256": "4287ae6895a13fd88678087e3c934d0d89175eb2503606c7e2c91b81b1b6188c",
+      "git_blob_sha1": "551040be2bb968f2bb04ac7d9909f66b0ff3d1a4"
+    },
+    "offline-decision.json": {
+      "size_bytes": 1204,
+      "sha256": "05fb75fc8dae6313b2eaaef6f91efee4257769f21563be48af816a91ddefb44c",
+      "git_blob_sha1": "53d284ac8d91603dcd901e0805588b1a552423d0"
+    },
+    "proof-local-commit-sha.txt": {
+      "size_bytes": 41,
+      "sha256": "3baf7187c0da51e86d857753a6fbbf49feec7434d08e082f16e33485c93f03c7",
+      "git_blob_sha1": "f6094a22b8ddaf4406a1361c81b5dfd8becd42f8"
+    },
+    "provider-manifest.json": {
+      "size_bytes": 4585,
+      "sha256": "c68b96632f9e896fba6a8dd4246f6efb8e4dd03a8efb6ad05c2f8b4855189df1",
+      "git_blob_sha1": "3fe94b77c9c35158f095d7167f8a580a3bc10367"
+    },
+    "receipts.json": {
+      "size_bytes": 112105,
+      "sha256": "876bc0238c411b66646f4b136dba6706adf679d927e8e72b3d2970cc4b1bf453",
+      "git_blob_sha1": "a3ac4b4750148d88a095c7a0239bfcc71d13cfee"
+    },
+    "reconciled-case.json": {
+      "size_bytes": 11332,
+      "sha256": "ebf7e45ad89196a7bb76316a8abf0cd20d76c94052f98cc611f0355064b89291",
+      "git_blob_sha1": "0671667da3599446ebd9a14c262fc0b23494522d"
+    },
+    "reconciled-ledger.json": {
+      "size_bytes": 95788,
+      "sha256": "9a45400a8b9645b4d5ce9f81b703702c81cf10fdb8b134955a9a63a3e91c89de",
+      "git_blob_sha1": "bd8435cf005ff9262b38de5cda5eacf6ebfc41aa"
+    },
+    "source-sha.txt": {
+      "size_bytes": 41,
+      "sha256": "ad52023d30558dce7717b6e81f278bec22045d42204a68e92469c31ba4c3dedf",
+      "git_blob_sha1": "efeb211b70381e92b18cdcd025b462495dd7b7be"
+    },
+    "status.txt": {
+      "size_bytes": 56,
+      "sha256": "9b5003994cfce71afa8fa0e24685be2db96ad0fee96dc3f4c49fedcae60d29df",
+      "git_blob_sha1": "07b59269203e6a8fc790b3b1b86177587ade840a"
+    }
+  },
+  "independent_audit": {
+    "performed_utc_date": "2026-11-03",
+    "assertions_passed": 11048,
+    "assertions_failed": 0,
+    "negative_controls_rejected": 7,
+    "standalone_local_report_sha256": "9890653cabaa8faa5ac332e4cc3a0b205db0199b83a66fcc50ce329106e47410",
+    "note": "Audit report was produced separately from the GitHub Actions runner; it is not a provider artifact."
+  },
+  "observed_metrics": {
+    "release_junit_unique": 976,
+    "http_junit_unique": 271,
+    "meta_junit_unique": 87,
+    "mutation_killed": 68,
+    "mutation_untestable": 1,
+    "mutation_survived": 0,
+    "visual_png": 32,
+    "visual_crc_chunks": 2884,
+    "soak_seconds": 1800.007,
+    "soak_accepted": 3999,
+    "soak_delivered": 3999,
+    "soak_idempotent_replays": 133,
+    "soak_p99_ms": 5.034
+  },
+  "engineering_acceptance": "ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY",
+  "external_status": {
+    "C0": "UNKNOWN",
+    "C10": "UNKNOWN",
+    "B1_B9": "BLOCKED_EXTERNAL",
+    "R1_R3": "BLOCKED_EXTERNAL",
+    "H1": "BLOCKED_EXTERNAL",
+    "F1": "BLOCKED_EXTERNAL",
+    "S1": "BLOCKED_EXTERNAL",
+    "D1": "BLOCKED_EXTERNAL",
+    "production": "HOLD"
+  },
+  "source_normative_ledger_mutated": false,
+  "warning": "Original reconciled-ledger.json and reconciled-case.json are immutable proof artifacts for this exact SHA, NOT substitutions for the canonical assurance/ledger.json or assurance/case.json."
+}
