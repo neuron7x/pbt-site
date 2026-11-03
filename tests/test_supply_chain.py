@@ -40,6 +40,39 @@ def test_real_repository_passes_and_sbom_lists_every_locked_requirement():
     assert all(c['hashes'] for c in bom['components'])
 
 
+def test_sbom_uses_cyclonedx_15_scope_and_source_lock_properties(repo):
+    bom = sc.sbom(repo)
+    components = bom['components']
+    assert bom['bomFormat'] == 'CycloneDX' and bom['specVersion'] == '1.5'
+    assert len(components) == len(sc.LOCKS)
+    assert {c['scope'] for c in components} == {'optional'}
+    assert {c['properties'][0]['value'] for c in components} == set(sc.LOCKS)
+    assert all(c['properties'][0]['name'] == 'pbt:source-lockfile' for c in components)
+    assert len({c['bom-ref'] for c in components}) == len(components)
+    assert sc.validate_sbom_contract(bom) == len(components)
+
+
+def test_invalid_lockfile_as_scope_is_rejected(repo):
+    bom = sc.sbom(repo)
+    bom['components'][0]['scope'] = 'requirements.txt'
+    with pytest.raises(sc.Rejected, match='invalid_component_scope'):
+        sc.validate_sbom_contract(bom)
+
+
+def test_missing_lock_origin_is_rejected(repo):
+    bom = sc.sbom(repo)
+    bom['components'][0]['properties'] = []
+    with pytest.raises(sc.Rejected, match='invalid_component_lock_origin'):
+        sc.validate_sbom_contract(bom)
+
+
+def test_repeated_bom_ref_is_rejected(repo):
+    bom = sc.sbom(repo)
+    bom['components'][1]['bom-ref'] = bom['components'][0]['bom-ref']
+    with pytest.raises(sc.Rejected, match='duplicate_or_missing_sbom_ref'):
+        sc.validate_sbom_contract(bom)
+
+
 def test_capture_then_verify_round_trip(repo):
     receipt = sc.capture(repo, _head(repo), env={})
     assert sc.verify(repo, receipt, _head(repo))['status'] == 'PASS'
