@@ -101,15 +101,51 @@ def verify(root, receipt, expected_head):
     return {'status': 'PASS', 'head_sha': expected_head}
 
 
+def validate_sbom_contract(bom):
+    """Bounded CycloneDX 1.5 component checks; not a full external JSON Schema validation."""
+    if bom.get('bomFormat') != 'CycloneDX' or bom.get('specVersion') != '1.5':
+        raise Rejected('sbom_format_or_version_invalid')
+    components = bom.get('components')
+    if not isinstance(components, list) or not components:
+        raise Rejected('sbom_components_missing')
+    refs = set()
+    for component in components:
+        if not isinstance(component, dict) or component.get('scope') not in ('required', 'optional', 'excluded'):
+            raise Rejected('invalid_component_scope')
+        ref = component.get('bom-ref')
+        if not isinstance(ref, str) or not ref or ref in refs:
+            raise Rejected('duplicate_or_missing_sbom_ref')
+        refs.add(ref)
+        origin = component.get('properties')
+        if (not isinstance(origin, list) or len(origin) != 1 or not isinstance(origin[0], dict)
+                or set(origin[0]) != {'name', 'value'}
+                or origin[0]['name'] != 'pbt:source-lockfile'
+                or origin[0]['value'] not in LOCKS):
+            raise Rejected('invalid_component_lock_origin')
+        hashes = component.get('hashes')
+        if (not isinstance(hashes, list) or not hashes
+                or any(not isinstance(h, dict) or h.get('alg') != 'SHA-256'
+                       or not isinstance(h.get('content'), str)
+                       or not re.fullmatch(r'[0-9a-f]{64}', h['content']) for h in hashes)):
+            raise Rejected('invalid_component_hashes')
+    return len(components)
+
+
 def sbom(root):
+    # CI/test/security locks are required for evidence generation; the deployed server is stdlib-only.
     components = []
     for name in LOCKS:
         for item in locked_requirements(root / name):
             components.append({'type': 'library', 'name': item['name'], 'version': item['version'],
-                               'purl': f"pkg:pypi/{item['name']}@{item['version']}", 'scope': name,
+                               'bom-ref': f"{name}::{item['name']}@{item['version']}",
+                               'purl': f"pkg:pypi/{item['name']}@{item['version']}",
+                               'scope': 'required',
+                               'properties': [{'name': 'pbt:source-lockfile', 'value': name}],
                                'hashes': [{'alg': 'SHA-256', 'content': h} for h in item['hashes']]})
-    return {'bomFormat': 'CycloneDX', 'specVersion': '1.5', 'components': components,
-            'metadata': {'component': {'type': 'application', 'name': 'pbt-site', 'version': git(root, 'rev-parse', 'HEAD')}}}
+    report = {'bomFormat': 'CycloneDX', 'specVersion': '1.5', 'components': components,
+              'metadata': {'component': {'type': 'application', 'name': 'pbt-site', 'version': git(root, 'rev-parse', 'HEAD')}}}
+    validate_sbom_contract(report)
+    return report
 
 
 def main(argv=None):
