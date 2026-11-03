@@ -1,0 +1,174 @@
+{
+ "artifacts": {
+  "http": {
+   "filename": "http.zip",
+   "id": 13188759264,
+   "run_id": 41548280460,
+   "sha256": "ebee523eab137900df1b7bc16e2e9eacc630daf10fdca1d70132178d7d5eb832"
+  },
+  "mobile": {
+   "filename": "mobile.zip",
+   "id": 13192595221,
+   "run_id": 41548280395,
+   "sha256": "7472c26c8a27d9df45f78147c69f01a6bad46c6f3819eeed5a06d06472bf7717"
+  },
+  "mutation": {
+   "filename": "mutation.zip",
+   "id": 13190246188,
+   "run_id": 41548280395,
+   "sha256": "80bf439fc2c83c50638d966a46ba1980ef6cf0fc8776f21d2eaf2b89a5ffd145"
+  },
+  "osv": {
+   "filename": "osv.zip",
+   "id": 13189896419,
+   "run_id": 41548280539,
+   "sha256": "6bb4c367d495c931af6ed9f1d2926fb13f34bbb16631db16b1030e23b8bfef84"
+  },
+  "release": {
+   "filename": "release.zip",
+   "id": 13190289109,
+   "run_id": 41548280395,
+   "sha256": "1500f1bdffd7d1c73c16a4e17a975e808a8f1b9aae608633b4d44e8e904c1a9e"
+  },
+  "sast": {
+   "filename": "sast.zip",
+   "id": 13189088518,
+   "run_id": 41548280539,
+   "sha256": "a8a13c78b934809cfa8f6a1bc364dbb6bf9b57330445e4518a63d8529bbddda4"
+  },
+  "soak": {
+   "filename": "soak.zip",
+   "id": 13193110917,
+   "run_id": 41548280587,
+   "sha256": "5b49da6c3951f076be35a3ca865d91e08359ee8eac8fc1f0a2ee0fde3baec8eb"
+  },
+  "static": {
+   "filename": "static.zip",
+   "id": 13190220812,
+   "run_id": 41548280539,
+   "sha256": "5d6f05cacc6c99bce9a1ac06dfed034c4a578a60315f8ea75dc046bf9cb7cb2d"
+  },
+  "visual": {
+   "filename": "visual.zip",
+   "id": 13189009717,
+   "run_id": 41548280481,
+   "sha256": "d655d4f907bed08cd2fd50f86cee26991c179fbf1b98d765df1eb81cc4fc4528"
+  }
+ },
+ "base_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+ "head_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+ "repository": "neuron7x/pbt-site",
+ "runs": {
+  "full": {
+   "attempt": 1,
+   "conclusion": "success",
+   "event": "push",
+   "head_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+   "id": 41548280395,
+   "jobs": {
+    "Critical fault catalog + assurance decision": {
+     "conclusion": "success",
+     "id": 125629146824,
+     "status": "completed"
+    },
+    "Independent exact-main make gate (no main mutation)": {
+     "conclusion": "skipped",
+     "id": 125629148757,
+     "status": "completed"
+    },
+    "Native contracts \u2192 full gate \u2192 offline bundles / lab metrics": {
+     "conclusion": "success",
+     "id": 125629147287,
+     "status": "completed"
+    },
+    "Offline evidence verifier \u2192 positive + adversarial mutation controls": {
+     "conclusion": "success",
+     "id": 125629147410,
+     "status": "completed"
+    }
+   },
+   "pull_requests": [],
+   "status": "completed"
+  },
+  "security": {
+   "attempt": 1,
+   "conclusion": "success",
+   "event": "push",
+   "head_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+   "id": 41548280539,
+   "jobs": {
+    "Fail-closed AST policy / server + ops": {
+     "conclusion": "success",
+     "id": 125629147263,
+     "status": "completed"
+    },
+    "Pinned broad scanner, SBOM, provenance receipt": {
+     "conclusion": "success",
+     "id": 125629147047,
+     "status": "completed"
+    },
+    "SHA-pinned pip-audit / OSV \u2192 immutable receipt": {
+     "conclusion": "success",
+     "id": 125629147356,
+     "status": "completed"
+    }
+   },
+   "pull_requests": [],
+   "status": "completed"
+  },
+  "soak": {
+   "attempt": 1,
+   "conclusion": "success",
+   "event": "push",
+   "head_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+   "id": 41548280587,
+   "jobs": {
+    "1800s+ real socket / SQLite / RSS / HMAC fault-injection": {
+     "conclusion": "success",
+     "id": 125629147657,
+     "status": "completed"
+    }
+   },
+   "pull_requests": [],
+   "status": "completed"
+  },
+  "transport": {
+   "attempt": 1,
+   "conclusion": "success",
+   "event": "push",
+   "head_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+   "id": 41548280460,
+   "jobs": {
+    "Adversarial HTTP \u2192 CRM/HMAC invariants": {
+     "conclusion": "success",
+     "id": 125629147258,
+     "status": "completed"
+    }
+   },
+   "pull_requests": [],
+   "status": "completed"
+  },
+  "visual": {
+   "attempt": 1,
+   "conclusion": "success",
+   "event": "push",
+   "head_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4",
+   "id": 41548280481,
+   "jobs": {
+    "Independent visual proofs \u2192 2 themes \u00d7 6 viewports \u2192 SHA-256": {
+     "conclusion": "success",
+     "id": 125629146926,
+     "status": "completed"
+    }
+   },
+   "pull_requests": [],
+   "status": "completed"
+  }
+ },
+ "schema": "pbt-exact-head-evidence-matrix-v2",
+ "target": {
+  "kind": "push",
+  "pr_number": null,
+  "ref": "refs/heads/main"
+ }
+}

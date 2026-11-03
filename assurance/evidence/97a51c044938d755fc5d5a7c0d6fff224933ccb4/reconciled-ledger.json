@@ -1,0 +1,2555 @@
+{
+ "schema": "pbt-obligation-ledger-v1",
+ "stage": "closed",
+ "source_package_sha256": "5e7510df742ec3333005050b972cb1a90b9c49667833c90219770892c9dd2f65",
+ "obligations": [
+  {
+   "obligation_id": "EVD-01",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "AGENTS.md",
+    ".github/workflows/pr-quality.yml",
+    "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md"
+   ],
+   "defect_or_requirement": "Define capture schema of ref, tree, toolchain, run IDs, attempt, OS/kernel, test hashes; preserve original logs",
+   "evidence_class": [
+    "CI_STATE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R19"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Each assertion is tied to one immutable checkout and matching test environment",
+   "counterexample": "Compare GitHub head/base/runner SHA with stale or swapped SHA",
+   "test_oracle": [
+    "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs",
+    "tests/test_supply_chain.py::test_capture_then_verify_round_trip"
+   ],
+   "required_change": "Define capture schema of ref, tree, toolchain, run IDs, attempt, OS/kernel, test hashes; preserve original logs",
+   "dependency_ids": [],
+   "verification_commands": [
+    "python -m pytest -q tests/test_supply_chain.py"
+   ],
+   "acceptance_predicate": "Any drift causes HOLD before further gate; baseline environment and real bytes captured",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs",
+    "tests/test_supply_chain.py::test_capture_then_verify_round_trip"
+   ],
+   "mutants": [
+    "M-EVD-01-drift"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "EVD-02",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/meta_evidence_gate.py:176-190",
+    "tests/test_meta_evidence_gate.py"
+   ],
+   "defect_or_requirement": "Implement versioned policy for target {pull_request,push,workflow_dispatch}, independent expected SHA and authorized state",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R06"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Verifier binds policy to exact target and event, not a historical PR number",
+   "counterexample": "Present valid PR14/main evidence to old PR8-only verifier; require negative failure",
+   "test_oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_meta_evidence_gate.py::test_main_target_uses_push_receipts_and_needs_no_baseline",
+    "tests/test_meta_evidence_gate.py::test_pull_request_receipts_never_certify_main",
+    "tests/test_meta_evidence_gate.py::test_main_receipts_never_certify_a_pull_request"
+   ],
+   "required_change": "Implement versioned policy for target {pull_request,push,workflow_dispatch}, independent expected SHA and authorized state",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_meta_evidence_gate.py"
+   ],
+   "acceptance_predicate": "Valid current HEAD accepted, stale/forged/unsupported event rejected with machine-readable reason",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_meta_evidence_gate.py::test_main_target_uses_push_receipts_and_needs_no_baseline",
+    "tests/test_meta_evidence_gate.py::test_pull_request_receipts_never_certify_main",
+    "tests/test_meta_evidence_gate.py::test_main_receipts_never_certify_a_pull_request"
+   ],
+   "mutants": [
+    "M-EVD-02-event-binding",
+    "M-EVD-02-historic-pr8",
+    "M-RUNNER-job-not-completed"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "EVD-03",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/meta_evidence_gate.py:80-90",
+    "tests/test_meta_evidence_gate.py"
+   ],
+   "defect_or_requirement": "Generate canonical required-test-ID inventory with versioned contract and machine-derived JUnit matching",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R06"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "A removed critical test cannot be hidden by many unrelated passing tests",
+   "counterexample": "Remove lead atomicity test while retaining >= MIN_TESTS total",
+   "test_oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_meta_evidence_gate.py::test_required_inventory_names_tests_that_really_exist"
+   ],
+   "required_change": "Generate canonical required-test-ID inventory with versioned contract and machine-derived JUnit matching",
+   "dependency_ids": [
+    "EVD-02"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_meta_evidence_gate.py"
+   ],
+   "acceptance_predicate": "Mandatory test identity absent => FAIL regardless total count; no silent skip/xfail",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_meta_evidence_gate.py::test_required_inventory_names_tests_that_really_exist"
+   ],
+   "mutants": [
+    "M-EVD-03-identity"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "EVD-04",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/meta_evidence_gate.py:223-231",
+    "tools/perf_probe.py",
+    "tests/test_perf_probe.py"
+   ],
+   "defect_or_requirement": "Recompute per-theme p75 LCP/CLS, unprompted switch shifts, exact head; distinguish lab/field",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R07",
+    "R13"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Raw samples and independently derived p75 and budgets must agree",
+   "counterexample": "Present raw p75 LCP above 2500 while consistent summary claims success",
+   "test_oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_perf_probe.py"
+   ],
+   "required_change": "Recompute per-theme p75 LCP/CLS, unprompted switch shifts, exact head; distinguish lab/field",
+   "dependency_ids": [
+    "EVD-02"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_meta_evidence_gate.py tests/test_perf_probe.py"
+   ],
+   "acceptance_predicate": "Independent verifier fails for any breach; no field INP claim",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_perf_probe.py"
+   ],
+   "mutants": [
+    "M-EVD-04-lcp-budget",
+    "M-EVD-04-cls-budget",
+    "M-EVD-04-deferred-shift"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "EVD-05",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/perf_probe.py",
+    ".github/workflows/runtime-soak.yml",
+    ".github/workflows/pr-quality.yml"
+   ],
+   "defect_or_requirement": "Require actual git rev-parse, event SHA and source SHA in receipts; assert exact checkout on all event types",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "CI_STATE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R06",
+    "R19"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Executed commit equals intended source SHA; GitHub PR synthetic merge SHA is a separate field",
+   "counterexample": "Substitute merge event SHA as execution_sha or re-run with changed base",
+   "test_oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_supply_chain.py::test_github_sha_is_recorded_separately_and_cannot_stand_in_for_the_checkout",
+    "tests/test_perf_probe.py"
+   ],
+   "required_change": "Require actual git rev-parse, event SHA and source SHA in receipts; assert exact checkout on all event types",
+   "dependency_ids": [
+    "EVD-01",
+    "EVD-02"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_meta_evidence_gate.py tests/test_perf_probe.py tests/test_supply_chain.py"
+   ],
+   "acceptance_predicate": "Verifier rejects drift; PR and main receipts remain disjoint",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_supply_chain.py::test_github_sha_is_recorded_separately_and_cannot_stand_in_for_the_checkout",
+    "tests/test_perf_probe.py"
+   ],
+   "mutants": [
+    "M-EVD-05-execution-sha"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "EVD-06",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/meta_evidence_gate.py",
+    "tools/evidence_gate.py",
+    ".github/workflows/visual-evidence.yml"
+   ],
+   "defect_or_requirement": "Rehash provider downloaded ZIPs, verify member paths/CRC, JUnit, PNG/HTML, quotas and role binding",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R06"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Metadata-only SUCCESS is not sufficient without actual archive bytes",
+   "counterexample": "Modify one PNG chunk/ZIP CRC/manifest SHA, preserve workflow success",
+   "test_oracle": [
+    "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected",
+    "tests/test_evidence_collect.py::test_artifact_replaced_during_download_is_rejected",
+    "tests/test_evidence_collect.py::test_missing_expired_or_foreign_digest_is_rejected",
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ],
+   "required_change": "Rehash provider downloaded ZIPs, verify member paths/CRC, JUnit, PNG/HTML, quotas and role binding",
+   "dependency_ids": [
+    "EVD-01",
+    "EVD-02"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_evidence_collect.py tests/test_meta_evidence_gate.py"
+   ],
+   "acceptance_predicate": "All required artifacts checked; failures remain HOLD; provider authentication provenance recorded",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected",
+    "tests/test_evidence_collect.py::test_artifact_replaced_during_download_is_rejected",
+    "tests/test_evidence_collect.py::test_missing_expired_or_foreign_digest_is_rejected",
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ],
+   "mutants": [
+    "M-EVD-06-provider-digest",
+    "M-EVD-06-zip-digest",
+    "M-EVD-06-png-crc"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "EVD-07",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "Makefile",
+    "requirements.txt",
+    "tests/conftest.py"
+   ],
+   "defect_or_requirement": "Measure canonical hashes, browser versions, clocks, random seeds; whitelist justified expected differences",
+   "evidence_class": [
+    "SCOPE_LIMIT_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R22"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Deterministic artifacts match within declared OS/toolchain inputs; nondeterministic fields identified",
+   "counterexample": "Run same fixed seed twice with locale/timezone/env variance",
+   "test_oracle": [
+    "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed",
+    "tests/test_reproducibility.py::test_comparison_detects_a_nondeterministic_input"
+   ],
+   "required_change": "Measure canonical hashes, browser versions, clocks, random seeds; whitelist justified expected differences",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_reproducibility.py"
+   ],
+   "acceptance_predicate": "Every difference classified; source build reproducibility not asserted if unverified",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed",
+    "tests/test_reproducibility.py::test_comparison_detects_a_nondeterministic_input"
+   ],
+   "mutants": [
+    "M-EVD-07-tz-in-bundle"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "EVD-08",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md",
+    "docs/RELEASE_STATUS.md"
+   ],
+   "defect_or_requirement": "Generate release proof-graph with external UNKNOWN statuses, no weighted averaging and stale-run invalidation",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "CI_STATE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R06",
+    "R19"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "No release claim without supporting current evidence for every mandatory leaf",
+   "counterexample": "Supply a complete list with one unavailable proof",
+   "test_oracle": [
+    "tests/test_acceptance_adversarial.py::test_forged_all_pass_ledger_is_not_accepted",
+    "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected",
+    "tests/test_acceptance_adversarial.py::test_authentic_evidence_is_accepted"
+   ],
+   "required_change": "Generate release proof-graph with external UNKNOWN statuses, no weighted averaging and stale-run invalidation",
+   "dependency_ids": [
+    "EVD-02",
+    "EVD-03",
+    "EVD-04",
+    "EVD-05",
+    "EVD-06"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_acceptance_adversarial.py"
+   ],
+   "acceptance_predicate": "Claim is PASS iff all mandatory proof leaves PASS at compatible SHA and target",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_acceptance_adversarial.py::test_forged_all_pass_ledger_is_not_accepted",
+    "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected",
+    "tests/test_acceptance_adversarial.py::test_authentic_evidence_is_accepted"
+   ],
+   "mutants": [
+    "M-ACCEPT-status-as-evidence",
+    "M-ACCEPT-test-never-ran",
+    "M-ACCEPT-normative"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "DB-01",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:86-110",
+    "ops/outbox_health.py",
+    "ops/restore.py"
+   ],
+   "defect_or_requirement": "Add FK PRAGMA before any transaction on all write connections and read-back assertion; preserve legacy DB migrations",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R01"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Orphan outbox insertion is impossible when constraints are active",
+   "counterexample": "Insert outbox with nonexistent lead_id; currently SQLite FK not enabled in db()",
+   "test_oracle": [
+    "tests/test_data_integrity.py::test_server_connection_enforces_foreign_keys_and_rejects_orphan",
+    "tests/test_data_integrity.py::test_outbox_insert_inside_real_acceptance_path_keeps_fk_clean"
+   ],
+   "required_change": "Add FK PRAGMA before any transaction on all write connections and read-back assertion; preserve legacy DB migrations",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_data_integrity.py"
+   ],
+   "acceptance_predicate": "Every write path rejects orphan with IntegrityError; foreign_key_check reports zero after approved remediation",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_data_integrity.py::test_server_connection_enforces_foreign_keys_and_rejects_orphan",
+    "tests/test_data_integrity.py::test_outbox_insert_inside_real_acceptance_path_keeps_fk_clean"
+   ],
+   "mutants": [
+    "M-DB-01-fk-pragma",
+    "M-DB-01-readback"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "DB-02",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:94-126",
+    "tests/test_leads.py",
+    "ops/restore.py"
+   ],
+   "defect_or_requirement": "Classify/reconcile legacy anomalies before enforcing new FK; explicit SQL transaction and rollback",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R01"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Migration is atomic/idempotent and does not silently discard legacy records",
+   "counterexample": "Legacy database includes old schema and an intentionally orphaned row",
+   "test_oracle": [
+    "tests/test_data_integrity.py::test_migration_failure_rolls_back_every_schema_write_then_retry_converges",
+    "tests/test_data_integrity.py::test_legacy_orphan_is_reported_never_repaired_and_never_lost",
+    "tests/test_restore_cutpoints.py::test_restore_refuses_snapshot_with_foreign_key_violations"
+   ],
+   "required_change": "Classify/reconcile legacy anomalies before enforcing new FK; explicit SQL transaction and rollback",
+   "dependency_ids": [
+    "DB-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_data_integrity.py tests/test_restore_cutpoints.py"
+   ],
+   "acceptance_predicate": "Repeated migration exact schema; no data loss; conflicts report BLOCKED and do not quietly repair",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_data_integrity.py::test_migration_failure_rolls_back_every_schema_write_then_retry_converges",
+    "tests/test_data_integrity.py::test_legacy_orphan_is_reported_never_repaired_and_never_lost",
+    "tests/test_restore_cutpoints.py::test_restore_refuses_snapshot_with_foreign_key_violations"
+   ],
+   "mutants": [
+    "M-DB-02-atomic-migration",
+    "M-DB-02-silent-orphan-repair",
+    "M-DB-06-fk-check"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "DB-03",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:1042-1144",
+    "tests/test_atomic_lead_quota.py"
+   ],
+   "defect_or_requirement": "Model state machine for BEGIN IMMEDIATE, replay, conflict and outbox; test across faults",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R08"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Concurrent identical keys have exactly one durable logical lead and no double quota",
+   "counterexample": "Concurrent same key across threads/processes under near-capacity SQLite locking",
+   "test_oracle": [
+    "tests/test_data_integrity.py::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement",
+    "tests/test_atomic_lead_quota.py",
+    "tests/test_leads.py::test_concurrent_duplicates_are_one_lead"
+   ],
+   "required_change": "Model state machine for BEGIN IMMEDIATE, replay, conflict and outbox; test across faults",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_atomic_lead_quota.py tests/test_data_integrity.py tests/test_leads.py"
+   ],
+   "acceptance_predicate": "Same key + same body -> same id; same key + different body -> 409; accepted state atomic",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_data_integrity.py::test_same_key_across_processes_yields_one_lead_and_conflict_is_not_replacement",
+    "tests/test_atomic_lead_quota.py",
+    "tests/test_leads.py::test_concurrent_duplicates_are_one_lead"
+   ],
+   "mutants": [
+    "M-DB-03-same-key-replaces",
+    "M-DB-03-unique-index"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "DB-04",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:1065-1120",
+    "tests/test_leads.py"
+   ],
+   "defect_or_requirement": "Fault injection at precise cutpoints with isolated DB and restart, no live data",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R08",
+    "R04"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "201 is emitted only after persisted lead+outbox, regardless crash timing",
+   "counterexample": "SIGKILL at before BEGIN/after insert/before commit/after commit/before reply",
+   "test_oracle": [
+    "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint",
+    "tests/test_data_integrity.py::test_disk_full_during_accept_is_500_with_no_partial_state"
+   ],
+   "required_change": "Fault injection at precise cutpoints with isolated DB and restart, no live data",
+   "dependency_ids": [
+    "DB-03"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_data_integrity.py"
+   ],
+   "acceptance_predicate": "For all cuts: no uncommitted 201, no lost committed lead, replay consistent",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint",
+    "tests/test_data_integrity.py::test_disk_full_during_accept_is_500_with_no_partial_state"
+   ],
+   "mutants": [
+    "M-DB-04-reply-before-commit",
+    "M-DB-04-lead-without-outbox-atomicity"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "DB-05",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "web/js/site.js:585-665",
+    "tests/test_frontend_finish.py"
+   ],
+   "defect_or_requirement": "Design short-lived request-ID-only restore with opt-out/TTL and privacy-safe expiry; avoid storing contact in localStorage",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R08"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Lost HTTP response followed by reload cannot silently become duplicate intent",
+   "counterexample": "Accept server-side, drop response, reload and submit unchanged form",
+   "test_oracle": [
+    "tests/test_lead_reload_idempotency.py"
+   ],
+   "required_change": "Design short-lived request-ID-only restore with opt-out/TTL and privacy-safe expiry; avoid storing contact in localStorage",
+   "dependency_ids": [
+    "DB-03",
+    "DB-04"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_lead_reload_idempotency.py"
+   ],
+   "acceptance_predicate": "Replay semantics preserved if same user intent; explicitly documented boundary for new intent",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_lead_reload_idempotency.py"
+   ],
+   "mutants": [
+    "M-DB-05-erase-key-on-reload",
+    "M-DB-05-store-payload",
+    "M-DB-05-ignore-expiry"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "DB-06",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "ops/restore.py:93-103",
+    "tests/test_backup_safety.py"
+   ],
+   "defect_or_requirement": "Prepare validated alternate generation, atomic final publish strategy, sidecar controls, cleanup and rollback proof",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R02"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "At every interruption either old or new consistent DB remains recoverable",
+   "counterexample": "SIGKILL/EIO/ENOSPC at each rename/fsync and metadata operation",
+   "test_oracle": [
+    "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation",
+    "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars",
+    "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
+   ],
+   "required_change": "Prepare validated alternate generation, atomic final publish strategy, sidecar controls, cleanup and rollback proof",
+   "dependency_ids": [
+    "DB-02",
+    "DB-04"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_backup_safety.py tests/test_restore_cutpoints.py"
+   ],
+   "acceptance_predicate": "No scenario produces irrecoverable partial state; old/new integrity and watermark checked",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation",
+    "tests/test_restore_cutpoints.py::test_new_generation_never_inherits_stale_sidecars",
+    "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
+   ],
+   "mutants": [
+    "M-DB-06-move-old-away",
+    "M-DB-06-stale-sidecar",
+    "M-DB-06-no-settle",
+    "M-DB-06-dir-fsync",
+    "M-BACKUP-no-lock"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "DB-07",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "ops/backup.py",
+    "ops/systemd/pbt-site-backup.timer"
+   ],
+   "defect_or_requirement": "Use designated approved remote store, encryption, authenticated digest, minimal privilege, retention policy and receipts; no secrets in repo",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R03"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Snapshot is independently present and integrity-checked outside source host",
+   "counterexample": "Destroy local root/data and backup directory in a disposable isolated environment",
+   "test_oracle": [],
+   "required_change": "Use designated approved remote store, encryption, authenticated digest, minimal privilege, retention policy and receipts; no secrets in repo",
+   "dependency_ids": [
+    "DB-06"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Provider receipt + offline restore verified against source snapshot; local-only copies not counted",
+   "artifact_paths": [
+    "evidence/offsite-provider-receipt.json",
+    "evidence/crypto-check.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Off-device store, credentials and encryption key are owner decisions (R03). Local mechanism only: ops/backup.py, ops/restore_drill.py.",
+   "subclaims": [
+    {
+     "id": "DB-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "R1"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "DB-08",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "ops/restore.py",
+    "docs/OUTBOX_OBSERVABILITY.md"
+   ],
+   "defect_or_requirement": "Restore on separate host; calculate recovered vs issued IDs, outbox pending, elapsed recovery; external watermark",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R02",
+    "R03"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Measured recovery meets preapproved RPO/RTO with accepted-lead/outbox reconciliation",
+   "counterexample": "Delete original machine and restore without source disk or server.log",
+   "test_oracle": [
+    "tests/test_backup_safety.py::test_restore_drill_measures_rpo_gap_and_never_claims_off_device"
+   ],
+   "required_change": "Restore on separate host; calculate recovered vs issued IDs, outbox pending, elapsed recovery; external watermark",
+   "dependency_ids": [
+    "DB-06",
+    "DB-07"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_backup_safety.py"
+   ],
+   "acceptance_predicate": "No unreconciled known loss; actual RPO/RTO numbers and limitations recorded; owner adopts thresholds",
+   "artifact_paths": [
+    "evidence/restore-host.json",
+    "evidence/rpo-rto-report.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Requires a separate host, an off-device snapshot and owner-adopted RPO/RTO. Procedure rehearsed locally by ops/restore_drill.py with off_device=false.",
+   "subclaims": [
+    {
+     "id": "DB-08.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_backup_safety.py::test_restore_drill_measures_rpo_gap_and_never_claims_off_device"
+     ],
+     "mutants": [
+      "M-DB-06-rpo-gap"
+     ]
+    },
+    {
+     "id": "DB-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "R2"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "NET-01",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:678-780",
+    "server/app.py:992-1031"
+   ],
+   "defect_or_requirement": "Preserve existing deadlines and run adversarial negative coverage from RFC 9110 mapped table",
+   "evidence_class": [
+    "CONDITIONAL"
+   ],
+   "risk_and_impact": [
+    "R20"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Malformed/slow clients have bounded wall-clock and cannot persist partial leads",
+   "counterexample": "Trickled headers/body, early EOF, conflicting length, media range fuzz under small MAX_CONNECTIONS",
+   "test_oracle": [
+    "tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched",
+    "tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state",
+    "tests/test_http_protocol.py::test_slow_clients_hold_slots_for_bounded_wall_clock_only",
+    "tests/test_request_body_deadline.py"
+   ],
+   "required_change": "Preserve existing deadlines and run adversarial negative coverage from RFC 9110 mapped table",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_http_protocol.py tests/test_request_body_deadline.py"
+   ],
+   "acceptance_predicate": "Bound wall-clock and connection slots, correct status class, zero partial commits",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_http_protocol.py::test_media_type_is_parsed_not_substring_matched",
+    "tests/test_http_protocol.py::test_non_rfc_content_length_is_rejected_without_state",
+    "tests/test_http_protocol.py::test_slow_clients_hold_slots_for_bounded_wall_clock_only",
+    "tests/test_request_body_deadline.py"
+   ],
+   "mutants": [
+    "M-NET-01-substring-media-type",
+    "M-NET-01-te-accepted",
+    "M-NET-01-deadline"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "NET-02",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:866-900",
+    "ops/README.md",
+    "ops/systemd/pbt-site.service"
+   ],
+   "defect_or_requirement": "Explicit trusted hop/source and edge config with DNS/TLS independent checks; preserve internal and external boundaries",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "CONDITIONAL"
+   ],
+   "risk_and_impact": [
+    "R12",
+    "R20"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Only authenticated configured proxy may establish client identity and TLS provenance",
+   "counterexample": "Spoof XFF/XFP from untrusted peer; spoof chain and IPv6 identities",
+   "test_oracle": [
+    "tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity",
+    "tests/test_http_protocol.py::test_untrusted_peer_cannot_set_identity_or_hsts"
+   ],
+   "required_change": "Explicit trusted hop/source and edge config with DNS/TLS independent checks; preserve internal and external boundaries",
+   "dependency_ids": [
+    "NET-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_http_protocol.py"
+   ],
+   "acceptance_predicate": "No quota bypass/false HSTS with untrusted headers; actual edge evidence separate",
+   "artifact_paths": [
+    "evidence/proxy-adversarial.json",
+    "evidence/tls-edge-attestation.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Adversarial proxy behavior verified; real TLS edge, DNS and proxy chain need owner domain decision B4.",
+   "subclaims": [
+    {
+     "id": "NET-02.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_http_protocol.py::test_attacker_first_header_line_cannot_choose_rate_identity",
+      "tests/test_http_protocol.py::test_untrusted_peer_cannot_set_identity_or_hsts"
+     ],
+     "mutants": [
+      "M-NET-02-first-xff-line",
+      "M-NET-02-trust-without-flag"
+     ]
+    },
+    {
+     "id": "NET-02.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B4"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "NET-03",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:436-461",
+    "server/delivery_transport.py:39-59"
+   ],
+   "defect_or_requirement": "Confirm threat model: deployment-controlled URL vs attacker-controlled input; apply approved endpoints and policy validation",
+   "evidence_class": [
+    "CONDITIONAL",
+    "CONDITIONAL"
+   ],
+   "risk_and_impact": [
+    "R15",
+    "R20"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "No unauthorized route/redirect exposes signed payload or Telegram token",
+   "counterexample": "Hostile redirects, private-IP targets, DNS rebinding, non-TLS and credentials in URL",
+   "test_oracle": [
+    "tests/test_delivery_deadline.py::test_redirect_does_not_forward_webhook_hmac_to_other_host"
+   ],
+   "required_change": "Confirm threat model: deployment-controlled URL vs attacker-controlled input; apply approved endpoints and policy validation",
+   "dependency_ids": [
+    "NET-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_delivery_deadline.py"
+   ],
+   "acceptance_predicate": "No signed lead crosses unapproved destination; synthetic tests isolate external network",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_delivery_deadline.py::test_redirect_does_not_forward_webhook_hmac_to_other_host"
+   ],
+   "mutants": [
+    "M-NET-03-follow-redirect"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "NET-04",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/delivery_transport.py",
+    "server/app.py:557-594"
+   ],
+   "defect_or_requirement": "Create isolated fake receiver with dedup and ACK-correlation; live receipts separate authorized operation",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R04",
+    "R08"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Transport 2xx, receiver persistence and business processing are distinguishable",
+   "counterexample": "Synthetic 2xx before durable receiver acknowledgment; 408/429/5xx and timeout",
+   "test_oracle": [
+    "tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart",
+    "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement",
+    "tests/test_outbox_state_machine.py::test_permanent_status_is_terminal_with_exactly_one_attempt",
+    "tests/test_outbox_state_machine.py::test_retry_budget_exhaustion_is_an_explicit_terminal_state",
+    "tests/test_outbox_state_machine.py::test_slow_receiver_times_out_then_retry_carries_same_identity"
+   ],
+   "required_change": "Create isolated fake receiver with dedup and ACK-correlation; live receipts separate authorized operation",
+   "dependency_ids": [
+    "DB-03",
+    "DB-04"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_outbox_state_machine.py"
+   ],
+   "acceptance_predicate": "No accepted lead lost; retries bounded; all ACK claims tied to external receipt ID",
+   "artifact_paths": [
+    "evidence/receiver-faults.json",
+    "evidence/live-receiver-receipts.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Synthetic receiver contract verified; a live receiver receipt needs B3 and an authorized live test. Site never treats 2xx as receipt.",
+   "subclaims": [
+    {
+     "id": "NET-04.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart",
+      "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement",
+      "tests/test_outbox_state_machine.py::test_permanent_status_is_terminal_with_exactly_one_attempt",
+      "tests/test_outbox_state_machine.py::test_retry_budget_exhaustion_is_an_explicit_terminal_state",
+      "tests/test_outbox_state_machine.py::test_slow_receiver_times_out_then_retry_carries_same_identity"
+     ],
+     "mutants": [
+      "M-NET-04-retry-class",
+      "M-NET-04-hmac-forged",
+      "M-NET-04-terminal-retried",
+      "M-NET-04-unbounded-retry"
+     ]
+    },
+    {
+     "id": "NET-04.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B3"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "NET-05",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:138-257",
+    "tests/test_rate_resource_bound.py"
+   ],
+   "defect_or_requirement": "Test actual deployment topology; enforce one-worker bound or add shared persistent limiter only if multi-process required",
+   "evidence_class": [
+    "CONDITIONAL"
+   ],
+   "risk_and_impact": [
+    "R17"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Quotas cannot be reset through identity churn or unsupported process topology",
+   "counterexample": "25k identities, IPv6 /64 churn, wall jumps, two independently spawned servers",
+   "test_oracle": [
+    "tests/test_http_protocol.py::test_second_server_on_same_database_fails_closed",
+    "tests/test_http_protocol.py::test_restore_refuses_while_the_guard_is_held_even_on_another_port",
+    "tests/test_rate_resource_bound.py"
+   ],
+   "required_change": "Test actual deployment topology; enforce one-worker bound or add shared persistent limiter only if multi-process required",
+   "dependency_ids": [
+    "NET-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_http_protocol.py tests/test_rate_resource_bound.py"
+   ],
+   "acceptance_predicate": "No unbounded memory nor quota bypass within declared topology; unsupported topology fail closed",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_http_protocol.py::test_second_server_on_same_database_fails_closed",
+    "tests/test_http_protocol.py::test_restore_refuses_while_the_guard_is_held_even_on_another_port",
+    "tests/test_rate_resource_bound.py"
+   ],
+   "mutants": [
+    "M-NET-05-no-guard",
+    "M-NET-05-ipv6-per-address",
+    "M-NET-05-migrate-before-guard"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "NET-06",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "web/js/site.js:302-315",
+    "web/js/site.js:477-496"
+   ],
+   "defect_or_requirement": "Replace unsafe composition where necessary with URL allowlist/DOM APIs; never invent actual exploit without repro",
+   "evidence_class": [
+    "CONDITIONAL"
+   ],
+   "risk_and_impact": [
+    "R15"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Data-derived HTML attributes and URL schemes cannot execute untrusted script",
+   "counterexample": "Inject malformed href, quotes, svg/javascript schemes via fake public config",
+   "test_oracle": [
+    "tests/test_dom_trust_boundary.py"
+   ],
+   "required_change": "Replace unsafe composition where necessary with URL allowlist/DOM APIs; never invent actual exploit without repro",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_dom_trust_boundary.py"
+   ],
+   "acceptance_predicate": "All payloads inert, console signals captured, CSP intact, negative mutation kills regression",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_dom_trust_boundary.py"
+   ],
+   "mutants": [
+    "M-NET-06-unescaped-channel",
+    "M-NET-06-any-scheme"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "NET-07",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/security_static.py",
+    ".github/workflows/security-assurance.yml"
+   ],
+   "defect_or_requirement": "Add independently pinned broad SAST + dependency/SBOM/source provenance without replacing narrow AST gate",
+   "evidence_class": [
+    "SCOPE_LIMIT_CONFIRMED",
+    "SCOPE_LIMIT_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R14",
+    "R22"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Scanning covers declared in-scope source and third-party artifacts and cannot pass when engine silently fails",
+   "counterexample": "Inject XSS/SSRF-like sink, scanner crash, omitted requirement, altered wheel hash",
+   "test_oracle": [
+    "tests/test_supply_chain.py::test_scanner_that_did_not_scan_cannot_pass",
+    "tests/test_supply_chain.py::test_open_finding_fails_and_waiver_needs_rationale_and_cannot_go_stale",
+    "tests/test_supply_chain.py::test_real_repository_passes_and_sbom_lists_every_locked_requirement",
+    "tests/test_supply_chain.py::test_bidi_controls_are_still_stripped_and_absent_from_source"
+   ],
+   "required_change": "Add independently pinned broad SAST + dependency/SBOM/source provenance without replacing narrow AST gate",
+   "dependency_ids": [
+    "EVD-06"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_supply_chain.py"
+   ],
+   "acceptance_predicate": "Findings and gaps machine reported; waiver requires owner rationale; no full ASVS certification claim",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_supply_chain.py::test_scanner_that_did_not_scan_cannot_pass",
+    "tests/test_supply_chain.py::test_open_finding_fails_and_waiver_needs_rationale_and_cannot_go_stale",
+    "tests/test_supply_chain.py::test_real_repository_passes_and_sbom_lists_every_locked_requirement",
+    "tests/test_supply_chain.py::test_bidi_controls_are_still_stripped_and_absent_from_source"
+   ],
+   "mutants": [
+    "M-NET-07-scanner-crash-is-pass"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "NET-08",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "ops/systemd/pbt-site.service",
+    "ops/systemd/pbt-site-health.service"
+   ],
+   "defect_or_requirement": "Review systemd restrictions and runtime file permissions; test in isolated cloned host, preserve power guard",
+   "evidence_class": [
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R16"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Site process accesses only declared DB, logs, web and network endpoints",
+   "counterexample": "Attempt to read files outside sandbox, exhaust tasks/memory, abuse writable root",
+   "test_oracle": [
+    "tests/test_systemd_sandbox.py"
+   ],
+   "required_change": "Review systemd restrictions and runtime file permissions; test in isolated cloned host, preserve power guard",
+   "dependency_ids": [
+    "NET-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_systemd_sandbox.py"
+   ],
+   "acceptance_predicate": "Resource caps and file/network boundaries proven, no break of media/API/backup",
+   "artifact_paths": [
+    "evidence/systemd-sandbox.json",
+    "evidence/resource-cgroup.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "MEASURED: under systemd --user on this host, ProtectHome/ProtectSystem have no effect on home read and write (ops/sandbox_probe.py FAIL); cgroup limits hold. System-manager candidate ops/systemd/system/pbt-site.service measured PASS. Installing it is a deployment decision.",
+   "subclaims": [
+    {
+     "id": "NET-08.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_systemd_sandbox.py"
+     ],
+     "mutants": [
+      "M-NET-08-probe-ignores-home"
+     ]
+    },
+    {
+     "id": "NET-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "R3"
+     ]
+    }
+   ],
+   "reclassification_reason": "Specification treats this as internal, but the boundary only exists on the production target and only under a system manager: measured FAIL under systemd --user. Technical part is the probe and candidate unit; the rest needs a deployment decision."
+  },
+  {
+   "obligation_id": "WEB-01",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tests/test_themes.py",
+    "tests/test_design_color_type.py",
+    "web/index.html"
+   ],
+   "defect_or_requirement": "Keep axe; add keyboard walkthrough and manual AA checklist, video/image descriptions",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R21"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "All critical user tasks available keyboard/screen reader/reduced motion in each supported viewport",
+   "counterexample": "Focus traps, enlarged text 200%, empty labels, error states, modal mode",
+   "test_oracle": [
+    "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey",
+    "tests/test_web_assurance.py::test_wcag_text_spacing_and_320px_reflow_do_not_clip_or_scroll_sideways",
+    "tests/test_web_assurance.py::test_error_state_moves_focus_and_names_the_problem"
+   ],
+   "required_change": "Keep axe; add keyboard walkthrough and manual AA checklist, video/image descriptions",
+   "dependency_ids": [
+    "EVD-04"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_web_assurance.py"
+   ],
+   "acceptance_predicate": "No critical WCAG A/AA finding; manual evidence named; axe alone never claimed complete",
+   "artifact_paths": [
+    "evidence/wcag-audit.json",
+    "evidence/focus-trace.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Automated keyboard, reflow, spacing and axe verified. WCAG AA needs named human evaluation with a screen reader; none exists.",
+   "subclaims": [
+    {
+     "id": "WEB-01.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey",
+      "tests/test_web_assurance.py::test_wcag_text_spacing_and_320px_reflow_do_not_clip_or_scroll_sideways",
+      "tests/test_web_assurance.py::test_error_state_moves_focus_and_names_the_problem"
+     ],
+     "mutants": [
+      "M-WEB-01-hide-focused"
+     ]
+    },
+    {
+     "id": "WEB-01.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "H1"
+     ]
+    }
+   ],
+   "reclassification_reason": "Specification treats this as internal, but its predicate names manual evidence and screen-reader use that automation cannot supply. Technical part is keyboard, reflow, spacing and error-state automation; the rest needs a named human."
+  },
+  {
+   "obligation_id": "WEB-02",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/perf_probe.py",
+    "tests/test_perf_probe.py"
+   ],
+   "defect_or_requirement": "Pin lab conditions, background CPU, cache, media and scripts, compare 3+ samples/theme; record variance",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R07",
+    "R13"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Dual-theme LCP/CLS and interaction shifts measured from raw samples with known browser environment",
+   "counterexample": "Force slow LCP or late shift while internally consistent summary says PASS",
+   "test_oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_perf_probe.py"
+   ],
+   "required_change": "Pin lab conditions, background CPU, cache, media and scripts, compare 3+ samples/theme; record variance",
+   "dependency_ids": [
+    "EVD-04"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_meta_evidence_gate.py tests/test_perf_probe.py"
+   ],
+   "acceptance_predicate": "Independent budget violation rejects; field INP remains unknown",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected",
+    "tests/test_perf_probe.py"
+   ],
+   "mutants": [
+    "M-WEB-02-interpolated-p75"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "WEB-03",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "web/js/site.js",
+    "docs/RELEASE_STATUS.md"
+   ],
+   "defect_or_requirement": "Use owner-approved privacy-conscious field monitoring or CrUX/Search Console where populated; report sample sizes and provenance",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R13"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Production CWV requires actual user data measured at p75 by device category",
+   "counterexample": "Inject long input tasks into critical user flow",
+   "test_oracle": [],
+   "required_change": "Use owner-approved privacy-conscious field monitoring or CrUX/Search Console where populated; report sample sizes and provenance",
+   "dependency_ids": [
+    "WEB-02"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Measured p75 by mobile/desktop meets owner-approved objectives or release HOLD",
+   "artifact_paths": [
+    "evidence/field-cwv.json",
+    "evidence/inp-samples-meta.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "No real users yet. Field INP/CWV cannot exist before exposure; RUM or CrUX needs owner privacy decision.",
+   "subclaims": [
+    {
+     "id": "WEB-03.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "F1"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "WEB-04",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "web/css/site.css",
+    "web/js/site.js:114-135",
+    "tests/test_hero_video_contrast.py"
+   ],
+   "defect_or_requirement": "Evaluate both themes state+session CLS, motion pause and frame contrast with matched screenshots",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R21"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "No unexpected post-input shifts and accessible text over all relevant video frames",
+   "counterexample": "Load font after 500ms, dark/bright sampled frames, extreme landscape viewport",
+   "test_oracle": [
+    "tests/test_web_assurance.py::test_late_fonts_do_not_shift_layout_beyond_cls_budget",
+    "tests/test_hero_video_contrast.py",
+    "tests/test_themes.py"
+   ],
+   "required_change": "Evaluate both themes state+session CLS, motion pause and frame contrast with matched screenshots",
+   "dependency_ids": [
+    "WEB-01",
+    "WEB-02"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_hero_video_contrast.py tests/test_themes.py tests/test_web_assurance.py"
+   ],
+   "acceptance_predicate": "Any unprompted shift/contrast violation rejected at measured state with raw screenshots",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_web_assurance.py::test_late_fonts_do_not_shift_layout_beyond_cls_budget",
+    "tests/test_hero_video_contrast.py",
+    "tests/test_themes.py"
+   ],
+   "mutants": [
+    "M-WEB-04-late-shift"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "WEB-05",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "web/index.html",
+    "web/media",
+    "tools/media_budget.py",
+    "tools/visual_contract.py"
+   ],
+   "defect_or_requirement": "Differentiate repository asset inventory, page transfer, cache, data-saver and format; fail over-budget on targets",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R13"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Transferrable bytes and user-perceived LCP are bounded independent of whole-repo media size",
+   "counterexample": "Add unexpected high-priority video/font preload or corrupt poster",
+   "test_oracle": [
+    "tests/test_web_assurance.py::test_page_transfer_stays_within_predeclared_budget",
+    "tests/test_media_budget.py"
+   ],
+   "required_change": "Differentiate repository asset inventory, page transfer, cache, data-saver and format; fail over-budget on targets",
+   "dependency_ids": [
+    "WEB-02"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_media_budget.py tests/test_web_assurance.py"
+   ],
+   "acceptance_predicate": "Per-profile transfer budgets from measured baseline; no broken poster or blank hero",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_web_assurance.py::test_page_transfer_stays_within_predeclared_budget",
+    "tests/test_media_budget.py"
+   ],
+   "mutants": [
+    "M-WEB-05-video-preload"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "WEB-06",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "web/index.html:1-48",
+    "config/business.json",
+    "docs/RELEASE_STATUS.md"
+   ],
+   "defect_or_requirement": "Add canonical and absolute Open Graph URL based on approved domain; verify search directives and crawl",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R18",
+    "R12"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Public URL/metadata consistent with approved live site; unapproved FQDN stays blocked",
+   "counterexample": "Change canonical, og image or JSON-LD to mismatched domain",
+   "test_oracle": [],
+   "required_change": "Add canonical and absolute Open Graph URL based on approved domain; verify search directives and crawl",
+   "dependency_ids": [
+    "OPS-07"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Canonical/schema/OG agree with owner-approved DNS+TLS; search indexing cannot be asserted absent field proof",
+   "artifact_paths": [
+    "evidence/seo-structural.json",
+    "evidence/public-indexing.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Canonical and OG URLs depend on the approved production domain (B4). Not invented.",
+   "subclaims": [
+    {
+     "id": "WEB-06.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B4",
+      "B8"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "WEB-07",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "config/business.json",
+    "web/js/data.js",
+    "web/js/quote.js",
+    "web/index.html"
+   ],
+   "defect_or_requirement": "Define approved price/VAT/min shift/idle/dispatch snapshot; validate catalog against it without accessing CRM",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R10",
+    "R18"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Visible price and quote are derived from effective-dated authorized canonical facts",
+   "counterexample": "Make JCB rate or VAT differ across JSON/JS/HTML while math still passes",
+   "test_oracle": [
+    "tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface",
+    "tests/test_business_parity.py::test_no_price_is_fabricated_as_zero_or_negative"
+   ],
+   "required_change": "Define approved price/VAT/min shift/idle/dispatch snapshot; validate catalog against it without accessing CRM",
+   "dependency_ids": [
+    "EVD-03"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_business_parity.py"
+   ],
+   "acceptance_predicate": "No unapproved published rate or hidden VAT semantics; arithmetic independent oracle passes",
+   "artifact_paths": [
+    "evidence/tariff-approval.json",
+    "evidence/pricing-parity.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Parity validator verified; approval of effective-dated prices and VAT is B1/B2.",
+   "subclaims": [
+    {
+     "id": "WEB-07.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface",
+      "tests/test_business_parity.py::test_no_price_is_fabricated_as_zero_or_negative"
+     ],
+     "mutants": [
+      "M-QUOTE-unknown-delivery-as-zero",
+      "M-WEB-07-parity"
+     ]
+    },
+    {
+     "id": "WEB-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B1",
+      "B2"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "WEB-08",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "config/stock.json",
+    "docs/PROVENANCE.md",
+    "web/media"
+   ],
+   "defect_or_requirement": "Create source-specific license inventory; replace or disable unapproved assets only after owner decision",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R11"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Each public asset has source hash, author, license/permission, brand/claim provenance",
+   "counterexample": "Remove permission record for one video while bytes/hash remain valid",
+   "test_oracle": [],
+   "required_change": "Create source-specific license inventory; replace or disable unapproved assets only after owner decision",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Every release asset has matched source rights and owner authorization; unresolved rights block publication",
+   "artifact_paths": [
+    "evidence/media-rights.json",
+    "evidence/brand-claims.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Media rights and footage origin are B5/B6/B9.",
+   "subclaims": [
+    {
+     "id": "WEB-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B5",
+      "B6",
+      "B9"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "OPS-01",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:969-981",
+    "ops/outbox_health.py",
+    "ops/health.py"
+   ],
+   "defect_or_requirement": "Preserve /api/health contract; define separate restricted readiness signals and telemetry truth table",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R04",
+    "R05",
+    "R23"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Each health status proves only a clearly defined observed subsystem",
+   "counterexample": "Worker heartbeat fresh with 100 stale pending jobs and no receiver ACK",
+   "test_oracle": [
+    "tests/test_readiness_truth_table.py",
+    "tests/test_outbox_readiness.py"
+   ],
+   "required_change": "Preserve /api/health contract; define separate restricted readiness signals and telemetry truth table",
+   "dependency_ids": [
+    "NET-04"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_outbox_readiness.py tests/test_readiness_truth_table.py"
+   ],
+   "acceptance_predicate": "No metric implies greater assurance than observed; unknown/failed channel blocks release",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_readiness_truth_table.py",
+    "tests/test_outbox_readiness.py"
+   ],
+   "mutants": [
+    "M-OPS-01-heartbeat-is-healthy",
+    "M-OPS-01-unknown-is-ready",
+    "M-OPS-01-receipt-subset"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "OPS-02",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "docs/OUTBOX_OBSERVABILITY.md",
+    "docs/RELEASE_STATUS.md"
+   ],
+   "defect_or_requirement": "Propose and have owner adopt accepted-lead durability, delivery latency, ack coverage, field CWV, recovery SLO",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "CODE_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R04",
+    "R13",
+    "R23",
+    "R05"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "SLO has defined population, clock, numerator, denominator, window and error budget",
+   "counterexample": "Report 100% availability from synthetic soak with no field requests",
+   "test_oracle": [],
+   "required_change": "Propose and have owner adopt accepted-lead durability, delivery latency, ack coverage, field CWV, recovery SLO",
+   "dependency_ids": [
+    "OPS-01",
+    "WEB-03"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Adopted pre-run SLO; no backfilled goals; actual monitored values with data-quality bounds",
+   "artifact_paths": [
+    "evidence/slo-policy.json",
+    "evidence/sli-historical.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "SLO adoption is an owner decision and needs field data; none is proposed as adopted.",
+   "subclaims": [
+    {
+     "id": "OPS-02.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "S1"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "OPS-03",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "ops/systemd/pbt-site-health.service",
+    "docs/OUTBOX_OBSERVABILITY.md"
+   ],
+   "defect_or_requirement": "Build correlation protocol without leaking PII; classify monitor DOWN vs actual lead loss",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R24",
+    "R05",
+    "R23"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Alert investigation correlates service event, host/power, SQLite, receiver ACK and monitor ID",
+   "counterexample": "Trigger false heartbeat DOWN during intentional power guard; real failed sender",
+   "test_oracle": [
+    "tests/test_incident_correlation.py"
+   ],
+   "required_change": "Build correlation protocol without leaking PII; classify monitor DOWN vs actual lead loss",
+   "dependency_ids": [
+    "OPS-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_incident_correlation.py"
+   ],
+   "acceptance_predicate": "Each incident has provider event ID and root-cause status; unknown remains unknown",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_incident_correlation.py"
+   ],
+   "mutants": [
+    "M-OPS-03-invent-outage"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "OPS-04",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "docs/drafts/privacy-draft.md",
+    "web/index.html:299-327"
+   ],
+   "defect_or_requirement": "Owner/legal review current Ukrainian law, publish accurate notice, minimization and user rights routes; no invented law",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R09"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "PII processing purpose, retention, controller/contact and lawful notice are owner-approved",
+   "counterexample": "Find contact form with no approved policy and no documented retention authorization",
+   "test_oracle": [],
+   "required_change": "Owner/legal review current Ukrainian law, publish accurate notice, minimization and user rights routes; no invented law",
+   "dependency_ids": [
+    "EVD-01"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Signed/recorded policy edition and purpose/retention decision or legal HOLD",
+   "artifact_paths": [
+    "evidence/privacy-decision.json",
+    "evidence/legal-review.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Privacy notice, purpose, retention and lawful basis are B7; needs owner and legal review under current Ukrainian law.",
+   "subclaims": [
+    {
+     "id": "OPS-04.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B7"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "OPS-05",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:86-110",
+    "ops/backup.py",
+    "ops/restore.py"
+   ],
+   "defect_or_requirement": "Use explicit retention/delete policy, key deletion or backup expiry, audit-safe deletion receipts",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R09"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Expired data no longer available in active systems and expires from backups under approved retention policy",
+   "counterexample": "Insert expired and legal-hold records, simulate deletion and restoration from old backup",
+   "test_oracle": [],
+   "required_change": "Use explicit retention/delete policy, key deletion or backup expiry, audit-safe deletion receipts",
+   "dependency_ids": [
+    "DB-08",
+    "OPS-04"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Data lifecycle verified; no irreversible auto-delete without approved policy",
+   "artifact_paths": [
+    "evidence/retention-drill.json",
+    "evidence/erasure-reconciliation.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Retention period needs OPS-04. No automatic deletion is implemented without an approved policy.",
+   "subclaims": [
+    {
+     "id": "OPS-05.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B7",
+      "S1"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "OPS-06",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "docs/OWNER_DECISIONS.md",
+    "web/js/quote.js",
+    "data/catalog.json"
+   ],
+   "defect_or_requirement": "Import only approved rate snapshot; require owner decisions for VAT, cranes, shift, downtime, dispatch",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R10"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Price claims are effective-dated and consistent with owner approval and currency/VAT policy",
+   "counterexample": "Compare 1C external proposed rates with site, inject conflicting quote or rounding",
+   "test_oracle": [],
+   "required_change": "Import only approved rate snapshot; require owner decisions for VAT, cranes, shift, downtime, dispatch",
+   "dependency_ids": [
+    "WEB-07"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "Unknown or conflicting rate => publish HOLD or label explicitly unverified; no unapproved assumptions",
+   "artifact_paths": [
+    "evidence/commercial-decision.json",
+    "evidence/quote-conformance.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Commercial rates, VAT, minimum shift, idle and dispatch policy are B1/B2.",
+   "subclaims": [
+    {
+     "id": "OPS-06.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B1",
+      "B2"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "OPS-07",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "ops/README.md",
+    "ops/systemd/pbt-site.service"
+   ],
+   "defect_or_requirement": "Use staging verification and explicit deploy plan, secrets boundary, rollback drill; do not deploy during audit",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R12"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Release only to confirmed controlled FQDN with verified edge TLS and independent authorization",
+   "counterexample": "Certificate mismatch, wrong DNS target, missing redirect/HSTS, broken new rollout",
+   "test_oracle": [],
+   "required_change": "Use staging verification and explicit deploy plan, secrets boundary, rollback drill; do not deploy during audit",
+   "dependency_ids": [
+    "NET-02",
+    "EVD-08"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "DNS/TLS/rollback proof and owner authorization separate from source CI",
+   "artifact_paths": [
+    "evidence/dns-tls.json",
+    "evidence/rollback-drill.json",
+    "evidence/deploy-authorization.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Domain, TLS, rollout and rollback rehearsal on a real edge need B4 and deploy authorization.",
+   "subclaims": [
+    {
+     "id": "OPS-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "B4",
+      "D1"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "OPS-08",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "docs/RELEASE_STATUS.md",
+    "docs/OWNER_DECISIONS.md",
+    "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md"
+   ],
+   "defect_or_requirement": "Create signed/approved owner decisions and independent evidence matrix; no automatic deployment/merge via score",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R03",
+    "R04",
+    "R09",
+    "R10",
+    "R11",
+    "R12",
+    "R13"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Every mandatory external fact has non-self-issued receipt; no unproven production claim",
+   "counterexample": "Keep one source absent and run green CI",
+   "test_oracle": [
+    "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class",
+    "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
+   ],
+   "required_change": "Create signed/approved owner decisions and independent evidence matrix; no automatic deployment/merge via score",
+   "dependency_ids": [
+    "EVD-08",
+    "OPS-02",
+    "OPS-04",
+    "OPS-05",
+    "OPS-06",
+    "OPS-07",
+    "WEB-08"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_acceptance_adversarial.py"
+   ],
+   "acceptance_predicate": "Release PASS iff all mandatory leaves are evidence-verified at target version and owner deploy authorization exists",
+   "artifact_paths": [
+    "evidence/final-release-act.json",
+    "evidence/owner-gates.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Depends on all external receipts above and explicit owner release acceptance.",
+   "subclaims": [
+    {
+     "id": "OPS-08.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class",
+      "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
+     ],
+     "mutants": [
+      "M-ACCEPT-external-file"
+     ]
+    },
+    {
+     "id": "OPS-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "D1"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "ADV-01",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py",
+    "server/delivery_transport.py",
+    "web/js/site.js"
+   ],
+   "defect_or_requirement": "Enumerate DFD, trust boundary, asset, threat, attack precondition, CWE class, non-prod falsifier",
+   "evidence_class": [
+    "SCOPE_LIMIT_CONFIRMED",
+    "CONDITIONAL",
+    "CONDITIONAL"
+   ],
+   "risk_and_impact": [
+    "R14",
+    "R15",
+    "R20"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Attack surface inventory is complete within known scope and trust boundaries testable",
+   "counterexample": "New data flow bypasses source-sink inventory without requiring update",
+   "test_oracle": [
+    "tests/test_assurance_case.py::test_threat_model_covers_every_endpoint_and_links_real_tests",
+    "tests/test_assurance_case.py::test_controls_map_names_real_tests_and_claims_no_whole_standard",
+    "tests/test_dom_trust_boundary.py::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink"
+   ],
+   "required_change": "Enumerate DFD, trust boundary, asset, threat, attack precondition, CWE class, non-prod falsifier",
+   "dependency_ids": [
+    "NET-03",
+    "NET-06"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_assurance_case.py tests/test_dom_trust_boundary.py"
+   ],
+   "acceptance_predicate": "Every high-impact path linked to at least one test and owner of risk",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_assurance_case.py::test_threat_model_covers_every_endpoint_and_links_real_tests",
+    "tests/test_assurance_case.py::test_controls_map_names_real_tests_and_claims_no_whole_standard",
+    "tests/test_dom_trust_boundary.py::test_dom_sink_inventory_is_complete_and_fails_on_a_new_sink"
+   ],
+   "mutants": [
+    "M-ADV-01-unmodelled-endpoint"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "ADV-02",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/meta_evidence_gate.py",
+    "tests/test_meta_evidence_gate.py",
+    "tests/test_leads.py"
+   ],
+   "defect_or_requirement": "Versioned mutation catalogue, enumerate survived/killed mutants with justified exclusions",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "CODE_CONFIRMED",
+    "SCOPE_LIMIT_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R06",
+    "R07",
+    "R14"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Critical oracle rejects deliberately unsafe behavior under controlled mutation",
+   "counterexample": "Mutate HMAC verification, FK checks, dedup uniqueness, replay or budget bounds",
+   "test_oracle": [
+    "tests/test_mutation_runner.py"
+   ],
+   "required_change": "Versioned mutation catalogue, enumerate survived/killed mutants with justified exclusions",
+   "dependency_ids": [
+    "EVD-03",
+    "EVD-04",
+    "DB-04"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_mutation_runner.py"
+   ],
+   "acceptance_predicate": "All designated critical mutants killed; score measured without arbitrary blanket 100% claim",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_mutation_runner.py"
+   ],
+   "mutants": [
+    "M-EVD-03-catalog-coverage"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "ADV-03",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py",
+    "tests/test_atomic_lead_quota.py",
+    "tests/test_leads.py"
+   ],
+   "defect_or_requirement": "Property-based state machine with deterministic seeds and replay traces",
+   "evidence_class": [
+    "CONDITIONAL",
+    "CONDITIONAL"
+   ],
+   "risk_and_impact": [
+    "R17",
+    "R20"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Safety properties survive network races and restarts under declared single-host topology",
+   "counterexample": "Schedule concurrent retry, quota, crash and worker states with fake time",
+   "test_oracle": [
+    "tests/test_stateful_model.py"
+   ],
+   "required_change": "Property-based state machine with deterministic seeds and replay traces",
+   "dependency_ids": [
+    "DB-03",
+    "NET-05"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_stateful_model.py"
+   ],
+   "acceptance_predicate": "Minimal counterexample recorded; no lost accepted lead or silent invariant breach",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_stateful_model.py"
+   ],
+   "mutants": [
+    "M-NET-05-quota-not-charged"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "ADV-04",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "tools/runtime_soak.py",
+    "tools/verify_soak_evidence.py"
+   ],
+   "defect_or_requirement": "Run mandatory >=1800s with raw sample verification; optionally longer endurance only after cost/perf policy",
+   "evidence_class": [
+    "CI_STATE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R19",
+    "R24"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Fixed synthetic stress must respect predeclared thresholds and measure resource trees",
+   "counterexample": "Inject stuck downstream, server restart, disk pressure, repeated packet faults",
+   "test_oracle": [
+    "tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget",
+    "tests/test_runtime_soak_contract.py",
+    "tests/test_data_integrity.py::test_disk_full_during_accept_is_500_with_no_partial_state"
+   ],
+   "required_change": "Run mandatory >=1800s with raw sample verification; optionally longer endurance only after cost/perf policy",
+   "dependency_ids": [
+    "EVD-05",
+    "OPS-01"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_data_integrity.py tests/test_runtime_soak_contract.py tests/test_runtime_soak_evidence.py"
+   ],
+   "acceptance_predicate": "Observed duration, integrity, backlog and process samples pass independent checker at same SHA",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget",
+    "tests/test_runtime_soak_contract.py",
+    "tests/test_data_integrity.py::test_disk_full_during_accept_is_500_with_no_partial_state"
+   ],
+   "mutants": [
+    "M-ADV-04-p99-limit"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "ADV-05",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "server/app.py:260-374",
+    "web/js/site.js:504-525",
+    "web/js/quote.js"
+   ],
+   "defect_or_requirement": "Design common canonical UTC/Kyiv date policy and differential test vectors; do not silently change API",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R10",
+    "R13"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Client/server locale and clock behavior has explicit equivalence domain",
+   "counterexample": "Time-zone offset around DST/day boundary, malformed Unicode and huge integer",
+   "test_oracle": [
+    "tests/test_date_policy.py"
+   ],
+   "required_change": "Design common canonical UTC/Kyiv date policy and differential test vectors; do not silently change API",
+   "dependency_ids": [
+    "WEB-07"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_date_policy.py"
+   ],
+   "acceptance_predicate": "All documented boundary cases invariant or explicit rejection; discrepancies fixed or scoped",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_date_policy.py"
+   ],
+   "mutants": [
+    "M-ADV-05-host-date",
+    "M-ADV-05-browser-date"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "ADV-06",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "requirements.txt",
+    ".github/workflows/security-assurance.yml",
+    "ops/systemd/pbt-site.service"
+   ],
+   "defect_or_requirement": "Adopt SLSA-aligned provenance with precise level boundary; verify GitHub run/asset digests against outputs",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "SCOPE_LIMIT_CONFIRMED"
+   ],
+   "risk_and_impact": [
+    "R16",
+    "R22"
+   ],
+   "preconditions": "none beyond dependencies",
+   "formal_invariant": "Dependency/toolchain and execution provenance independently traceable",
+   "counterexample": "Change action pin or wheel hash and replay stale receipt",
+   "test_oracle": [
+    "tests/test_supply_chain.py::test_unpinned_action_is_rejected",
+    "tests/test_supply_chain.py::test_weak_lock_files_are_rejected",
+    "tests/test_supply_chain.py::test_stale_receipt_after_pin_or_lock_change_is_rejected"
+   ],
+   "required_change": "Adopt SLSA-aligned provenance with precise level boundary; verify GitHub run/asset digests against outputs",
+   "dependency_ids": [
+    "NET-07",
+    "NET-08"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_supply_chain.py"
+   ],
+   "acceptance_predicate": "Mutation rejected; valid source/runner/dependency manifest reproducible within documented limits",
+   "artifact_paths": [
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/receipts.json",
+    "assurance/evidence/97a51c044938d755fc5d5a7c0d6fff224933ccb4/decision.json"
+   ],
+   "execution_status": "VERIFIED",
+   "verification_status": "CONFIRMED",
+   "disposition": "VERIFIED",
+   "tests": [
+    "tests/test_supply_chain.py::test_unpinned_action_is_rejected",
+    "tests/test_supply_chain.py::test_weak_lock_files_are_rejected",
+    "tests/test_supply_chain.py::test_stale_receipt_after_pin_or_lock_change_is_rejected"
+   ],
+   "mutants": [
+    "M-ADV-06-unpinned-action"
+   ],
+   "external_receipt": null,
+   "verified_at_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+  },
+  {
+   "obligation_id": "ADV-07",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "web/index.html",
+    "web/css/site.css",
+    "tests/test_cross_engine_parity.py"
+   ],
+   "defect_or_requirement": "Independent manual observation with actual device specs and recordings/screenshots (consent); lab baseline retained",
+   "evidence_class": [
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R21",
+    "R13"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Critical booking lead journey works across device engines, input methods and constraints",
+   "counterexample": "200% text, high contrast, reduced motion, keyboard only, screen reader, iOS Safari",
+   "test_oracle": [],
+   "required_change": "Independent manual observation with actual device specs and recordings/screenshots (consent); lab baseline retained",
+   "dependency_ids": [
+    "WEB-01",
+    "WEB-03",
+    "WEB-04"
+   ],
+   "verification_commands": [],
+   "acceptance_predicate": "No unresolved WCAG AA critical failure and recorded field boundary; owner visual approval separate",
+   "artifact_paths": [
+    "evidence/manual-device-matrix.json",
+    "evidence/visual-approval.json"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Real devices, screen reader and iOS Safari need a human and hardware; WebKit on Linux is not iOS.",
+   "subclaims": [
+    {
+     "id": "ADV-07.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "H1"
+     ]
+    }
+   ]
+  },
+  {
+   "obligation_id": "ADV-08",
+   "source_revision": "b1f91f46567a1567d68b6c2530dc8d18a09b13b3",
+   "source_location": [
+    "docs/RELEASE_STATUS.md",
+    "docs/EXACT_HEAD_EVIDENCE_PROTOCOL.md"
+   ],
+   "defect_or_requirement": "Generate canonical release act with mandatory graph, signed owner/deploy decisions, unresolved facts as HOLD",
+   "evidence_class": [
+    "CODE_CONFIRMED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED",
+    "EXTERNAL_UNVERIFIED"
+   ],
+   "risk_and_impact": [
+    "R02",
+    "R03",
+    "R04",
+    "R09",
+    "R10",
+    "R11",
+    "R12"
+   ],
+   "preconditions": "external owner fact",
+   "formal_invariant": "Release decision is a verifiable dependency closure, never a self-graded average",
+   "counterexample": "Withdraw one mandatory provider receipt after all code gates become green",
+   "test_oracle": [
+    "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
+   ],
+   "required_change": "Generate canonical release act with mandatory graph, signed owner/deploy decisions, unresolved facts as HOLD",
+   "dependency_ids": [
+    "OPS-08",
+    "ADV-01",
+    "ADV-02",
+    "ADV-04",
+    "ADV-06",
+    "ADV-07"
+   ],
+   "verification_commands": [
+    "python -m pytest -q tests/test_acceptance_adversarial.py"
+   ],
+   "acceptance_predicate": "Zero mandatory unknowns, no new P0/P1, current immutable code proof, owner authorization; otherwise HOLD",
+   "artifact_paths": [
+    "evidence/assurance-final.json",
+    "evidence/release-digest.txt"
+   ],
+   "execution_status": "BLOCKED",
+   "verification_status": "UNKNOWN",
+   "disposition": "BLOCKED_EXTERNAL",
+   "tests": [],
+   "mutants": [],
+   "external_receipt": null,
+   "blocker": "Signed release act needs every external receipt and owner authorization. Machine decision: PRODUCTION HOLD.",
+   "subclaims": [
+    {
+     "id": "ADV-08.T",
+     "kind": "technical",
+     "status": "VERIFIED",
+     "tests": [
+      "tests/test_acceptance_adversarial.py::test_production_stays_on_hold_without_signed_receipts"
+     ],
+     "mutants": [
+      "M-ACCEPT-external-file"
+     ]
+    },
+    {
+     "id": "ADV-08.E",
+     "kind": "external",
+     "status": "UNKNOWN",
+     "classes": [
+      "D1"
+     ]
+    }
+   ]
+  }
+ ],
+ "evidence_sha": "97a51c044938d755fc5d5a7c0d6fff224933ccb4"
+}
