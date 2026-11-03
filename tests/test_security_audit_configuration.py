@@ -19,6 +19,8 @@ AUDIT_FIELDS = [
     '          require-hashes: true',
     '          vulnerability-service: osv',
 ]
+AUDIT_FIELDS_SAST = [v.replace('inputs: requirements.txt', 'inputs: requirements-sast.txt')
+                     for v in AUDIT_FIELDS]
 
 
 def dependency_steps(workflow):
@@ -50,10 +52,21 @@ def assert_audit_policy(workflow):
         '        id: complete_audit', *AUDIT_FIELDS,
         '          internal-be-careful-extra-flags: --format=json --disable-pip',
     ]
+    sast_first = find_single_id(steps, 'sast_audit')
+    sast_complete = find_single_id(steps, 'sast_complete_audit')
+    assert steps[sast_first] == [
+        '      - name: Audit hash-locked SAST scanner requirements against OSV',
+        '        id: sast_audit', *AUDIT_FIELDS_SAST,
+    ]
+    assert steps[sast_complete] == [
+        '      - name: Audit every pinned SAST scanner requirement and emit JSON',
+        '        id: sast_complete_audit', *AUDIT_FIELDS_SAST,
+        '          internal-be-careful-extra-flags: --format=json --disable-pip',
+    ]
     cleanup = [i for i, step in enumerate(steps)
                if any(line.strip().endswith('rm -f /tmp/pip-audit-output.txt') for line in step)]
-    assert cleanup == [first - 1, complete - 1]
-    assert first < complete
+    assert cleanup == [first - 1, complete - 1, sast_first - 1, sast_complete - 1]
+    assert first < complete < sast_first < sast_complete
     assert steps[cleanup[0]] == [
         '      - name: Remove any stale runner-local audit output',
         '        run: rm -f /tmp/pip-audit-output.txt',
@@ -65,6 +78,20 @@ def assert_audit_policy(workflow):
         '          git show "${PBT_HEAD_SHA}:requirements.txt" | cmp - requirements.txt',
         '          rm -f /tmp/pip-audit-output.txt',
     ]
+    assert steps[cleanup[2]] == [
+        '      - name: Remove primary output before SAST lock baseline scan',
+        '        run: |',
+        '          test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"',
+        '          git show "${PBT_HEAD_SHA}:requirements-sast.txt" | cmp - requirements-sast.txt',
+        '          rm -f /tmp/pip-audit-output.txt',
+    ]
+    assert steps[cleanup[3]] == [
+        '      - name: Remove SAST baseline output before complete locked-input scan',
+        '        run: |',
+        '          test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"',
+        '          git show "${PBT_HEAD_SHA}:requirements-sast.txt" | cmp - requirements-sast.txt',
+        '          rm -f /tmp/pip-audit-output.txt',
+    ]
     provenance = [step for step in steps if step[0] ==
                   '      - name: Exact source provenance and diff hygiene']
     assert provenance == [[
@@ -74,11 +101,16 @@ def assert_audit_policy(workflow):
         '          git show "${PBT_HEAD_SHA}:requirements.txt" | cmp - requirements.txt',
         '          git diff --check HEAD^1 HEAD',
     ]]
-    assert workflow.count(f'uses: {PIN}') == 2
+    assert workflow.count(f'uses: {PIN}') == 4
     assert 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' in workflow
     assert 'actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0' in workflow
     assert 'python tools/security_receipt.py --requirements requirements.txt' in workflow
     assert '--report /tmp/pip-audit-output.txt --output artifacts/security/osv-receipt.json' in workflow
+    assert 'python tools/security_receipt.py --requirements requirements-sast.txt' in workflow
+    assert '--report /tmp/pip-audit-output.txt --output artifacts/security/osv-sast-receipt.json' in workflow
+    assert 'AUDIT_OUTCOME: ${{ steps.sast_complete_audit.outcome }}' in workflow
+    assert 'AUDIT_BASELINE_OUTCOME: ${{ steps.sast_audit.outcome }}' in workflow
+    assert 'artifacts/security/osv-sast-receipt.json' in workflow
     assert workflow.index('id: complete_audit') < workflow.index('python tools/security_receipt.py')
     assert 'AUDIT_OUTCOME: ${{ steps.complete_audit.outcome }}' in workflow
     assert 'AUDIT_BASELINE_OUTCOME: ${{ steps.audit.outcome }}' in workflow
@@ -143,3 +175,38 @@ def test_removing_either_pre_scan_blob_check_fails_policy(which):
     mutant = parts[0] + ('' if which == 0 else check) + parts[1] + ('' if which == 1 else check) + parts[2]
     with pytest.raises(AssertionError):
         assert_audit_policy(mutant)
+
+@pytest.mark.parametrize('step_id', ['sast_audit', 'sast_complete_audit'])
+@pytest.mark.parametrize('original,replacement', [
+    ('uses: ' + PIN, 'uses: pypa/gh-action-pip-audit@v2'),
+    ('inputs: requirements-sast.txt', 'inputs: requirements.txt'),
+    ('no-deps: true', 'no-deps: false'),
+    ('require-hashes: true', 'require-hashes: false'),
+    ('vulnerability-service: osv', 'vulnerability-service: pypi'),
+])
+def test_sast_each_scan_rejects_weakened_configuration(step_id, original, replacement):
+    workflow = (ROOT / '.github/workflows/security-assurance.yml').read_text()
+    marker = f'        id: {step_id}\n'
+    start = workflow.index(marker)
+    end = workflow.find('\n      - name:', start)
+    block = workflow[start:end]
+    assert original in block
+    altered = workflow[:start] + block.replace(original, replacement, 1) + workflow[end:]
+    with pytest.raises(AssertionError):
+        assert_audit_policy(altered)
+
+
+def test_sast_scan_disappearance_cannot_hide_behind_primary_clean_result():
+    workflow = (ROOT / '.github/workflows/security-assurance.yml').read_text()
+    altered = workflow.replace('        id: sast_complete_audit', '        id: disabled_sast_complete', 1)
+    with pytest.raises(AssertionError):
+        assert_audit_policy(altered)
+
+
+def test_sast_receipt_cannot_be_silently_omitted():
+    workflow = (ROOT / '.github/workflows/security-assurance.yml').read_text()
+    altered = workflow.replace('            artifacts/security/osv-sast-receipt.json\n', '', 1)
+    with pytest.raises(AssertionError):
+        assert_audit_policy(altered)
+
+
