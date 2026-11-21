@@ -15,7 +15,7 @@ def _proc(root, pid, parent, *, children=None, tid=None):
     task = root / str(pid) / "task" / str(tid or pid)
     task.mkdir(parents=True)
     (root / str(pid) / "status").write_text(
-        f"Name:\tfixture\\nState:\tS (sleeping)\\nPPid:\t{parent}\\n"
+        f"Name:\tfixture\nState:\tS (sleeping)\nPPid:\t{parent}\n"
     )
     if children is not None:
         (task / "children").write_text(children)
@@ -54,6 +54,6 @@ def test_missing_both_interfaces_rejects_instead_of_certifying_zero(tmp_path):
 
 def test_corrupted_ppid_fails_closed(tmp_path):
     _proc(tmp_path, 100, 1)
-    (tmp_path / "100" / "status").write_text("State:\tS (sleeping)\\n")
+    (tmp_path / "100" / "status").write_text("State:\tS (sleeping)\n")
     with pytest.raises(RuntimeError, match="proc_ppid_missing"):
         _descendants(100, proc_root=tmp_path)
