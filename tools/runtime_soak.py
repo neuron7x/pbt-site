@@ -11,7 +11,6 @@ import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import math
-import re
 import os
 from pathlib import Path
 import signal
@@ -212,12 +211,13 @@ def _proc_status(pid):
         if line.startswith(('VmRSS:', 'Threads:', 'PPid:')):
             k, v = line.split(':', 1)
             rows[k] = int(v.split()[0])
-    retudef _descendants(root_pid, proc_root=Path('/proc')):
-    """Census process descendants, falling back to PPid on restricted procfs.
+    return rows
 
-    A task/*/children file can be absent even for a live Linux task. If no
-    children file is readable, inspect numeric /proc/*/status PPid records.
-    Never silently certify an empty tree if the alternate census fails.
+
+def _descendants(root_pid, proc_root=Path('/proc')):
+    """Sample process descendants; recover if task/*/children is unavailable.
+
+    Never treat an unobservable process tree as a verified empty tree.
     """
     found = set()
     pending = [root_pid]
@@ -228,11 +228,11 @@ def _proc_status(pid):
             tasks = (proc_root / str(pid) / 'task').iterdir()
             for task in tasks:
                 try:
-                    child_text = (task / 'children').read_text()
+                    children = (task / 'children').read_text()
                     child_interface_observed = True
                 except FileNotFoundError:
                     continue
-                for token in child_text.split():
+                for token in children.split():
                     child = int(token)
                     if child != root_pid and child not in found:
                         found.add(child)
@@ -242,8 +242,8 @@ def _proc_status(pid):
     if child_interface_observed:
         return found
 
-    # Snapshot all process relationships before traversal: grandchildren may
-    # appear ahead of their parents in the directory iteration order.
+    # PPid is process-wide (unlike a worker thread TID). Collect all parent
+    # relationships before traversing so grandchildren are not order-sensitive.
     by_parent = {}
     observed_root = False
     try:
@@ -253,13 +253,15 @@ def _proc_status(pid):
             try:
                 status = (entry / 'status').read_text()
             except (FileNotFoundError, ProcessLookupError):
-                continue  # Process disappeared during the snapshot.
-            if int(entry.name) == root_pid:
+                continue
+            pid = int(entry.name)
+            if pid == root_pid:
                 observed_root = True
-            match = re.search(r'(?m)^PPid:\s*(\d+)\s*, status)
-            if match is None:
+            parents = [line.partition(':')[2].strip() for line in status.splitlines()
+                       if line.startswith('PPid:')]
+            if len(parents) != 1 or not parents[0].isdecimal():
                 raise RuntimeError('proc_ppid_missing')
-            by_parent.setdefault(int(match.group(1)), set()).add(int(entry.name))
+            by_parent.setdefault(int(parents[0]), set()).add(pid)
     except OSError as exc:
         raise RuntimeError('proc_descendant_census_unavailable') from exc
     if not observed_root:
@@ -273,263 +275,6 @@ def _proc_status(pid):
                 found.add(child)
                 pending.append(child)
     return found
-urn found
-
-
-def resources(proc):
-    rows = _proc_status(proc.pid)
-    if 'VmRSS' not in rows or 'Threads' not in rows:
-        raise RuntimeError('rss_or_thread_measurement_missing')
-    child_rss = 0
-    live_children = 0
-    for pid in _descendants(proc.pid):
-        try:
-            child = _proc_status(pid)
-        except FileNotFoundError:
-            continue  # Short-lived process exited between census and read.
-        child_rss += child.get('VmRSS', 0)  # Zombies may not expose VmRSS.
-        live_children += 1
-    rows['ChildRSSSum'] = child_rss
-    rows['ChildCount'] = live_children
-    return rows
-
-
-def backup(env):
-    done = subprocess.run([sys.executable, str(ROOT / 'ops' / 'backup.py')],
-                          cwd=ROOT, env=env, stdout=subprocess.DEVNULL,
-                          stderr=subprocess.DEVNULL, timeout=20, check=False)
-    if done.returncode:
-        raise RuntimeError('sqlite_backup_failed')
-
-
-def exercise(profile, seconds, source_sha, cfg):
-    periods = cfg[profile]
-    limits = cfg['budgets']
-    crm = SyntheticCRM()
-    proc = None
-    try:
-        with tempfile.TemporaryDirectory(prefix='pbt-runtime-soak-') as temp:
-            tmp = Path(temp)
-            db = tmp / 'leads.db'
-            backups = tmp / 'backups'
-            port = free_port()
-            base = f'http://127.0.0.1:{port}'
-            env = {
-                **os.environ, 'HOST': '127.0.0.1', 'PORT': str(port),
-                'LEAD_DB': str(db), 'LEAD_WEBHOOK_URL': crm.url,
-                'LEAD_WEBHOOK_SECRET': SECRET.decode(), 'TELEGRAM_BOT_TOKEN': '',
-                'TELEGRAM_CHAT_ID': '', 'RATE_ANY_10MIN': '1000000',
-                'RATE_LEAD_10MIN': '1000000', 'RATE_LEAD_DAY': '1000000',
-                'DELIVERY_CONCURRENCY': '4', 'DELIVERY_TIMEOUT': '.6',
-                'DELIVERY_POLL_S': '.05', 'DELIVERY_BACKOFF_S': '.05',
-                'DELIVERY_MAX_ATTEMPTS': '4', 'MAX_CONNECTIONS': '48',
-                'BACKUP_DIR': str(backups), 'BACKUP_KEEP': '6',
-                'IP_HASH_SALT': 'local-test-only-ip-salt',
-                'PYTHONDONTWRITEBYTECODE': '1',
-            }
-            proc = launch(env, port)
-            began = time.monotonic()
-            samples = []
-            rss_epochs = [[]]
-            child_rss_epochs = [[]]
-            child_count_epochs = [[]]
-            threads_max = 0
-            pending_max = 0
-            accepted = 0
-            replayed = 0
-            restarted = False
-            checkpoints = set()
-            last_resource_sample = -1
-            while time.monotonic() - began < seconds:
-                tick = time.monotonic()
-                n = accepted + 1
-                result, ms = lead(base, n)
-                if result.get('ref') != f'PBT-{n:06d}':
-                    raise RuntimeError('nonmonotonic_accepted_id')
-                samples.append(ms)
-                accepted += 1
-                if accepted % 30 == 0:
-                    again, _ = lead(base, n)
-                    if again.get('ref') != result['ref'] or again.get('replayed') is not True:
-                        raise RuntimeError('idempotent_replay_mismatch')
-                    replayed += 1
-                elapsed = time.monotonic() - began
-                if last_resource_sample < 0 or elapsed - last_resource_sample >= 2:
-                    seen = resources(proc)
-                    rss_epochs[-1].append(seen['VmRSS'])
-                    child_rss_epochs[-1].append(seen['ChildRSSSum'])
-                    child_count_epochs[-1].append(seen['ChildCount'])
-                    threads_max = max(threads_max, seen['Threads'])
-                    pending_max = max(pending_max, sqlite_counts(db)['pending'])
-                    last_resource_sample = elapsed
-                for fraction, name in ((1 / 3, 'first'), (2 / 3, 'second')):
-                    if elapsed >= seconds * fraction and name not in checkpoints:
-                        backup(env)
-                        checkpoints.add(name)
-                if elapsed >= seconds / 2 and not restarted:
-                    with crm.lock:
-                        crm.crash_window = True
-                    try:
-                        stop(proc)
-                        if sqlite_counts(db)['leads'] != accepted:
-                            raise RuntimeError('accepted_lead_missing_after_process_crash')
-                        proc = launch(env, port)
-                    finally:
-                        with crm.lock:
-                            crm.crash_window = False
-                    rss_epochs.append([])
-                    child_rss_epochs.append([])
-                    child_count_epochs.append([])
-                    last_resource_sample = -1
-                    restarted = True
-                time.sleep(max(0, periods['request_period_s'] - (time.monotonic() - tick)))
-            elapsed = time.monotonic() - began
-            drain_until = time.monotonic() + limits['maximum_drain_s']
-            state = sqlite_counts(db)
-            while (state['delivered'] != accepted or state['pending'] != 0) and time.monotonic() < drain_until:
-                time.sleep(.15)
-                state = sqlite_counts(db)
-            drain_elapsed = time.monotonic() - (drain_until - limits['maximum_drain_s'])
-            with sqlite3.connect(db, timeout=5) as conn:
-                integrity = conn.execute('PRAGMA integrity_check').fetchone()[0]
-            actual_backups = sorted(backups.glob('leads-*.db'))
-            for file in actual_backups:
-                with sqlite3.connect(file, timeout=5) as conn:
-                    if conn.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
-                        raise RuntimeError('backup_integrity_invalid')
-            stats = crm.snapshot()
-            rss_peaks = [max(x) for x in rss_epochs if x]
-            rss_growth = [max(x) - x[0] for x in rss_epochs if x]
-            tree_rss_peak = max(
-                server + child
-                for server_epoch, child_epoch in zip(rss_epochs, child_rss_epochs)
-                for server, child in zip(server_epoch, child_epoch))
-            child_count_peak = max(max(group) for group in child_count_epochs if group)
-            report = {
-                'schema': 'pbt-soak-evidence-v1',
-                'source_sha': source_sha,
-                'profile': profile,
-                'scope': 'synthetic_local_http_sqlite_not_production',
-                'minimum_required_duration_s': periods['minimum_duration_s'],
-                'observed_duration_s': round(elapsed, 3),
-                'accepted_leads': accepted,
-                'minimum_required_accepted': periods['minimum_accepted'],
-                'idempotent_replays': replayed,
-                'api_p50_ms': round(percentile(samples, 50), 3),
-                'api_p95_ms': round(percentile(samples, 95), 3),
-                'api_p99_ms': round(percentile(samples, 99), 3),
-                'api_max_ms': round(max(samples), 3),
-                'api_latency_samples_ms': [round(v, 3) for v in samples],
-                'rss_sample_epochs_kib': rss_epochs,
-                'child_rss_sample_epochs_kib': child_rss_epochs,
-                'child_process_sample_epochs': child_count_epochs,
-                'tree_vm_rss_sum_peak_kib': tree_rss_peak,
-                'observed_child_processes_peak': child_count_peak,
-                'resource_scope': 'sampled_server_plus_descendants_sum_vm_rss_not_cgroup_peak',
-                'rss_peak_kib': max(rss_peaks),
-                'rss_growth_max_kib': max(rss_growth),
-                'threads_peak': threads_max,
-                'pending_outbox_peak': pending_max,
-                'process_crash_and_restart': restarted,
-                'backup_checkpoints': len(actual_backups),
-                'outbox': state,
-                'final_sqlite_integrity': integrity,
-                'drain_elapsed_s': round(drain_elapsed, 3),
-                'crm': stats,
-                'limits': limits,
-                'worker_liveness_scope': 'process_alive_and_backlog_drained_only',
-                'field_inp': 'NOT_MEASURED',
-            }
-            violations = []
-            def gate(ok, name):
-                if not ok:
-                    violations.append(name)
-            gate(elapsed >= periods['minimum_duration_s'], 'insufficient_duration')
-            gate(accepted >= periods['minimum_accepted'], 'insufficient_request_volume')
-            gate(report['api_p99_ms'] <= limits['maximum_p99_lead_ms'], 'api_p99')
-            gate(report['rss_peak_kib'] <= limits['maximum_rss_kib'], 'rss_peak')
-            gate(report['rss_growth_max_kib'] <= limits['maximum_rss_growth_kib_per_process'], 'rss_growth')
-            gate(tree_rss_peak <= limits['maximum_tree_vm_rss_sum_kib'], 'tree_rss_peak')
-            gate(child_count_peak <= limits['maximum_delivery_descendants'], 'delivery_descendant_bound')
-            if profile == 'soak':
-                gate(child_count_peak >= 1, 'no_outbound_child_observed')
-            gate(threads_max <= limits['maximum_thread_count'], 'thread_bound')
-            gate(pending_max <= limits['maximum_pending_outbox'], 'outbox_backlog_peak')
-            gate(drain_elapsed <= limits['maximum_drain_s'], 'outbox_drain_deadline')
-            gate(state == {'leads': accepted, 'pending': 0, 'delivered': accepted, 'failed': 0},
-                 'accepted_lead_outbox_invariant')
-            gate(integrity == 'ok', 'sqlite_integrity')
-            gate(restarted, 'restart_not_executed')
-            gate(len(actual_backups) >= limits['minimum_backup_checkpoints'], 'backup_checkpoint_missing')
-            gate(stats['invalid_hmac'] == 0, 'hmac_failed')
-            gate(stats['invalid_payloads'] == 0, 'webhook_payload_invalid')
-            gate(stats['unexpected_transport_aborts'] == 0, 'unexpected_transport_abort')
-            # Exactly four delivery worker slots exist in this synthetic profile.
-            gate(stats['expected_crash_aborts'] <= int(env['DELIVERY_CONCURRENCY']),
-                 'crash_transport_abort_bound')
-            gate(stats['observed_distinct_leads'] == accepted, 'webhook_coverage')
-            if profile == 'soak':
-                gate(all(stats['http_status_counts'].get(str(code), 0) > 0 for code in (408, 429, 503)),
-                     'required_fault_class_not_observed')
-                gate(stats['total_webhook_attempts'] > accepted, 'retry_path_not_exercised')
-            report['violations'] = violations
-            report['status'] = 'PASS' if not violations else 'FAIL'
-            return report
-    finally:
-        stop(proc)
-        crm.stop()
-
-
-def main(argv=None):
-    p = argparse.ArgumentParser()
-    p.add_argument('--profile', choices=('smoke', 'soak'), required=True)
-    p.add_argument('--duration-s', type=float, required=True)
-    p.add_argument('--report', type=Path, required=True)
-    args = p.parse_args(argv)
-    cfg = json.loads(CONFIG.read_text())
-    minimum = cfg[args.profile]['minimum_duration_s']
-    if not math.isfinite(args.duration_s) or args.duration_s < minimum:
-        print('FAIL: duration below locked test budget', file=sys.stderr)
-        return 2
-    actual_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
-    expected_sha = os.environ.get('PBT_HEAD_SHA')
-    if expected_sha and expected_sha != actual_sha:
-        print('FAIL: HEAD provenance mismatch', file=sys.stderr)
-        return 2
-    try:
-        evidence = exercise(args.profile, args.duration_s, actual_sha, cfg)
-    except Exception as exc:  # noqa: BLE001
-        evidence = {'schema': 'pbt-soak-evidence-v1', 'source_sha': actual_sha,
-                    'profile': args.profile, 'status': 'FAIL',
-                    'violations': ['uncaught_' + type(exc).__name__],
-                    'scope': 'synthetic_local_http_sqlite_not_production',
-                    'limits': cfg['budgets']}
-    args.report.parent.mkdir(parents=True, exist_ok=True)
-    args.report.write_text(json.dumps(evidence, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-    print(f"soak {evidence['status']}: {args.report}, violations={evidence['violations']}")
-    return 0 if evidence['status'] == 'PASS' else 1
-
-
-if __name__ == '__main__':
-    sys.exit(main())
-, status)
-            if match is None:
-                raise RuntimeError('proc_ppid_missing')
-            by_parent.setdefault(int(match.group(1)), set()).add(int(entry.name))
-    except OSError as exc:
-        raise RuntimeError('proc_descendant_census_unavailable') from exc
-    if not observed_root:
-        raise RuntimeError('proc_root_not_observed')
-    found = set()
-    pending = [root_pid]
-    while pending:
-        pid = pending.pop()
-        for child in by_parent.get(pid, ()):
-            if child != root_pid and child not in found:
-                found.add(child)
-                pending.append(child)
-    return found
-urn found
 
 
 def resources(proc):
