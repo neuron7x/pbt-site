@@ -694,10 +694,10 @@
     if (Object.keys(err).length) { const first = form.querySelector('.is-err input, .is-err textarea'); if (first) first.focus(); return; }
     const h = JSON.stringify(p);
     const btn = $('#send'); btn.disabled = true; btn.textContent = 'Надсилаю…';
-    await bindIdempotencyKey(h);
     const controller = new AbortController();
     const deadline = setTimeout(() => controller.abort(), 15000);
     try {
+      await bindIdempotencyKey(h);
       if (window.PBT_BUNDLE) throw new Error('bundle');
       const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey }, body: h, signal: controller.signal });
       const j = await r.json().catch(error => { if (controller.signal.aborted) throw error; return {}; });
