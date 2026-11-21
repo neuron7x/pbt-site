@@ -2,16 +2,17 @@
 """Одно-файлова збірка: шрифти, CSS, JS, зображення й відео — як data:URI.
   dist/pbt-site.html          — повний документ (з диска, без сервера; форма → резервна панель із текстом заявки)
   dist/pbt-site.artifact.html — фрагмент без <html>/<head>/<body> для публікації як Artifact
-Бюджет артефакту 16 МБ: відео лише mp4; якщо не вміщається — спочатку випадають петлі доказу, потім робіт (постери лишаються)."""
+Бюджет 15,5 MiB: відео лише mp4; спочатку випадають петлі доказу, потім робіт,
+останнім — відео героя. Постери лишаються; завелика збірка без відео завершується помилкою."""
 import base64, json, mimetypes, re
 from pathlib import Path
 
-from bundle_contract import emit_fragment, inline_css
+from bundle_contract import emit_fragment, fit_video_budget, inline_css
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 DIST = ROOT / 'dist'
-LIMIT = 15.5 * 1024 * 1024
+LIMIT = int(15.5 * 1024 * 1024)
 BRAND_NAME = json.loads((ROOT / 'config' / 'business.json').read_text(encoding='utf-8'))['brand']['name']
 mimetypes.add_type('image/webp', '.webp'); mimetypes.add_type('font/woff2', '.woff2'); mimetypes.add_type('video/mp4', '.mp4')
 
@@ -46,19 +47,17 @@ def assemble(videos):
 
 
 ALL = ['hero-tall', 'hero-wide-720', 'job-voda', 'job-zemlia', 'job-trans', 'job-lis', 'job-demont', 'proof-amph', 'proof-long', 'proof-sunset', 'proof-trailer', 'proof-night', 'proof-winter']
-videos = list(ALL)
-page = assemble(videos)
-while len(page.encode()) > LIMIT and len(videos) > 2:
-    videos.pop()                                   # з кінця: доказ → роботи; герой лишається
-    page = assemble(videos)
-DIST.mkdir(exist_ok=True)
-(DIST / 'pbt-site.html').write_text(page, encoding='utf-8')
+page, videos = fit_video_budget(assemble, ALL, LIMIT)
 
 head = re.search(r'<head>(.*?)</head>', page, re.S).group(1)
 body = re.search(r'<body[^>]*>(.*?)</body>', page, re.S).group(1)
 keep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', head, re.S)
 early = re.search(r'<script>\s*/\* Профіль.*?</script>', head, re.S).group(0)
 frag = emit_fragment(BRAND_NAME, keep, early, body)
+if len(frag.encode('utf-8')) > LIMIT:
+    raise ValueError('Portable fragment exceeds the byte budget')
+DIST.mkdir(exist_ok=True)
+(DIST / 'pbt-site.html').write_text(page, encoding='utf-8')
 (DIST / 'pbt-site.artifact.html').write_text(frag, encoding='utf-8')
 for f in ('pbt-site.html', 'pbt-site.artifact.html'):
     print(f, round((DIST / f).stat().st_size / 1048576, 2), 'MB', '| відео у бандлі:', len(videos), '/', len(ALL))

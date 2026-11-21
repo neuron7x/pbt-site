@@ -9,10 +9,33 @@ import subprocess
 
 import pytest
 
-from tools.bundle_contract import emit_fragment, inline_css
+from tools.bundle_contract import emit_fragment, fit_video_budget, inline_css
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
+
+
+@pytest.mark.parametrize("remaining", [2, 1, 0])
+def test_video_budget_keeps_priority_order_and_can_fall_back_to_posters(remaining):
+    candidates = ["hero-tall", "hero-wide-720"]
+    def assemble(videos):
+        return "<title>ПЛЕЙНБУД</title>" + "".join(
+            f'<video data-name="{name}"></video>' for name in videos)
+
+    expected = candidates[:remaining]
+    limit = len(assemble(expected).encode("utf-8"))
+    page, selected = fit_video_budget(assemble, candidates, limit)
+    assert selected == expected
+    assert page == assemble(expected)
+    assert len(page.encode("utf-8")) <= limit
+    assert candidates == ["hero-tall", "hero-wide-720"]
+
+
+def test_video_budget_rejects_an_oversized_poster_only_page():
+    poster_page = "<title>ПЛЕЙНБУД</title><main>Постери</main>"
+    # A character count would fit; the actual UTF-8 bytes exceed this limit.
+    with pytest.raises(ValueError, match="Poster-only bundle exceeds"):
+        fit_video_budget(lambda videos: poster_page, ["hero-tall"], len(poster_page))
 
 
 def test_inline_css_preserves_stylesheet_order_and_removes_external_links():
@@ -80,6 +103,41 @@ def test_portable_fragments_restore_theme_before_any_stylesheet():
     assert result.index("dataset.theme") < result.index("<style>")
     assert result.count("<style>") == 2
     assert result.endswith("<main>ok</main>")
+
+
+@pytest.mark.parametrize("title", [
+    "ПЛЕЙНБУД & Партнери",
+    'ПЛЕЙНБУД </title><script>alert("brand")</script><title>',
+])
+def test_portable_fragment_title_is_text_not_executable_markup(title):
+    """A configured company name must not create elements in the exported page."""
+    class Fragment(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.tags, self.title_parts, self.in_title = [], [], False
+
+        def handle_starttag(self, tag, attrs):
+            self.tags.append(tag)
+            if tag == "title":
+                self.in_title = True
+
+        def handle_endtag(self, tag):
+            if tag == "title":
+                self.in_title = False
+
+        def handle_data(self, text):
+            if self.in_title:
+                self.title_parts.append(text)
+
+    fragment = emit_fragment(
+        title, ['<style>body{}</style>'],
+        '<script>document.documentElement.dataset.theme="sky"</script>',
+        '<main>Ready</main>',
+    )
+    parsed = Fragment()
+    parsed.feed(fragment)
+    assert "".join(parsed.title_parts) == title
+    assert parsed.tags == ["title", "script", "style", "main"]
 
 
 @pytest.mark.parametrize("prepaint,head", [
