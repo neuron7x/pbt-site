@@ -1,4 +1,5 @@
 """Issue #4: доступне перемикання тем, збереження і відсутність FOUC."""
+import json
 from pathlib import Path
 
 import pytest
@@ -209,8 +210,10 @@ def test_accessible_names_include_actual_visible_control_labels(page_factory):
         assert control.inner_text().strip().casefold() in (
             control.get_attribute("aria-label") or ""
         ).casefold()
+    brand = json.loads((ROOT / "config/business.json").read_text(encoding="utf-8"))["brand"]["nameUk"].casefold()
+    assert brand
     for control in pg.locator("a.brand").all():
-        assert "полтавабудтехніка" in (control.get_attribute("aria-label") or "").casefold()
+        assert brand in (control.get_attribute("aria-label") or "").casefold()
     assert "onsubmit=" not in (ROOT / "web" / "index.html").read_text(encoding="utf-8")
 
 
