@@ -74,11 +74,13 @@
     return innerWidth * (devicePixelRatio || 1) >= 1600;
   }
   function attachVideo(video, name, { tall } = {}) {
-    if (!video || video.dataset.ready) return;
-    video.dataset.ready = '1';
-    video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
+    if (!video) return false;
+    if (video.dataset.ready) return true;
     let n = tall && mobileLayout() ? name.replace('-wide', '-tall') : name;
     if (n === 'hero-wide' && !heroHD()) n = 'hero-wide-720';          // 1920 — лише коли екран його покаже й мережа витягне
+    // Budget-omitted standalone clips keep their posters without requesting absent files.
+    if (D.videoData && !D.videoData[n + '.mp4']) return false;
+    video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
     if (D.videoData || D.mp4Only || !document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
       video.src = vsrc(n, 'mp4');
     } else {
@@ -86,12 +88,13 @@
       const s2 = document.createElement('source'); s2.src = vsrc(n, 'mp4'); s2.type = 'video/mp4';
       video.append(s1, s2);
     }
+    video.dataset.ready = '1';
+    return true;
   }
   const playing = new Set(), visibleCards = new Set();
   function syncCardVideo(card) {
     const v = $('video', card); if (!v) return;
-    if (visibleCards.has(card) && videoAllowed()) {
-      if (!v.dataset.ready) attachVideo(v, v.dataset.video);
+    if (visibleCards.has(card) && videoAllowed() && attachVideo(v, v.dataset.video)) {
       v.preload = 'auto';
       const p = v.play(); if (p && p.catch) p.catch(() => {});
       card.classList.add('is-playing'); playing.add(v);
@@ -870,7 +873,8 @@
       const go = () => {
         if (!videoAllowed() || scrollY >= innerHeight) { hVideo.pause(); return; }
         if (!hVideo.paused) return;
-        attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
+        if (!attachVideo(hVideo, 'hero-wide', { tall: true })) return;
+        hVideo.preload = 'auto';
         const pr = hVideo.play();
         if (pr && pr.catch) pr.catch(() => { if (++tries < 8) setTimeout(go, 200 * tries); });
       };
