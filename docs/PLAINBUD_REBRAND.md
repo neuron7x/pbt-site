@@ -145,3 +145,6 @@ connector не повертає її текст; причина account/runner-l
 
 Інтеграцію обох security locks, source-bound evidence та захист локальної
 доставки й recovery-файлів описано в [SECURITY_INTEGRATION.md](SECURITY_INTEGRATION.md).
+
+Наступну перевірку procfs, числових вимірювань, обліку synthetic CRM і
+runtime-оракулів описано в [RUNTIME_EVIDENCE_HARDENING.md](RUNTIME_EVIDENCE_HARDENING.md).
