@@ -212,7 +212,9 @@
     const dpr = Math.min(devicePixelRatio || 1, 1.5);
     cW = spark.clientWidth; cH = spark.clientHeight;
     spark.width = Math.round(cW * dpr); spark.height = Math.round(cH * dpr);
-    ctx = spark.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx = spark.getContext('2d');
+    if (!ctx) { dots = []; return; }   // Decorative canvas may be unavailable; page initialization continues.
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     dots = Array.from({ length: mobileLayout() ? 28 : 60 }, () => ({ x: Math.random() * cW, y: Math.random() * cH, r: .6 + Math.random() * 1.8, s: .15 + Math.random() * .45, ph: Math.random() * 6.28 }));
   }
   /* цикл іскор засинає, коли герой поза кадром або вкладка прихована (раніше rAF крутився вічно: Lighthouse devtools 09.10
