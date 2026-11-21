@@ -12,9 +12,31 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def parse_budget(raw: str) -> dict:
+    """Read canonical policy without silently replacing duplicated constraints."""
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"Duplicate budget key: {key!r}")
+            result[key] = value
+        return result
+
+    def reject_constant(value):
+        raise ValueError(f"Non-finite JSON budget value: {value}")
+
+    policy = json.loads(raw, object_pairs_hook=unique_object, parse_constant=reject_constant)
+    if not isinstance(policy, dict):
+        raise ValueError("Budget must be a JSON object")
+    return policy
+
+
 def audit_media(media_root: Path, budgets: dict) -> dict:
+    if not isinstance(budgets, dict):
+        raise ValueError("Budget must be a JSON object")
     failures: list[str] = []
-    if budgets.get("schema_version") != 1:
+    schema = budgets.get("schema_version")
+    if type(schema) is not int or schema != 1:
         failures.append("Невідома версія бюджету")
     files = sorted(p for p in media_root.rglob("*") if p.is_file() or p.is_symlink())
     entries: list[dict] = []
@@ -30,26 +52,34 @@ def audit_media(media_root: Path, budgets: dict) -> dict:
         entries.append({"path": rel, "bytes": p.stat().st_size, "sha256": h.hexdigest()})
     total = sum(rec["bytes"] for rec in entries)
     max_total = budgets.get("max_total_bytes")
-    if not isinstance(max_total, int) or max_total <= 0:
+    if type(max_total) is not int or max_total <= 0:
         failures.append("Невалідний загальний бюджет")
     elif total > max_total:
         failures.append(f"Медіапак перевищує бюджет: {total} > {max_total} байтів")
     max_single = budgets.get("max_single_asset_bytes")
-    if not isinstance(max_single, int) or max_single <= 0:
+    if type(max_single) is not int or max_single <= 0:
         failures.append("Невалідний бюджет одного файла")
     else:
         for e in entries:
             if e["bytes"] > max_single:
                 failures.append(f"{e['path']}: {e['bytes']} > {max_single} байтів")
     groups = []
-    for rule in budgets.get("rules", []):
+    rules = budgets.get("rules")
+    if not isinstance(rules, list) or not rules:
+        failures.append("Бюджет має містити непорожній список правил")
+        rules = []
+    for rule in rules:
+        if not isinstance(rule, dict):
+            failures.append("Кожне правило бюджету має бути об'єктом")
+            continue
         pattern = rule.get("glob", "")
         ceiling = rule.get("max_bytes")
         minimum = rule.get("min_count")
         # Патерни прив'язані виключно до web/media; зовнішні шляхи не читаємо.
-        if (not pattern or pattern.startswith("/") or ".." in Path(pattern).parts
-                or not isinstance(ceiling, int) or ceiling <= 0
-                or not isinstance(minimum, int) or minimum < 1):
+        if (not isinstance(pattern, str) or not pattern
+                or pattern.startswith("/") or ".." in Path(pattern).parts
+                or type(ceiling) is not int or ceiling <= 0
+                or type(minimum) is not int or minimum < 1):
             failures.append(f"Невалідне правило бюджету: {pattern!r}")
             continue
         group = [e for e in entries if fnmatch.fnmatchcase(e["path"], pattern)]
@@ -79,7 +109,7 @@ def main() -> int:
         print(f"FAIL: медіатека не знайдена: {args.root}", file=sys.stderr)
         return 1
     try:
-        budgets = json.loads(args.budget.read_text(encoding="utf-8"))
+        budgets = parse_budget(args.budget.read_text(encoding="utf-8"))
         result = audit_media(args.root, budgets)
     except (ValueError, OSError, TypeError) as exc:
         print(f"FAIL: невірний бюджет: {exc}", file=sys.stderr)

@@ -23,9 +23,9 @@ else:
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def _load_json(path: Path, failures: list[str]):
+def _load_json(path: Path, failures: list[str], *, loader=json.loads):
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = loader(path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
             raise ValueError("top-level JSON is not an object")
         return value
@@ -100,7 +100,7 @@ def verify_evidence(
         if not media_root.is_dir() or not budget_path.is_file():
             failures.append("Media root or canonical budget file is missing")
         else:
-            budgets = _load_json(budget_path, failures)
+            budgets = _load_json(budget_path, failures, loader=media_budget.parse_budget)
             if budgets is not None:
                 try:
                     recalculated = media_budget.audit_media(media_root, budgets)
