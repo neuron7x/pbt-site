@@ -142,3 +142,6 @@ connector не повертає її текст; причина account/runner-l
 
 Подальші відтворені дефекти HTTP, submit recovery, backup/restore та provenance
 закрито окремою ітерацією: [INTEGRITY_HARDENING.md](INTEGRITY_HARDENING.md).
+
+Інтеграцію обох security locks, source-bound evidence та захист локальної
+доставки й recovery-файлів описано в [SECURITY_INTEGRATION.md](SECURITY_INTEGRATION.md).

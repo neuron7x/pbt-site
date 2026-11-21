@@ -54,6 +54,8 @@ class World:
         self.evidence.mkdir()
         for name in ('config', 'assurance', 'tests'):
             shutil.copytree(ROOT / name, self.repo / name, ignore=shutil.ignore_patterns('__pycache__', 'evidence'))
+        for name in gate.supply_chain.LOCKS:
+            shutil.copyfile(ROOT / name, self.repo / name)
         (self.repo / 'assurance/evidence').mkdir()
         if signers_text is not None:
             (self.repo / 'config/owner-allowed-signers').write_text(signers_text)
@@ -118,6 +120,21 @@ def test_authentic_evidence_is_accepted(world):
                   'junit_testcase_ids', 'test_outcome', 'oracle_identifier', 'negative_control_identifier'):
         assert row[field], field
     assert row['source_sha'] == world.head and row['test_outcome'] == 'passed'
+
+
+def test_meta_cli_reads_measured_locks_after_a_later_closure_commit(world, monkeypatch, capsys):
+    monkeypatch.setattr(gate, 'ROOT', world.repo)
+    assert _git(world.repo, 'rev-parse', 'HEAD') != world.head
+    result = gate.main([
+        '--manifest', str(world.evidence / 'manifest.json'),
+        '--evidence-dir', str(world.evidence),
+        '--policy', str(world.repo / 'config/runtime-soak-budgets.json'),
+        '--expected-head', world.head, '--expected-base', world.base,
+    ])
+    decision = json.loads(capsys.readouterr().out)
+    assert result == 0 and decision['status'] == 'PASS'
+    assert decision['head_sha'] == world.head
+    assert set(decision['osv_dependencies_by_lock']) == set(gate.supply_chain.LOCKS)
 
 
 def test_forged_all_pass_ledger_is_not_accepted(tmp_path):

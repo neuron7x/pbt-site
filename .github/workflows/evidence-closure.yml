@@ -45,6 +45,10 @@ jobs:
           printf '%s\n' 'NOT_ACCEPTED' > "$RUNNER_TEMP/pbt-proof-reports/status.txt"
           printf '%s\n' "$SOURCE_SHA" > "$RUNNER_TEMP/pbt-proof-reports/source-sha.txt"
           command -v gh
+      - name: Install hash-locked verifier dependencies before collecting evidence
+        run: |
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt
+          python -c 'from tools import meta_evidence_gate, security_receipt, supply_chain'
       - name: Wait boundedly for all five exact-main push workflows
         run: |
           python - <<'PY'

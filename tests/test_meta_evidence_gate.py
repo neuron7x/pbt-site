@@ -5,6 +5,7 @@ import io
 import json
 from pathlib import Path
 import struct
+import subprocess
 import sys
 import zipfile
 import zlib
@@ -32,6 +33,7 @@ def pack(files):
 
 
 ROOT = Path(__file__).resolve().parents[1]
+SOURCE_LOCKS = {name: (ROOT / name).read_bytes() for name in gate.supply_chain.LOCKS}
 EVIDENCE_POLICY = json.loads((ROOT / 'config/evidence-policy.json').read_text())
 REQUIRED_TESTS = json.loads((ROOT / 'config/required-tests.json').read_text())
 
@@ -53,7 +55,8 @@ CATALOG = json.loads(CATALOG_RAW)['mutants']
 
 
 def verify(meta, directory, policy, head=HEAD, base=BASE, evidence_policy=None):
-    return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY, REQUIRED_TESTS, CATALOG_RAW)
+    return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY,
+                                REQUIRED_TESTS, CATALOG_RAW, source_locks=SOURCE_LOCKS)
 
 
 def png():
@@ -120,17 +123,33 @@ def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mu
             'kind':'synthetic_chromium_lab_not_field_data',
             'themes':{theme:{'raw':[{'lcp_ms':1200,'cls':0.01,'switch_unprompted_shift_sum':0.0}]*3,
                               'p75_lcp_ms':1200,'p75_cls':0.01,'synthetic_budget_met':True} for theme in ('sky','precision')}}
-    osv_output=json.dumps({'dependencies':[{'name':'a','version':'1','vulns':[]}]})
-    osv={'head_sha':HEAD,'outcome':'success','require_hashes':True,'no_deps':True,'dependency_count':1,
-         'service':'OSV','scanner_output':osv_output,'scanner_output_sha256':sha(osv_output.encode())}
+    def audit_receipt(lock_name):
+        source = SOURCE_LOCKS[lock_name]
+        expected = gate.security_receipt.required_packages(source)
+        output = json.dumps({'dependencies': [
+            {'name': name, 'version': str(version), 'vulns': []} for name, version in expected.items()
+        ], 'fixes': []})
+        return {'schema': 'pbt-osv-audit-receipt-v2', 'head_sha': HEAD,
+                'outcome': 'success', 'baseline_outcome': 'success', 'validation_errors': [],
+                'require_hashes': True, 'no_deps': True, 'disable_pip': True, 'service': 'OSV',
+                'input': lock_name, 'requirements_match_head_blob': True,
+                'requirements_sha256': sha(source), 'action_commit': gate.security_receipt.ACTION_COMMIT,
+                'scanner_version': '9.9', 'dependency_count': len(expected),
+                'scanner_output': output, 'scanner_output_sha256': sha(output.encode())}
+
+    osv = audit_receipt('requirements.txt')
+    osv_sast = audit_receipt('requirements-sast.txt')
     static={'head_sha':HEAD,'status':'PASS','findings':[],'files_scanned':6,
             'scanned_roots':['server','ops']}
     mutation={'head_sha':HEAD,'status':'PASS','catalog_sha256':sha(CATALOG_RAW_),
               'results':[{'id':m['id'],'verdict':(extra_mutation_verdicts or {}).get(m['id'],m.get('expected','KILLED'))} for m in CATALOG_]}
+    bom = gate.supply_chain.sbom(ROOT)
+    bom['metadata']['component']['version'] = HEAD
     sast={'sast.json':json.dumps({'status':'PASS','open':[],'stale_waivers':[],'files_scanned':30,'loc':100}).encode(),
-          'provenance.json':json.dumps({'head_sha':HEAD,'signed':False,'slsa_level':'none_claimed'}).encode(),
-          'sbom.json':json.dumps({'bomFormat':'CycloneDX','metadata':{'component':{'version':HEAD}},
-                                  'components':[{'hashes':[1]}]*6}).encode()}
+          'provenance.json':json.dumps({'schema': 'pbt-provenance-v1', 'head_sha':HEAD,
+              'signed':False, 'slsa_level':'none_claimed',
+              'locks_sha256': {name: sha(raw) for name, raw in SOURCE_LOCKS.items()}}).encode(),
+          'sbom.json':json.dumps(bom).encode()}
     contents={
         'mutation':{'mutation-ledger.json':json.dumps(mutation).encode()},'sast':sast,
         'release':{'artifacts/full-junit.xml':junit(390,'release',extra=extra_release_cases),
@@ -140,7 +159,8 @@ def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mu
         'visual':{'shots/manifest.json':manifest,'media-budget.json':media,
                   'evidence-verification.json':visual_receipt,**shots},
         'static':{'scoped-static.json':json.dumps(static).encode()},
-        'osv':{'osv-receipt.json':json.dumps(osv).encode()},
+        'osv':{'osv-receipt.json':json.dumps(osv).encode(),
+               'osv-sast-receipt.json':json.dumps(osv_sast).encode()},
         'soak':{'soak-evidence.json':json.dumps(soak).encode()},
         'mobile':{'dual-theme-mobile.json':json.dumps(mobile).encode()},
     }
@@ -164,7 +184,120 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     assert result['policy_digest']==gate.policy_digest(policy,EVIDENCE_POLICY,REQUIRED_TESTS)
     assert result['target']['pr_number']==14
     assert result['verified_png']==32 and result['soak']['accepted']==3000
-    assert result['mutation']['KILLED']==len(CATALOG)-1 and result['mutation']['UNTESTABLE']==1 and result['sast']['components']==6
+    expected = {name: len(gate.security_receipt.required_packages(raw)) for name, raw in SOURCE_LOCKS.items()}
+    assert result['mutation']['KILLED']==len(CATALOG)-1 and result['mutation']['UNTESTABLE']==1
+    assert result['sast']['components'] == sum(expected.values())
+    assert result['osv_dependencies_by_lock'] == expected
+
+
+@pytest.mark.parametrize('mutation', [
+    'receipt_schema', 'baseline_failure', 'validation_errors', 'wrong_lock',
+    'wrong_lock_digest', 'unverified_blob', 'disable_pip_false', 'wrong_action',
+    'scanner_version_missing', 'duplicate_dependency', 'unknown_dependency', 'version_drift',
+    'boolean_dependency_count', 'receipt_not_object',
+    'missing_sast_receipt', 'failed_sast_receipt', 'wrong_sast_lock',
+    'missing_sbom_component', 'duplicate_sbom_component', 'invalid_sbom_hash', 'missing_sbom_hash',
+    'provenance_locks_missing', 'provenance_schema', 'provenance_not_object',
+])
+def test_security_graph_rejects_incomplete_or_inconsistent_receipts(state, mutation):
+    meta, policy, directory, contents = state
+    role = 'osv'
+    receipt = json.loads(contents['osv']['osv-receipt.json'])
+    if mutation == 'receipt_schema': receipt['schema'] = 'unknown'
+    elif mutation == 'baseline_failure': receipt['baseline_outcome'] = 'failure'
+    elif mutation == 'validation_errors': receipt['validation_errors'] = ['scanner_coverage_mismatch']
+    elif mutation == 'wrong_lock': receipt['input'] = 'other.txt'
+    elif mutation == 'wrong_lock_digest': receipt['requirements_sha256'] = '0' * 64
+    elif mutation == 'unverified_blob': receipt['requirements_match_head_blob'] = False
+    elif mutation == 'disable_pip_false': receipt['disable_pip'] = False
+    elif mutation == 'wrong_action': receipt['action_commit'] = '0' * 40
+    elif mutation == 'scanner_version_missing': receipt['scanner_version'] = None
+    elif mutation == 'boolean_dependency_count': receipt['dependency_count'] = True
+    elif mutation == 'receipt_not_object': receipt = []
+    elif mutation in ('duplicate_dependency', 'unknown_dependency', 'version_drift'):
+        output = json.loads(receipt['scanner_output'])
+        if mutation == 'duplicate_dependency':
+            output['dependencies'].append(copy.deepcopy(output['dependencies'][0]))
+        elif mutation == 'unknown_dependency':
+            output['dependencies'][0]['name'] = 'unscanned-package'
+        else:
+            output['dependencies'][0]['version'] = '999999'
+        receipt['scanner_output'] = json.dumps(output)
+        receipt['scanner_output_sha256'] = sha(receipt['scanner_output'].encode())
+        receipt['dependency_count'] = len(output['dependencies'])
+    elif mutation == 'missing_sast_receipt':
+        contents['osv'].pop('osv-sast-receipt.json', None)
+    elif mutation in ('failed_sast_receipt', 'wrong_sast_lock'):
+        other = json.loads(contents['osv'].get('osv-sast-receipt.json', contents['osv']['osv-receipt.json']))
+        if mutation == 'failed_sast_receipt': other['outcome'] = 'failure'
+        else: other['input'] = 'requirements.txt'
+        contents['osv']['osv-sast-receipt.json'] = json.dumps(other).encode()
+    elif 'sbom' in mutation:
+        role = 'sast'
+        bom = json.loads(contents[role]['sbom.json'])
+        if mutation == 'missing_sbom_component': bom['components'].pop()
+        elif mutation == 'duplicate_sbom_component': bom['components'].append(copy.deepcopy(bom['components'][0]))
+        elif mutation == 'missing_sbom_hash':
+            next(item for item in bom['components'] if len(item['hashes']) > 1)['hashes'].pop()
+        else: bom['components'][0]['hashes'] = [{'alg': 'SHA-256', 'content': 'invalid'}]
+        contents[role]['sbom.json'] = json.dumps(bom).encode()
+    elif mutation.startswith('provenance'):
+        role = 'sast'
+        provenance = json.loads(contents[role]['provenance.json'])
+        if mutation == 'provenance_locks_missing': provenance['locks_sha256'] = {}
+        elif mutation == 'provenance_not_object': provenance = []
+        else: provenance['schema'] = 'unknown'
+        contents[role]['provenance.json'] = json.dumps(provenance).encode()
+    contents['osv']['osv-receipt.json'] = json.dumps(receipt).encode()
+    path = directory / (role + '.zip')
+    path.write_bytes(pack(contents[role]))
+    meta['artifacts'][role]['sha256'] = sha(path.read_bytes())
+    with pytest.raises((gate.Rejected, ValueError, KeyError)):
+        verify(meta, directory, policy)
+
+
+@pytest.mark.parametrize('raw', [
+    b'{"outcome":"failure","outcome":"success"}',
+    b'{"dependencies":[{"name":"a","vulns":[{"id":"TEST"}],"vulns":[]}]}',
+])
+def test_duplicate_json_members_are_not_evidence(raw):
+    with pytest.raises(gate.Rejected, match='duplicate_json_key'):
+        gate.json_bytes(raw)
+
+
+def test_security_lock_inputs_come_from_measured_git_blobs_not_current_worktree(tmp_path):
+    def git(*args):
+        return subprocess.run(['git', '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
+                               '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null', *args],
+                              cwd=tmp_path, check=True, capture_output=True, timeout=10).stdout
+
+    git('init', '-q', '--template=')
+    for name, raw in SOURCE_LOCKS.items():
+        (tmp_path / name).write_bytes(raw)
+    git('add', '--', *SOURCE_LOCKS)
+    git('commit', '-qm', 'synthetic measured locks')
+    measured = git('rev-parse', 'HEAD').decode().strip()
+    assert gate.lock_sources_at(tmp_path, measured) == SOURCE_LOCKS
+
+    # Both an unstaged replacement and a later committed version must leave the
+    # earlier evidence revision's independent comparison bytes unchanged.
+    (tmp_path / 'requirements.txt').write_bytes(b'untrusted replacement\n')
+    assert gate.lock_sources_at(tmp_path, measured) == SOURCE_LOCKS
+    git('add', '--', 'requirements.txt')
+    git('commit', '-qm', 'different current locks')
+    assert gate.lock_sources_at(tmp_path, measured) == SOURCE_LOCKS
+    (tmp_path / 'requirements-sast.txt').unlink()
+    assert gate.lock_sources_at(tmp_path, measured) == SOURCE_LOCKS
+    with pytest.raises(gate.Rejected, match='source_lock_unavailable'):
+        gate.lock_sources_at(tmp_path, '0' * 40)
+
+
+def test_security_receipts_cannot_choose_their_own_lock_bytes(state):
+    meta, policy, directory, _ = state
+    changed = {**SOURCE_LOCKS, 'requirements.txt': SOURCE_LOCKS['requirements.txt'] + b'\n# different source\n'}
+    with pytest.raises(gate.Rejected, match='content_sha256'):
+        gate.verify_manifest(meta, directory, policy, HEAD, BASE, EVIDENCE_POLICY, REQUIRED_TESTS,
+                             CATALOG_RAW, source_locks=changed)
 
 
 @pytest.mark.parametrize('mutant',[

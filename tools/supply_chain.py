@@ -95,18 +95,22 @@ def action_pins(root):
 
 
 def locked_requirements(path):
-    raw = path.read_text(encoding='utf-8')
+    return parse_locked_requirements(path.read_text(encoding='utf-8'), path.name)
+
+
+def parse_locked_requirements(raw, lock_name):
+    """Parse lock text from either a checkout or an immutable Git blob."""
     entries = REQ.findall(raw)
     names = re.findall(r'^([A-Za-z0-9_.\-\[\]]+)==', raw, re.M)
     if not names:
-        raise Rejected(f'empty_lock_{path.name}')
+        raise Rejected(f'empty_lock_{lock_name}')
     if len(entries) != len(names):
-        raise Rejected(f'requirement_without_hash_{path.name}')
+        raise Rejected(f'requirement_without_hash_{lock_name}')
     if re.search(r'^[A-Za-z0-9_.\-\[\]]+\s*(?:>=|<=|~=|>|<|!=)', raw, re.M):
-        raise Rejected(f'unpinned_requirement_{path.name}')
+        raise Rejected(f'unpinned_requirement_{lock_name}')
     remainder = REQ.sub('', raw)
     if any(line.strip() and not line.lstrip().startswith('#') for line in remainder.splitlines()):
-        raise Rejected(f'unparsed_lock_content_{path.name}')
+        raise Rejected(f'unparsed_lock_content_{lock_name}')
     return [{'name': n.lower(), 'version': v, 'hashes': sorted(re.findall(r'sha256:([0-9a-f]{64})', h))} for n, v, h in entries]
 
 
