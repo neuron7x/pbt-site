@@ -97,3 +97,8 @@ Implement **C0–C1 before changing endpoints**, then read-only CRM → site (C2
 - Original premium visual concept stays intact: two themes, animations, source media, quote UX. CRM integration is under the hood, not an aesthetic redesign.
 
 **Exit condition:** one customer-facing system with consistently governed business facts, reliable bidirectional *information* flow, verifiable contracts, safe offline states and permitted customer access—not merely two services connected by an unverified webhook.
+
+
+## 8. Evidence-backed engineering method (2026)
+
+Primary research, Jira applicability, formal invariants, adversarial tests, and full bibliography are in [2026 Research-to-Engineering Protocol](CRM_RESEARCH_METHODS_2026.md). Read that document **before** implementing C0–C6; do not infer live CRM functionality from a historical Jira 'Готово' status.
