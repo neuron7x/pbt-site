@@ -4,6 +4,12 @@
 **Canonical product intent:** [Issue #38](https://github.com/neuron7x/pbt-site/issues/38) · [CRM Jira KAN-158](https://neuron7x.atlassian.net/browse/KAN-158) · [Implementation roadmap](CRM_INTEGRATION_ROADMAP.md).  
 **Evidence boundary:** source and Jira checks reflect accessible records as of 21 Nov 2026. A Jira "Готово" label is a workflow claim, **not** an independently executed live site↔CRM acceptance test.
 
+## Owner sequencing constraint (binding for this research program)
+
+**Decision:** finish CRM first; then finish the website as a complete independently operating product; **only when BOTH pass their separate acceptance gates**, authorize and begin the actual integration. The website's existing local intake/outbox and static catalog must not need a running CRM to remain usable. Do not interpret the pre-existing webhook transport as an instruction to activate it against production.
+
+Until then, every methodology below is **research / deferred design**, not a current implementation task. C0 implementation inventory and compatibility testing start in the integration phase after the two independent products are finished; source reading for risk analysis may occur earlier without writes. This does not weaken either product's tests or their independent release/production holds.
+
 ## 0. Research discipline
 
 Selection criteria: influential primary research (prefer peer-reviewed or authors' published work); current normative specifications; original engineering patterns; no junior tutorials or unexplained marketing methodology. Distinguish **publication year** from **2026 applicability** and label research claims as *theory*, *pattern*, *specification*, or *locally observed Jira fact*. Cite the direct publication, not an influencer biography. No paper itself proves this repo correct.
@@ -113,7 +119,7 @@ Visitor ─POST→ Website: validate + commit (lead, outbox) atomically
 
 ## 6. Implementation priority / proportional complexity
 
-**P0:** read actual current CRM source + resolve effective ACL conflict + formal inbound receipt semantics.  
+**P0 — AFTER CRM AND WEBSITE INDEPENDENT COMPLETION:** read current CRM source with authorization, resolve effective ACL conflict and confirm inbound receipt semantics. Before both are ready: documentation/research only.  
 **P1:** establish consumer-driven versioned contract and CRM read projection; verify refresh policy and its operational independence from site lead intake.  
 **P1:** executable fault tests (duplicates, crashes, missing ACK, staleness, bad authorization), sign off database assertions.  
 **P2:** public quote projection with approved VAT/minimum/dispatch rules.  
