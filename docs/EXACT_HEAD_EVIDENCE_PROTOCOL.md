@@ -32,8 +32,11 @@ invariant.
 
 ## Offline verifier
 
-The stdlib-only evaluator is `tools/meta_evidence_gate.py`. It expects a
-JSON manifest `pbt-exact-head-evidence-matrix-v2` with:
+The offline evaluator is `tools/meta_evidence_gate.py`. Its shared lock and
+workflow parsers require `packaging` and `PyYAML`; install the hash-locked
+`requirements.txt` with `python3 -m pip install --require-hashes -r requirements.txt`
+before running it. It expects a JSON manifest
+`pbt-exact-head-evidence-matrix-v2` with:
 
 - `head_sha`, `base_sha`, `target` (`kind`, `pr_number`, `ref`, bound by `config/evidence-policy.json`);
 - the run roles the target requires (`full`, `transport`, `visual`, `security`,

@@ -145,6 +145,7 @@ def nearest(values, pct):
 
 
 def verify_soak(data, budget, head):
+    require(data['schema'] == 'pbt-soak-evidence-v1', 'soak_schema')
     require(data['source_sha'] == head and data['profile'] == 'soak', 'soak_head_profile')
     require(data['status'] == 'PASS' and data['violations'] == [], 'soak_report_failure')
     require(data['scope'] == 'synthetic_local_http_sqlite_not_production', 'soak_scope')
@@ -173,10 +174,14 @@ def verify_soak(data, budget, head):
             num(a,'parent_rss',integer=True,min_value=1)
             num(b,'child_rss',integer=True)
             num(nc,'child_count',integer=True)
+            require(nc > 0 or b == 0, 'child_memory_without_process')
             sums.append(a+b)
     max_parent=max(max(ep) for ep in parent)
     growth=max(max(ep)-ep[0] for ep in parent)
     peak_children=max(v for ep in counts for v in ep)
+    for key in ('rss_peak_kib', 'rss_growth_max_kib', 'tree_vm_rss_sum_peak_kib',
+                'observed_child_processes_peak'):
+        num(data[key], key, integer=True)
     require(data['rss_peak_kib'] == max_parent and data['rss_growth_max_kib'] == growth, 'parent_rss_provenance')
     require(data['tree_vm_rss_sum_peak_kib'] == max(sums), 'tree_rss_provenance')
     require(data['observed_child_processes_peak'] == peak_children >= 1, 'child_process_provenance')
@@ -184,17 +189,29 @@ def verify_soak(data, budget, head):
     require(max_parent <= rules['maximum_rss_kib'] and growth <= rules['maximum_rss_growth_kib_per_process']
             and max(sums) <= rules['maximum_tree_vm_rss_sum_kib']
             and peak_children <= rules['maximum_delivery_descendants'], 'memory_or_child_budget')
-    require(num(data['threads_peak'],'threads_peak',integer=True) <= rules['maximum_thread_count'], 'thread_budget')
+    require(num(data['threads_peak'],'threads_peak',integer=True,min_value=1) <= rules['maximum_thread_count'], 'thread_budget')
     require(num(data['pending_outbox_peak'],'pending',integer=True) <= rules['maximum_pending_outbox'], 'backlog_budget')
     require(num(data['drain_elapsed_s'],'drain') <= rules['maximum_drain_s'], 'drain_budget')
+    for key in ('leads', 'pending', 'delivered', 'failed'):
+        num(data['outbox'][key], 'outbox_' + key, integer=True)
     require(data['outbox'] == dict(leads=n,pending=0,delivered=n,failed=0), 'accepted_outbox_invariant')
     require(data['final_sqlite_integrity'] == 'ok' and data['process_crash_and_restart'] is True, 'recovery_not_verified')
     require(num(data['backup_checkpoints'],'backups',integer=True) >= rules['minimum_backup_checkpoints'], 'backups_not_verified')
     require(num(data['idempotent_replays'],'replays',integer=True) >= 1, 'missing_idempotency')
     crm=data['crm']
+    for key in ('observed_distinct_leads', 'total_webhook_attempts', 'invalid_hmac',
+                'invalid_payloads', 'unexpected_transport_aborts', 'expected_crash_aborts'):
+        num(crm[key], 'crm_' + key, integer=True)
     require(crm['observed_distinct_leads'] == n and crm['total_webhook_attempts'] > n, 'crm_delivery_retry')
     require(all(crm[k] == 0 for k in ('invalid_hmac','invalid_payloads','unexpected_transport_aborts')), 'webhook_integrity')
     require(type(crm['expected_crash_aborts']) is int and 0 <= crm['expected_crash_aborts'] <= 4, 'crash_abort_bound')
+    statuses = crm['http_status_counts']
+    require(type(statuses) is dict and not set(statuses) - {'200','400','408','429','503'}, 'crm_statuses')
+    for count in statuses.values():
+        num(count, 'http_status_count', integer=True)
+    require(sum(statuses.values()) == crm['total_webhook_attempts'] + crm['expected_crash_aborts']
+            and statuses.get('400', 0) == crm['expected_crash_aborts']
+            and statuses.get('200', 0) >= n, 'crm_counter_consistency')
     require(all(crm['http_status_counts'].get(str(code), 0) > 0 for code in (408,429,503)), 'fault_classes_missing')
     return {'duration_s': duration, 'accepted': n, 'api_p99_ms': data['api_p99_ms'],
             'tree_rss_peak_kib': max(sums), 'sampled_child_count_max': peak_children}

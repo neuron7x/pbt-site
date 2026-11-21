@@ -87,7 +87,7 @@ def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mu
                          'maximum_failed_deliveries':0,'minimum_backup_checkpoints':2,
                          'maximum_tree_vm_rss_sum_kib':393216,'maximum_delivery_descendants':8}}
     n=3000
-    soak={'source_sha':HEAD,'profile':'soak','status':'PASS','violations':[],
+    soak={'schema':'pbt-soak-evidence-v1','source_sha':HEAD,'profile':'soak','status':'PASS','violations':[],
           'scope':'synthetic_local_http_sqlite_not_production','field_inp':'NOT_MEASURED',
           'limits':policy['budgets'],'accepted_leads':n,'observed_duration_s':1800.001,
           'api_latency_samples_ms':[1.]*n,'api_p50_ms':1.,'api_p95_ms':1.,'api_p99_ms':1.,'api_max_ms':1.,
@@ -103,7 +103,7 @@ def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mu
           'backup_checkpoints':2,'idempotent_replays':1,
           'crm':{'observed_distinct_leads':n,'total_webhook_attempts':n+20,
                  'invalid_hmac':0,'invalid_payloads':0,'unexpected_transport_aborts':0,
-                 'expected_crash_aborts':0,'http_status_counts':{'408':1,'429':1,'503':1}}}
+                 'expected_crash_aborts':0,'http_status_counts':{'200':n+17,'408':1,'429':1,'503':1}}}
     raw_html={name:(name+'<html></html>').encode() for name in
               ('dist/pbt-site.html','dist/pbt-site.artifact.html','dist/artifact/index.html')}
     sha_lines=''.join(sha(data)+'  '+name+'\n' for name,data in raw_html.items()).encode()
