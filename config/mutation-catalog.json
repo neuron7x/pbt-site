@@ -313,8 +313,8 @@
    "edits": [
     {
      "file": "server/delivery_transport.py",
-     "find": "urllib.request.build_opener(RejectRedirect)",
-     "replace": "urllib.request.build_opener()"
+     "find": "handlers = [RejectRedirect]",
+     "replace": "handlers = []"
     }
    ],
    "oracle": [

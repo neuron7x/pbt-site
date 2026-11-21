@@ -84,7 +84,12 @@ def main():
         return 12
 
     try:
-        opener = urllib.request.build_opener(RejectRedirect)
+        handlers = [RejectRedirect]
+        if urlsplit(url).scheme == 'http':
+            # HTTP дозволений лише для локального приймача: env-проксі не
+            # повинен отримувати його незашифроване тіло, HMAC чи шлях Telegram.
+            handlers.append(urllib.request.ProxyHandler({}))
+        opener = urllib.request.build_opener(*handlers)
         with opener.open(urllib.request.Request(url, raw, headers), timeout=timeout) as response:
             if 200 <= response.status < 300:
                 return 0  # Headers-only acknowledgement; never consume a trickled 2xx body.
