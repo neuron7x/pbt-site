@@ -1,5 +1,6 @@
 """ADV-06/EVD-01/NET-07: provenance receipts and scanner gate reject what they must."""
 import json
+from collections import Counter
 from pathlib import Path
 import shutil
 import subprocess
@@ -21,6 +22,8 @@ def repo(tmp_path):
     (tmp_path / '.github/workflows/ci.yml').write_text(f'jobs:\n  a:\n    steps:\n      - uses: actions/checkout@{GOOD_SHA}\n')
     for name in sc.LOCKS:
         (tmp_path / name).write_text(LOCK)
+    (tmp_path / 'app.py').write_text('VALUE = 1\n')
+    (tmp_path / '.gitignore').write_text('artifacts/\n')
     run = lambda *a: subprocess.run(['git', *a], cwd=tmp_path, check=True, capture_output=True)
     run('init', '-q')
     run('add', '-A')
@@ -91,6 +94,136 @@ def test_capture_then_verify_round_trip(repo):
     receipt = sc.capture(repo, _head(repo), env={})
     assert sc.verify(repo, receipt, _head(repo))['status'] == 'PASS'
     assert receipt['slsa_level'] == 'none_claimed' and receipt['signed'] is False
+
+
+@pytest.mark.parametrize('state', ['unstaged', 'staged', 'untracked'])
+def test_uncommitted_source_cannot_claim_the_clean_revision(repo, state):
+    head = _head(repo)
+    receipt = sc.capture(repo, head, env={})
+    path = repo / ('injected.py' if state == 'untracked' else 'app.py')
+    path.write_text('VALUE = 2\n')
+    if state == 'staged':
+        subprocess.run(['git', 'add', 'app.py'], cwd=repo, check=True, capture_output=True)
+    with pytest.raises(sc.Rejected, match='dirty_checkout'):
+        sc.capture(repo, head, env={})
+    with pytest.raises(sc.Rejected, match='dirty_checkout'):
+        sc.verify(repo, receipt, head)
+
+
+def test_ignored_generated_artifacts_do_not_invalidate_source_provenance(repo):
+    (repo / 'artifacts').mkdir()
+    (repo / 'artifacts/result.json').write_text('{"result":"synthetic"}')
+    head = _head(repo)
+    receipt = sc.capture(repo, head, env={})
+    assert sc.verify(repo, receipt, head)['status'] == 'PASS'
+
+
+@pytest.mark.parametrize('flag', ['--assume-unchanged', '--skip-worktree'])
+def test_index_flags_cannot_hide_modified_source_from_provenance(repo, flag):
+    head = _head(repo)
+    receipt = sc.capture(repo, head, env={})
+    subprocess.run(['git', 'update-index', flag, 'app.py'], cwd=repo, check=True, capture_output=True)
+    (repo / 'app.py').write_text('VALUE = 2\n')
+    assert sc.git(repo, 'status', '--porcelain') == ''
+    with pytest.raises(sc.Rejected, match='hidden_index_flags'):
+        sc.capture(repo, head, env={})
+    with pytest.raises(sc.Rejected, match='hidden_index_flags'):
+        sc.verify(repo, receipt, head)
+
+
+def test_workflow_fingerprint_in_receipt_must_be_verified(repo):
+    head = _head(repo)
+    receipt = sc.capture(repo, head, env={})
+    receipt['workflows_sha256'] = 'f' * 64
+    with pytest.raises(sc.Rejected, match='receipt_drift_workflows_sha256'):
+        sc.verify(repo, receipt, head)
+
+
+def test_workflow_bytes_change_fingerprint_without_action_pin_changes(repo):
+    before = sc.derive(repo)
+    workflow = repo / '.github/workflows/ci.yml'
+    workflow.write_text(workflow.read_text() + '      - run: python app.py\n')
+    after = sc.derive(repo)
+    assert after['action_pins'] == before['action_pins']
+    assert after['workflows_sha256'] != before['workflows_sha256']
+
+
+def test_yaml_workflow_extension_cannot_bypass_action_pinning(repo):
+    (repo / '.github/workflows/extra.yaml').write_text('steps:\n  - uses: actions/checkout@v4\n')
+    with pytest.raises(sc.Rejected, match='unpinned_action_extra.yaml'):
+        sc.action_pins(repo)
+
+
+@pytest.mark.parametrize('step', [
+    '- { uses: actions/setup-python@v5 }',
+    '- "uses": actions/setup-python@v5',
+    "- 'uses': actions/setup-python@v5",
+])
+def test_structural_yaml_action_forms_cannot_hide_an_unpinned_action(repo, step):
+    workflow = repo / '.github/workflows/ci.yml'
+    workflow.write_text(workflow.read_text() + '      ' + step + '\n')
+    with pytest.raises(sc.Rejected, match='unpinned_action'):
+        sc.action_pins(repo)
+
+
+def test_pinned_flow_mapping_and_aliases_are_scanned_without_expansion(repo):
+    workflow = repo / '.github/workflows/ci.yml'
+    workflow.write_text(f'''shared: &action {{uses: actions/setup-python@{'b' * 40}}}
+cycle: &cycle [*cycle]
+steps:
+  - *action
+  - *action
+  - "uses": actions/checkout@{GOOD_SHA}
+''')
+    assert sc.action_pins(repo) == {
+        f'actions/checkout@{GOOD_SHA}': ['ci.yml'],
+        'actions/setup-python@' + 'b' * 40: ['ci.yml'],
+    }
+
+
+@pytest.mark.parametrize('body', [
+    'steps: [',
+    'steps:\n  - uses: [actions/checkout@' + GOOD_SHA + ']\n',
+    f'steps:\n  - uses: actions/checkout@{GOOD_SHA}\n    uses: actions/checkout@v4\n',
+])
+def test_malformed_or_ambiguous_workflow_actions_are_rejected(repo, body):
+    (repo / '.github/workflows/ci.yml').write_text(body)
+    with pytest.raises(sc.Rejected, match='workflow_'):
+        sc.action_pins(repo)
+
+
+def test_workflow_parser_dependency_has_the_same_locked_version_and_hashes():
+    requirements = [{row['name']: row for row in sc.locked_requirements(ROOT / name)} for name in sc.LOCKS]
+    assert 'pyyaml' in requirements[0]
+    assert requirements[0]['pyyaml'] == requirements[1]['pyyaml']
+
+
+@pytest.mark.parametrize('newline', ['\n', ''])
+@pytest.mark.parametrize('continuation', ['\\', '\\\\'])
+def test_locked_requirements_preserve_all_distribution_hashes(repo, newline, continuation):
+    path = repo / 'requirements.txt'
+    path.write_text('pkg==1.0 ' + continuation + '\n    --hash=sha256:' + 'a' * 64
+                    + ' ' + continuation + '\n    --hash=sha256:' + 'b' * 64 + newline)
+    assert sc.locked_requirements(path) == [
+        {'name': 'pkg', 'version': '1.0', 'hashes': ['a' * 64, 'b' * 64]},
+    ]
+
+
+@pytest.mark.parametrize('tail', ['    --hash=sha256:not-a-digest\n', 'unlocked_dependency\n'])
+def test_unparsed_lockfile_content_cannot_disappear_from_the_sbom(repo, tail):
+    path = repo / 'requirements.txt'
+    path.write_text(LOCK + tail)
+    with pytest.raises(sc.Rejected, match='unparsed_lock_content'):
+        sc.locked_requirements(path)
+
+
+def test_real_lockfiles_keep_every_hash_in_the_sbom():
+    import re
+    for name in sc.LOCKS:
+        path = ROOT / name
+        actual = Counter(digest for entry in sc.locked_requirements(path) for digest in entry['hashes'])
+        expected = Counter(re.findall(r'--hash=sha256:([0-9a-f]{64})', path.read_text(encoding='utf-8')))
+        assert expected and actual == expected, name
 
 
 def test_checkout_drift_holds_before_anything_runs(repo):

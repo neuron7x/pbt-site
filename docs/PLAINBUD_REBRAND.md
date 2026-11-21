@@ -139,3 +139,6 @@ SHA-256 JUnit цього прогону:
 connector не повертає її текст; причина account/runner-level зупинки лишається
 невідомою. Нові локальні докази не оголошуються зеленим CI. Правило merge
 після успішних незмінених gates на остаточному head зберігається.
+
+Подальші відтворені дефекти HTTP, submit recovery, backup/restore та provenance
+закрито окремою ітерацією: [INTEGRITY_HARDENING.md](INTEGRITY_HARDENING.md).
