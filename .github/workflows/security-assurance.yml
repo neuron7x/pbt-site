@@ -75,12 +75,50 @@ jobs:
           mkdir -p artifacts/security
           python tools/security_receipt.py --requirements requirements.txt \
             --report /tmp/pip-audit-output.txt --output artifacts/security/osv-receipt.json
+      - name: Remove primary output before SAST lock baseline scan
+        run: |
+          test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
+          git show "${PBT_HEAD_SHA}:requirements-sast.txt" | cmp - requirements-sast.txt
+          rm -f /tmp/pip-audit-output.txt
+      - name: Audit hash-locked SAST scanner requirements against OSV
+        id: sast_audit
+        uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266
+        with:
+          inputs: requirements-sast.txt
+          no-deps: true
+          require-hashes: true
+          vulnerability-service: osv
+      - name: Remove SAST baseline output before complete locked-input scan
+        run: |
+          test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
+          git show "${PBT_HEAD_SHA}:requirements-sast.txt" | cmp - requirements-sast.txt
+          rm -f /tmp/pip-audit-output.txt
+      - name: Audit every pinned SAST scanner requirement and emit JSON
+        id: sast_complete_audit
+        uses: pypa/gh-action-pip-audit@1220774d901786e6f652ae159f7b6bc8fea6d266
+        with:
+          inputs: requirements-sast.txt
+          no-deps: true
+          require-hashes: true
+          vulnerability-service: osv
+          internal-be-careful-extra-flags: --format=json --disable-pip
+      - name: Record independent SAST lock outcome, fail closed
+        if: always()
+        env:
+          AUDIT_OUTCOME: ${{ steps.sast_complete_audit.outcome }}
+          AUDIT_BASELINE_OUTCOME: ${{ steps.sast_audit.outcome }}
+          AUDIT_OUTPUT_B64: ${{ steps.sast_complete_audit.outputs.internal-be-careful-output || steps.sast_audit.outputs.internal-be-careful-output }}
+        run: |
+          python tools/security_receipt.py --requirements requirements-sast.txt \
+            --report /tmp/pip-audit-output.txt --output artifacts/security/osv-sast-receipt.json
       - name: Preserve fail-closed security evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: pbt-security-${{ github.run_id }}-${{ github.run_attempt }}
-          path: artifacts/security/osv-receipt.json
+          path: |
+            artifacts/security/osv-receipt.json
+            artifacts/security/osv-sast-receipt.json
           if-no-files-found: error
           retention-days: 14
 

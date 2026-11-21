@@ -85,13 +85,13 @@ def test_duplicate_json_keys_and_nonstandard_constants_fail_closed(payload):
         verify_report(payload, required_packages(REQUIREMENTS))
 
 
-def make_repo(tmp_path, source):
+def make_repo(tmp_path, source, lockfile='requirements.txt'):
     repo = tmp_path / 'repo'
     repo.mkdir()
     subprocess.run(['git', 'init', '-q', '--template=', str(repo)], check=True)
-    requirements = repo / 'requirements.txt'
+    requirements = repo / lockfile
     requirements.write_bytes(source)
-    subprocess.run(['git', 'add', 'requirements.txt'], cwd=repo, check=True)
+    subprocess.run(['git', 'add', lockfile], cwd=repo, check=True)
     subprocess.run(['git', '-c', 'user.name=Test', '-c', 'user.email=test@example.invalid',
                     '-c', 'commit.gpgsign=false', '-c', 'core.hooksPath=/dev/null',
                     'commit', '-qm', 'synthetic requirements'], cwd=repo, check=True)
@@ -100,8 +100,9 @@ def make_repo(tmp_path, source):
 
 
 def invoke(tmp_path, *, outcome='success', baseline='success', scan=None, source=REQUIREMENTS,
-           output_b64='', after_commit=None, head_override=None, other_path=False):
-    repo, requirements, head = make_repo(tmp_path, source)
+           output_b64='', after_commit=None, head_override=None, other_path=False,
+           lockfile='requirements.txt'):
+    repo, requirements, head = make_repo(tmp_path, source, lockfile=lockfile)
     if after_commit is not None:
         requirements.write_bytes(after_commit)
     if other_path:
@@ -178,6 +179,41 @@ def test_git_head_requirements_provenance_is_mandatory(tmp_path, mutation, error
     assert result.returncode != 0
     assert receipt['requirements_match_head_blob'] is False
     assert error in receipt['validation_errors']
+
+
+def test_sast_lockfile_has_fully_declared_packages_not_covered_by_primary_only():
+    source = (ROOT / 'requirements-sast.txt').read_bytes()
+    expected = required_packages(source)
+    assert len(expected) == 7 and 'bandit' in expected and 'pyyaml' in expected
+    missing = {'dependencies': [{'name': k, 'version': str(v), 'vulns': []}
+                                for k, v in expected.items() if k != 'bandit'], 'fixes': []}
+    with pytest.raises(ValueError, match='scanner_coverage_mismatch'):
+        verify_report(json.dumps(missing), expected)
+
+
+def test_sast_lock_receipt_accepts_only_exact_approved_git_blob(tmp_path):
+    result, receipt = invoke(tmp_path, scan=json.dumps(report()),
+                             lockfile='requirements-sast.txt')
+    assert result.returncode == 0, result.stderr
+    assert receipt['dependency_count'] == 2
+    assert receipt['requirements_match_head_blob'] is True
+    assert receipt['input'].endswith('requirements-sast.txt')
+    assert receipt['validation_errors'] == []
+
+
+def test_sast_lock_modified_after_commit_is_rejected(tmp_path):
+    result, receipt = invoke(tmp_path, scan=json.dumps(report()),
+                             lockfile='requirements-sast.txt',
+                             after_commit=REQUIREMENTS + b'\n# changed\n')
+    assert result.returncode != 0
+    assert 'requirements_blob_mismatch' in receipt['validation_errors']
+
+
+def test_arbitrary_lock_filename_is_rejected_even_when_git_committed(tmp_path):
+    result, receipt = invoke(tmp_path, scan=json.dumps(report()), lockfile='other-lock.txt')
+    assert result.returncode != 0
+    assert 'requirements_path_mismatch' in receipt['validation_errors']
+
 
 
 def test_success_without_scanner_version_is_rejected(tmp_path, monkeypatch):

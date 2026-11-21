@@ -89,9 +89,13 @@ def verify_source_provenance(head, source, requirements):
         raise ValueError('git_provenance_unavailable') from exc
     if actual_head != head:
         raise ValueError('git_head_mismatch')
-    if requirements.resolve() != root / 'requirements.txt':
+    try:
+        relative = requirements.resolve().relative_to(root).as_posix()
+    except ValueError as exc:
+        raise ValueError('requirements_path_mismatch') from exc
+    if relative not in ('requirements.txt', 'requirements-sast.txt'):
         raise ValueError('requirements_path_mismatch')
-    if git('cat-file', 'blob', head + ':requirements.txt') != source:
+    if git('cat-file', 'blob', f'{head}:{relative}') != source:
         raise ValueError('requirements_blob_mismatch')
 
 
