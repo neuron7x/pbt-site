@@ -37,7 +37,8 @@ class Provider:
         if '/actions/runs?' in path:
             return {'workflow_runs': self.runs}
         if '/jobs?' in path:
-            return {'jobs': [{'name': 'j', 'id': 7, 'status': 'completed', 'conclusion': 'success'}]}
+            return {'total_count': 1,
+                    'jobs': [{'name': 'j', 'id': 7, 'status': 'completed', 'conclusion': 'success'}]}
         if path.endswith('/artifacts?per_page=100'):
             run = int(path.split('/runs/')[1].split('/')[0])
             return {'artifacts': [a for a in self.artifacts.values() if a['run'] == run]}
@@ -59,6 +60,73 @@ def test_positive_control_writes_provider_bound_manifest(tmp_path):
     assert (tmp_path / 'manifest.json').exists() and all(r['pull_requests'] == [14] for r in m['runs'].values())
     for role, item in m['artifacts'].items():
         assert hashlib.sha256((tmp_path / f'{role}.zip').read_bytes()).hexdigest() == item['sha256']
+
+
+def _with_jobs(provider, listing):
+    original = provider.api
+
+    def replaced(path):
+        if '/jobs?' in path:
+            return copy.deepcopy(listing)
+        return original(path)
+
+    provider.api = replaced
+    return provider
+
+
+JOB = {'name': 'verify', 'id': 7, 'status': 'completed', 'conclusion': 'success'}
+
+
+@pytest.mark.parametrize('listing', [
+    {'jobs': [{**JOB, 'conclusion': 'failure'}, {**JOB, 'id': 8}]},
+    {'jobs': [JOB, {**JOB, 'name': 'another'}]},
+    {'jobs': []},
+    {'jobs': [JOB], 'total_count': 2},
+    {'jobs': [JOB], 'total_count': 0},
+    {'jobs': [JOB], 'total_count': True},
+    {'jobs': [JOB], 'total_count': 1.0},
+    {'jobs': [JOB], 'total_count': '1'},
+    {'jobs': [JOB], 'total_count': -1},
+    {'jobs': [{**JOB, 'id': True}]},
+    {'jobs': [{**JOB, 'id': 0}]},
+    {'jobs': [{**JOB, 'id': -7}]},
+    {'jobs': [{**JOB, 'id': '7'}]},
+    {'jobs': [{**JOB, 'name': ''}]},
+    {'jobs': [{**JOB, 'name': '  '}]},
+    {'jobs': [{**JOB, 'name': None}]},
+    {'jobs': [None]},
+    {'jobs': {'verify': JOB}},
+    {'jobs': None},
+    {},
+    None,
+    {'jobs': [{k: v for k, v in JOB.items() if k != 'status'}]},
+    {'jobs': [{k: v for k, v in JOB.items() if k != 'conclusion'}]},
+    {'jobs': [{**JOB, 'status': True}]},
+    {'jobs': [{**JOB, 'conclusion': True}]},
+])
+def test_job_listing_cannot_hide_or_relabel_provider_facts(tmp_path, listing):
+    # A failed collection also invalidates an older manifest from the same output.
+    if isinstance(listing, dict) and isinstance(listing.get('jobs'), list) and 'total_count' not in listing:
+        listing = {**listing, 'total_count': len(listing['jobs'])}
+    _collect(Provider(), tmp_path)
+    with pytest.raises(ec.CollectError, match='job_'):
+        _collect(_with_jobs(Provider(), listing), tmp_path)
+    assert not (tmp_path / 'manifest.json').exists()
+
+
+def test_missing_provider_job_count_cannot_certify_a_complete_listing(tmp_path):
+    with pytest.raises(ec.CollectError, match='job_listing_incomplete_or_invalid'):
+        _collect(_with_jobs(Provider(), {'jobs': [JOB]}), tmp_path)
+    assert not (tmp_path / 'manifest.json').exists()
+
+
+def test_complete_jobs_preserve_failed_and_unfinished_facts_for_offline_gate(tmp_path):
+    jobs = [JOB, {**JOB, 'name': 'failed', 'id': 8, 'conclusion': 'failure'},
+            {**JOB, 'name': 'unfinished', 'id': 9, 'status': 'in_progress', 'conclusion': None}]
+    manifest = _collect(_with_jobs(Provider(), {'jobs': jobs, 'total_count': 3}), tmp_path)
+    for run in manifest['runs'].values():
+        assert run['jobs'] == {job['name']: {k: job[k] for k in ('id', 'status', 'conclusion')}
+                               for job in jobs}
 
 
 def test_bytes_differing_from_provider_digest_are_rejected(tmp_path):

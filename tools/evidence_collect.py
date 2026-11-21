@@ -94,6 +94,34 @@ def _execution_snapshot(run):
             tuple(sorted(pr['number'] for pr in run.get('pull_requests') or [])))
 
 
+def _jobs_snapshot(listing):
+    """Preserve every attempt job; duplicate identities must not erase a failure."""
+    if not isinstance(listing, dict) or not isinstance(listing.get('jobs'), list):
+        raise CollectError('job_listing_invalid')
+    jobs = listing['jobs']
+    total = listing.get('total_count')
+    if type(total) is not int or total < 1 or total != len(jobs):
+        raise CollectError('job_listing_incomplete_or_invalid')
+    snapshot, ids = {}, set()
+    for job in jobs:
+        if not isinstance(job, dict):
+            raise CollectError('job_record_invalid')
+        name, identity = job.get('name'), job.get('id')
+        if (not isinstance(name, str) or not name.strip()
+                or type(identity) is not int or identity < 1):
+            raise CollectError('job_identity_invalid')
+        if name in snapshot or identity in ids:
+            raise CollectError('job_identity_duplicate')
+        if (not isinstance(job.get('status'), str) or not job['status'].strip()
+                or 'conclusion' not in job
+                or (job['conclusion'] is not None
+                    and (not isinstance(job['conclusion'], str) or not job['conclusion'].strip()))):
+            raise CollectError('job_execution_invalid')
+        ids.add(identity)
+        snapshot[name] = {key: job[key] for key in ('id', 'status', 'conclusion')}
+    return snapshot
+
+
 def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_bytes):
     if not (SHA.fullmatch(head) and SHA.fullmatch(base)):
         raise CollectError('expected_sha_format')
@@ -116,8 +144,8 @@ def collect(repo, kind, head, base, pr, out, policy, api=gh_json, download=gh_by
                             'conclusion': r['conclusion'], 'attempt': r['run_attempt'],
                             'pull_requests': [x['number'] for x in r.get('pull_requests') or []]} for role, r in chosen.items()}
     for role, record in manifest_runs.items():
-        listed = api(f"repos/{repo}/actions/runs/{record['id']}/attempts/{record['attempt']}/jobs?per_page=100")['jobs']
-        record['jobs'] = {j['name']: {'id': j['id'], 'status': j['status'], 'conclusion': j['conclusion']} for j in listed}
+        listed = api(f"repos/{repo}/actions/runs/{record['id']}/attempts/{record['attempt']}/jobs?per_page=100")
+        record['jobs'] = _jobs_snapshot(listed)
     artifacts = {}
     downloaded = {}
     for role in rules['roles']:
