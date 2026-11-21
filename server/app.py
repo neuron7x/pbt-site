@@ -824,6 +824,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.rfile = io.BufferedReader(_HeaderDeadlineReader(self))
 
     def handle_one_request(self):
+        self._vary_encoding = False
         self._hdr_deadline, self._hdr_expired, self._hdr_bytes = time.monotonic() + self.header_timeout, False, 0
         try:
             super().handle_one_request()      # stdlib ковтає TimeoutError і мовчки закриває з'єднання
@@ -870,7 +871,13 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_media()
         return super().send_head()
 
-    RANGE = re.compile(r'bytes=(\d*)-(\d*)$', re.I)            # одиниця діапазону нечутлива до регістру (RFC 9110 §14.1)
+    RANGE = re.compile(r'bytes=([0-9]*)-([0-9]*)$', re.I)      # одиниця діапазону нечутлива до регістру (RFC 9110 §14.1)
+
+    @staticmethod
+    def _bounded_range_number(value, size):
+        """Normalized decimal strings need no unbounded integer conversion."""
+        limit = str(size)
+        return size if (len(value), value) >= (len(limit), limit) else int(value)
 
     def url_path(self):
         """Нормалізований шлях запиту (як його бачить translate_path): /media/../js/x.js → /js/x.js. Гілки статики й кешу — лише за ним."""
@@ -901,15 +908,18 @@ class Handler(SimpleHTTPRequestHandler):
             lm = self.date_time_string(int(st.st_mtime))
             if self.not_modified(st.st_mtime):                   # §13.2.2: If-Modified-Since перевіряється ДО Range
                 f.close(); self.send_response(304); self.send_header('Last-Modified', lm); self.end_headers(); return None
-            m = self.RANGE.match((self.headers.get('Range') or '').strip())
+            m = self.RANGE.match(', '.join(self.headers.get_all('Range') or []).strip())
             if_range = self.headers.get('If-Range')
             if m and (m.group(1) or m.group(2)) and (not if_range or if_range == lm):
                 a, b = m.group(1), m.group(2)
+                a = (a.lstrip('0') or '0') if a else ''
+                b = (b.lstrip('0') or '0') if b else ''
                 if a:
-                    start, end = int(a), min(int(b), size - 1) if b else size - 1
+                    start = self._bounded_range_number(a, size)
+                    end = min(self._bounded_range_number(b, size), size - 1) if b else size - 1
                 else:                                           # суфікс: останні N байтів
-                    start, end = max(size - int(b), 0), size - 1
-                if a and b and int(b) < int(a):                 # синтаксично невалідний (5-3) → ігнорувати Range, увесь файл
+                    start, end = size - self._bounded_range_number(b, size), size - 1
+                if a and b and (len(b), b) < (len(a), a):        # синтаксично невалідний (5-3) → ігнорувати Range, увесь файл
                     start, end = None, None
                 elif start >= size or start > end:
                     f.close()
@@ -946,7 +956,10 @@ class Handler(SimpleHTTPRequestHandler):
             lines = (getattr(self, 'headers', None) and self.headers.get_all('X-Forwarded-For')) or []
             xff = [p.strip() for line in lines for p in line.split(',') if p.strip()]
             if xff and re.fullmatch(r'[0-9A-Fa-f:.]{2,45}', xff[-1]):
-                return xff[-1]
+                try:
+                    return str(ipaddress.ip_address(xff[-1]))
+                except ValueError:
+                    pass
         return peer
 
     def behind_trusted_proxy(self):
@@ -967,6 +980,8 @@ class Handler(SimpleHTTPRequestHandler):
     def end_headers(self):
         for k, v in SEC_HEADERS.items():
             self.send_header(k, v)
+        if getattr(self, '_vary_encoding', False):
+            self.send_header('Vary', 'Accept-Encoding')
         if getattr(self, 'headers', None) and self.behind_trusted_proxy() and self.headers.get('X-Forwarded-Proto') == 'https':   # S6: HSTS лише коли запит прийшов по HTTPS
             self.send_header('Strict-Transport-Security', 'max-age=15552000')
         p = self.url_path()   # SEC-2: помилка розбору — path ще не присвоєно (url_path терпить); нормалізовано — /media/../js не кешується тиждень
@@ -983,7 +998,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Content-Length', str(len(raw)))
         self.send_header('Cache-Control', 'no-store')
         self.end_headers()
-        self.wfile.write(raw)
+        if self.command != 'HEAD':
+            self.wfile.write(raw)
 
     def send_error(self, code, message=None, explain=None):
         if getattr(self, 'request_version', None) in (None, 'HTTP/0.9'):   # SEC-2: невалідна версія лишає 0.9 → помилка без статус-рядка
@@ -1002,16 +1018,35 @@ class Handler(SimpleHTTPRequestHandler):
     GZIP_TYPES = {'.css', '.js', '.html', '.json', '.svg', '.txt'}
     _gz_cache = {}
 
+    def accepts_gzip(self):
+        """Honor exact coding names and q=0 across every field line."""
+        explicit, wildcard = [], []
+        for line in self.headers.get_all('Accept-Encoding') or []:
+            for item in line.split(','):
+                coding, *params = (part.strip() for part in item.split(';'))
+                coding = coding.lower()
+                if coding not in ('gzip', 'x-gzip', '*'):
+                    continue
+                quality = 1.0
+                if params:
+                    match = re.fullmatch(r'q\s*=\s*(0(?:\.[0-9]{0,3})?|1(?:\.0{0,3})?)',
+                                         params[0], re.I) if len(params) == 1 else None
+                    quality = float(match.group(1)) if match else 0.0
+                (wildcard if coding == '*' else explicit).append(quality)
+        values = explicit if explicit else wildcard
+        return bool(values) and all(value > 0 for value in values)
+
     def serve_gzip(self):
         """P12: текстові ресурси стиснуті gzip (CSS 84 КБ, JS 108 КБ блокували рендер на повільній мережі). Кеш за (шлях, mtime, розмір);
         ETag → 304; Vary: Accept-Encoding. Лише файли всередині web/ (той самий translate_path, що й для статики)."""
-        if 'gzip' not in (self.headers.get('Accept-Encoding') or ''):
-            return False
         path = self.translate_path(self.path)
         if os.path.isdir(path):
             path = os.path.join(path, 'index.html')
         ext = os.path.splitext(path)[1].lower()
         if ext not in self.GZIP_TYPES or not os.path.isfile(path) or not in_web(path):
+            return False
+        self._vary_encoding = True
+        if not self.accepts_gzip():
             return False
         st = os.stat(path); key = (path, st.st_mtime_ns, st.st_size)
         body = self._gz_cache.get(key)
@@ -1023,10 +1058,10 @@ class Handler(SimpleHTTPRequestHandler):
             self._gz_cache[key] = body
         etag = f'"{st.st_mtime_ns:x}-{st.st_size:x}-gz"'
         if self.headers.get('If-None-Match') == etag:
-            self.send_response(304); self.send_header('ETag', etag); self.send_header('Vary', 'Accept-Encoding'); self.end_headers(); return True
+            self.send_response(304); self.send_header('ETag', etag); self.end_headers(); return True
         self.send_response(200)
         self.send_header('Content-Type', self.guess_type(path) + ('; charset=utf-8' if ext in ('.html', '.css', '.js', '.txt') else ''))
-        self.send_header('Content-Encoding', 'gzip'); self.send_header('Vary', 'Accept-Encoding')
+        self.send_header('Content-Encoding', 'gzip')
         self.send_header('Content-Length', str(len(body))); self.send_header('ETag', etag)
         self.end_headers()
         if self.command != 'HEAD':
@@ -1041,6 +1076,13 @@ class Handler(SimpleHTTPRequestHandler):
         if self.serve_gzip():
             return
         return super().do_GET()
+
+    def do_HEAD(self):
+        if self.path.split('?')[0] in ('/api/config', '/api/health'):
+            return self.do_GET()
+        if self.serve_gzip():
+            return
+        return super().do_HEAD()
 
     def health(self):
         """O1: здоров'я = сховище заявок справді працює (читання й запис у транзакції з відкатом) і на диску є місце.
