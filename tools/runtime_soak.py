@@ -215,31 +215,38 @@ def _proc_status(pid):
 
 
 def _descendants(root_pid, proc_root=Path('/proc')):
-    """Sample process descendants; recover if task/*/children is unavailable.
+    """Sample descendants, using PPid when any task interface is incomplete.
 
     Never treat an unobservable process tree as a verified empty tree.
     """
     found = set()
     pending = [root_pid]
     child_interface_observed = False
+    child_interface_complete = True
     while pending:
         pid = pending.pop()
         try:
-            tasks = (proc_root / str(pid) / 'task').iterdir()
+            tasks = list((proc_root / str(pid) / 'task').iterdir())
+            if not tasks:
+                child_interface_complete = False
             for task in tasks:
                 try:
                     children = (task / 'children').read_text()
                     child_interface_observed = True
-                except FileNotFoundError:
+                except OSError:
+                    child_interface_complete = False
                     continue
                 for token in children.split():
+                    if not token.isascii() or not token.isdecimal() or int(token) <= 0:
+                        raise RuntimeError('proc_child_pid_invalid')
                     child = int(token)
                     if child != root_pid and child not in found:
                         found.add(child)
                         pending.append(child)
-        except FileNotFoundError:
+        except OSError:
+            child_interface_complete = False
             continue
-    if child_interface_observed:
+    if child_interface_observed and child_interface_complete:
         return found
 
     # PPid is process-wide (unlike a worker thread TID). Collect all parent
@@ -253,13 +260,15 @@ def _descendants(root_pid, proc_root=Path('/proc')):
             try:
                 status = (entry / 'status').read_text()
             except (FileNotFoundError, ProcessLookupError):
+                if entry.exists():
+                    raise RuntimeError('proc_status_unavailable')
                 continue
             pid = int(entry.name)
             if pid == root_pid:
                 observed_root = True
             parents = [line.partition(':')[2].strip() for line in status.splitlines()
                        if line.startswith('PPid:')]
-            if len(parents) != 1 or not parents[0].isdecimal():
+            if len(parents) != 1 or not parents[0].isascii() or not parents[0].isdecimal():
                 raise RuntimeError('proc_ppid_missing')
             by_parent.setdefault(int(parents[0]), set()).add(pid)
     except OSError as exc:
