@@ -534,7 +534,7 @@ def send(channel, lead_id, data):
     Payload/Telegram credentials travel via stdin, never argv or logs.
     """
     if channel == 'telegram':
-        brand = (public_config().get('brand') or {}).get('name') or 'ПЛЕЙНБУД'
+        brand = public_brand_name()
         text = f"{brand} · заявка №{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
         # Telegram Bot API accepts application/json. UTF-8 avoids 12-byte
         # percent-encoding per astral emoji and remains below the child 16-KiB
@@ -706,8 +706,17 @@ def public_config():
         c = json.loads(CONFIG.read_text(encoding='utf-8'))
     except Exception:  # noqa: BLE001
         return {}
+    if not isinstance(c, dict):
+        return {}
     c.pop('_status', None)
     return c
+
+
+def public_brand_name():
+    """Missing identity must not interrupt startup or lead delivery."""
+    brand = public_config().get('brand')
+    name = brand.get('name') if isinstance(brand, dict) else None
+    return name if isinstance(name, str) and name.strip() else 'Сайт'
 
 
 # ─── HTTP ────────────────────────────────────────────────
@@ -1262,7 +1271,7 @@ def main():
         threading.Thread(target=migrate_retry_worker, name='migrate', daemon=True).start()
     if (ENV('DELIVERY_WORKER') or '1') != '0':      # 0 — лише для тестів («падіння до доставки»)
         threading.Thread(target=delivery_worker, name='delivery', daemon=True).start()
-    brand = (public_config().get('brand') or {}).get('name') or 'ПЛЕЙНБУД'
+    brand = public_brand_name()
     print(f'{brand} → http://{host}:{port}/')
     srv.serve_forever()
 
