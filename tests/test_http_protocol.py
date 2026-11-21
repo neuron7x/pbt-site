@@ -93,6 +93,54 @@ def test_unkeyed_malformed_key_and_json_leave_no_state(srv):
     assert _count(s) == 0
 
 
+@pytest.mark.parametrize('second_name, second_value', [
+    pytest.param('Idempotency-Key', 'k-duplicate-a-0001', id='identical'),
+    pytest.param('Idempotency-Key', 'k-duplicate-b-0001', id='conflicting'),
+    pytest.param('iDeMpOtEnCy-KeY', 'k-duplicate-a-0001', id='mixed-case-identical'),
+    pytest.param('iDeMpOtEnCy-KeY', 'k-duplicate-b-0001', id='mixed-case-conflicting'),
+])
+def test_duplicate_idempotency_headers_are_rejected_without_state_or_quota(srv, second_name, second_value):
+    s = srv(DELIVERY_WORKER='0', RATE_ANY_10MIN='1', RATE_LEAD_10MIN='1', RATE_LEAD_DAY='1',
+            LEAD_WEBHOOK_URL='http://127.0.0.1:9/hook', LEAD_WEBHOOK_SECRET='synthetic')
+    headers = [('Content-Type', 'application/json'), ('Content-Length', len(BODY)),
+               ('Idempotency-Key', 'k-duplicate-a-0001'), (second_name, second_value)]
+    assert raw(s, headers) == 400
+    assert _count(s) == 0
+    assert s.rows('SELECT count(*) FROM outbox') == [(0,)]
+    # Even the general request quota remains available; a rejected header
+    # cannot reserve either key or charge a lead that was never committed.
+    status, accepted, _ = s.post(LEAD, 'k-duplicate-a-0001')
+    assert status == 201 and accepted['ref'] == 'PBT-000001'
+    assert s.rows('SELECT idem_key FROM leads') == [('k-duplicate-a-0001',)]
+    assert s.rows('SELECT count(*) FROM outbox') == [(1,)]
+
+
+def test_duplicate_idempotency_rejection_closes_without_waiting_for_body(srv):
+    s = srv(DELIVERY_WORKER='0', REQUEST_BODY_DEADLINE='5', RATE_ANY_10MIN='1')
+    request = (f'POST /api/lead HTTP/1.1\r\nHost: 127.0.0.1:{s.port}\r\nOrigin: {s.base}\r\n'
+               f'Content-Type: application/json\r\nContent-Length: {len(BODY)}\r\n'
+               'Idempotency-Key: k-no-body-a-0001\r\nIdempotency-Key: k-no-body-b-0001\r\n'
+               'Connection: keep-alive\r\n\r\n').encode()
+    with socket.create_connection(('127.0.0.1', s.port), timeout=2) as client:
+        client.sendall(request)  # Deliberately keep the socket open without a body.
+        reply = b''
+        while chunk := client.recv(4096):
+            reply += chunk
+    assert int(reply.split()[1]) == 400
+    assert json.loads(reply.partition(b'\r\n\r\n')[2]) == {'ok': False, 'error': 'idempotency_key'}
+    assert _count(s) == 0 and s.rows('SELECT count(*) FROM outbox') == [(0,)]
+    assert s.post(LEAD, 'k-after-ambiguous-0001')[0] == 201
+
+
+@pytest.mark.parametrize('key', [None, 'k-single-header-0001'], ids=['absent', 'single'])
+def test_single_or_absent_idempotency_header_preserves_lead_contract(srv, key):
+    s = srv(DELIVERY_WORKER='0', LEAD_WEBHOOK_URL='http://127.0.0.1:9/hook', LEAD_WEBHOOK_SECRET='synthetic')
+    status, accepted, _ = s.post(LEAD, key)
+    assert status == 201 and accepted == {'ok': True, 'ref': 'PBT-000001'}
+    assert s.rows('SELECT idem_key FROM leads') == [(key,)]
+    assert s.rows('SELECT channel, status FROM outbox') == [('webhook', 'pending')]
+
+
 def test_slow_clients_hold_slots_for_bounded_wall_clock_only(srv):
     """Drip on every slot for the whole test, so per-recv inactivity never fires. Only the absolute
     deadline can free a slot: with REQUEST_TIMEOUT far longer than the bound, nothing else would."""

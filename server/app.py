@@ -1084,6 +1084,11 @@ class Handler(SimpleHTTPRequestHandler):
                 lengths and not re.fullmatch(r'[0-9]{1,10}', lengths[0].strip())):
             self.close_connection = True
             return self.send_json(400, {'ok': False, 'error': 'framing'})
+        # A request has one idempotency identity. Choosing the first of
+        # multiple header lines could give a retry a different durable key.
+        if len(self.headers.get_all('Idempotency-Key') or []) > 1:
+            self.close_connection = True
+            return self.send_json(400, {'ok': False, 'error': 'idempotency_key'})
         n = int(lengths[0]) if lengths else 0
         if n <= 0 or n > MAX_BODY:
             return self.send_json(413, {'ok': False, 'error': 'size'})
