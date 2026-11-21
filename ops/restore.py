@@ -143,7 +143,7 @@ def main(argv=None):
         tmp.unlink(missing_ok=True)
         for stale in dst.parent.glob(f'{dst.name}.pre-restore-*.part'):
             stale.unlink()
-        with closing(sqlite3.connect(f'file:{src}?mode=ro', uri=True)) as s, closing(sqlite3.connect(tmp)) as t:
+        with closing(sqlite3.connect(src.resolve().as_uri() + '?mode=ro', uri=True)) as s, closing(sqlite3.connect(tmp)) as t:
             s.backup(t)
         with closing(sqlite3.connect(tmp)) as c:
             if c.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
