@@ -1,4 +1,4 @@
-# ПБТ · ПолтаваБудТехніка — публічний сайт. Python 3.10+, stdlib-сервер; тести: pytest + playwright (chromium) + axe.
+# ПЛЕЙНБУД — публічний сайт. Python 3.10+, stdlib-сервер; тести: pytest + playwright (chromium) + axe.
 PY ?= python3
 PORT ?= 4180
 

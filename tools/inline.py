@@ -3,7 +3,7 @@
   dist/pbt-site.html          — повний документ (з диска, без сервера; форма → резервна панель із текстом заявки)
   dist/pbt-site.artifact.html — фрагмент без <html>/<head>/<body> для публікації як Artifact
 Бюджет артефакту 16 МБ: відео лише mp4; якщо не вміщається — спочатку випадають петлі доказу, потім робіт (постери лишаються)."""
-import base64, mimetypes, re
+import base64, json, mimetypes, re
 from pathlib import Path
 
 from bundle_contract import emit_fragment, inline_css
@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 DIST = ROOT / 'dist'
 LIMIT = 15.5 * 1024 * 1024
+BRAND_NAME = json.loads((ROOT / 'config' / 'business.json').read_text(encoding='utf-8'))['brand']['name']
 mimetypes.add_type('image/webp', '.webp'); mimetypes.add_type('font/woff2', '.woff2'); mimetypes.add_type('video/mp4', '.mp4')
 
 
@@ -57,7 +58,7 @@ head = re.search(r'<head>(.*?)</head>', page, re.S).group(1)
 body = re.search(r'<body[^>]*>(.*?)</body>', page, re.S).group(1)
 keep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', head, re.S)
 early = re.search(r'<script>\s*/\* Профіль.*?</script>', head, re.S).group(0)
-frag = emit_fragment('ПБТ · ПолтаваБудТехніка', keep, early, body)
+frag = emit_fragment(BRAND_NAME, keep, early, body)
 (DIST / 'pbt-site.artifact.html').write_text(frag, encoding='utf-8')
 for f in ('pbt-site.html', 'pbt-site.artifact.html'):
     print(f, round((DIST / f).stat().st_size / 1048576, 2), 'MB', '| відео у бандлі:', len(videos), '/', len(ALL))
@@ -77,10 +78,10 @@ mbody = re.search(r'<body[^>]*>(.*?)</body>', h, re.S).group(1)
 mkeep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', mhead, re.S)
 mearly = re.search(r'<script>\s*/\* Профіль.*?</script>', mhead, re.S).group(0)
 MULTI.mkdir(parents=True)
-(MULTI / 'index.html').write_text(emit_fragment('ПБТ · ПолтаваБудТехніка', mkeep, mearly, mbody), encoding='utf-8')
+(MULTI / 'index.html').write_text(emit_fragment(BRAND_NAME, mkeep, mearly, mbody), encoding='utf-8')
 n = 0
 for f in sorted((WEB / 'media').rglob('*')):
-    if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'pbt-logo.webm'):   # логотип — лише webm (альфа)
+    if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'plainbud-logo.webm'):   # логотип — лише webm (альфа)
         t = MULTI / f.relative_to(WEB); t.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(f, t); n += 1
 tot = sum(p.stat().st_size for p in MULTI.rglob('*') if p.is_file())
 print('artifact/', n + 1, 'файлів,', round(tot / 1048576, 1), 'MB')

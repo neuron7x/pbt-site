@@ -1,4 +1,4 @@
-/* ПБТ · ПолтаваБудТехніка — публічний сайт. Візуальна система «Небо і золото».
+/* ПЛЕЙНБУД — публічний сайт. Візуальна система «Небо і золото».
    Палітра — з логотипа клієнта (золоті зрізані літери PBT на блакитному градієнті): небо #1A87F5→#339DFD→#76CAFC→#AAE4FC,
    золото #F8E901→#FDC501→#F97316, чорнило #062B5C для тексту на світлому. Золото — лише дія, ціна, акцент; текст — білий або чорнило.
    Типографіка: Tektur (зрізані кути, як у лого) для заголовків і великих чисел, IBM Plex Sans — текст, IBM Plex Mono — цифри (спільний із CRM).
@@ -543,12 +543,12 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .reel{display:grid;gap:14px}
 @media (min-width:600px){.reel{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1000px){.reel{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.reel a{position:relative;display:block;overflow:hidden;border-radius:var(--t-card-radius);background:var(--sky-900);min-width:0;box-shadow:0 14px 40px rgba(6,43,92,.3);transition:transform .5s var(--spring)}
-.reel a:hover{transform:translateY(-5px) scale(1.01)}
+.reel .proof-card{position:relative;display:block;overflow:hidden;border-radius:var(--t-card-radius);background:var(--sky-900);min-width:0;box-shadow:0 14px 40px rgba(6,43,92,.3);transition:transform .5s var(--spring)}
+.reel a.proof-card:hover{transform:translateY(-5px) scale(1.01)}
 .reel figure{position:relative;aspect-ratio:16/9}
 .reel img,.reel video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .reel video{opacity:0;transition:opacity .6s}
-.reel a.is-playing video{opacity:1}
+.reel .proof-card.is-playing video{opacity:1}
 .reel figcaption{position:absolute;left:0;right:0;bottom:0;padding:44px 16px 14px;background:linear-gradient(180deg,transparent,rgba(6,43,92,.9));display:grid;gap:3px}
 .reel b{font:700 clamp(15px,1.15vw,19px)/1.05 var(--f-d);text-transform:uppercase;letter-spacing:.02em}
 .reel span{font-size:12px;color:#F2F9FF}
@@ -660,6 +660,8 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 /* ═══ ПІДВАЛ ═══ */
 .foot{padding:clamp(48px,6vw,88px) var(--gut) 36px;background:var(--t-footer-bg);color:#C9DCF2}
 .foot__grid{display:grid;gap:32px;max-width:var(--wrap);margin:0 auto}
+.foot__grid > *{min-width:0}
+.foot [data-bank-iban]{overflow-wrap:anywhere}
 @media (min-width:900px){.foot__grid{grid-template-columns:1.3fr 1fr 1fr 1fr}}
 .foot .brand{color:var(--white)}
 .foot h4{margin:0 0 14px;font:600 12px/1.2 var(--f-m);letter-spacing:.1em;text-transform:uppercase;color:#A8C1DE}

@@ -1,4 +1,4 @@
-/* ПБТ · ПолтаваБудТехніка — сцени, стани, інтерактив. Без залежностей; рух — функція прогресу скролу й видимості.
+/* ПЛЕЙНБУД — сцени, стани, інтерактив. Без залежностей; рух — функція прогресу скролу й видимості.
    Контракт валідації заявки спільний із сервером: tests/contracts/lead_vectors.json (window.PBTv — чиста функція для тестів). */
 (function () {
   'use strict';
@@ -430,11 +430,16 @@
         <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
   }
   function renderProof() {
-    $('#reel').innerHTML = D.proof.map((p, i) => `<a class="rv" style="--d:${(i % 3) * 90}ms" href="${esc(httpsUrl(p.url) || '#roboty')}" target="_blank" rel="noopener" aria-label="${esc(p.t)}: ${esc(p.s)} — відкрити відео">
-      <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
-      <i aria-hidden="true"></i><figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></a>`).join('');
-    $$('#reel a').forEach(watchVideo);
-    const logos = duplicate => D.partners.map((p, i) => `<li${duplicate ? ' aria-hidden="true"' : ''}><img src="${p}" alt="${duplicate ? '' : `Логотип партнера ${i + 1}`}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
+    const standalone = window.PBT_BUNDLE && !D.mp4Only;
+    $('#reel').innerHTML = D.proof.map((p, i) => {
+      const tag = standalone ? 'article' : 'a';
+      const link = standalone ? '' : ` href="${esc(proofUrl(p.url) || '#roboty')}" target="_blank" rel="noopener"`;
+      return `<${tag} class="proof-card rv" style="--d:${(i % 3) * 90}ms"${link} aria-label="${esc(p.t)}: ${esc(p.s)}${standalone ? '' : ' — відкрити відео'}">
+        <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
+        ${standalone ? '' : '<i aria-hidden="true"></i>'}<figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></${tag}>`;
+    }).join('');
+    $$('#reel .proof-card').forEach(watchVideo);
+    const logos = duplicate => D.partners.map((p, i) => `<li${duplicate ? ' aria-hidden="true"' : ''}><img src="${p}" alt="${duplicate ? '' : `Логотип в ілюстративній добірці ${i + 1}`}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
     $('#partners').innerHTML = logos(false) + logos(true);      /* декоративний повтор не дублює доступний список */
   }
   function renderGeo() {
@@ -478,26 +483,47 @@
     try { const u = new URL(String(value)); return u.protocol === 'https:' && !/["'<>\s]/.test(String(value)) ? u.href : null; } catch (_) { return null; }
   }
 
+  function proofUrl(value) {
+    // Rebranded cards open the existing local clips; source attribution stays in provenance.
+    const text = String(value || '');
+    return /^media\/video\/[a-z0-9-]+\.mp4$/.test(text) ? text : httpsUrl(text);
+  }
+
   /* ───── КОНФІГУРАЦІЯ БІЗНЕСУ: /api/config → канали, підвал (fallback — вбудовані дані) ───── */
   function applyBusiness(b) {
     const c = b.contacts || {};
     const tel = p => p ? `tel:${String(p).replace(/[^+\d]/g, '')}` : '#zapyt';
     $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = tel(c.phone); });
-    $$('[data-phone2]').forEach(a => { a.textContent = phoneHuman(c.phone2) || ''; if (a.tagName === 'A') a.href = tel(c.phone2); });
+    $$('[data-phone2]').forEach(a => {
+      const present = !!c.phone2, row = a.closest('[data-phone2-row]') || a;
+      row.hidden = !present; a.textContent = phoneHuman(c.phone2) || '';
+      if (a.tagName === 'A') { if (present) a.href = tel(c.phone2); else a.removeAttribute('href'); }
+    });
+    const email = typeof c.email === 'string' && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email) ? c.email : '';
+    $$('[data-email]').forEach(a => {
+      a.hidden = !email; a.textContent = email;
+      if (a.tagName === 'A') { if (email) a.href = `mailto:${email}`; else a.removeAttribute('href'); }
+    });
+    $$('[data-brand]').forEach(e => e.textContent = b.brand?.nameUk || 'ПЛЕЙНБУД');
+    const requisites = { director: b.director, 'bank-name': b.bank?.name, 'bank-iban': b.bank?.iban };
+    Object.entries(requisites).forEach(([key, value]) => {
+      $$(`[data-${key}]`).forEach(e => { e.textContent = value || ''; });
+      $$(`[data-${key}-row]`).forEach(e => { e.hidden = !value; });
+    });
     $$('[data-address]').forEach(e => e.textContent = b.address || 'Адреса уточнюється');
-    $$('[data-legal]').forEach(e => e.textContent = b.legalName || 'ТОВ «ПолтаваБудТехніка»');
+    $$('[data-legal]').forEach(e => e.textContent = b.legalName || 'ТОВ «ПЛЕЙНБУД»');
     $$('[data-edrpou]').forEach(e => e.textContent = b.edrpou ? `ЄДРПОУ ${b.edrpou}` : '');
     const h = b.hours || {};
-    $$('[data-hours]').forEach(e => e.textContent = h['mo-fr'] ? `Пн–Пт ${h['mo-fr']} · Сб ${h.sa || '—'} · Нд ${h.su || '—'}` : 'Години роботи уточнюються');
+    $$('[data-hours]').forEach(e => e.textContent = h['mo-fr'] ? `Пн–Пт ${h['mo-fr']} · Сб ${h.sa || '—'} · Нд ${h.su || '—'}` : 'Графік роботи уточнюється');
     const ch = [];
     if (c.phone) ch.push({ k: 'Телефон', v: phoneHuman(c.phone), href: tel(c.phone) });
     if (c.phone2) ch.push({ k: 'Телефон', v: phoneHuman(c.phone2), href: tel(c.phone2) });
     if (c.viber) ch.push({ k: 'Viber', v: phoneHuman(c.viber), href: `viber://chat?number=${encodeURIComponent(c.viber)}` });
     if (c.telegram) ch.push({ k: 'Telegram', v: c.telegram, href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}` });
-    if (c.email && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email)) ch.push({ k: 'Email', v: c.email, href: `mailto:${c.email}` });
+    if (email) ch.push({ k: 'Email', v: email, href: `mailto:${email}` });
     $('#channels').innerHTML = ch.map(x => `<a href="${esc(x.href)}"><b>${esc(x.v)}</b><span>${x.k}</span></a>`).join('') || '<div><b>Канали зв’язку</b><span>уточнюються</span></div>';
     const soc = [['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['youtube', 'YouTube']].filter(([k]) => httpsUrl(c[k]));
-    $$('[data-social]').forEach(ul => ul.innerHTML = soc.map(([k, n]) => `<li><a href="${esc(httpsUrl(c[k]))}" target="_blank" rel="noopener">${n}</a></li>`).join(''));
+    $$('[data-social]').forEach(ul => { ul.hidden = !soc.length; ul.innerHTML = soc.map(([k, n]) => `<li><a href="${esc(httpsUrl(c[k]))}" target="_blank" rel="noopener">${n}</a></li>`).join(''); });
   }
   function loadBusiness() {
     const fb = () => applyBusiness(D.business || {});
@@ -582,7 +608,7 @@
     const telegram = method.value === 'telegram';
     contact.inputMode = telegram ? 'text' : 'tel';
     contact.autocomplete = telegram ? 'off' : 'tel';
-    contact.placeholder = telegram ? '@username або номер телефону' : '097 000 00 00';
+    contact.placeholder = telegram ? '@username або номер телефону' : '067 000 00 00';
   }
   method.addEventListener('change', syncContactMode);
   form.addEventListener('change', e => { if (e.target.name === 'type') switchRequestType(e.target.value); });
@@ -674,7 +700,7 @@
       const j = await r.json().catch(error => { if (controller.signal.aborted) throw error; return {}; });
       if (r.status === 201 && j.ok) {
         pendingClear();
-        form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = j.ref; done.focus();
+        form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = /^PBT-\d+$/.test(String(j.ref || '')) ? `№ ${String(j.ref).slice(4)}` : String(j.ref || ''); done.focus();
       } else if (r.status === 422 && j.fields) {
         pendingClear();   // Definitively not committed.
         Object.entries(j.fields).forEach(([k, v]) => setErr(k, v));
@@ -832,7 +858,7 @@
       const syncLogo = () => {
         if (!videoAllowed() || heroP >= 1) { lv.pause(); return; }
         if (lv.ended) return;
-        if (!lv.getAttribute('src')) lv.src = 'media/logo/pbt-logo.webm';
+        if (!lv.getAttribute('src')) lv.src = 'media/logo/plainbud-logo.webm';
         const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
       };
       mediaSync.add(syncLogo); syncLogo();

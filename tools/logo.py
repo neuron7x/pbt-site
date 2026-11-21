@@ -1,86 +1,173 @@
 #!/usr/bin/env python3
-"""Логотип власника ПБТ (references/brand/, не версіюється) → активи сайту з прозорим тлом. Детерміновано, numpy + ffmpeg.
-Джерело: logo-anim.mp4 1436×726, 159 кадрів 29.67 к/с — P-екскаватор, B, T-кран збираються з креслення і спалахують.
-Ключ — за чистою плитою: фон анімації статичний (кадри 18–20 = кадр 20 до пікселя), тож
-  alpha = smoothstep(|кадр − плита|), колір = (кадр − (1−alpha)·плита) / alpha  — точне обернення накладання «over».
-Підпис «CRM» і відблиск під літерами не беремо: на публічному сайті CRM (внутрішня система) клієнтам нічого не каже. KEEP_CRM=1 — лишити.
-Вихід web/media/logo/: pbt-logo.webm (VP9 з альфою, грає один раз), pbt-logo.webp/.png (останній кадр, LCP і запасний),
-pbt-logo-nav.webp (шапка), favicon.png 32 / apple-touch 180 / icon-512, og-pbt.jpg 1200×630."""
-import os, subprocess, sys, tempfile
-from pathlib import Path
+"""Build the user-authorized ПЛЕЙНБУД wordmark from local font and geometry.
 
+Run: python3 tools/logo.py
+Uses the existing Pillow/numpy environment and ffmpeg/libvpx-vp9; no network or
+private source footage. Preserves the blue/gold palette, image geometry, and
+one-shot transparent VP9/static fallback contract. This is a newly generated
+brand treatment, with no claim of official registered-logo status.
+"""
+from __future__ import annotations
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import tempfile
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont, __version__ as pillow_version
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / 'references' / 'brand' / 'logo-anim.mp4'
-OUT = ROOT / 'web' / 'media' / 'logo'
-W, H, PLATE = 1436, 726, 20
-KEEP_CRM = os.environ.get('KEEP_CRM') == '1'
-BOX = (240, 120, 1320, 516) if not KEEP_CRM else (240, 120, 1320, 580)   # x0, y0, x1, y1: літери + спалах над T
-SKY_TOP, SKY_BOT = (0x1A, 0x87, 0xF5), (0xAA, 0xE4, 0xFC)                # палітра сайту (небо)
+OUT = ROOT / 'web/media/logo'
+FONT = ROOT / 'web/fonts/IBMPlexSans-600-cyrillic.woff2'
+WORDMARK = 'ПЛЕЙНБУД'
+HERO_SIZE, NAV_SIZE, VIDEO_SIZE = (960, 352), (168, 62), (720, 264)
+FRAMES, FPS, SCALE = 159, '89/3', 3
+BLUE, INK, GOLD, PAPER = (26, 135, 245), (6, 43, 92), (253, 197, 1), (245, 245, 242)
 
 
-def frames():
-    if not SRC.exists():
-        sys.exit(f'немає {SRC} — скопіювати з ~/Downloads/PBT_CRM_логотип_показ')
-    p = subprocess.Popen(['ffmpeg', '-v', 'error', '-i', str(SRC), '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE)
-    n = W * H * 3
-    while (b := p.stdout.read(n)) and len(b) == n:
-        yield np.frombuffer(b, np.uint8).reshape(H, W, 3).astype(np.float32)
-    p.wait()
+def digest(path):
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def key(f, plate):
-    d = np.abs(f - plate).max(2)
-    t = np.clip((d - 20) / 40, 0, 1)                                          # нижче 20 — шум і м'яке сяйво оригіналу (давало синій ореол)
-    a = t * t * (3 - 2 * t)                                                   # smoothstep: м'який край без ступенів
-    if not KEEP_CRM:
-        a[478:, 465:] = 0                                                     # CRM праворуч від гусениці P
-        a[506:, :] = 0                                                        # відблиск під літерами
-    am = np.maximum(a, 1e-3)[..., None]
-    c = np.clip((f - (1 - a[..., None]) * plate) / am, 0, 255)
-    edge = (a < .6)[..., None]                                                # despill: на напівпрозорому краї синій не вище за середнє R/G
-    c = np.where(edge, np.concatenate([c[..., :2], np.minimum(c[..., 2:], c[..., :2].mean(2, keepdims=True))], 2), c)
-    x0, y0, x1, y1 = BOX
-    return np.dstack([c, a[..., None] * 255])[y0:y1, x0:x1].round().astype(np.uint8)
+def geometric_mark(size, antialias=SCALE):
+    """One structural П; no excavator, crane, hooks or inherited PBT initials."""
+    image = Image.new('RGBA', (size * antialias, size * antialias))
+    draw = ImageDraw.Draw(image)
+    unit = size * antialias / 100
+    def polygon(points, fill):
+        draw.polygon([(round(x * unit), round(y * unit)) for x, y in points], fill=fill)
+    polygon([(10, 12), (90, 12), (90, 88), (70, 88), (70, 32), (30, 32), (30, 88), (10, 88)], (*INK, 255))
+    polygon([(13, 15), (87, 15), (87, 85), (73, 85), (73, 29), (27, 29), (27, 85), (13, 85)], (*GOLD, 255))
+    draw.rectangle((round(34 * unit), round(76 * unit), round(66 * unit), round(85 * unit)), fill=(*BLUE, 255))
+    return image.resize((size, size), Image.Resampling.LANCZOS)
 
 
-def sky(w, h):
+def full_brand_wordmark():
+    """Full mark and wordmark composition for the large sharing card."""
+    image = Image.new('RGBA', (HERO_SIZE[0] * SCALE, HERO_SIZE[1] * SCALE))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.truetype(str(FONT), 135 * SCALE)
+    bounds = draw.textbbox((0, 0), WORDMARK, font=font)
+    tw, th = bounds[2] - bounds[0], bounds[3] - bounds[1]
+    mark_size, gap = 146 * SCALE, 22 * SCALE
+    left = (image.width - mark_size - gap - tw) // 2
+    image.alpha_composite(geometric_mark(mark_size, 1), (left, (image.height - mark_size) // 2))
+    draw.text((left + mark_size + gap - bounds[0], (image.height - th) // 2 - bounds[1]),
+              WORDMARK, font=font, fill=(*PAPER, 255), stroke_width=2 * SCALE, stroke_fill=(*INK, 255))
+    return image.resize(HERO_SIZE, Image.Resampling.LANCZOS)
+
+
+def hero_wordmark():
+    """Compact wordmark for the unchanged 96/80px hero slot.
+
+    Optical horizontal condensation preserves roughly 15px cap height at the
+    96px display width. There is no separate symbol taking width from the name.
+    """
+    font = ImageFont.truetype(str(FONT), 220 * SCALE)
+    stroke = 2 * SCALE
+    bounds = font.getbbox(WORDMARK)
+    letters = Image.new('RGBA', (bounds[2] - bounds[0] + 2 * stroke,
+                                 bounds[3] - bounds[1] + 2 * stroke))
+    ImageDraw.Draw(letters).text((stroke - bounds[0], stroke - bounds[1]), WORDMARK,
+                                font=font, fill=(*PAPER, 255),
+                                stroke_width=stroke, stroke_fill=(*INK, 255))
+    letters = letters.resize((944 * SCALE, letters.height), Image.Resampling.LANCZOS)
+    image = Image.new('RGBA', (HERO_SIZE[0] * SCALE, HERO_SIZE[1] * SCALE))
+    image.alpha_composite(letters, ((image.width - letters.width) // 2,
+                                    (image.height - letters.height) // 2))
+    return image.resize(HERO_SIZE, Image.Resampling.LANCZOS)
+
+
+def sky(size):
+    w, h = size
     t = np.linspace(0, 1, h)[:, None, None]
-    g = (1 - t) * np.array(SKY_TOP) + t * np.array(SKY_BOT)
-    return Image.fromarray(np.broadcast_to(g, (h, w, 3)).astype(np.uint8))
+    gradient = np.broadcast_to((1 - t) * np.array(BLUE) + t * np.array((170, 228, 252)), (h, w, 3))
+    return Image.fromarray(np.rint(gradient).astype(np.uint8)).convert('RGBA')
 
 
-def on_sky(logo, w, h, scale):
-    bg = sky(w, h).convert('RGBA')
-    lw = int(w * scale); lg = logo.resize((lw, int(logo.height * lw / logo.width)), Image.LANCZOS)
-    bg.alpha_composite(lg, ((w - lg.width) // 2, (h - lg.height) // 2))
-    return bg.convert('RGB')
+def square_icon(size):
+    image = sky((size, size))
+    mark = geometric_mark(round(size * .82))
+    image.alpha_composite(mark, ((size - mark.width) // 2, (size - mark.height) // 2))
+    return image.convert('RGB')
+
+
+def animation_frame(base, index):
+    """One restrained light sweep; first/last frames equal the static mark."""
+    if index in (0, FRAMES - 1):
+        return Image.fromarray(base)
+    progress = index / (FRAMES - 1)
+    strength = .24 * np.sin(np.pi * progress) ** 2
+    x = np.arange(base.shape[1], dtype=float)[None, :]
+    y = np.arange(base.shape[0], dtype=float)[:, None]
+    center = -120 + progress * (base.shape[1] + 240)
+    band = np.exp(-((x - center + (y - base.shape[0] / 2) * .24) / 44) ** 2)
+    rgba = base.copy()
+    rgb = base[:, :, :3].astype(float)
+    rgba[:, :, :3] = np.rint(rgb + (255 - rgb) * (band * strength)[:, :, None]).astype(np.uint8)
+    return Image.fromarray(rgba)
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    all_f = list(frames())
-    plate = all_f[PLATE]
-    with tempfile.TemporaryDirectory() as td:
-        for i, f in enumerate(all_f):
-            Image.fromarray(key(f, plate), 'RGBA').save(f'{td}/{i:04d}.png')
-        last = Image.open(f'{td}/{len(all_f) - 1:04d}.png')
-        # VP9 з альфою: Chrome/Edge/Firefox/Android; Safari альфу VP9 не показує — там лишається статичний кадр (site.js)
-        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-framerate', '89/3', '-i', f'{td}/%04d.png', '-vf', 'scale=720:-2:flags=lanczos',
-                        '-c:v', 'libvpx-vp9', '-pix_fmt', 'yuva420p', '-b:v', '0', '-crf', '38', '-auto-alt-ref', '0', '-row-mt', '1',
-                        '-threads', '4', '-an', str(OUT / 'pbt-logo.webm')], check=True)
-    lw = last.resize((960, round(last.height * 960 / last.width)), Image.LANCZOS)
-    lw.save(OUT / 'pbt-logo.webp', 'WEBP', quality=90, method=6)
-    lw.save(OUT / 'pbt-logo.png', optimize=True)
-    nav = last.resize((168, round(last.height * 168 / last.width)), Image.LANCZOS)
-    nav.save(OUT / 'pbt-logo-nav.webp', 'WEBP', quality=92, method=6)
+    if not FONT.is_file():
+        raise SystemExit(f'Missing versioned font: {FONT.relative_to(ROOT)}')
+    logo = hero_wordmark()
+    logo.save(OUT / 'plainbud-logo.png', optimize=True)
+    logo.save(OUT / 'plainbud-logo.webp', 'WEBP', lossless=True, method=6, exact=True)
+    # The text name is hidden by the existing narrow-mobile navigation CSS.
+    # Keep the complete wordmark legible in that existing 70/84px-wide slot.
+    nav = Image.new('RGBA', (NAV_SIZE[0] * SCALE, NAV_SIZE[1] * SCALE))
+    nd = ImageDraw.Draw(nav)
+    nf = ImageFont.truetype(str(FONT), 30 * SCALE)
+    nb = nd.textbbox((0, 0), WORDMARK, font=nf)
+    nd.text(((nav.width - nb[2] + nb[0]) // 2 - nb[0],
+             (nav.height - nb[3] + nb[1]) // 2 - nb[1]), WORDMARK, font=nf,
+            fill=(*GOLD, 255), stroke_width=SCALE, stroke_fill=(*INK, 255))
+    nav = nav.resize(NAV_SIZE, Image.Resampling.LANCZOS)
+    nav.save(OUT / 'plainbud-logo-nav.webp', 'WEBP', lossless=True, method=6, exact=True)
     for size, name in ((32, 'favicon.png'), (180, 'apple-touch-icon.png'), (512, 'icon-512.png')):
-        on_sky(last, size, size, .9).save(OUT / name, optimize=True)
-    on_sky(last, 1200, 630, .62).save(OUT / 'og-pbt.jpg', quality=88)
-    for p in sorted(OUT.glob('pbt-logo*')) + [OUT / 'og-pbt.jpg', OUT / 'favicon.png']:
-        print(p.name, round(p.stat().st_size / 1024), 'КБ')
+        square_icon(size).save(OUT / name, optimize=True)
+    og = sky((1200, 630))
+    full_brand = full_brand_wordmark()
+    og.alpha_composite(full_brand, ((og.width - full_brand.width) // 2,
+                                    (og.height - full_brand.height) // 2))
+    og.convert('RGB').save(OUT / 'og-plainbud.jpg', quality=92, subsampling=0, optimize=True)
+    with tempfile.TemporaryDirectory(prefix='plainbud-brand-') as folder:
+        temp = Path(folder)
+        video = np.array(logo.resize(VIDEO_SIZE, Image.Resampling.LANCZOS))
+        for i in range(FRAMES):
+            animation_frame(video, i).save(temp / f'{i:04d}.png')
+        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-fflags', '+bitexact', '-framerate', FPS,
+                        '-i', str(temp / '%04d.png'), '-c:v', 'libvpx-vp9', '-pix_fmt', 'yuva420p',
+                        '-b:v', '0', '-crf', '28', '-auto-alt-ref', '0', '-row-mt', '0', '-threads', '1',
+                        '-g', str(FRAMES), '-flags:v', '+bitexact', '-map_metadata', '-1', '-an',
+                        '-fflags', '+bitexact',
+                        str(OUT / 'plainbud-logo.webm')], check=True)
+    names = ['plainbud-logo.png', 'plainbud-logo.webp', 'plainbud-logo-nav.webp', 'plainbud-logo.webm',
+             'favicon.png', 'apple-touch-icon.png', 'icon-512.png', 'og-plainbud.jpg']
+    outputs = {}
+    for name in names:
+        path = OUT / name
+        item = {'sha256': digest(path), 'bytes': path.stat().st_size}
+        if path.suffix != '.webm':
+            with Image.open(path) as image:
+                item.update(width=image.width, height=image.height, mode=image.mode)
+        else:
+            item.update(width=VIDEO_SIZE[0], height=VIDEO_SIZE[1], frames=FRAMES, fps=FPS,
+                        alpha=True, playback='once; static first/last frame')
+        outputs[name] = item
+    manifest = {'schema': 'plainbud-brand-assets-v1', 'brand': WORDMARK,
+                'status': 'User-authorized generated wordmark; no official trademark status asserted',
+                'generation_command': 'python3 tools/logo.py', 'generator_sha256': digest(__file__),
+                'font': {'path': str(FONT.relative_to(ROOT)), 'sha256': digest(FONT)},
+                'toolchain': {'pillow': pillow_version, 'numpy': np.__version__,
+                              'ffmpeg': subprocess.check_output(['ffmpeg', '-version'], text=True).splitlines()[0]},
+                'palette': {'blue': '#1A87F5', 'ink': '#062B5C', 'gold': '#FDC501', 'paper': '#F5F5F2'},
+                'outputs': outputs}
+    (OUT / 'plainbud-brand-manifest.json').write_text(
+        json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + '\n', encoding='utf-8')
+    print(json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ПБТ · ПолтаваБудТехніка — статичний фронтенд + API заявок (успадковано з lube-avto server/app.py, доменні поля замінено).
+"""ПЛЕЙНБУД — статичний фронтенд + API заявок (успадковано з lube-avto server/app.py, доменні поля замінено).
 
 Лише stdlib. Заявка вважається прийнятою ТІЛЬКИ після запису в SQLite.
 Продакшн-адаптери (Telegram / вебхук CRM) — з env, після запису, помилки логуються.
@@ -534,7 +534,8 @@ def send(channel, lead_id, data):
     Payload/Telegram credentials travel via stdin, never argv or logs.
     """
     if channel == 'telegram':
-        text = f"Заявка PBT-{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
+        brand = (public_config().get('brand') or {}).get('name') or 'ПЛЕЙНБУД'
+        text = f"{brand} · заявка №{lead_id:06d}\n" + '\n'.join(f"{k}: {v}" for k, v in data.items() if v not in (None, ''))
         # Telegram Bot API accepts application/json. UTF-8 avoids 12-byte
         # percent-encoding per astral emoji and remains below the child 16-KiB
         # body limit for a 4000-character message (<=16000 UTF-8 bytes).
@@ -1261,7 +1262,8 @@ def main():
         threading.Thread(target=migrate_retry_worker, name='migrate', daemon=True).start()
     if (ENV('DELIVERY_WORKER') or '1') != '0':      # 0 — лише для тестів («падіння до доставки»)
         threading.Thread(target=delivery_worker, name='delivery', daemon=True).start()
-    print(f'ПБТ · ПолтаваБудТехніка → http://{host}:{port}/')
+    brand = (public_config().get('brand') or {}).get('name') or 'ПЛЕЙНБУД'
+    print(f'{brand} → http://{host}:{port}/')
     srv.serve_forever()
 
 

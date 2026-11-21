@@ -14,7 +14,7 @@ A fact closes with a signed receipt: fields, authority and expiry per class in `
 | B4 | Domain, DNS, TLS, proxy chain | Owner | NET-02, OPS-07, WEB-06 | Independent DNS and TLS check; canonical and OG URLs set then, not before |
 | B5/B6 | Rights to TikTok footage, authorship and origin of frames | Owner | WEB-08 | Per-asset rights record |
 | B7 | Privacy notice, purpose, retention, lawful basis (Law of Ukraine 2297-VI) | Owner + lawyer | OPS-04, OPS-05 | Dated decision. No automatic deletion exists until then |
-| B8 | Public email and Telegram | Owner | WEB-06 | `config/business.json`; today `null` means do not invent |
+| B8 | Public contact decision for ПЛЕЙНБУД: email supplied 21.11.2026; Telegram not supplied | Owner | WEB-06 | Email is `plainbud@gmail.com` in `config/business.json`; Telegram stays `null`. Formal release evidence remains subject to the receipt policy above |
 | B9 | Consent to Wikimedia illustration and attribution form | Owner | WEB-08 | Written decision |
 | R1 | Off-device encrypted store and credentials | Owner | DB-07 | Provider receipt |
 | R2 | Restore on a separate host, with RPO and RTO thresholds adopted before the run | Owner + operator | DB-08 | `ops/restore_drill.py` on that host, with receipt and external watermark |

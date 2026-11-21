@@ -1,7 +1,11 @@
 """Контракт переносної збірки: оформлення не губиться після інлайнування."""
 
 import ast
+from html.parser import HTMLParser
+import json
 from pathlib import Path
+import shutil
+import subprocess
 
 import pytest
 
@@ -87,3 +91,74 @@ def test_portable_fragments_restore_theme_before_any_stylesheet():
 def test_portable_fragment_fails_closed_without_safe_prepaint(prepaint, head):
     with pytest.raises(ValueError):
         emit_fragment("Title", head, prepaint, "<main></main>")
+
+
+@pytest.mark.parametrize("mode", ["live", "standalone", "multifile"])
+def test_proof_cards_link_only_when_local_clips_are_distributed(mode):
+    """Run the real renderer: a one-file export has no adjacent MP4 link targets.
+
+    The DOM stub captures markup and observer registration; browser media and
+    layout checks remain separate. No video assets or browser process required.
+    """
+    node = shutil.which("node")
+    assert node, "Node.js is required to verify portable proof-card rendering"
+    script = r"""
+const fs = require('node:fs');
+const vm = require('node:vm');
+const mode = process.argv[1];
+const initial = {window: {}};
+vm.runInNewContext(fs.readFileSync('web/js/data.js', 'utf8'), initial);
+const D = initial.window.PBT;
+if (mode === 'multifile') D.mp4Only = true;
+if (mode === 'standalone') D.videoData = {'proof-amph.mp4': 'data:video/mp4;base64,AAAA'};
+const source = fs.readFileSync('web/js/site.js', 'utf8');
+const functions = ['httpsUrl', 'proofUrl', 'renderProof'].map(name => {
+  const found = source.match(new RegExp('  function ' + name + '\\([^\\n]*\\) \\{[\\s\\S]*?\\n  \\}'));
+  if (!found) throw new Error('Missing renderer dependency: ' + name);
+  return found[0];
+});
+const esc = source.split('\n').find(line => line.trimStart().startsWith('const esc = '));
+if (!esc) throw new Error('Missing shared HTML escaping');
+const elements = {'#reel': {innerHTML: ''}, '#partners': {innerHTML: ''}};
+const watched = [], selectors = [];
+const context = {
+  D, URL, window: {PBT_BUNDLE: mode !== 'live'},
+  $: selector => elements[selector],
+  $$: selector => {selectors.push(selector); return D.proof;},
+  watchVideo: proof => watched.push(proof.video)
+};
+vm.runInNewContext(esc + '\n' + functions.join('\n') + '\nrenderProof();', context);
+process.stdout.write(JSON.stringify({html: elements['#reel'].innerHTML, proof: D.proof, watched, selectors}));
+"""
+    run = subprocess.run([node, "-e", script, mode], cwd=ROOT,
+                         capture_output=True, text=True, timeout=10, check=True)
+    actual = json.loads(run.stdout)
+
+    class Tags(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.nodes = []
+
+        def handle_starttag(self, tag, attrs):
+            self.nodes.append((tag, dict(attrs)))
+
+    parsed = Tags()
+    parsed.feed(actual["html"])
+    cards = [(tag, attrs) for tag, attrs in parsed.nodes
+             if "proof-card" in attrs.get("class", "").split()]
+    assert len(cards) == len(actual["proof"]) == 6
+    assert actual["selectors"] == ["#reel .proof-card"]
+    assert actual["watched"] == [proof["video"] for proof in actual["proof"]]
+    videos = [attrs for tag, attrs in parsed.nodes if tag == "video"]
+    images = [attrs for tag, attrs in parsed.nodes if tag == "img"]
+    assert [attrs["data-video"] for attrs in videos] == actual["watched"]
+    assert [attrs["poster"] for attrs in videos] == [proof["poster"] for proof in actual["proof"]]
+    assert len(images) == 6 and all(attrs.get("loading") == "lazy" for attrs in images)
+    assert all("src" not in attrs for attrs in videos), "video sources must stay lazy"
+    if mode == "standalone":
+        assert all(tag == "article" and "href" not in attrs for tag, attrs in cards)
+        assert not any(tag in ("a", "i") for tag, _ in parsed.nodes)
+        assert all("відкрити відео" not in attrs.get("aria-label", "") for _, attrs in cards)
+    else:
+        assert all(tag == "a" and attrs.get("target") == "_blank" for tag, attrs in cards)
+        assert [attrs["href"] for _, attrs in cards] == [proof["url"] for proof in actual["proof"]]

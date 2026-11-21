@@ -14,7 +14,7 @@ def test_no_javascript_cannot_submit_contact_in_url(browser, server):
         page.wait_for_timeout(300)
         assert '0970000011' not in page.url
         expect(page.locator('#send')).to_be_disabled()
-        assert page.locator('a[href="tel:+380978637777"]').count() > 0
+        assert page.locator('a[href="tel:+380675550317"]').count() > 0
         expect(page.locator('#cOrder')).to_be_disabled()
         expect(page.locator('#cMachine')).to_be_disabled()
         expect(page.locator('#cTotal')).to_have_text('—')
@@ -37,7 +37,7 @@ def test_broken_site_script_keeps_submit_disabled(browser, server):
         assert page.locator('#roboty .sec-head').evaluate("e => getComputedStyle(e).opacity") == '1'
         expect(page.locator('#park .content-fallback')).to_be_visible()
         expect(page.locator('#mats .content-fallback')).to_be_visible()
-        expect(page.locator('#channels a[href="tel:+380978637777"]')).to_have_count(1)
+        expect(page.locator('#channels a[href="tel:+380675550317"]')).to_have_count(1)
         expect(page.locator('#calcUnavailable')).to_be_visible()
         expect(page.locator('#formUnavailable')).to_be_visible()
     finally:
@@ -245,7 +245,7 @@ def test_known_contacts_show_before_config_request_finishes(browser, server):
         page.goto(server['base'], wait_until='domcontentloaded')
         page.wait_for_function('() => window.PBT && document.querySelectorAll("#park .unit").length > 0')
         assert page.evaluate('window.__configPending === true')
-        expect(page.locator('#channels a[href="tel:+380978637777"]')).to_have_count(1)
+        expect(page.locator('#channels a[href="tel:+380675550317"]')).to_have_count(1)
         expect(page.locator('#cOrder')).to_have_text('Замовити цю зміну')
     finally:
         ctx.close()
