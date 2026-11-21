@@ -539,12 +539,17 @@
 
   /* ───── ВАЛІДАЦІЯ ЗАЯВКИ: той самий контракт, що й сервер ───── */
   const kyivToday = () => {
-    const opts = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    const opts = { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'iso8601', numberingSystem: 'latn' };
+    // Locale fallback can reorder date fields; compare only explicitly assembled ISO dates.
+    const iso = formatter => {
+      const parts = Object.fromEntries(formatter.formatToParts(new Date()).map(part => [part.type, part.value]));
+      return `${parts.year}-${parts.month}-${parts.day}`;
+    };
     // Browsers with tzdata older than 2022b know only the old zone name; a RangeError here would silently block the form.
     for (const timeZone of ['Europe/Kyiv', 'Europe/Kiev']) {
-      try { return new Intl.DateTimeFormat('en-CA', { ...opts, timeZone }).format(new Date()); } catch (_) { /* next name */ }
+      try { return iso(new Intl.DateTimeFormat('en-CA', { ...opts, timeZone })); } catch (_) { /* next name */ }
     }
-    return new Intl.DateTimeFormat('en-CA', opts).format(new Date());
+    return iso(new Intl.DateTimeFormat('en-CA', opts));
   };
   const V = {
     contact(method, s) {
@@ -703,9 +708,11 @@
       if (window.PBT_BUNDLE) throw new Error('bundle');
       const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey }, body: h, signal: controller.signal });
       const j = await r.json().catch(error => { if (controller.signal.aborted) throw error; return {}; });
-      if (r.status === 201 && j.ok) {
+      if (r.status === 201) {
+        // An HTTP status alone cannot confirm the durable lead receipt or clear safe retry state.
+        if (!j || j.ok !== true || typeof j.ref !== 'string' || !/^PBT-[0-9]{6,}$/.test(j.ref) || !/[1-9]/.test(j.ref)) throw new Error('invalid_lead_receipt');
         pendingClear();
-        form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = /^PBT-\d+$/.test(String(j.ref || '')) ? `№ ${String(j.ref).slice(4)}` : String(j.ref || ''); done.focus();
+        form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = `№ ${j.ref.slice(4)}`; done.focus();
       } else if (r.status === 422 && j.fields) {
         pendingClear();   // Definitively not committed.
         Object.entries(j.fields).forEach(([k, v]) => setErr(k, v));
