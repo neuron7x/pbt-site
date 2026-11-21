@@ -11,6 +11,7 @@ import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import math
+import re
 import os
 from pathlib import Path
 import signal
@@ -211,35 +212,68 @@ def _proc_status(pid):
         if line.startswith(('VmRSS:', 'Threads:', 'PPid:')):
             k, v = line.split(':', 1)
             rows[k] = int(v.split()[0])
-    return rows
+    retudef _descendants(root_pid, proc_root=Path('/proc')):
+    """Census process descendants, falling back to PPid on restricted procfs.
 
-
-def _descendants(root_pid):
-    """Census children of *all threads*, recursively (Linux /proc).
-
-    The worker spawns deliveries from executor threads, not the group leader.
-    Enumerating only /proc/<pid>/task/<pid>/children misses those processes.
-    This is sampled process-tree evidence, not a continuous cgroup peak.
+    A task/*/children file can be absent even for a live Linux task. If no
+    children file is readable, inspect numeric /proc/*/status PPid records.
+    Never silently certify an empty tree if the alternate census fails.
     """
     found = set()
     pending = [root_pid]
+    child_interface_observed = False
     while pending:
         pid = pending.pop()
         try:
-            tasks = Path(f'/proc/{pid}/task').iterdir()
+            tasks = (proc_root / str(pid) / 'task').iterdir()
             for task in tasks:
                 try:
                     child_text = (task / 'children').read_text()
+                    child_interface_observed = True
                 except FileNotFoundError:
-                    continue  # Thread exited during census.
+                    continue
                 for token in child_text.split():
                     child = int(token)
                     if child != root_pid and child not in found:
                         found.add(child)
                         pending.append(child)
         except FileNotFoundError:
-            continue  # Process exited during census.
+            continue
+    if child_interface_observed:
+        return found
+
+    # Snapshot all process relationships before traversal: grandchildren may
+    # appear ahead of their parents in the directory iteration order.
+    by_parent = {}
+    observed_root = False
+    try:
+        for entry in proc_root.iterdir():
+            if not entry.name.isdecimal():
+                continue
+            try:
+                status = (entry / 'status').read_text()
+            except (FileNotFoundError, ProcessLookupError):
+                continue  # Process disappeared during the snapshot.
+            if int(entry.name) == root_pid:
+                observed_root = True
+            match = re.search(r'(?m)^PPid:\\s*(\\d+)\\s*$', status)
+            if match is None:
+                raise RuntimeError('proc_ppid_missing')
+            by_parent.setdefault(int(match.group(1)), set()).add(int(entry.name))
+    except OSError as exc:
+        raise RuntimeError('proc_descendant_census_unavailable') from exc
+    if not observed_root:
+        raise RuntimeError('proc_root_not_observed')
+    found = set()
+    pending = [root_pid]
+    while pending:
+        pid = pending.pop()
+        for child in by_parent.get(pid, ()):
+            if child != root_pid and child not in found:
+                found.add(child)
+                pending.append(child)
     return found
+urn found
 
 
 def resources(proc):
