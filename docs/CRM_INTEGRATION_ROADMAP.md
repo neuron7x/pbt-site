@@ -4,6 +4,16 @@
 **Canonical tracking:** [Issue #38](https://github.com/neuron7x/pbt-site/issues/38)  
 **Scope owner:** product owner and authorized CRM implementation team. This document is a target architecture and staged integration contract, not a statement of current live connectivity.
 
+## 0. Owner-approved execution order — HARD DEPENDENCY
+
+**Owner decision, 2026-11-21:** the implementation sequence is **(1) finish CRM → (2) finish and verify the website independently → (3) connect them only when BOTH are independently ready and the owner authorizes integration**. This overrides any earlier wording that implied developing or launching two-way sync during the CRM or website completion phase.
+
+- **Phase A — CRM completion:** finish CRM roles, approvals, transactions, inventory and operational gates in its own project. No new website↔CRM integration build or schema migration during this phase.
+- **Phase B — independent website completion:** finish visual/media/quality, self-contained catalog/quote and local lead capture, release evidence and operational readiness **without depending on CRM online availability**. Existing optional site→CRM webhook implementation stays compatible but is not evidence or authorization that a production CRM connection is enabled.
+- **Phase C — integration, only after A ∧ B:** freeze both exact release SHAs, confirm mutual contracts, get an owner-approved activation decision, then execute C0–C6 (existing delivery reconciled first, read-only CRM projections next, optional customer status last). Test against synthetic data before any owner-authorized staging/live transfer.
+
+**NO PREMATURE CONNECT:** do not activate website CRM webhook, point live credentials or traffic at a receiver, introduce reverse sync, or expose internal data merely because a connector or code path exists. No claim that CRM is currently online. This sequencing is a project decision, not proof of A or B completion; independent gates still apply. Research and documentation may be prepared before Phase C; source implementation/integration is deferred.
+
 ## 1. Product intent and boundary
 
 The PLAINBUD website is the **public customer-facing interface** of one CRM-driven operational ecosystem. The website should not become a second, independently edited business database or an alternative CRM. A customer can inspect products, obtain a qualified estimate, send a request, and eventually see explicitly authorized status information. Staff continue to manage clients, dispatch, approvals, inventory, pricing and deals in CRM.
@@ -86,7 +96,7 @@ These are schema decisions to be made jointly with CRM developers; no invented e
 | C5 | Operational resilience | Backlog/dead-letter/reconciliation procedures, backup and restore, monitoring without PII; measurable owner-adopted SLO |
 | C6 | Independent release evidence | Full source-bound CI, security, browser/visual, simulated network failures, authorized CRM staging/live acceptance and rollback |
 
-Implement **C0–C1 before changing endpoints**, then read-only CRM → site (C2), then stronger business semantics (C3), then optional customer identity (C4). A site-side feature is not considered complete without reciprocal CRM contract tests.
+**Dependency gate:** do not execute C0–C6 as an implementation program until the CRM and standalone website have both met their own acceptance gates (Phase A ∧ Phase B) and the owner explicitly starts Phase C. Within Phase C, complete C0–C1 before changing endpoints; follow with read-only CRM → site (C2), approved business semantics (C3) and optional customer status (C4). Preparatory research/documentation is allowed earlier. A site-side integration feature is not complete without reciprocal CRM contract tests.
 
 ## 7. Project integration and commercial scope
 
