@@ -148,3 +148,6 @@ connector не повертає її текст; причина account/runner-l
 
 Наступну перевірку procfs, числових вимірювань, обліку synthetic CRM і
 runtime-оракулів описано в [RUNTIME_EVIDENCE_HARDENING.md](RUNTIME_EVIDENCE_HARDENING.md).
+
+Подальші виправлення HTTP, форми, медіаполітики та прив'язки перевірених
+джерел описано в [HTTP_SOURCE_INTEGRITY.md](HTTP_SOURCE_INTEGRITY.md).
