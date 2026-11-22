@@ -123,6 +123,14 @@ jobs:
           test -s dist/pbt-site.artifact.html
           test -s dist/artifact/index.html
           sha256sum dist/pbt-site.html dist/pbt-site.artifact.html dist/artifact/index.html > artifacts/offline-bundles.sha256
+          # Separate SHA manifest: core HTML evidence contract stays exactly unchanged.
+          test -s dist/artifact-budget-preflight.json
+          test -s dist/artifact-budget.json
+          : > artifacts/artifact-metrics.sha256
+          for f in dist/artifact-budget-preflight.json dist/artifact-budget.json dist/artifact-video-fit.json; do
+            if test -s "$f"; then sha256sum "$f" >> artifacts/artifact-metrics.sha256; fi
+          done
+          test -s artifacts/artifact-metrics.sha256
       - name: Preserve full-suite report and offline bundles
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -131,6 +139,10 @@ jobs:
           path: |
             artifacts/full-junit.xml
             artifacts/offline-bundles.sha256
+            artifacts/artifact-metrics.sha256
+            dist/artifact-budget-preflight.json
+            dist/artifact-budget.json
+            dist/artifact-video-fit.json
             dist/pbt-site.html
             dist/pbt-site.artifact.html
             dist/artifact/index.html

@@ -151,3 +151,16 @@ def test_multifile_builder_runs_quality_gated_fit_only_for_actual_oversize():
     assert code.index('shutil.copy2(f, t)') < code.index('preflight = audit_artifact(MULTI)')
     assert code.index("fit = fit_copies(MULTI") < code.index("enforce_artifact_budget(MULTI")
     assert code.index("tot = sum(") > code.index("fit = fit_copies(MULTI")
+
+
+
+def test_provider_quality_uploads_real_multifile_budget_proof_without_changing_html_contract():
+    workflow = (ROOT / ".github/workflows/pr-quality.yml").read_text(encoding="utf-8")
+    assert workflow.count("artifacts/offline-bundles.sha256") == 2
+    assert "test -s dist/artifact-budget-preflight.json" in workflow
+    assert "test -s dist/artifact-budget.json" in workflow
+    assert "artifacts/artifact-metrics.sha256" in workflow
+    for name in ("dist/artifact-budget-preflight.json", "dist/artifact-budget.json", "dist/artifact-video-fit.json"):
+        assert workflow.count(name) >= 2
+    assert "if-no-files-found: error" in workflow
+    assert workflow.index("test -s dist/artifact-budget.json") < workflow.index("Preserve full-suite report")
