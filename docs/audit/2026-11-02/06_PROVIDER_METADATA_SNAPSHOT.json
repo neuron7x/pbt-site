@@ -1,0 +1,178 @@
+{
+  "schema": "pbt-audit-github-provider-metadata-v1",
+  "source": "GitHub authenticated REST connector snapshot; copied data, NOT authenticated signed receipt",
+  "as_of_utc_date": "2026-11-02",
+  "repo": "neuron7x/pbt-site",
+  "main_sha": "382a476b3803f03a8dd1de53c69931f551719151",
+  "kind": "push",
+  "measurement": "PROVIDER_METADATA_ONLY",
+  "zip_bytes_downloaded": false,
+  "zip_crc_verified": false,
+  "independent_artifact_sha_verified": false,
+  "all_mandatory_raw_verification": "NOT_ESTABLISHED",
+  "valid_for_engineering_acceptance": false,
+  "required_roles": [
+    "release",
+    "mobile",
+    "http",
+    "visual",
+    "osv",
+    "static",
+    "soak",
+    "mutation",
+    "sast"
+  ],
+  "provider_runs": [
+    {
+      "run_id": 41419498479,
+      "name": "PBT / Перевірка якості PR",
+      "event": "push",
+      "head_sha": "382a476b3803f03a8dd1de53c69931f551719151",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "artifacts": [
+        {
+          "role": "mobile",
+          "artifact_id": 13130178870,
+          "name": "pbt-mobile-lab-41419498479-1",
+          "provider_digest": "sha256:05993e7a1be1eaabfc4cad7ecae3f8eb13aa9c04fbf8323d385dd791da840909",
+          "reported_size_bytes": 1089,
+          "expired": false,
+          "created_at": "2026-11-02T09:42:32Z"
+        },
+        {
+          "role": "release",
+          "artifact_id": 13130014063,
+          "name": "pbt-release-41419498479-1",
+          "provider_digest": "sha256:7e3f98e93efb079ef9021fbe1029ec3653f1649e1f5cc96dbfc3595a0a83eb77",
+          "reported_size_bytes": 34438382,
+          "expired": false,
+          "created_at": "2026-11-02T09:41:18Z"
+        },
+        {
+          "role": "mutation",
+          "artifact_id": 13129776573,
+          "name": "pbt-mutation-41419498479-1",
+          "provider_digest": "sha256:9ce0d35d78ec1dd904feecaab1782762dd84c3172e7763d4580e72c69d52cdca",
+          "reported_size_bytes": 5255,
+          "expired": false,
+          "created_at": "2026-11-02T09:22:51Z"
+        },
+        {
+          "role": "extra-meta",
+          "artifact_id": 13129555478,
+          "name": "pbt-meta-selftest-41419498479-1",
+          "provider_digest": "sha256:0461d93f17ce10f415e3a5f2bd4f0072de1bba4327d5b801152063cd0a2e73d0",
+          "reported_size_bytes": 1467,
+          "expired": false,
+          "created_at": "2026-11-02T09:18:24Z"
+        }
+      ]
+    },
+    {
+      "run_id": 41419498548,
+      "name": "PBT / 30-minute runtime soak — measured synthetic R2/R3 evidence",
+      "event": "push",
+      "head_sha": "382a476b3803f03a8dd1de53c69931f551719151",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "artifacts": [
+        {
+          "role": "soak",
+          "artifact_id": 13131630239,
+          "name": "pbt-soak-41419498548-1",
+          "provider_digest": "sha256:54e54ac729d30e6b01d401b851480eb122d9ee5bb1c1b2d8793f36352348d4b9",
+          "reported_size_bytes": 11496,
+          "expired": false,
+          "created_at": "2026-11-02T09:48:25Z"
+        }
+      ]
+    },
+    {
+      "run_id": 41419498347,
+      "name": "PBT / Доказовий дизайн та медіабюджет",
+      "event": "push",
+      "head_sha": "382a476b3803f03a8dd1de53c69931f551719151",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "artifacts": [
+        {
+          "role": "visual",
+          "artifact_id": 13129695573,
+          "name": "pbt-visual-proof-41419498347-1",
+          "provider_digest": "sha256:0898be36d2ebb2eebfe4c9efbf7a26662b71d2daa13d3f49beab55202873e241",
+          "reported_size_bytes": 11429599,
+          "expired": false,
+          "created_at": "2026-11-02T09:19:53Z"
+        }
+      ]
+    },
+    {
+      "run_id": 41419498449,
+      "name": "PBT / Transport reliability gate",
+      "event": "push",
+      "head_sha": "382a476b3803f03a8dd1de53c69931f551719151",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "artifacts": [
+        {
+          "role": "http",
+          "artifact_id": 13129263567,
+          "name": "pbt-http-41419498449-1",
+          "provider_digest": "sha256:39df0274eae3875c25bbaef5e3e8101df5bfc4125eb7b1c4b0138435cf790f0e",
+          "reported_size_bytes": 6136,
+          "expired": false,
+          "created_at": "2026-11-02T09:20:17Z"
+        }
+      ]
+    },
+    {
+      "run_id": 41419498560,
+      "name": "PBT / Vulnerability assurance (locked Python dependencies)",
+      "event": "push",
+      "head_sha": "382a476b3803f03a8dd1de53c69931f551719151",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "artifacts": [
+        {
+          "role": "static",
+          "artifact_id": 13129511002,
+          "name": "pbt-static-41419498560-1",
+          "provider_digest": "sha256:7256d05701de08b8ea6d553c9c60e4c50a03f4e312e6f63e3a37863f7ea533cf",
+          "reported_size_bytes": 367,
+          "expired": false,
+          "created_at": "2026-11-02T09:18:24Z"
+        },
+        {
+          "role": "osv",
+          "artifact_id": 13129197757,
+          "name": "pbt-security-41419498560-1",
+          "provider_digest": "sha256:9974f6d3cea21b2522161b0c7ca73f2344c46a7fd5381d0ea8348061ce9b864a",
+          "reported_size_bytes": 812,
+          "expired": false,
+          "created_at": "2026-11-02T09:18:27Z"
+        },
+        {
+          "role": "sast",
+          "artifact_id": 13128269360,
+          "name": "pbt-sast-41419498560-1",
+          "provider_digest": "sha256:68ddeffc6db811e5de6c03b2c61a28cbfce9a704d7b78a8668d9af59e85e057f",
+          "reported_size_bytes": 2524,
+          "expired": false,
+          "created_at": "2026-11-02T09:18:22Z"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Use tools/evidence_collect.py to authenticate provider snapshot and fetch real ZIP bytes before acceptance.",
+    "This file is NOT sufficient input for tools/meta_evidence_gate.py without independent provider source validation.",
+    "No personal customer data or secrets are included."
+  ],
+  "metadata_role_coverage": "9/9 present in API metadata; NOT independently byte verified"
+}
