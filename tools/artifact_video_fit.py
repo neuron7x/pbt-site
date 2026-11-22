@@ -14,10 +14,13 @@ from pathlib import Path
 import re
 import subprocess
 import tempfile
+import time
 
 MIN_MEAN_SSIM = 0.995
 MIN_FRAME_SSIM = 0.985
 CRFS = (17, 19, 21)
+MAX_ATTEMPTS = 6
+MAX_SECONDS = 360
 # First largest hero, then other large clips. No source loss, dropped asset or resolution change.
 CANDIDATES = (
     'media/video/hero-wide.mp4', 'media/video/hero-tall.mp4',
@@ -44,12 +47,12 @@ def probe(path: Path) -> tuple[int, int, int]:
     return dimensions
 
 
-def quality(source: Path, candidate: Path, stats: Path) -> dict:
+def quality(source: Path, candidate: Path, stats: Path, *, timeout=180) -> dict:
     """Compare all decoded frames; reject a perfect mean hiding poor individual frames."""
     if probe(source) != probe(candidate):
         raise ValueError('geometry_or_decoded_frame_count_changed')
     _execute(['ffmpeg', '-nostdin', '-v', 'error', '-i', str(source), '-i', str(candidate),
-              '-lavfi', 'ssim=stats_file=' + str(stats), '-an', '-f', 'null', '-'], timeout=180)
+              '-lavfi', 'ssim=stats_file=' + str(stats), '-an', '-f', 'null', '-'], timeout=timeout)
     rows = [float(v) for v in re.findall(r'\bAll:([0-9]+(?:\.[0-9]+)?)', stats.read_text())]
     frames = probe(source)[2]
     if len(rows) != frames or any(not (0 <= n <= 1) for n in rows):
@@ -74,6 +77,7 @@ def fit_copies(root: Path, *, need_bytes: int, candidates=CANDIDATES) -> dict:
                'target_met': not need_bytes}
     if not need_bytes:
         return outcome
+    start = time.monotonic()
     # Safe by construction: only whitelisted repository-relative filenames.
     for rel in candidates:
         if outcome['saved_bytes'] >= need_bytes:
@@ -89,6 +93,10 @@ def fit_copies(root: Path, *, need_bytes: int, candidates=CANDIDATES) -> dict:
         original_sha = hashlib.sha256(src.read_bytes()).hexdigest()
         accepted = False
         for crf in CRFS:
+            if len(outcome['attempts']) >= MAX_ATTEMPTS or time.monotonic() - start >= MAX_SECONDS:
+                outcome['budget_exhausted'] = True
+                outcome['target_met'] = outcome['saved_bytes'] >= need_bytes
+                return outcome
             with tempfile.TemporaryDirectory(prefix='pbt-fit-', dir=str(root.parent)) as td:
                 temp = Path(td)
                 proposed = temp / 'candidate.mp4'
@@ -97,13 +105,13 @@ def fit_copies(root: Path, *, need_bytes: int, candidates=CANDIDATES) -> dict:
                           '-map', '0:v:0', '-map', '0:a?', '-c:v', 'libx264',
                           '-preset', 'medium', '-threads', '2', '-crf', str(crf),
                           '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-movflags', '+faststart',
-                          str(proposed)], timeout=150)
+                          str(proposed)], timeout=min(150, max(1, MAX_SECONDS - (time.monotonic() - start))))
                 reduced = original_size - proposed.stat().st_size
                 log = {'source': rel, 'crf': crf, 'old_bytes': original_size,
                        'new_bytes': proposed.stat().st_size, 'saved_bytes': max(0, reduced),
                        'input_sha256': original_sha}
                 if reduced > 0:
-                    q = quality(src, proposed, stats)
+                    q = quality(src, proposed, stats, timeout=min(180, max(1, MAX_SECONDS - (time.monotonic() - start))))
                     log.update(q)
                     if q['pass']:
                         # atomic replacement of *copied* file only; originals stay in web/media.

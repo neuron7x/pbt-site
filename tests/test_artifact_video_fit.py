@@ -88,11 +88,21 @@ def test_no_accepted_candidate_does_not_mutate_asset(clip, monkeypatch):
     source=clip/'media/video/hero-wide.mp4'
     raw=source.read_bytes()
     actual=av.quality
-    def decline(src, candidate, stats):
-        measured=actual(src,candidate,stats)
+    def decline(src, candidate, stats, **kwargs):
+        measured=actual(src,candidate,stats,**kwargs)
         return {**measured, 'pass':False}
     monkeypatch.setattr(av,'quality',decline)
     result=av.fit_copies(clip,need_bytes=1000,candidates=('media/video/hero-wide.mp4',))
     assert not result['target_met'] and result['saved_bytes']==0
     assert source.read_bytes()==raw
     assert result['attempts'] and all(x['accepted'] is False for x in result['attempts'])
+
+
+def test_bounded_attempt_limit_does_not_modify_clips(clip, monkeypatch):
+    source=clip/'media/video/hero-wide.mp4'
+    raw=source.read_bytes()
+    monkeypatch.setattr(av,'MAX_ATTEMPTS',0)
+    result=av.fit_copies(clip,need_bytes=1,candidates=('media/video/hero-wide.mp4',))
+    assert result['budget_exhausted'] and not result['target_met']
+    assert result['attempts']==[]
+    assert source.read_bytes()==raw
