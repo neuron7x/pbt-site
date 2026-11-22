@@ -1,70 +1,94 @@
 {
   "brand": "ПЛЕЙНБУД",
+  "construction": {
+    "monogram": "chamfered ink tile, gold П with 45° corners and matching stencil slot, blue base bar",
+    "wordmark": "Tektur wght 900 outlines, tracking -10/1000, custom Й bar, transparent stencil cut at 40 % cap height"
+  },
   "font": {
-    "path": "web/fonts/IBMPlexSans-600-cyrillic.woff2",
-    "sha256": "9409ee21811f0f5272b7e1d828fe8838005b0573481ef906e7e55b63f6610ab0"
+    "license": "SIL OFL 1.1",
+    "path": "web/fonts/Tektur-var-cyrillic.woff2",
+    "sha256": "717684b09fd7c875416b30e168f51256ebc7cf811c908218fae6182069e41f01"
   },
   "generation_command": "python3 tools/logo.py",
-  "generator_sha256": "a2db5fbc2c8e8cb4a50b44f993721fdde84d6ed62f0de5464bb75061292747d2",
+  "generator_sha256": "cb0b94a4dc1a1fc59739fbf471b92c6199ee72e903e787408175aa1e9696f852",
   "outputs": {
     "apple-touch-icon.png": {
-      "bytes": 2018,
+      "bytes": 873,
       "height": 180,
       "mode": "RGB",
-      "sha256": "fefa6ce11ff8fbae0bbff371df5f81c7d6cf64159130ec89ea477b6095a164c6",
+      "sha256": "8627caac2353b7c581340bdd0dd49fbff80210a02ae5c5e51bef44eff2cd79d6",
       "width": 180
     },
     "favicon.png": {
-      "bytes": 781,
+      "bytes": 404,
       "height": 32,
       "mode": "RGB",
-      "sha256": "28a45a81d6d9f0780f888f01ec9c349499fb40ecf6da12993bd0171fa3559dfa",
+      "sha256": "14dc4ab3fddc59039fcadf2c0f5950259c160304276ee7b15fe6c09c1ee9173d",
       "width": 32
     },
     "icon-512.png": {
-      "bytes": 4148,
+      "bytes": 2290,
       "height": 512,
       "mode": "RGB",
-      "sha256": "be44e8f6bfdc81b5e97aa7fdb775847785a9569908a98a9f8161b06da4fa7c98",
+      "sha256": "e372d232d1eb7b9c786d13959d9da950b7a26fa84e884d0fc3f9e995ba92889c",
       "width": 512
     },
     "og-plainbud.jpg": {
-      "bytes": 61146,
+      "bytes": 48856,
       "height": 630,
       "mode": "RGB",
-      "sha256": "f45c52940cdd17a47f6f11e15c989956f596e0debeaf40589cce7f4fd387759e",
+      "sha256": "05717db3d93bba25329a38c05acee67ade60ca7d699a1a769951c21393bfca2e",
       "width": 1200
     },
-    "plainbud-logo-nav.webp": {
-      "bytes": 5816,
+    "plainbud-lockup.svg": {
+      "bytes": 1560,
+      "sha256": "f4dbceef800214989e2272a2253fdc91371658bedf72a889d46a91ad6fa4a78c"
+    },
+    "plainbud-logo-nav-ink.webp": {
+      "bytes": 5572,
       "height": 62,
       "mode": "RGBA",
-      "sha256": "847ab75261e67c9c638acae0033099dde262506c750fa8cc53254ec0c65c253a",
-      "width": 168
+      "sha256": "e1ec475f6f211c871d27e0ad67f67fd7853f0daf905c3109b9b76b35f5684adf",
+      "width": 305
+    },
+    "plainbud-logo-nav.webp": {
+      "bytes": 5826,
+      "height": 62,
+      "mode": "RGBA",
+      "sha256": "1bc8018a554e94634b30fbf3573fb22e76c4c40d2ae6152c5422df0834915aa1",
+      "width": 305
     },
     "plainbud-logo.png": {
-      "bytes": 43686,
+      "bytes": 19083,
       "height": 352,
       "mode": "RGBA",
-      "sha256": "6a15b7ced9960583d426f35ed6464201ecc49cf3bc16237f25dab4b951a1c50b",
+      "sha256": "8825c02ca4acc6f8945cb5fa9af7407ecd64fd10d7001612dc9528023feec1b5",
       "width": 960
     },
     "plainbud-logo.webm": {
       "alpha": true,
-      "bytes": 62099,
+      "bytes": 60127,
       "fps": "89/3",
       "frames": 159,
       "height": 264,
       "playback": "once; static first/last frame",
-      "sha256": "a39bb9cce5b9553d7c59a29ee125ca540898d024b233d98722e4a8ef63fe9793",
+      "sha256": "665b6d927d2c3ff507bd937a60268dd030c157488fd03aea64bb023d3c6ba340",
       "width": 720
     },
     "plainbud-logo.webp": {
-      "bytes": 25830,
+      "bytes": 10262,
       "height": 352,
       "mode": "RGBA",
-      "sha256": "8263ce4ebcc8ba6306915ba97464d3e4418676b9e3685efd912a77ec7f14a4b8",
+      "sha256": "f1d38e9f69342c2cb473993adff0547190ddf48a2ab59c12ce7bbdf3fce71683",
       "width": 960
+    },
+    "plainbud-mark.svg": {
+      "bytes": 427,
+      "sha256": "6189f34a004815916d738d319d0b855cbad3979ef70dbd98b4f2935dd6ba6173"
+    },
+    "plainbud-wordmark.svg": {
+      "bytes": 1158,
+      "sha256": "802ba8241ad99e611ded43275807013d73014ad9347b84147519375ad91d0d4e"
     }
   },
   "palette": {
@@ -73,11 +97,13 @@
     "ink": "#062B5C",
     "paper": "#F5F5F2"
   },
-  "schema": "plainbud-brand-assets-v1",
-  "status": "User-authorized generated wordmark; no official trademark status asserted",
+  "schema": "plainbud-brand-assets-v2",
+  "status": "User-authorized custom wordmark and monogram; no official trademark status asserted",
   "toolchain": {
-    "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
-    "numpy": "2.3.5",
-    "pillow": "13.0.0"
+    "cairosvg": "2.9.0",
+    "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
+    "fonttools": "4.62.1",
+    "numpy": "2.4.6",
+    "pillow": "12.2.0"
   }
 }
