@@ -16,9 +16,18 @@ def test_single_theme_without_switch():
         assert 'data-theme' not in source and 'pbt-theme' not in source and 'precision' not in source
 
 
-def test_no_gradient_text_and_one_keyframe_for_confirmation_only():
+def test_no_gradient_text_and_keyframes_are_the_declared_two():
     assert 'background-clip:text' not in CSS
-    assert re.findall(r'@keyframes\s+([\w-]+)', CSS) == ['draw']
+    assert re.findall(r'@keyframes\s+([\w-]+)', CSS) == ['draw', 'settle']
+
+
+def test_settle_is_transform_only_and_off_for_reduced_motion():
+    frames = re.search(r'@keyframes settle\{(.*?)\}\}', CSS, re.S).group(1)
+    assert 'transform' in frames and not re.search(r'opacity|width|height|top|left|margin', frames)
+    block = CSS[CSS.index('@supports (animation-timeline:view())'):]
+    block = block[:block.index('animation:settle') + 1]
+    assert '@media (prefers-reduced-motion:no-preference)' in block
+    assert ':not([data-quality=static]):not([data-motion=paused])' in block
 
 
 def test_decorative_layers_are_gone():

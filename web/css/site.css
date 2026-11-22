@@ -405,10 +405,10 @@ h3{font-size:clamp(19px,1.4vw,22px)}
       кадр «осідає» з 1.08 до 1, поки картка входить у вікно. Лише transform — композитор, без перерахунку розкладки.
       Де animation-timeline немає (Firefox), кадр просто статичний. ── */
 @keyframes settle{from{transform:scale(1.08)}to{transform:scale(1)}}
-@supports (animation-timeline:view()){
+@supports (animation-timeline:view()){@media (prefers-reduced-motion:no-preference){
   html:not([data-quality=static]):not([data-motion=paused]) :is(.job,.tile,.reel .proof-card,.cine__ch) figure > img{
     animation:settle linear both;animation-timeline:view();animation-range:entry 0% cover 45%}
-}
+}}
 /* Фільтр каталогу: картки переїжджають на нові місця (View Transitions), а не стрибають. */
 ::view-transition-group(*){animation-duration:var(--t-ui);animation-timing-function:var(--ease-out)}
 ::view-transition-old(*),::view-transition-new(*){animation-duration:var(--t-ui)}
