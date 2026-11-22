@@ -322,7 +322,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .nav.is-hidden{transform:var(--t-nav-hide)}
 .nav__bar{display:var(--t-decor);position:absolute;left:0;bottom:0;height:3px;width:100%;transform-origin:left;transform:scaleX(var(--sp,0));background:var(--grad-gold)}
 .brand{display:flex;align-items:center;gap:12px;margin-right:auto;line-height:1}
-.brand__logo{display:block;width:84px;height:auto;filter:drop-shadow(0 2px 3px rgba(6,43,92,.28))}
+.brand__logo,.brand__ink{display:block;width:auto;height:31px;filter:drop-shadow(0 2px 3px rgba(6,43,92,.28))}
 .brand__name{display:grid;gap:4px}
 .brand b{font:700 13px/1 var(--f-d);letter-spacing:.06em;text-transform:uppercase}
 .brand span{font:500 10.5px/1.15 var(--f-m);letter-spacing:.12em;text-transform:uppercase;opacity:.82}
@@ -845,7 +845,7 @@ main section[id]{scroll-margin-top:88px}
 }
 @media(max-width:440px){
   .brand__name{display:none}
-  .brand__logo{width:70px}
+  .brand__logo,.brand__ink{height:26px}
   .nav{padding:12px var(--gut)}
   .theme-switch__button{padding:10px 9px;font-size:11px}
   .theme-switch{gap:2px;padding:2px}
@@ -885,3 +885,9 @@ main section[id]{scroll-margin-top:88px}
   .motion-toggle{top:76px;bottom:auto;left:var(--gut);right:auto}
   .hero__center{padding-top:132px}
 }
+
+/* Шапка: логотип-блок несе назву; підпис лише на дуже широких екранах, щоб меню не переносилось. */
+#nav .brand__name{padding-left:12px;border-left:1px solid currentColor}
+@media (max-width:1599px){#nav .brand__name{display:none}}
+/* Світла шапка після прокрутки: золото на білому не читається — той самий блок із темно-синьою назвою. */
+.brand__ink{display:none}.nav.is-solid .brand__logo{display:none}.nav.is-solid .brand__ink{display:block}
