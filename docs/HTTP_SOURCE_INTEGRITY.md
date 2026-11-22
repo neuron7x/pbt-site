@@ -88,8 +88,9 @@ The metadata-derived sum is **68,054,229 bytes**, exceeding the documented
 64 MiB / 67,108,864 bytes by **945,365 bytes**. This calculation uses Git
 asset-size metadata plus real HTML; it is not a completed binary build.
 The current builder reports size but does not enforce that multifile limit.
-This remains open pending complete media bytes and a verified packaging
-change; no video quality reduction or limit increase was substituted.
+Resolved 2026-11-22: the preview serves the 720p hero and omits the 1920 copy;
+built package 58,656,312 bytes, cap unchanged — see
+[MULTIFILE_BUDGET_PROOF_20261122.md](MULTIFILE_BUDGET_PROOF_20261122.md#resolution--2026-11-22-fixartifact-hero-sd-20261122).
 
 ## Integration rule
 

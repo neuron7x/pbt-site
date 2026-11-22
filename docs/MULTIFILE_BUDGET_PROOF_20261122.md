@@ -2,6 +2,25 @@
 
 **Status: NOT YET ACCEPTED / MEDIA VALIDATION HOLD.** This is a reproducible arithmetic proof of an oversized **unoptimized** candidate, not a verified optimized package or field visual acceptance.
 
+## Resolution · 2026-11-22 (`fix/artifact-hero-sd-20261122`)
+
+**Status: FITS, measured on a full local build.** The Artifact preview omits the 1920 hero copy
+`media/video/hero-wide.mp4` (9,397,955 bytes) and sets `window.PBT.heroSD = true`, so `heroHD()`
+selects `hero-wide-720.mp4`. Nothing is re-encoded; the live site and the single-file bundle keep
+every source asset. Explicit trade-off: in the claude.ai preview only, screens with
+`innerWidth × devicePixelRatio ≥ 1600` see the 720p hero instead of 1920p.
+
+| Measurement | Bytes |
+|---|---:|
+| Built `dist/artifact` total (`dist/artifact-budget.json`, `ok: true`) | **58,656,312** |
+| Maximum | 67,108,864 |
+| Margin | **8,452,552** |
+
+Chromium on the served preview: 1920×1080 requests `hero-wide-720.mp4`, 390×844@3 requests
+`hero-tall.mp4`; 0 HTTP ≥ 400, 0 page errors. Guard: `tests/test_artifact_hero_sd.py`
+(3/3 mutants killed). The cap is unchanged; the reproducibility test now sees exit 0.
+
+
 ## Two independent inputs
 
 | Measurement | Grounding | Bytes |
