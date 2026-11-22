@@ -32,11 +32,7 @@
     }
     if (!videoAllowed()) $$('video').forEach(video => video.pause());
     mediaSync.forEach(sync => sync());
-    if (paused) {
-      $$('.unit').forEach(unit => { unit.style.removeProperty('--rx'); unit.style.removeProperty('--ry'); });
-      $('#glow')?.classList.remove('is-on');
-    }
-    reveal(); render();
+    render();
   }
   motionToggle?.addEventListener('click', () => {
     if (quality() === 'static' || reduced) return;
@@ -49,7 +45,6 @@
   document.addEventListener('play', event => {
     if (event.target.tagName === 'VIDEO' && !videoAllowed()) event.target.pause();
   }, true);
-  const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -109,35 +104,9 @@
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
-  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge'), motionToggle, $('.skip')].filter(Boolean);
+  const menuBackdrop = [nav, $('#main'), $('.foot'), motionToggle, $('.skip')].filter(Boolean);
   const menuInertBefore = new Map();
   let lastY = scrollY, navHidden = false, returnFocus = null;
-  const themeButtons = Array.from(document.querySelectorAll('[data-theme-choice]'));
-  const THEME_KEY = 'pbt-theme';
-  function applyTheme(value, persist) {
-    const next = value === 'precision' ? 'precision' : 'sky';
-    if (doc.dataset.theme !== next) {
-      doc.dataset.theme = next;
-      nav.classList.remove('is-hidden');
-      navHidden = false;
-    }
-    themeButtons.forEach(button => {
-      button.setAttribute('aria-pressed', String(button.dataset.themeChoice === next));
-    });
-    const meta = $('meta[name="theme-color"]');
-    if (meta) meta.content = next === 'precision' ? '#101820' : '#0D6AE0';
-    const face = $('#themeFontPreload');
-    if (face) face.href = 'fonts/' + (next === 'precision' ? 'IBMPlexSans-600-cyrillic.woff2' : 'Tektur-var-cyrillic.woff2');
-    if (persist) {
-      try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* приватний режим / заблоковане сховище */ }
-    }
-    // Обидві теми спільно використовують DOM і медіа. Після зміни стилю
-    // перераховуємо геометрію й не підтримуємо прихований Canvas-цикл.
-    requestAnimationFrame(() => { measure(); render(); sparkWake(); });
-  }
-  themeButtons.forEach(button => button.addEventListener('click', () => applyTheme(button.dataset.themeChoice, true)));
-  // Інші вкладки застосують спільний вибір під час наступного завантаження:
-  // миттєва перебудова активної сторінки спричиняє непередбачений CLS.
 
   function openMenu(on, restoreFocus = true) {
     if (on === !menu.hidden) return;
@@ -182,81 +151,31 @@
   });
 
   /* ───── ГЕРОЙ ───── */
-  const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
+  const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo');
   $$('#heroTitle .line').forEach(line => {       /* слова — окремі спани для появи */
-    line.innerHTML = line.textContent.trim().split(/\s+/).map((w, i) => `<span class="w" style="transition-delay:${.45 + i * .07}s">${esc(w)}</span>`).join(' ');
+    line.innerHTML = line.textContent.trim().split(/\s+/).map((w, i) => `<span class="w" style="transition-delay:${(i * .045).toFixed(3)}s">${esc(w)}</span>`).join(' ');
   });
   let heroTop = 0, heroTotal = 1, heroP = 0;
   function heroRender(y) {
+    // Єдиний рух героя — відео; поза кадром воно стоїть.
     const p = clamp((y - heroTop) / heroTotal, 0, 1);
-    if (motion()) {
-      if (hVideo) hVideo.style.transform = `scale(${(1 + .14 * p).toFixed(4)}) translate3d(0,${(p * 6).toFixed(2)}%,0)`;
-      const cp = seg(p, .35, .8);
-      hCenter.style.opacity = (1 - cp).toFixed(3);
-      hCenter.style.transform = `translate3d(0,calc(-50% - ${(cp * 90).toFixed(1)}px),0) scale(${(1 - .06 * cp).toFixed(4)})`;
-      water.style.setProperty('--wl', (seg(p, .45, .985) * 1.04).toFixed(4));
-      if (p >= 1 && hVideo && !hVideo.paused) hVideo.pause();
-      else if (p < 1 && hVideo && hVideo.paused && hVideo.dataset.ready && videoAllowed()) { const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
-    } else {
-      // Пауза посеред прокручування не залишає заголовок прозорим при поверненні нагору.
-      hCenter.style.removeProperty('opacity'); hCenter.style.removeProperty('transform');
-      if (hVideo) hVideo.style.removeProperty('transform');
-      water.style.removeProperty('--wl');
-    }
+    if (p >= 1 && hVideo && !hVideo.paused) hVideo.pause();
+    else if (p < 1 && hVideo && hVideo.paused && hVideo.dataset.ready && videoAllowed()) { const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
     return p;
   }
-  /* блиски на воді — canvas, лише повна якість і лише поки герой у кадрі */
-  let ctx = null, cW = 0, cH = 0, cLast = 0, dots = [];
-  function sparkSize() {
-    if (!spark || getComputedStyle(spark).display === 'none') { ctx = null; dots = []; return; }
-    const dpr = Math.min(devicePixelRatio || 1, 1.5);
-    cW = spark.clientWidth; cH = spark.clientHeight;
-    spark.width = Math.round(cW * dpr); spark.height = Math.round(cH * dpr);
-    ctx = spark.getContext('2d');
-    if (!ctx) { dots = []; return; }   // Decorative canvas may be unavailable; page initialization continues.
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    dots = Array.from({ length: mobileLayout() ? 28 : 60 }, () => ({ x: Math.random() * cW, y: Math.random() * cH, r: .6 + Math.random() * 1.8, s: .15 + Math.random() * .45, ph: Math.random() * 6.28 }));
-  }
-  /* цикл іскор засинає, коли герой поза кадром або вкладка прихована (раніше rAF крутився вічно: Lighthouse devtools 09.10
-     — сторінка не ставала «тихою»); прокидає його sparkWake() зі скролу й visibilitychange */
-  let sparkOn = false;
-  const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroP < 1 && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
-  function sparkLoop(t) {
-    if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || !motion() || heroP >= 1 || document.hidden) { sparkOn = false; return; }
-    requestAnimationFrame(sparkLoop);
-    if (t - cLast < 33) return;
-    cLast = t;
-    ctx.clearRect(0, 0, cW, cH);
-    const s = t / 1000;
-    for (const d of dots) {
-      d.y -= d.s; d.x += Math.sin(s * .6 + d.ph) * .18;
-      if (d.y < -4) { d.y = cH + 4; d.x = Math.random() * cW; }
-      const a = .25 + .55 * (.5 + .5 * Math.sin(s * 1.7 + d.ph));
-      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283);
-      ctx.fillStyle = `rgba(253,220,80,${a.toFixed(3)})`; ctx.fill();
-    }
-  }
 
-  /* ───── ГЛИБИНОМІР, АКТИВНА СЕКЦІЯ, ПРОГРЕС ───── */
-  const gauge = $('#gauge'), gFloat = $('.gauge__float'), gOut = $('.gauge__m'), gStops = $$('.gauge__stops a'), navLinks = $$('.nav__links a');
+  /* ───── АКТИВНА СЕКЦІЯ ───── */
+  const navLinks = $$('.nav__links a');
   const sections = $$('main section[id]');
   let docMax = 1, secTops = [];
   function measure() {
-    heroTop = sHero.offsetTop; heroTotal = Math.max(1, sHero.offsetHeight - innerHeight);
+    heroTop = sHero.offsetTop; heroTotal = Math.max(1, sHero.offsetHeight);
     docMax = Math.max(1, doc.scrollHeight - innerHeight);
     secTops = sections.map(s => ({ id: s.id, top: s.offsetTop }));
-    $$('.gauge__stops li').forEach((li, i) => { const s = secTops[i]; if (s) li.style.top = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; });
-    sparkSize();
   }
-  function gaugeRender(y) {
-    const p = clamp(y / docMax, 0, 1);
-    nav.style.setProperty('--sp', p.toFixed(4));
-    gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
-    gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
-    gauge.classList.toggle('is-on', y > 80);
+  function activeRender(y) {
     let active = secTops[0] ? secTops[0].id : '';
     for (const s of secTops) if (s.top <= y + innerHeight * .42) active = s.id;
-    gStops.forEach(a => a.classList.toggle('is-on', a.getAttribute('href').slice(1) === active));
     navLinks.forEach(a => a.classList.toggle('is-on', a.getAttribute('href') === '#' + active));
   }
 
@@ -265,8 +184,8 @@
   function render() {
     ticking = false;
     const y = scrollY;
-    heroP = heroRender(y); sparkWake();
-    gaugeRender(y);
+    heroP = heroRender(y);
+    activeRender(y);
     nav.classList.toggle('is-solid', y > 40);
     const dy = y - lastY;
     if (menu.hidden) {
@@ -280,24 +199,7 @@
   let rT;
   addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (!mobileLayout() && !menu.hidden) openMenu(false, false); profile(); measure(); render(); }, 120); });
 
-  /* ───── ПОЯВА СЕКЦІЙ, ЛІЧИЛЬНИКИ, МАРШРУТИ ───── */
-  const rio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
-    if (!e.isIntersecting) return;
-    e.target.classList.add('is-in'); rio.unobserve(e.target);
-    $$('[data-count]', e.target).forEach(countUp);
-    if (e.target.dataset.count !== undefined) countUp(e.target);
-  }), { threshold: 0, rootMargin: '20% 0px 20% 0px' }) : null;   // симетрична зона появи: стрибок до центру високої сітки не пропускає заголовок
-  function reveal(root) {
-    $$('.rv', root || document).forEach(el => { if (!rio || !motion()) el.classList.add('is-in'); else rio.observe(el); });
-    $$('[data-count]', root || document).forEach(el => { if (el.closest('.rv')) return; if (!rio || !motion()) countUp(el); else rio.observe(el); });   /* лічильники поза .rv (герой) */
-  }
-  function countUp(el) {
-    if (el.dataset.done) return; el.dataset.done = '1';
-    const to = parseFloat(el.dataset.count), suf = el.dataset.suffix || '', dur = 1400, t0 = performance.now();
-    if (!motion()) { el.textContent = fmt(to) + suf; return; }
-    const step = t => { const k = motion() ? ease(clamp((t - t0) / dur, 0, 1)) : 1; el.textContent = fmt(to * k) + suf; if (k < 1) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  }
+  /* ───── МАРШРУТИ ───── */
 
   /* ───── ПАРК ───── */
   const catName = id => (D.cats.find(c => c.id === id) || {}).name || '';
@@ -311,12 +213,12 @@
     chips.innerHTML = [`<button class="chip" type="button" data-cat="all" aria-pressed="true">Уся техніка <span class="num">${D.fleet.length}</span></button>`]
       .concat(D.cats.map(c => `<button class="chip" type="button" data-cat="${c.id}" aria-pressed="false">${esc(c.name)} <span class="num">${counts[c.id] || 0}</span></button>`)).join('');
     grid.innerHTML = D.fleet.map((u, i) => `
-      <article class="unit rv rv--scale" style="--d:${(i % 8) * 60}ms" data-cat="${u.cat}" data-id="${u.id}">
+      <article class="unit" data-cat="${u.cat}" data-id="${u.id}">
         <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__cat">${esc(catName(u.cat))}</span></figure>
         <div class="unit__body"><h3>${esc(u.name)}</h3>
           ${u.specs.length ? `<dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl>` : `<p class="unit__purpose">${esc(unitPurpose(u))}</p>`}</div>
         <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
-          <button class="btn btn--sm" type="button" data-req="${u.cat === 'trans' ? 'transport' : 'rent'}" data-subject="${esc(u.name)}">У заявку</button></div>
+          <button class="order" type="button" data-req="${u.cat === 'trans' ? 'transport' : 'rent'}" data-subject="${esc(u.name)}">У заявку</button></div>
       </article>`).join('');
     const reveal1 = b => { if (chips.scrollWidth > chips.clientWidth + 1) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: motion() ? 'smooth' : 'auto' }); };
     chips.addEventListener('focusin', e => { const b = e.target.closest('.chip'); if (b) reveal1(b); });   // Tab не лишає фокус за краєм (аудит a5951a5: 107 px поза контейнером на 390)
@@ -325,23 +227,20 @@
       reveal1(b);
       $$('.chip', chips).forEach(c => c.setAttribute('aria-pressed', String(c === b)));
       const cat = b.dataset.cat;
-      $$('.unit', grid).forEach((u, i) => { u.hidden = !(cat === 'all' || u.dataset.cat === cat); if (!u.hidden) { u.classList.remove('is-in'); u.style.setProperty('--d', `${(i % 8) * 50}ms`); requestAnimationFrame(() => requestAnimationFrame(() => u.classList.add('is-in'))); } });
+      const apply = () => { $$('.unit', grid).forEach(u => { u.hidden = !(cat === 'all' || u.dataset.cat === cat); }); };
+      // Картки переїжджають на нові місця (View Transitions); без підтримки або без руху — миттєво.
+      if (document.startViewTransition && motion()) {
+        $$('.unit', grid).forEach(u => { u.style.viewTransitionName = 'u-' + u.dataset.id; });
+        const vt = document.startViewTransition(apply);
+        vt.finished.finally(() => $$('.unit', grid).forEach(u => u.style.removeProperty('view-transition-name')));
+      } else apply();
       measure();
     });
-    if (finePointer) grid.addEventListener('pointermove', e => {         /* нахил картки за вказівником */
-      if (!motion() || doc.dataset.theme === 'precision') return;
-      const u = e.target.closest('.unit'); if (!u) return;
-      const r = u.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
-      u.style.setProperty('--ry', `${(x * 7).toFixed(2)}deg`); u.style.setProperty('--rx', `${(-y * 7).toFixed(2)}deg`);
-    });
-    grid.addEventListener('pointerleave', e => { $$('.unit', grid).forEach(u => { u.style.removeProperty('--rx'); u.style.removeProperty('--ry'); }); }, true);
-    grid.addEventListener('pointerout', e => { const u = e.target.closest('.unit'); if (u && !u.contains(e.relatedTarget)) { u.style.removeProperty('--rx'); u.style.removeProperty('--ry'); } });
   }
 
   /* ───── РОБОТИ: відео на картках ───── */
   function renderJobs() {
     $$('#jobs .job').forEach((job, i) => {
-      job.classList.add('rv'); job.style.setProperty('--d', `${i * 90}ms`);
       const v = $('video', job); if (v) watchVideo(job);
     });
   }
@@ -431,26 +330,24 @@
   const x2 = src => /^media\/.+\.webp$/.test(src) ? ` srcset="${src} 1x, ${src.replace(/\.webp$/, '@2x.webp')} 2x"` : '';   // data:URI однофайлової збірки — без srcset
   function renderMats() {
     $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
-      <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
-        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
+      <article class="tile"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
+        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="order tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
   }
   function renderProof() {
     const standalone = window.PBT_BUNDLE && !D.mp4Only;
     $('#reel').innerHTML = D.proof.map((p, i) => {
       const tag = standalone ? 'article' : 'a';
       const link = standalone ? '' : ` href="${esc(proofUrl(p.url) || '#roboty')}" target="_blank" rel="noopener"`;
-      return `<${tag} class="proof-card rv" style="--d:${(i % 3) * 90}ms"${link} aria-label="${esc(p.t)}: ${esc(p.s)}${standalone ? '' : ' — відкрити відео'}">
+      return `<${tag} class="proof-card"${link} aria-label="${esc(p.t)}: ${esc(p.s)}${standalone ? '' : ' — відкрити відео'}">
         <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
         ${standalone ? '' : '<i aria-hidden="true"></i>'}<figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></${tag}>`;
     }).join('');
     $$('#reel .proof-card').forEach(watchVideo);
-    const logos = duplicate => D.partners.map((p, i) => `<li${duplicate ? ' aria-hidden="true"' : ''}><img src="${p}" alt="${duplicate ? '' : `Логотип в ілюстративній добірці ${i + 1}`}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
-    $('#partners').innerHTML = logos(false) + logos(true);      /* декоративний повтор не дублює доступний список */
   }
   function renderGeo() {
     const home = 'Полтавська', svg = $('#geoMap svg');
     const list = $('#geoList');
-    list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : 'виїзд'}</span></li>`).join('');
+    list.innerHTML = D.regions.map(r => `<li${r === home ? ' class="home"' : ''}><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : 'виїзд'}</span></li>`).join('');
     if (!svg) return;
     $$('.obl', svg).forEach(p => { if (p.dataset.ua === home) p.classList.add('home'); });
     /* маршрути з Полтави до кожної області — криві по центрах контурів, малюються при появі секції */
@@ -464,12 +361,12 @@
     const ends = served.map(center);
     const qlen = (x0, y0, x1, y1, x2, y2) => { let L = 0, px = x0, py = y0; for (let k = 1; k <= 24; k++) { const t = k / 24, u = 1 - t, x = u * u * x0 + 2 * u * t * x1 + t * t * x2, y = u * u * y0 + 2 * u * t * y1 + t * t * y2; L += Math.hypot(x - px, y - py); px = x; py = y; } return L; };
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'routes');
-    ends.forEach(([x, y], i) => {
+    ends.forEach(([x, y]) => {
       const mx = (hx + x) / 2, my = (hy + y) / 2 - Math.abs(x - hx) * .18 - 14;
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', `M${hx.toFixed(1)},${hy.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`);
       path.setAttribute('class', 'route');
-      path.style.setProperty('--len', qlen(hx, hy, mx, my, x, y).toFixed(1)); path.style.setProperty('--d', `${.2 + i * .12}s`);
+      path.style.setProperty('--len', qlen(hx, hy, mx, my, x, y).toFixed(1));
       g.appendChild(path);
     });
     const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); ring.setAttribute('class', 'beacon-ring'); ring.setAttribute('cx', hx); ring.setAttribute('cy', hy); ring.setAttribute('r', 9);
@@ -477,7 +374,6 @@
     g.append(ring, dot); svg.appendChild(g);
     };
     build();   // на старті, не ліниво: getBBox посеред скролу давав ривок і «примар» (A/B 09.10, p95 951 → 387 мс)
-    $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
     svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
@@ -769,27 +665,15 @@
     subject.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'center' });
   });
 
-  /* ───── курсорне світло ───── */
-  const glow = $('#glow');
-  if (glow && finePointer && getComputedStyle(glow).display !== 'none') {
-    let gx = 0, gy = 0, tx = 0, ty = 0, on = false;
-    addEventListener('pointermove', e => { if (!motion()) return; tx = e.clientX; ty = e.clientY; if (!on || !glow.classList.contains('is-on')) { on = true; glow.classList.add('is-on'); } }, { passive: true });
-    let run = false;                                   // цикл живе, лише поки світло доганяє курсор
-    const loop = () => { if (!motion()) { run = false; on = false; return; } gx += (tx - gx) * .12; gy += (ty - gy) * .12; glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
-      if (Math.abs(tx - gx) + Math.abs(ty - gy) > .5) requestAnimationFrame(loop); else run = false; };
-    addEventListener('pointermove', () => { if (motion() && !run) { run = true; requestAnimationFrame(loop); } }, { passive: true });
-  }
-
   /* ───── МАСШТАБ: кіно-сцена з ілюстративної зйомки (window.PBT_CINE ← config/stock.json) ───── */
   const C_BASE = D.cine || 'media/cine/';
   const cposter = id => (D.cinePosters && D.cinePosters[id]) || C_BASE + id + '-w.webp';   /* бандл: постери як data:URI, відео немає */
   function renderCine() {
     const sec = $('#masshtab'), list = $('#cine'), rail = $('#cineRail'), C = window.PBT_CINE;
     if (!sec || !list || !C || !C.chapters) return;
-    const chs = C.chapters, total = String(chs.length).padStart(2, '0');
+    const chs = C.chapters;
     list.innerHTML = chs.map((c, i) => `<li class="cine__ch" id="cine-${esc(c.id)}" data-i="${i}">
       <figure><img src="${cposter(c.id)}" alt="${esc(c.word)}: ${esc(c.line)}" width="1920" height="1080" loading="lazy" decoding="async"></figure>
-      <p class="cine__n num">${String(i + 1).padStart(2, '0')} / ${total}</p>
       <h3 class="cine__w">${esc(c.word)}</h3>
       <p class="cine__l">${esc(c.line)}</p>
     </li>`).join('');
@@ -853,9 +737,7 @@
   /* ───── СТАРТ ───── */
   function start() {
     profile();
-    applyTheme(doc.dataset.theme, false);
     renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
-    reveal();
     measure(); render();
     /* відео героя — після load і першого простою: до того кадр тримає постер, а 3–5 МБ не конкурують зі шрифтами й скриптами */
     const afterLoad = fn => { const idle = () => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: 800 }) : setTimeout(fn, 1));
@@ -891,14 +773,12 @@
       hVideo.addEventListener('canplay', go, { once: true });
     });
     requestAnimationFrame(() => hero.classList.add('is-lit'));
-    sparkWake();
     syncMotion();
     // Якість може змінитися незалежно від системного налаштування руху.
     new MutationObserver(syncMotion).observe(doc, {attributes: true, attributeFilter: ['data-quality']});
     document.addEventListener('visibilitychange', () => { if (document.hidden) $$('video').forEach(v => v.pause()); else syncMotion(); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); render(); });
     addEventListener('load', () => { measure(); render(); });
-    doc.classList.add('reveal-ready');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
