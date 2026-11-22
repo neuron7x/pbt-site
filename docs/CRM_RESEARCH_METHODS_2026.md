@@ -2,6 +2,7 @@
 
 **Decision-support research · 21 Nov 2026 · status: proposed / not release approval**  
 **Canonical product intent:** [Issue #38](https://github.com/neuron7x/pbt-site/issues/38) · [CRM Jira KAN-158](https://neuron7x.atlassian.net/browse/KAN-158) · [Implementation roadmap](CRM_INTEGRATION_ROADMAP.md).  
+**Binding stage decision:** [ADR-0001](ADR-0001-INTEGRATION-SEQUENCE.md). The v1 policy is deliberately non-authorizing; research is not a live release.  
 **Evidence boundary:** source and Jira checks reflect accessible records as of 21 Nov 2026. A Jira "Готово" label is a workflow claim, **not** an independently executed live site↔CRM acceptance test.
 
 ## Owner sequencing constraint (binding for this research program)

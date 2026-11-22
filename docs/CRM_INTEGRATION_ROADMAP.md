@@ -3,8 +3,11 @@
 **Status:** PLANNED / NOT YET IMPLEMENTED · 2026-11-21  
 **Canonical tracking:** [Issue #38](https://github.com/neuron7x/pbt-site/issues/38)  
 **Scope owner:** product owner and authorized CRM implementation team. This document is a target architecture and staged integration contract, not a statement of current live connectivity.
+**Normative sequencing:** [ADR-0001](ADR-0001-INTEGRATION-SEQUENCE.md) · [frozen non-authorizing plan](../config/integration-lifecycle.json) · `python3 tools/integration_sequence.py` (exit 0 = plan consistent, **not** integration approved).
 
 ## 0. Owner-approved execution order — HARD DEPENDENCY
+
+**Only this stage is current:** `CRM_FIRST`; readiness and live authorization remain independently **UNKNOWN / HOLD**. Do not convert Jira completion labels into release status or switch on live webhook/CRM→site sync. The v1 policy is intentionally immutable until a separately authorized, evidenced schema migration.
 
 **Owner decision, 2026-11-21:** the implementation sequence is **(1) finish CRM → (2) finish and verify the website independently → (3) connect them only when BOTH are independently ready and the owner authorizes integration**. This overrides any earlier wording that implied developing or launching two-way sync during the CRM or website completion phase.
 

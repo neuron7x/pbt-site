@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "program": "PLAINBUD_PBT_CRM",
+  "work_priority": "CRM_FIRST",
+  "evidence_class": "PLAN_ONLY_NOT_RUNTIME_ATTESTATION",
+  "completion_signals": {
+    "crm_independent_acceptance": "UNKNOWN",
+    "website_independent_acceptance": "UNKNOWN",
+    "owner_integration_start": "UNKNOWN",
+    "shared_contract_accepted": "UNKNOWN",
+    "staging_e2e_accepted": "UNKNOWN",
+    "security_privacy_accepted": "UNKNOWN",
+    "rollback_verified": "UNKNOWN",
+    "provider_evidence_accepted": "UNKNOWN",
+    "owner_live_activation": "UNKNOWN"
+  },
+  "planned_activation": {
+    "site_to_crm": false,
+    "crm_to_site": false,
+    "customer_status": false
+  },
+  "references": {
+    "decision": "https://github.com/neuron7x/pbt-site/issues/38",
+    "jira": "https://neuron7x.atlassian.net/browse/KAN-158",
+    "adr": "docs/ADR-0001-INTEGRATION-SEQUENCE.md",
+    "release_hold": "docs/PRODUCTION_HOLD.md"
+  }
+}
