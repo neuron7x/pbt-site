@@ -1,4 +1,5 @@
 """Synthetic, byte-based falsifiers for the multifile export audit."""
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -131,7 +132,10 @@ def test_report_replace_does_not_follow_preexisting_symlink(artifact, tmp_path):
 
 def test_real_multifile_builder_enforces_budget_after_copy():
     code = (ROOT / "tools/inline.py").read_text(encoding="utf-8")
-    assert "from artifact_budget import enforce_artifact_budget" in code
+    parsed = ast.parse(code)
+    assert any(isinstance(node, ast.ImportFrom) and node.module == "artifact_budget"
+               and any(alias.name == "enforce_artifact_budget" for alias in node.names)
+               for node in ast.walk(parsed))
     assert "budget = enforce_artifact_budget(MULTI, DIST / 'artifact-budget.json')" in code
     assert code.index("shutil.copy2(f, t)") < code.index("enforce_artifact_budget(MULTI")
     assert code.index("enforce_artifact_budget(MULTI") < code.index("print('artifact/'")
