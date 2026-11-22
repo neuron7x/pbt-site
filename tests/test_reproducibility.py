@@ -17,10 +17,21 @@ ENVIRONMENTS = [{'TZ': 'UTC', 'LC_ALL': 'C'}, {'TZ': 'Pacific/Auckland', 'LC_ALL
 
 def _build(tree, env):
     shutil.rmtree(tree / 'dist', ignore_errors=True)
-    subprocess.run([sys.executable, 'tools/inline.py'], cwd=tree, env={**os.environ, **env}, check=True,
-                   capture_output=True, timeout=180)
-    return {p.relative_to(tree / 'dist').as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-            for p in sorted((tree / 'dist').rglob('*')) if p.is_file()}
+    proc = subprocess.run([sys.executable, 'tools/inline.py'], cwd=tree, env={**os.environ, **env},
+                          check=False, capture_output=True, text=True, timeout=180)
+    if proc.returncode != 0:
+        # A size-guarded package can fail *deterministically* while remaining
+        # genuinely unreleasable. No other builder error counts as success.
+        assert 'Multifile artifact exceeds' in proc.stderr, proc.stderr
+        budget = tree / 'dist' / 'artifact-budget.json'
+        assert budget.is_file(), 'A failed publish must leave byte/digest evidence'
+        import json
+        report = json.loads(budget.read_text(encoding='utf-8'))
+        assert report['ok'] is False and report['over_budget_bytes'] > 0
+    result = {p.relative_to(tree / 'dist').as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in sorted((tree / 'dist').rglob('*')) if p.is_file()}
+    result['__builder_exit__'] = str(proc.returncode)
+    return result
 
 
 def _tree(tmp):

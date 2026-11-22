@@ -106,3 +106,37 @@ def test_bounded_attempt_limit_does_not_modify_clips(clip, monkeypatch):
     assert result['budget_exhausted'] and not result['target_met']
     assert result['attempts']==[]
     assert source.read_bytes()==raw
+
+
+def test_cli_postbuild_quality_proof_and_separate_final_size_gate(clip,tmp_path):
+    import json
+    source = clip/'media/video/hero-wide.mp4'
+    (clip/'index.html').write_text('<main>test</main>')
+    needed=1024
+    limit=source.stat().st_size + (clip/'index.html').stat().st_size - needed
+    report=tmp_path/'video-fit.json'
+    root=Path(__file__).resolve().parents[1]
+    run=subprocess.run([sys.executable,str(root/'tools/artifact_video_fit.py'),
+                        '--root',str(clip),'--limit',str(limit),'--report',str(report),
+                        '--candidates','media/video/hero-wide.mp4'],
+                       capture_output=True,text=True,timeout=25)
+    assert run.returncode==0,(run.stdout,run.stderr)
+    data=json.loads(report.read_text())
+    assert data['ok'] and data['saved_bytes']>=needed
+    assert data['release_authorization']=='NOT_GRANTED'
+    assert json.loads((tmp_path/'artifact-budget-after-fit.json').read_text())['ok']
+
+
+def test_cli_refuses_truly_impossible_budget_without_false_release(clip,tmp_path):
+    import json
+    (clip/'index.html').write_text('<main>test</main>')
+    root=Path(__file__).resolve().parents[1]
+    report=tmp_path/'video-fit.json'
+    run=subprocess.run([sys.executable,str(root/'tools/artifact_video_fit.py'),
+                        '--root',str(clip),'--limit','1','--report',str(report),
+                        '--candidates','media/video/hero-wide.mp4'],
+                       capture_output=True,text=True,timeout=25)
+    assert run.returncode==1
+    data=json.loads(report.read_text())
+    assert not data['ok'] and data['final_bytes']>1
+    assert data['release_authorization']=='NOT_GRANTED'

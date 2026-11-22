@@ -128,3 +128,36 @@ def fit_copies(root: Path, *, need_bytes: int, candidates=CANDIDATES) -> dict:
                 break
     outcome['target_met'] = outcome['saved_bytes'] >= need_bytes
     return outcome
+
+
+def main(argv=None) -> int:
+    """Explicit *postbuild* trial; never a substitute for normal make gate."""
+    import argparse
+    from artifact_budget import audit_artifact, DEFAULT_LIMIT, _save_report
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1] / 'dist/artifact')
+    p.add_argument('--limit', type=int, default=DEFAULT_LIMIT)
+    p.add_argument('--report', type=Path)
+    p.add_argument('--candidates', nargs='+', default=list(CANDIDATES))
+    args = p.parse_args(argv)
+    report_path = args.report or args.root.parent / 'artifact-video-fit.json'
+    try:
+        pre = audit_artifact(args.root, args.limit)
+        result = fit_copies(args.root, need_bytes=pre['over_budget_bytes'], candidates=args.candidates)
+        after = audit_artifact(args.root, args.limit)
+        result.update({'preflight_bytes': pre['total_bytes'], 'final_bytes': after['total_bytes'],
+                       'limit_bytes': args.limit, 'ok': after['ok'],
+                       'release_authorization': 'NOT_GRANTED'})
+        _save_report(result, report_path)
+        _save_report(after, report_path.with_name('artifact-budget-after-fit.json'))
+    except (ValueError, OSError, subprocess.SubprocessError) as exc:
+        print(json.dumps({'ok': False, 'status': 'FIT_REJECTED',
+                          'error_type': type(exc).__name__, 'detail': str(exc)[:240]}))
+        return 1
+    print(json.dumps({'ok': result['ok'], 'saved_bytes': result['saved_bytes'],
+                      'final_bytes': after['total_bytes'], 'limit_bytes': args.limit}, sort_keys=True))
+    return 0 if result['ok'] else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

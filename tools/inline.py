@@ -9,7 +9,6 @@ from pathlib import Path
 
 from bundle_contract import emit_fragment, fit_video_budget, inline_css
 from artifact_budget import audit_artifact, enforce_artifact_budget, _save_report
-from artifact_video_fit import fit_copies
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
@@ -87,11 +86,8 @@ for f in sorted((WEB / 'media').rglob('*')):
 # Аудит фактичних байтів ДО підгонки. Жоден кліп не пропускається.
 preflight = audit_artifact(MULTI)
 _save_report(preflight, DIST / 'artifact-budget-preflight.json')
-if not preflight['ok']:
-    # Адаптивно перекодовуємо тільки копії MP4, і лише з високою кадр-за-кадром
-    # подібністю; невдалий профіль не змінює актив, а надлишок лишає HOLD.
-    fit = fit_copies(MULTI, need_bytes=preflight['over_budget_bytes'])
-    _save_report(fit, DIST / 'artifact-video-fit.json')
+# Source-derived media is copied byte-for-byte: no encoding inside the build.
+# Publication remains HOLD until a separately quality-reviewed media asset pack fits.
 tot = sum(p.stat().st_size for p in MULTI.rglob('*') if p.is_file())
 budget = enforce_artifact_budget(MULTI, DIST / 'artifact-budget.json')
 if budget['total_bytes'] != tot or budget['asset_count'] != n + 1:
