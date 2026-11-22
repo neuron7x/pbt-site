@@ -8,7 +8,8 @@ import base64, json, mimetypes, re
 from pathlib import Path
 
 from bundle_contract import emit_fragment, fit_video_budget, inline_css
-from artifact_budget import enforce_artifact_budget
+from artifact_budget import audit_artifact, enforce_artifact_budget, _save_report
+from artifact_video_fit import fit_copies
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
@@ -83,6 +84,14 @@ n = 0
 for f in sorted((WEB / 'media').rglob('*')):
     if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'plainbud-logo.webm'):   # логотип — лише webm (альфа)
         t = MULTI / f.relative_to(WEB); t.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(f, t); n += 1
+# Аудит фактичних байтів ДО підгонки. Жоден кліп не пропускається.
+preflight = audit_artifact(MULTI)
+_save_report(preflight, DIST / 'artifact-budget-preflight.json')
+if not preflight['ok']:
+    # Адаптивно перекодовуємо тільки копії MP4, і лише з високою кадр-за-кадром
+    # подібністю; невдалий профіль не змінює актив, а надлишок лишає HOLD.
+    fit = fit_copies(MULTI, need_bytes=preflight['over_budget_bytes'])
+    _save_report(fit, DIST / 'artifact-video-fit.json')
 tot = sum(p.stat().st_size for p in MULTI.rglob('*') if p.is_file())
 budget = enforce_artifact_budget(MULTI, DIST / 'artifact-budget.json')
 if budget['total_bytes'] != tot or budget['asset_count'] != n + 1:

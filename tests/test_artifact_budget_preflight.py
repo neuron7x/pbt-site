@@ -137,3 +137,17 @@ def test_real_multifile_builder_enforces_budget_after_copy():
     assert code.index("enforce_artifact_budget(MULTI") < code.index("print('artifact/'")
     assert "budget['total_bytes'] != tot" in code
     assert "budget['asset_count'] != n + 1" in code
+
+
+
+def test_multifile_builder_runs_quality_gated_fit_only_for_actual_oversize():
+    code = (ROOT / "tools/inline.py").read_text(encoding="utf-8")
+    assert "from artifact_video_fit import fit_copies" in code
+    assert "preflight = audit_artifact(MULTI)" in code
+    assert "if not preflight['ok']:" in code
+    assert "fit = fit_copies(MULTI, need_bytes=preflight['over_budget_bytes'])" in code
+    assert "DIST / 'artifact-budget-preflight.json'" in code
+    assert "DIST / 'artifact-video-fit.json'" in code
+    assert code.index('shutil.copy2(f, t)') < code.index('preflight = audit_artifact(MULTI)')
+    assert code.index("fit = fit_copies(MULTI") < code.index("enforce_artifact_budget(MULTI")
+    assert code.index("tot = sum(") > code.index("fit = fit_copies(MULTI")
