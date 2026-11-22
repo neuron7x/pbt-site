@@ -92,3 +92,48 @@ def test_cli_success_does_not_claim_release_readiness(artifact):
     report = json.loads(run.stdout)
     assert report["ok"] and report["limit_bytes"] == DEFAULT_LIMIT
     assert "release" not in report
+
+
+
+def test_enforce_budget_writes_complete_report_before_rejecting(artifact, tmp_path):
+    from tools.artifact_budget import enforce_artifact_budget
+    report = tmp_path / "budget.json"
+    total = audit_artifact(artifact)["total_bytes"]
+    with pytest.raises(ValueError, match="exceeds"):
+        enforce_artifact_budget(artifact, report, total - 1)
+    observed = json.loads(report.read_text(encoding="utf-8"))
+    assert observed["total_bytes"] == total
+    assert observed["over_budget_bytes"] == 1
+    assert observed["ok"] is False
+    assert len(observed["files"]) == 2
+
+
+def test_enforce_exact_cap_works_without_claiming_production_ready(artifact, tmp_path):
+    from tools.artifact_budget import enforce_artifact_budget
+    report = tmp_path / "budget.json"
+    total = audit_artifact(artifact)["total_bytes"]
+    result = enforce_artifact_budget(artifact, report, total)
+    assert result["ok"] is True
+    assert json.loads(report.read_text(encoding="utf-8"))["limit_bytes"] == total
+    assert "production_ready" not in result
+
+
+def test_report_replace_does_not_follow_preexisting_symlink(artifact, tmp_path):
+    from tools.artifact_budget import enforce_artifact_budget
+    target = tmp_path / "sensitive.txt"
+    target.write_text("CANARY", encoding="utf-8")
+    report = tmp_path / "budget.json"
+    report.symlink_to(target)
+    enforce_artifact_budget(artifact, report)
+    assert target.read_text(encoding="utf-8") == "CANARY"
+    assert report.is_file() and not report.is_symlink()
+
+
+def test_real_multifile_builder_enforces_budget_after_copy():
+    code = (ROOT / "tools/inline.py").read_text(encoding="utf-8")
+    assert "from artifact_budget import enforce_artifact_budget" in code
+    assert "budget = enforce_artifact_budget(MULTI, DIST / 'artifact-budget.json')" in code
+    assert code.index("shutil.copy2(f, t)") < code.index("enforce_artifact_budget(MULTI")
+    assert code.index("enforce_artifact_budget(MULTI") < code.index("print('artifact/'")
+    assert "budget['total_bytes'] != tot" in code
+    assert "budget['asset_count'] != n + 1" in code

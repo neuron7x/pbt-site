@@ -8,6 +8,7 @@ import base64, json, mimetypes, re
 from pathlib import Path
 
 from bundle_contract import emit_fragment, fit_video_budget, inline_css
+from artifact_budget import enforce_artifact_budget
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
@@ -83,4 +84,7 @@ for f in sorted((WEB / 'media').rglob('*')):
     if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'plainbud-logo.webm'):   # логотип — лише webm (альфа)
         t = MULTI / f.relative_to(WEB); t.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(f, t); n += 1
 tot = sum(p.stat().st_size for p in MULTI.rglob('*') if p.is_file())
-print('artifact/', n + 1, 'файлів,', round(tot / 1048576, 1), 'MB')
+budget = enforce_artifact_budget(MULTI, DIST / 'artifact-budget.json')
+if budget['total_bytes'] != tot or budget['asset_count'] != n + 1:
+    raise ValueError('Multifile artifact changed during budget verification')
+print('artifact/', n + 1, 'файлів,', round(tot / 1048576, 1), 'MB', '| budget verified')
