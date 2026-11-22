@@ -1,26 +1,50 @@
 {
-  "_status": "Джерело: публічний сайт pbt-spectehnika.com.ua (знято 03.10.2026) + ЄДРПОУ з конфігурації 1С. Поля зі значенням null — заповнює/підтверджує власник.",
-  "brand": { "name": "ПБТ", "nameUk": "ПолтаваБудТехніка", "alternateName": "PBT Spectehnika" },
-  "legalName": "ТОВ «ПолтаваБудТехніка»",
-  "edrpou": "45383082",
+  "_status": "Реквізити ТОВ «ПЛЕЙНБУД» надані власником 21.11.2026. Непідтверджені домен, додаткові канали та графік роботи залишено null. Каталог і ставки успадковані з вихідного проєкту; нове затвердження цін не заявляється.",
+  "brand": {
+    "name": "ПЛЕЙНБУД",
+    "nameUk": "ПЛЕЙНБУД",
+    "alternateName": "PLAINBUD"
+  },
+  "legalName": "ТОВ «ПЛЕЙНБУД»",
+  "edrpou": "45318076",
   "city": "Полтава",
   "region": "Полтавська область",
-  "address": "36002, м. Полтава, вул. Довженка, 2А",
-  "url": "https://pbt-spectehnika.com.ua",
-  "logo": "/media/logo/pbt-logo.png",
+  "address": "36022, м. Полтава, вул. Небесної сотні, буд. 69 Б",
+  "url": null,
+  "logo": "/media/logo/plainbud-logo.png",
   "contacts": {
-    "phone": "+380978637777",
-    "phone2": "+380958637777",
-    "email": null,
+    "phone": "+380675550317",
+    "phone2": null,
+    "email": "plainbud@gmail.com",
     "telegram": null,
-    "viber": "+380978637777",
+    "viber": null,
     "whatsapp": null,
-    "instagram": "https://www.instagram.com/pbtspectehnika",
-    "tiktok": "https://www.tiktok.com/@poltavabudtehnika",
-    "facebook": "https://www.facebook.com/profile.php?id=61563404525960",
-    "youtube": "https://www.youtube.com/channel/UCvSkE5UV_uavxC7fwAU9Ssg"
+    "instagram": null,
+    "tiktok": null,
+    "facebook": null,
+    "youtube": null
   },
-  "responsiblePerson": null,
-  "hours": { "mo-fr": "09:00–18:00", "sa": "09:00–15:00", "su": "вихідний", "dispatch": "техніка працює цілодобово" },
-  "regions": ["Полтавська", "Черкаська", "Дніпропетровська", "Харківська", "Запорізька", "Київська", "Кіровоградська", "Чернігівська", "Житомирська"]
+  "responsiblePerson": "Любашевський Дмитро Васильович",
+  "hours": {
+    "mo-fr": null,
+    "sa": null,
+    "su": null,
+    "dispatch": null
+  },
+  "regions": [
+    "Полтавська",
+    "Черкаська",
+    "Дніпропетровська",
+    "Харківська",
+    "Запорізька",
+    "Київська",
+    "Кіровоградська",
+    "Чернігівська",
+    "Житомирська"
+  ],
+  "director": "Любашевський Дмитро Васильович",
+  "bank": {
+    "name": "АТ «А-БАНК»",
+    "iban": "UA393077700000026008411259048"
+  }
 }

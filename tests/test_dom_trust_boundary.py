@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 HOSTILE = '"><img src=x onerror="window.__xss=1"><a href="'
 CONFIG = {
     'legalName': HOSTILE, 'address': HOSTILE, 'edrpou': HOSTILE, 'hours': {'mo-fr': HOSTILE, 'sa': HOSTILE, 'su': HOSTILE},
+    'brand': {'nameUk': HOSTILE}, 'director': HOSTILE, 'bank': {'name': HOSTILE, 'iban': HOSTILE},
     'contacts': {
         'phone': '+380971234567" onmouseover="window.__xss=1', 'phone2': HOSTILE, 'viber': HOSTILE,
         'telegram': '@x"><script>window.__xss=1</script>', 'email': 'a@b.c"><img src=x onerror="window.__xss=1">',
@@ -48,6 +49,9 @@ def test_hostile_public_config_is_inert_in_every_sink(browser, server):
     try:
         assert page.evaluate(UNSAFE_ATTRS) == []
         assert page.evaluate('() => window.__xss') is None
+        for field in ('brand', 'director', 'bank-name', 'bank-iban'):
+            values = page.locator(f'[data-{field}]').all_text_contents()
+            assert values and all(value == HOSTILE for value in values), field
         for link in page.locator('[data-social] a, #channels a').all():
             link.hover(force=True, timeout=1000)
         assert page.evaluate('() => window.__xss') is None

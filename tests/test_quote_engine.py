@@ -12,7 +12,7 @@ def test_node_quote_kernel_property_suite():
     node = shutil.which("node")
     assert node, "Node.js >=20 is required to verify the quote model"
     run = subprocess.run(
-        [node, "--test", str(ROOT / "tests" / "quote_engine.test.cjs")],
+        [node, "--test", "--test-reporter=tap", str(ROOT / "tests" / "quote_engine.test.cjs")],
         cwd=ROOT, text=True, capture_output=True, timeout=15, check=False,
     )
     assert run.returncode == 0, run.stdout + "\n" + run.stderr

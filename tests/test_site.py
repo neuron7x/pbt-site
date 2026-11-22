@@ -91,7 +91,7 @@ def test_lead_form_submits_to_server_and_is_stored(page_factory, server):
     pg.click('#send')
     pg.wait_for_selector('#done.is-on', timeout=5000)
     ref = pg.inner_text('#ref')
-    assert re.fullmatch(r'PBT-\d{6}', ref)
+    assert re.fullmatch(r'№\s*\d{6}', ref)
     row = sqlite3.connect(server['db']).execute('select payload from leads order by id desc limit 1').fetchone()
     d = json.loads(row[0])
     assert d['type'] == 'rent' and d['hours'] == 16 and d['km'] == 40 and d['contact'] == '+380978637777'

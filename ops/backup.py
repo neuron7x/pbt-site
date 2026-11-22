@@ -44,6 +44,12 @@ def main():
     tmp = None
     guard = None
     try:
+        # Retention and interrupted-run cleanup own this directory. Neither the
+        # configured source name nor its symlink target may be one of its entries.
+        backup_directory = OUT.resolve()
+        if DB.parent.resolve() == backup_directory or DB.resolve().parent == backup_directory:
+            print('backup FAIL: source database must be outside the backup directory', file=sys.stderr)
+            return 1
         OUT.mkdir(parents=True, exist_ok=True)
         os.chmod(OUT, 0o700)
         guard = os.open(OUT / '.backup-lock', os.O_RDWR | os.O_CREAT, 0o600)

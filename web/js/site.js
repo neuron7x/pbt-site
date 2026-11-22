@@ -1,4 +1,4 @@
-/* ПБТ · ПолтаваБудТехніка — сцени, стани, інтерактив. Без залежностей; рух — функція прогресу скролу й видимості.
+/* ПЛЕЙНБУД — сцени, стани, інтерактив. Без залежностей; рух — функція прогресу скролу й видимості.
    Контракт валідації заявки спільний із сервером: tests/contracts/lead_vectors.json (window.PBTv — чиста функція для тестів). */
 (function () {
   'use strict';
@@ -70,15 +70,17 @@
   /* ───── відео: джерела підставляються лише з JS, грають лише у кадрі ───── */
   function heroHD() {
     const c = navigator.connection || {};
-    if (D.videoData || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
+    if (D.videoData || D.heroSD || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
     return innerWidth * (devicePixelRatio || 1) >= 1600;
   }
   function attachVideo(video, name, { tall } = {}) {
-    if (!video || video.dataset.ready) return;
-    video.dataset.ready = '1';
-    video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
+    if (!video) return false;
+    if (video.dataset.ready) return true;
     let n = tall && mobileLayout() ? name.replace('-wide', '-tall') : name;
     if (n === 'hero-wide' && !heroHD()) n = 'hero-wide-720';          // 1920 — лише коли екран його покаже й мережа витягне
+    // Budget-omitted standalone clips keep their posters without requesting absent files.
+    if (D.videoData && !D.videoData[n + '.mp4']) return false;
+    video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
     if (D.videoData || D.mp4Only || !document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
       video.src = vsrc(n, 'mp4');
     } else {
@@ -86,12 +88,13 @@
       const s2 = document.createElement('source'); s2.src = vsrc(n, 'mp4'); s2.type = 'video/mp4';
       video.append(s1, s2);
     }
+    video.dataset.ready = '1';
+    return true;
   }
   const playing = new Set(), visibleCards = new Set();
   function syncCardVideo(card) {
     const v = $('video', card); if (!v) return;
-    if (visibleCards.has(card) && videoAllowed()) {
-      if (!v.dataset.ready) attachVideo(v, v.dataset.video);
+    if (visibleCards.has(card) && videoAllowed() && attachVideo(v, v.dataset.video)) {
       v.preload = 'auto';
       const p = v.play(); if (p && p.catch) p.catch(() => {});
       card.classList.add('is-playing'); playing.add(v);
@@ -209,7 +212,9 @@
     const dpr = Math.min(devicePixelRatio || 1, 1.5);
     cW = spark.clientWidth; cH = spark.clientHeight;
     spark.width = Math.round(cW * dpr); spark.height = Math.round(cH * dpr);
-    ctx = spark.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx = spark.getContext('2d');
+    if (!ctx) { dots = []; return; }   // Decorative canvas may be unavailable; page initialization continues.
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     dots = Array.from({ length: mobileLayout() ? 28 : 60 }, () => ({ x: Math.random() * cW, y: Math.random() * cH, r: .6 + Math.random() * 1.8, s: .15 + Math.random() * .45, ph: Math.random() * 6.28 }));
   }
   /* цикл іскор засинає, коли герой поза кадром або вкладка прихована (раніше rAF крутився вічно: Lighthouse devtools 09.10
@@ -430,11 +435,16 @@
         <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
   }
   function renderProof() {
-    $('#reel').innerHTML = D.proof.map((p, i) => `<a class="rv" style="--d:${(i % 3) * 90}ms" href="${esc(httpsUrl(p.url) || '#roboty')}" target="_blank" rel="noopener" aria-label="${esc(p.t)}: ${esc(p.s)} — відкрити відео">
-      <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
-      <i aria-hidden="true"></i><figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></a>`).join('');
-    $$('#reel a').forEach(watchVideo);
-    const logos = duplicate => D.partners.map((p, i) => `<li${duplicate ? ' aria-hidden="true"' : ''}><img src="${p}" alt="${duplicate ? '' : `Логотип партнера ${i + 1}`}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
+    const standalone = window.PBT_BUNDLE && !D.mp4Only;
+    $('#reel').innerHTML = D.proof.map((p, i) => {
+      const tag = standalone ? 'article' : 'a';
+      const link = standalone ? '' : ` href="${esc(proofUrl(p.url) || '#roboty')}" target="_blank" rel="noopener"`;
+      return `<${tag} class="proof-card rv" style="--d:${(i % 3) * 90}ms"${link} aria-label="${esc(p.t)}: ${esc(p.s)}${standalone ? '' : ' — відкрити відео'}">
+        <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
+        ${standalone ? '' : '<i aria-hidden="true"></i>'}<figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></${tag}>`;
+    }).join('');
+    $$('#reel .proof-card').forEach(watchVideo);
+    const logos = duplicate => D.partners.map((p, i) => `<li${duplicate ? ' aria-hidden="true"' : ''}><img src="${p}" alt="${duplicate ? '' : `Логотип в ілюстративній добірці ${i + 1}`}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
     $('#partners').innerHTML = logos(false) + logos(true);      /* декоративний повтор не дублює доступний список */
   }
   function renderGeo() {
@@ -478,26 +488,47 @@
     try { const u = new URL(String(value)); return u.protocol === 'https:' && !/["'<>\s]/.test(String(value)) ? u.href : null; } catch (_) { return null; }
   }
 
+  function proofUrl(value) {
+    // Rebranded cards open the existing local clips; source attribution stays in provenance.
+    const text = String(value || '');
+    return /^media\/video\/[a-z0-9-]+\.mp4$/.test(text) ? text : httpsUrl(text);
+  }
+
   /* ───── КОНФІГУРАЦІЯ БІЗНЕСУ: /api/config → канали, підвал (fallback — вбудовані дані) ───── */
   function applyBusiness(b) {
     const c = b.contacts || {};
     const tel = p => p ? `tel:${String(p).replace(/[^+\d]/g, '')}` : '#zapyt';
     $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = tel(c.phone); });
-    $$('[data-phone2]').forEach(a => { a.textContent = phoneHuman(c.phone2) || ''; if (a.tagName === 'A') a.href = tel(c.phone2); });
+    $$('[data-phone2]').forEach(a => {
+      const present = !!c.phone2, row = a.closest('[data-phone2-row]') || a;
+      row.hidden = !present; a.textContent = phoneHuman(c.phone2) || '';
+      if (a.tagName === 'A') { if (present) a.href = tel(c.phone2); else a.removeAttribute('href'); }
+    });
+    const email = typeof c.email === 'string' && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email) ? c.email : '';
+    $$('[data-email]').forEach(a => {
+      a.hidden = !email; a.textContent = email;
+      if (a.tagName === 'A') { if (email) a.href = `mailto:${email}`; else a.removeAttribute('href'); }
+    });
+    $$('[data-brand]').forEach(e => e.textContent = b.brand?.nameUk || 'ПЛЕЙНБУД');
+    const requisites = { director: b.director, 'bank-name': b.bank?.name, 'bank-iban': b.bank?.iban };
+    Object.entries(requisites).forEach(([key, value]) => {
+      $$(`[data-${key}]`).forEach(e => { e.textContent = value || ''; });
+      $$(`[data-${key}-row]`).forEach(e => { e.hidden = !value; });
+    });
     $$('[data-address]').forEach(e => e.textContent = b.address || 'Адреса уточнюється');
-    $$('[data-legal]').forEach(e => e.textContent = b.legalName || 'ТОВ «ПолтаваБудТехніка»');
+    $$('[data-legal]').forEach(e => e.textContent = b.legalName || 'ТОВ «ПЛЕЙНБУД»');
     $$('[data-edrpou]').forEach(e => e.textContent = b.edrpou ? `ЄДРПОУ ${b.edrpou}` : '');
     const h = b.hours || {};
-    $$('[data-hours]').forEach(e => e.textContent = h['mo-fr'] ? `Пн–Пт ${h['mo-fr']} · Сб ${h.sa || '—'} · Нд ${h.su || '—'}` : 'Години роботи уточнюються');
+    $$('[data-hours]').forEach(e => e.textContent = h['mo-fr'] ? `Пн–Пт ${h['mo-fr']} · Сб ${h.sa || '—'} · Нд ${h.su || '—'}` : 'Графік роботи уточнюється');
     const ch = [];
     if (c.phone) ch.push({ k: 'Телефон', v: phoneHuman(c.phone), href: tel(c.phone) });
     if (c.phone2) ch.push({ k: 'Телефон', v: phoneHuman(c.phone2), href: tel(c.phone2) });
     if (c.viber) ch.push({ k: 'Viber', v: phoneHuman(c.viber), href: `viber://chat?number=${encodeURIComponent(c.viber)}` });
     if (c.telegram) ch.push({ k: 'Telegram', v: c.telegram, href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}` });
-    if (c.email && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email)) ch.push({ k: 'Email', v: c.email, href: `mailto:${c.email}` });
+    if (email) ch.push({ k: 'Email', v: email, href: `mailto:${email}` });
     $('#channels').innerHTML = ch.map(x => `<a href="${esc(x.href)}"><b>${esc(x.v)}</b><span>${x.k}</span></a>`).join('') || '<div><b>Канали зв’язку</b><span>уточнюються</span></div>';
     const soc = [['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['youtube', 'YouTube']].filter(([k]) => httpsUrl(c[k]));
-    $$('[data-social]').forEach(ul => ul.innerHTML = soc.map(([k, n]) => `<li><a href="${esc(httpsUrl(c[k]))}" target="_blank" rel="noopener">${n}</a></li>`).join(''));
+    $$('[data-social]').forEach(ul => { ul.hidden = !soc.length; ul.innerHTML = soc.map(([k, n]) => `<li><a href="${esc(httpsUrl(c[k]))}" target="_blank" rel="noopener">${n}</a></li>`).join(''); });
   }
   function loadBusiness() {
     const fb = () => applyBusiness(D.business || {});
@@ -508,12 +539,17 @@
 
   /* ───── ВАЛІДАЦІЯ ЗАЯВКИ: той самий контракт, що й сервер ───── */
   const kyivToday = () => {
-    const opts = { year: 'numeric', month: '2-digit', day: '2-digit' };
+    const opts = { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'iso8601', numberingSystem: 'latn' };
+    // Locale fallback can reorder date fields; compare only explicitly assembled ISO dates.
+    const iso = formatter => {
+      const parts = Object.fromEntries(formatter.formatToParts(new Date()).map(part => [part.type, part.value]));
+      return `${parts.year}-${parts.month}-${parts.day}`;
+    };
     // Browsers with tzdata older than 2022b know only the old zone name; a RangeError here would silently block the form.
     for (const timeZone of ['Europe/Kyiv', 'Europe/Kiev']) {
-      try { return new Intl.DateTimeFormat('en-CA', { ...opts, timeZone }).format(new Date()); } catch (_) { /* next name */ }
+      try { return iso(new Intl.DateTimeFormat('en-CA', { ...opts, timeZone })); } catch (_) { /* next name */ }
     }
-    return new Intl.DateTimeFormat('en-CA', opts).format(new Date());
+    return iso(new Intl.DateTimeFormat('en-CA', opts));
   };
   const V = {
     contact(method, s) {
@@ -582,7 +618,7 @@
     const telegram = method.value === 'telegram';
     contact.inputMode = telegram ? 'text' : 'tel';
     contact.autocomplete = telegram ? 'off' : 'tel';
-    contact.placeholder = telegram ? '@username або номер телефону' : '097 000 00 00';
+    contact.placeholder = telegram ? '@username або номер телефону' : '067 000 00 00';
   }
   method.addEventListener('change', syncContactMode);
   form.addEventListener('change', e => { if (e.target.name === 'type') switchRequestType(e.target.value); });
@@ -665,16 +701,18 @@
     if (Object.keys(err).length) { const first = form.querySelector('.is-err input, .is-err textarea'); if (first) first.focus(); return; }
     const h = JSON.stringify(p);
     const btn = $('#send'); btn.disabled = true; btn.textContent = 'Надсилаю…';
-    await bindIdempotencyKey(h);
     const controller = new AbortController();
     const deadline = setTimeout(() => controller.abort(), 15000);
     try {
+      await bindIdempotencyKey(h);
       if (window.PBT_BUNDLE) throw new Error('bundle');
       const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey }, body: h, signal: controller.signal });
       const j = await r.json().catch(error => { if (controller.signal.aborted) throw error; return {}; });
-      if (r.status === 201 && j.ok) {
+      if (r.status === 201) {
+        // An HTTP status alone cannot confirm the durable lead receipt or clear safe retry state.
+        if (!j || j.ok !== true || typeof j.ref !== 'string' || !/^PBT-[0-9]{6,}$/.test(j.ref) || !/[1-9]/.test(j.ref)) throw new Error('invalid_lead_receipt');
         pendingClear();
-        form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = j.ref; done.focus();
+        form.hidden = true; done.classList.add('is-on'); $('#ref').textContent = `№ ${j.ref.slice(4)}`; done.focus();
       } else if (r.status === 422 && j.fields) {
         pendingClear();   // Definitively not committed.
         Object.entries(j.fields).forEach(([k, v]) => setErr(k, v));
@@ -832,7 +870,7 @@
       const syncLogo = () => {
         if (!videoAllowed() || heroP >= 1) { lv.pause(); return; }
         if (lv.ended) return;
-        if (!lv.getAttribute('src')) lv.src = 'media/logo/pbt-logo.webm';
+        if (!lv.getAttribute('src')) lv.src = 'media/logo/plainbud-logo.webm';
         const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
       };
       mediaSync.add(syncLogo); syncLogo();
@@ -844,7 +882,8 @@
       const go = () => {
         if (!videoAllowed() || scrollY >= innerHeight) { hVideo.pause(); return; }
         if (!hVideo.paused) return;
-        attachVideo(hVideo, 'hero-wide', { tall: true }); hVideo.preload = 'auto';
+        if (!attachVideo(hVideo, 'hero-wide', { tall: true })) return;
+        hVideo.preload = 'auto';
         const pr = hVideo.play();
         if (pr && pr.catch) pr.catch(() => { if (++tries < 8) setTimeout(go, 200 * tries); });
       };

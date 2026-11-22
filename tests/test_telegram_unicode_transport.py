@@ -1,5 +1,6 @@
 """Telegram delivery must preserve full accepted Unicode input without URL-encoding expansion."""
 import json
+from pathlib import Path
 import urllib.request
 
 from test_leads import LEAD, Stub, srv, wait_for  # noqa: F401
@@ -31,13 +32,16 @@ def test_valid_maximum_emoji_fields_reach_telegram_once(srv):
              'Idempotency-Key': 'k-telegram-emoji-0001'}, method='POST')
         with urllib.request.urlopen(request, timeout=8) as result:
             assert result.status == 201
-            assert json.loads(result.read())['ok'] is True
+            accepted = json.loads(result.read())
+            assert accepted['ok'] is True
         assert wait_for(
             lambda: server.rows(
                 "SELECT status, attempts FROM outbox WHERE channel='telegram'"
             ) == [('delivered', 1)] or None, timeout=8
         ), server.rows("SELECT status, attempts, last_error FROM outbox")
         assert server.rows("SELECT count(*) FROM leads") == [(1,)]
+        lead_id = server.rows("SELECT id FROM leads")[0][0]
+        assert accepted['ref'] == f'PBT-{lead_id:06d}'
         assert len(receiver.hits) == 1
         path, body, headers = receiver.hits[0]
         assert path == '/bot123:abc/sendMessage'
@@ -45,6 +49,8 @@ def test_valid_maximum_emoji_fields_reach_telegram_once(srv):
         assert len(body) < 16384  # Original child cap remains enforced.
         message = json.loads(body)
         assert message['chat_id'] == '42'
+        canonical = json.loads((Path(__file__).resolve().parent.parent / 'config/business.json').read_text(encoding='utf-8'))
+        assert message['text'].splitlines()[0] == f"{canonical['brand']['name']} · заявка №{lead_id:06d}"
         assert emoji * 160 in message['text']
         assert emoji * 1000 in message['text']
         assert len(message['text']) <= 4000

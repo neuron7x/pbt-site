@@ -60,10 +60,22 @@ def _fsync_dir(directory):
     _fsync_path(directory, os.O_RDONLY | os.O_DIRECTORY)
 
 
+def _private_writer(path):
+    """Create-only and private from the first byte, regardless of the caller's umask."""
+    return open(path, 'xb', opener=lambda name, flags: os.open(name, flags, 0o600))
+
+
+def _staging_parts(dst):
+    """Назва БД є буквальним префіксом, навіть якщо містить [], * або ?."""
+    prefix = dst.name + '.pre-restore-'
+    return [path for path in dst.parent.iterdir()
+            if path.name.startswith(prefix) and path.name.endswith('.part')]
+
+
 def _durable_copy(src, dst):
     """Copy, not hard link: recovery of the live file must never rewrite the preserved evidence."""
     part = Path(f'{dst}.part')
-    with src.open('rb') as reader, part.open('xb') as writer:
+    with src.open('rb') as reader, _private_writer(part) as writer:
         while chunk := reader.read(1024 * 1024):
             writer.write(chunk)
         writer.flush()
@@ -128,6 +140,16 @@ def main(argv=None):
     src, dst = Path(a.backup), Path(a.db)
     if not src.is_file():
         print(f'restore FAIL: бекапу нема ({src})', file=sys.stderr); return 1
+    try:
+        tmp = dst.with_name(dst.name + '.restore-tmp')
+        source = src.resolve()
+        staging = [tmp, *_staging_parts(dst)]
+        if any(path.resolve() == source for path in staging):
+            print('restore REFUSED: backup path conflicts with restore staging', file=sys.stderr)
+            return 1
+    except (OSError, RuntimeError, ValueError):
+        print('restore FAIL: restore staging paths cannot be verified', file=sys.stderr)
+        return 1
     n_log = log_max(a.log)
     if n_log is None and a.min_seq is None:
         print(f'restore FAIL: у журналі {a.log} нема "lead stored id=N" і не задано --min-seq — '
@@ -138,12 +160,15 @@ def main(argv=None):
     except OSError:
         os.close(guard)
         print('restore REFUSED: single_process_guard held — a server is using this database', file=sys.stderr); return 2
-    tmp = dst.with_name(dst.name + '.restore-tmp')
     try:
         tmp.unlink(missing_ok=True)
-        for stale in dst.parent.glob(f'{dst.name}.pre-restore-*.part'):
+        for stale in _staging_parts(dst):
             stale.unlink()
-        with closing(sqlite3.connect(f'file:{src}?mode=ro', uri=True)) as s, closing(sqlite3.connect(tmp)) as t:
+        # SQLite must inherit an owner-only file, not create a readable staging
+        # database that a crash could leave behind before _publish() chmods it.
+        with _private_writer(tmp):
+            pass
+        with closing(sqlite3.connect(src.resolve().as_uri() + '?mode=ro', uri=True)) as s, closing(sqlite3.connect(tmp)) as t:
             s.backup(t)
         with closing(sqlite3.connect(tmp)) as c:
             if c.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':

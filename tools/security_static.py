@@ -5,8 +5,10 @@ This supplements (does not replace) vulnerability scanning or human threat revie
 """
 import argparse
 import ast
+import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -60,20 +62,73 @@ def scan_source(content, name):
     return findings
 
 
-def run(roots):
+def committed_sources(head, files, roots):
+    """Bind the scanned snapshot to Git, independently of index visibility flags."""
+    if not re.fullmatch(r'[0-9a-f]{40}', head):
+        raise ValueError('invalid_source_sha')
+    listing = subprocess.run(
+        ['git', '--no-replace-objects', 'ls-tree', '-rz', '--full-tree', head, '--', *roots],
+        cwd=ROOT, check=True, capture_output=True, timeout=15).stdout
+    expected = {}
+    for record in listing.split(b'\0'):
+        if not record:
+            continue
+        metadata, raw_name = record.split(b'\t', 1)
+        name = raw_name.decode('utf-8')
+        mode, kind, blob = metadata.decode('ascii').split()
+        if kind != 'blob' or mode not in ('100644', '100755'):
+            raise ValueError('unsupported_source_entry')
+        if not name.endswith('.py'):
+            continue
+        expected[name] = blob
+    actual = {path.relative_to(ROOT).as_posix() for path in files}
+    if not expected or actual != set(expected):
+        raise ValueError('source_inventory_mismatch')
+    snapshots, records = [], []
+    for name in sorted(expected):
+        path = ROOT / name
+        if path.resolve() != path.absolute():
+            raise ValueError('source_path_alias')
+        raw = path.read_bytes()
+        blob = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw,
+                            usedforsecurity=False).hexdigest()
+        if blob != expected[name]:
+            raise ValueError('source_blob_mismatch')
+        snapshots.append((name, raw.decode('utf-8')))
+        records.append({'path': name, 'git_blob_sha': blob,
+                        'sha256': hashlib.sha256(raw).hexdigest()})
+    return snapshots, records
+
+
+def run(roots, expected_head=None):
     files = []
     for root in roots:
         base = ROOT / root
         if not base.is_dir():
             raise OSError('missing_scanned_root')
-        files += sorted(base.rglob('*.py'))
+        if base.resolve() != base.absolute():
+            raise ValueError('source_path_alias')
+        # rglob does not descend directory symlinks. Reject them explicitly so an
+        # importable subtree cannot disappear from both Python file inventories.
+        entries = sorted(base.rglob('*'))
+        if any(path.is_symlink() for path in entries):
+            raise ValueError('source_path_alias')
+        files += [path for path in entries if path.suffix == '.py']
     if not files:
         raise OSError('no_source_files_scanned')
+    if expected_head is None:
+        snapshots = [(path.relative_to(ROOT).as_posix(), path.read_text(encoding='utf-8'))
+                     for path in files]
+        records = None
+    else:
+        snapshots, records = committed_sources(expected_head, files, roots)
     results = []
-    for path in files:
-        name = path.relative_to(ROOT).as_posix()
-        results.extend(scan_source(path.read_text(encoding='utf-8'), name))
-    return {'files_scanned': len(files), 'findings': results}
+    for name, content in snapshots:
+        results.extend(scan_source(content, name))
+    report = {'files_scanned': len(snapshots), 'findings': results}
+    if records is not None:
+        report['source_files'] = records
+    return report
 
 
 def main(argv=None):
@@ -82,7 +137,8 @@ def main(argv=None):
     p.add_argument('--expected-head', required=True)
     p.add_argument('--output', type=Path, required=True)
     args = p.parse_args(argv)
-    actual = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    actual = subprocess.check_output(['git', '--no-replace-objects', 'rev-parse', 'HEAD'],
+                                     cwd=ROOT, text=True).strip()
     evidence = {
         'schema': 'pbt-scoped-static-guard-v1',
         'head_sha': actual, 'scanned_roots': args.roots,
@@ -94,10 +150,10 @@ def main(argv=None):
             raise ValueError('SHA mismatch')
         if sorted(args.roots) != ['ops', 'server']:
             raise ValueError('scanned roots modified')
-        evidence.update(run(args.roots))
+        evidence.update(run(args.roots, expected_head=actual))
         if not evidence['findings']:
             evidence['status'] = 'PASS'
-    except (OSError, UnicodeError, ValueError) as exc:
+    except (OSError, UnicodeError, ValueError, subprocess.SubprocessError) as exc:
         evidence['findings'].append({'file': 'scanner', 'line': 0, 'rule': type(exc).__name__})
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(evidence, sort_keys=True, indent=2) + '\n', encoding='utf-8')

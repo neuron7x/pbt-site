@@ -77,8 +77,6 @@ def fix(d):
         j['b'] = [typo(x) for x in j['b']]; j['subject'] = typo(j['subject'])
     for p in d.get('proof', []):
         p['t'], p['s'] = typo(p['t']), typo(p['s'])
-    if 'business' in d and d['business'].get('logo') == '/media/logo/pbt-mark.png':
-        d['business']['logo'] = '/media/logo/pbt-logo.png'
     return d
 
 

@@ -1,8 +1,8 @@
 """Fail-closed structural guard for the dependency-audit workflow.
 
 These assertions inspect the supported workflow's exact step structure; they
-are not a general YAML parser or a security scanner. Both scans are guarded
-independently, so one valid step cannot mask a changed or disabled second one.
+are not a general YAML parser or a security scanner. Both scans for each lock
+are guarded independently, so one valid step cannot mask a disabled scan.
 """
 from pathlib import Path
 import re
@@ -208,5 +208,3 @@ def test_sast_receipt_cannot_be_silently_omitted():
     altered = workflow.replace('            artifacts/security/osv-sast-receipt.json\n', '', 1)
     with pytest.raises(AssertionError):
         assert_audit_policy(altered)
-
-

@@ -2,16 +2,19 @@
 """Одно-файлова збірка: шрифти, CSS, JS, зображення й відео — як data:URI.
   dist/pbt-site.html          — повний документ (з диска, без сервера; форма → резервна панель із текстом заявки)
   dist/pbt-site.artifact.html — фрагмент без <html>/<head>/<body> для публікації як Artifact
-Бюджет артефакту 16 МБ: відео лише mp4; якщо не вміщається — спочатку випадають петлі доказу, потім робіт (постери лишаються)."""
-import base64, mimetypes, re
+Бюджет 15,5 MiB: відео лише mp4; спочатку випадають петлі доказу, потім робіт,
+останнім — відео героя. Постери лишаються; завелика збірка без відео завершується помилкою."""
+import base64, json, mimetypes, re
 from pathlib import Path
 
-from bundle_contract import emit_fragment, inline_css
+from bundle_contract import emit_fragment, fit_video_budget, inline_css
+from artifact_budget import audit_artifact, enforce_artifact_budget, _save_report
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 DIST = ROOT / 'dist'
-LIMIT = 15.5 * 1024 * 1024
+LIMIT = int(15.5 * 1024 * 1024)
+BRAND_NAME = json.loads((ROOT / 'config' / 'business.json').read_text(encoding='utf-8'))['brand']['name']
 mimetypes.add_type('image/webp', '.webp'); mimetypes.add_type('font/woff2', '.woff2'); mimetypes.add_type('video/mp4', '.mp4')
 
 
@@ -45,19 +48,17 @@ def assemble(videos):
 
 
 ALL = ['hero-tall', 'hero-wide-720', 'job-voda', 'job-zemlia', 'job-trans', 'job-lis', 'job-demont', 'proof-amph', 'proof-long', 'proof-sunset', 'proof-trailer', 'proof-night', 'proof-winter']
-videos = list(ALL)
-page = assemble(videos)
-while len(page.encode()) > LIMIT and len(videos) > 2:
-    videos.pop()                                   # з кінця: доказ → роботи; герой лишається
-    page = assemble(videos)
-DIST.mkdir(exist_ok=True)
-(DIST / 'pbt-site.html').write_text(page, encoding='utf-8')
+page, videos = fit_video_budget(assemble, ALL, LIMIT)
 
 head = re.search(r'<head>(.*?)</head>', page, re.S).group(1)
 body = re.search(r'<body[^>]*>(.*?)</body>', page, re.S).group(1)
 keep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', head, re.S)
 early = re.search(r'<script>\s*/\* Профіль.*?</script>', head, re.S).group(0)
-frag = emit_fragment('ПБТ · ПолтаваБудТехніка', keep, early, body)
+frag = emit_fragment(BRAND_NAME, keep, early, body)
+if len(frag.encode('utf-8')) > LIMIT:
+    raise ValueError('Portable fragment exceeds the byte budget')
+DIST.mkdir(exist_ok=True)
+(DIST / 'pbt-site.html').write_text(page, encoding='utf-8')
 (DIST / 'pbt-site.artifact.html').write_text(frag, encoding='utf-8')
 for f in ('pbt-site.html', 'pbt-site.artifact.html'):
     print(f, round((DIST / f).stat().st_size / 1048576, 2), 'MB', '| відео у бандлі:', len(videos), '/', len(ALL))
@@ -66,8 +67,11 @@ for f in ('pbt-site.html', 'pbt-site.artifact.html'):
 # Повна якість: усі петлі й кіно-сцена «Масштаб»; бюджет одного публікування 64 МБ.
 import shutil
 MULTI = DIST / 'artifact'
+# Прев'ю в Artifact показує героя лише в 720 (window.PBT.heroSD): 1920-копія (9,4 МБ) не вміщається в 64 МБ
+# одного публікування. Живий сайт і однофайлова збірка не змінюються; жодне відео не перекодовується.
+ARTIFACT_OMIT = frozenset({'media/video/hero-wide.mp4'})
 shutil.rmtree(MULTI, ignore_errors=True)
-d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.mp4Only = true;\nwindow.PBT_BUNDLE = true;\n'
+d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.mp4Only = true;\nwindow.PBT.heroSD = true;\nwindow.PBT_BUNDLE = true;\n'
 h = (WEB / 'index.html').read_text(encoding='utf-8')
 h = inline_css(h, STYLES)
 h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
@@ -77,10 +81,20 @@ mbody = re.search(r'<body[^>]*>(.*?)</body>', h, re.S).group(1)
 mkeep = re.findall(r'<meta (?:name|property)="(?:description|og:[a-z:]+)"[^>]*>|<style>.*?</style>|<script type="application/ld\+json">.*?</script>', mhead, re.S)
 mearly = re.search(r'<script>\s*/\* Профіль.*?</script>', mhead, re.S).group(0)
 MULTI.mkdir(parents=True)
-(MULTI / 'index.html').write_text(emit_fragment('ПБТ · ПолтаваБудТехніка', mkeep, mearly, mbody), encoding='utf-8')
+(MULTI / 'index.html').write_text(emit_fragment(BRAND_NAME, mkeep, mearly, mbody), encoding='utf-8')
 n = 0
 for f in sorted((WEB / 'media').rglob('*')):
-    if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'pbt-logo.webm'):   # логотип — лише webm (альфа)
+    if f.relative_to(WEB).as_posix() in ARTIFACT_OMIT:
+        continue
+    if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'plainbud-logo.webm'):   # логотип — лише webm (альфа)
         t = MULTI / f.relative_to(WEB); t.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(f, t); n += 1
+# Аудит фактичних байтів ДО підгонки. Жоден кліп не пропускається.
+preflight = audit_artifact(MULTI)
+_save_report(preflight, DIST / 'artifact-budget-preflight.json')
+# Source-derived media is copied byte-for-byte: no encoding inside the build.
+# Publication remains HOLD until a separately quality-reviewed media asset pack fits.
 tot = sum(p.stat().st_size for p in MULTI.rglob('*') if p.is_file())
-print('artifact/', n + 1, 'файлів,', round(tot / 1048576, 1), 'MB')
+budget = enforce_artifact_budget(MULTI, DIST / 'artifact-budget.json')
+if budget['total_bytes'] != tot or budget['asset_count'] != n + 1:
+    raise ValueError('Multifile artifact changed during budget verification')
+print('artifact/', n + 1, 'файлів,', round(tot / 1048576, 1), 'MB', '| budget verified')

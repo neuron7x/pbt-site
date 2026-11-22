@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ADV-06/EVD-01/NET-07: source, toolchain and dependency provenance, and a CycloneDX-shaped SBOM.
 
-  capture --expected-head SHA --out p.json   fail if the checkout differs from the intended SHA
-  verify  p.json --expected-head SHA         re-derive from the tree; a stale receipt is rejected
+  capture --expected-head SHA --out artifacts/provenance.json   require a clean checkout of SHA
+  verify  artifacts/provenance.json --expected-head SHA         reject stale or modified source
   sbom    --out sbom.json                    every locked requirement with its hashes
 
 This is SLSA-aligned recording, not a SLSA build level: nothing here is signed by the build platform,
@@ -19,10 +19,13 @@ import re
 import subprocess
 import sys
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
-PIN = re.compile(r'^\s*(?:-\s*)?uses:\s*([^\s#]+)', re.M)
 FULL_SHA = re.compile(r'.+@[0-9a-f]{40}\Z')
-REQ = re.compile(r'^([A-Za-z0-9_.\-\[\]]+)==([^\s\\]+)\s*\\?\s*\n((?:\s+--hash=sha256:[0-9a-f]{64}\s*\\?\s*\n?)+)', re.M)
+REQ = re.compile(
+    r'^([A-Za-z0-9_.\-\[\]]+)==([^\s\\]+)[ \t]*\\*[ \t]*\n'
+    r'((?:[ \t]+--hash=sha256:[0-9a-f]{64}[ \t]*\\*[ \t]*(?:\n|$))+)', re.M)
 LOCKS = ('requirements.txt', 'requirements-sast.txt')
 
 
@@ -34,10 +37,53 @@ def git(root, *args):
     return subprocess.run(['git', *args], cwd=root, check=True, capture_output=True, text=True, timeout=20).stdout.strip()
 
 
+def workflow_files(root):
+    folder = root / '.github' / 'workflows'
+    return sorted([*folder.glob('*.yml'), *folder.glob('*.yaml')])
+
+
+def require_clean_checkout(root):
+    # HEAD alone does not identify staged, modified or untracked source bytes.
+    entries = git(root, 'ls-files', '-v', '-z').split('\0')
+    if any(entry and (entry[0].islower() or entry[0] == 'S') for entry in entries):
+        raise Rejected('hidden_index_flags')
+    if git(root, 'status', '--porcelain=v1', '--untracked-files=normal'):
+        raise Rejected('dirty_checkout')
+
+
+def workflow_uses(path):
+    """Inspect YAML nodes without constructing objects or expanding alias graphs."""
+    try:
+        document = yaml.compose(path.read_text(encoding='utf-8'), Loader=yaml.SafeLoader)
+    except (yaml.YAMLError, RecursionError) as exc:
+        raise Rejected(f'workflow_yaml_invalid_{path.name}') from exc
+    if not isinstance(document, yaml.MappingNode):
+        raise Rejected(f'workflow_mapping_required_{path.name}')
+    pending, seen = [document], set()
+    while pending:
+        node = pending.pop()
+        if id(node) in seen:
+            continue
+        seen.add(id(node))
+        if isinstance(node, yaml.MappingNode):
+            keys = set()
+            for key, value in node.value:
+                if not isinstance(key, yaml.ScalarNode) or key.value in keys:
+                    raise Rejected(f'workflow_ambiguous_key_{path.name}')
+                keys.add(key.value)
+                if key.value == 'uses':
+                    if not isinstance(value, yaml.ScalarNode) or value.tag != 'tag:yaml.org,2002:str':
+                        raise Rejected(f'workflow_action_invalid_{path.name}')
+                    yield value.value
+                pending.append(value)
+        elif isinstance(node, yaml.SequenceNode):
+            pending.extend(node.value)
+
+
 def action_pins(root):
     pins = {}
-    for path in sorted((root / '.github' / 'workflows').glob('*.yml')):
-        for use in PIN.findall(path.read_text(encoding='utf-8')):
+    for path in workflow_files(root):
+        for use in workflow_uses(path):
             if use.startswith('./'):
                 continue
             if not FULL_SHA.fullmatch(use):
@@ -49,15 +95,22 @@ def action_pins(root):
 
 
 def locked_requirements(path):
-    raw = path.read_text(encoding='utf-8')
+    return parse_locked_requirements(path.read_text(encoding='utf-8'), path.name)
+
+
+def parse_locked_requirements(raw, lock_name):
+    """Parse lock text from either a checkout or an immutable Git blob."""
     entries = REQ.findall(raw)
     names = re.findall(r'^([A-Za-z0-9_.\-\[\]]+)==', raw, re.M)
     if not names:
-        raise Rejected(f'empty_lock_{path.name}')
+        raise Rejected(f'empty_lock_{lock_name}')
     if len(entries) != len(names):
-        raise Rejected(f'requirement_without_hash_{path.name}')
+        raise Rejected(f'requirement_without_hash_{lock_name}')
     if re.search(r'^[A-Za-z0-9_.\-\[\]]+\s*(?:>=|<=|~=|>|<|!=)', raw, re.M):
-        raise Rejected(f'unpinned_requirement_{path.name}')
+        raise Rejected(f'unpinned_requirement_{lock_name}')
+    remainder = REQ.sub('', raw)
+    if any(line.strip() and not line.lstrip().startswith('#') for line in remainder.splitlines()):
+        raise Rejected(f'unparsed_lock_content_{lock_name}')
     return [{'name': n.lower(), 'version': v, 'hashes': sorted(re.findall(r'sha256:([0-9a-f]{64})', h))} for n, v, h in entries]
 
 
@@ -70,9 +123,11 @@ def derive(root):
         locked_requirements(path)
         locks[name] = hashlib.sha256(path.read_bytes()).hexdigest()
     pins = action_pins(root)
+    workflows = {path.relative_to(root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                 for path in workflow_files(root)}
     return {'head_sha': git(root, 'rev-parse', 'HEAD'), 'tree_sha': git(root, 'rev-parse', 'HEAD^{tree}'),
             'locks_sha256': locks, 'action_pins': pins,
-            'workflows_sha256': hashlib.sha256(json.dumps(pins, sort_keys=True).encode()).hexdigest()}
+            'workflows_sha256': hashlib.sha256(json.dumps(workflows, sort_keys=True).encode()).hexdigest()}
 
 
 def capture(root, expected_head, env=os.environ):
@@ -82,6 +137,7 @@ def capture(root, expected_head, env=os.environ):
     claimed = env.get('PBT_HEAD_SHA')
     if claimed and claimed != expected_head:
         raise Rejected('pbt_head_sha_differs')
+    require_clean_checkout(root)
     return {'schema': 'pbt-provenance-v1', **identity, 'event_sha': env.get('GITHUB_SHA'),
             'event': env.get('GITHUB_EVENT_NAME'), 'run_id': env.get('GITHUB_RUN_ID'),
             'run_attempt': env.get('GITHUB_RUN_ATTEMPT'), 'repository': env.get('GITHUB_REPOSITORY'),
@@ -95,9 +151,10 @@ def verify(root, receipt, expected_head):
     now = derive(root)
     if expected_head != now['head_sha'] or receipt.get('head_sha') != expected_head:
         raise Rejected('stale_source_revision')
-    for key in ('tree_sha', 'locks_sha256', 'action_pins'):
+    for key in ('tree_sha', 'locks_sha256', 'action_pins', 'workflows_sha256'):
         if receipt.get(key) != now[key]:
             raise Rejected(f'receipt_drift_{key}')
+    require_clean_checkout(root)
     return {'status': 'PASS', 'head_sha': expected_head}
 
 

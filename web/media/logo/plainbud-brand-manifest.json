@@ -1,0 +1,83 @@
+{
+  "brand": "ПЛЕЙНБУД",
+  "font": {
+    "path": "web/fonts/IBMPlexSans-600-cyrillic.woff2",
+    "sha256": "9409ee21811f0f5272b7e1d828fe8838005b0573481ef906e7e55b63f6610ab0"
+  },
+  "generation_command": "python3 tools/logo.py",
+  "generator_sha256": "a2db5fbc2c8e8cb4a50b44f993721fdde84d6ed62f0de5464bb75061292747d2",
+  "outputs": {
+    "apple-touch-icon.png": {
+      "bytes": 2018,
+      "height": 180,
+      "mode": "RGB",
+      "sha256": "fefa6ce11ff8fbae0bbff371df5f81c7d6cf64159130ec89ea477b6095a164c6",
+      "width": 180
+    },
+    "favicon.png": {
+      "bytes": 781,
+      "height": 32,
+      "mode": "RGB",
+      "sha256": "28a45a81d6d9f0780f888f01ec9c349499fb40ecf6da12993bd0171fa3559dfa",
+      "width": 32
+    },
+    "icon-512.png": {
+      "bytes": 4148,
+      "height": 512,
+      "mode": "RGB",
+      "sha256": "be44e8f6bfdc81b5e97aa7fdb775847785a9569908a98a9f8161b06da4fa7c98",
+      "width": 512
+    },
+    "og-plainbud.jpg": {
+      "bytes": 61146,
+      "height": 630,
+      "mode": "RGB",
+      "sha256": "f45c52940cdd17a47f6f11e15c989956f596e0debeaf40589cce7f4fd387759e",
+      "width": 1200
+    },
+    "plainbud-logo-nav.webp": {
+      "bytes": 5816,
+      "height": 62,
+      "mode": "RGBA",
+      "sha256": "847ab75261e67c9c638acae0033099dde262506c750fa8cc53254ec0c65c253a",
+      "width": 168
+    },
+    "plainbud-logo.png": {
+      "bytes": 43686,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "6a15b7ced9960583d426f35ed6464201ecc49cf3bc16237f25dab4b951a1c50b",
+      "width": 960
+    },
+    "plainbud-logo.webm": {
+      "alpha": true,
+      "bytes": 62099,
+      "fps": "89/3",
+      "frames": 159,
+      "height": 264,
+      "playback": "once; static first/last frame",
+      "sha256": "a39bb9cce5b9553d7c59a29ee125ca540898d024b233d98722e4a8ef63fe9793",
+      "width": 720
+    },
+    "plainbud-logo.webp": {
+      "bytes": 25830,
+      "height": 352,
+      "mode": "RGBA",
+      "sha256": "8263ce4ebcc8ba6306915ba97464d3e4418676b9e3685efd912a77ec7f14a4b8",
+      "width": 960
+    }
+  },
+  "palette": {
+    "blue": "#1A87F5",
+    "gold": "#FDC501",
+    "ink": "#062B5C",
+    "paper": "#F5F5F2"
+  },
+  "schema": "plainbud-brand-assets-v1",
+  "status": "User-authorized generated wordmark; no official trademark status asserted",
+  "toolchain": {
+    "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "numpy": "2.3.5",
+    "pillow": "13.0.0"
+  }
+}

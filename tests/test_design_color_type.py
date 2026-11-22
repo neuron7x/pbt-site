@@ -49,7 +49,7 @@ def test_confirmation_reference_contrast_in_actual_ui(page_factory, theme):
     page.locator('#contact').fill('0970000000')
     page.locator('#send').click()
     page.locator('#done.is-on').wait_for()
-    assert page.locator('#ref').inner_text() == 'PBT-123456'
+    assert ''.join(page.locator('#ref').inner_text().split()) == '№123456'
     sample = page.locator('#ref').evaluate("""el => ({
       foreground: getComputedStyle(el).color,
       fill: getComputedStyle(el).webkitTextFillColor,

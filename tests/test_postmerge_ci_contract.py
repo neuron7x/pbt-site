@@ -71,3 +71,24 @@ def test_push_jobs_checkout_the_actual_merged_sha():
         source = (ROOT / name).read_text(encoding="utf-8")
         assert "PBT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}" in source, name
         assert "ref: ${{ github.event.pull_request.head.sha || github.sha }}" in source, name
+
+
+def _assert_closure_dependencies(source):
+    verified = source.index('test "$(git rev-parse HEAD)" = "$SOURCE_SHA"')
+    install = source.index('python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt')
+    smoke = source.index("python -c 'from tools import meta_evidence_gate, security_receipt, supply_chain'")
+    wait = source.index('- name: Wait boundedly for all five exact-main push workflows')
+    assert verified < install < smoke < wait
+
+
+def test_evidence_closure_installs_locked_dependencies_before_waiting_for_evidence():
+    _assert_closure_dependencies((ROOT / 'evidence-closure.yml').read_text())
+
+
+@pytest.mark.parametrize('omitted', ['--require-hashes ',
+    "          python -c 'from tools import meta_evidence_gate, security_receipt, supply_chain'\n"])
+def test_evidence_closure_dependency_preflight_cannot_be_silently_disabled(omitted):
+    source = (ROOT / 'evidence-closure.yml').read_text()
+    assert omitted in source
+    with pytest.raises((ValueError, AssertionError)):
+        _assert_closure_dependencies(source.replace(omitted, '', 1))

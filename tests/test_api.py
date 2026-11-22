@@ -86,7 +86,7 @@ def test_security_headers(server):
 
 def test_public_config_has_no_internal_fields(server):
     c = json.loads(urllib.request.urlopen(server['base'] + '/api/config').read())
-    assert '_status' not in c and c['brand']['name'] == 'ПБТ'
+    assert '_status' not in c and c['brand']['name'] == 'ПЛЕЙНБУД'
 
 
 # ─── безпека сервера (аудит 25.09.2026: S1, S4, S5, S6) ───
@@ -217,7 +217,7 @@ def test_P12_text_assets_gzip_etag_and_no_escape(server):
     raw = gzip.decompress(body); assert b':root' in raw and len(body) < len(raw) * .5
     code2, h2, _ = _get(base, '/css/site.css', {'Accept-Encoding': 'gzip', 'If-None-Match': h['ETag']})
     assert code2 == 304
-    code3, h3, _ = _get(base, '/media/logo/pbt-mark.png', {'Accept-Encoding': 'gzip'})
+    code3, h3, _ = _get(base, '/media/logo/plainbud-logo.png', {'Accept-Encoding': 'gzip'})
     assert code3 == 200 and 'Content-Encoding' not in h3
     code4, h4, b4 = _get(base, '/', {'Accept-Encoding': 'gzip'})
     assert code4 == 200 and h4.get('Content-Encoding') == 'gzip' and b'<html' in gzip.decompress(b4)[:400].lower()
@@ -261,7 +261,7 @@ def test_S13_static_root_containment_symlinks_and_traversal(server, tmp_path):
             except urllib.error.HTTPError as e:
                 assert e.code == 404, p
         assert _get(server['base'], '/s13_in.css')[0] == 200
-        assert _get(server['base'], '/css/fonts.css')[0] == 200 and _get(server['base'], '/media/logo/pbt-mark.png')[0] == 200
+        assert _get(server['base'], '/css/fonts.css')[0] == 200 and _get(server['base'], '/media/logo/plainbud-logo.png')[0] == 200
         for p in ('/..%2F..%2Fserver%2Fapp.py', '/%2e%2e%2f%2e%2e/config/business.json', '/css/../../server/app.py', '/./../.env', '//etc/passwd'):
             code, _, body = _get(server['base'], p)
             assert code == 404 or b'import' not in body, p

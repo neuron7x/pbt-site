@@ -1,6 +1,6 @@
 """Секція «Масштаб»: ілюстративна зйомка з Wikimedia Commons.
 Інваріанти: ліцензія кожного джерела вільна; атрибуція (автор, назва, ліцензія з посиланнями) біля КОЖНОГО кадру;
-сторінка прямо каже, що це не техніка ПБТ; web/js/cine.js не розходиться з config/stock.json; кожен кліп існує в обох профілях."""
+сторінка прямо каже, що це не техніка ПЛЕЙНБУД; web/js/cine.js не розходиться з config/stock.json; кожен кліп існує в обох профілях."""
 import hashlib, io, json, re, subprocess, sys
 from pathlib import Path
 import pytest
@@ -86,11 +86,11 @@ def test_footer_attributes_every_frame_and_page_disclaims_fleet(page_factory):
         assert s['author'] in c['text'] and s['license'] in c['text'], c
         assert 'кадровано, виконано колірну корекцію' in c['text'], c          # CC BY §3(a)(1)(B): позначка змін
     note = pg.locator('#masshtab .cine__note')
-    assert note.is_visible() and 'не техніка ПБТ' in note.text_content()
+    assert note.is_visible() and 'не техніка ПЛЕЙНБУД' in note.text_content()
     assert 'Wikimedia Commons' in pg.locator('.foot__legal').text_content()
     assert pg.evaluate("document.querySelectorAll('#cine .cine__ch a, #cine .cine__cr').length") == 0, 'підписи поверх кадрів'
     ph = page_factory(390, 844, mobile=True)                       # застереження не може зникати на телефоні
-    assert ph.locator('#masshtab .cine__note').is_visible() and 'не техніка ПБТ' in ph.locator('#masshtab .cine__note').text_content()
+    assert ph.locator('#masshtab .cine__note').is_visible() and 'не техніка ПЛЕЙНБУД' in ph.locator('#masshtab .cine__note').text_content()
 
 
 def test_stage_plays_and_switches_clip_on_scroll(page_factory):

@@ -1,6 +1,21 @@
 """Фейл-клоуз контракт інлайнування CSS у переносних збірках ПБТ."""
 
+from collections.abc import Callable
+from html import escape
 import re
+
+
+def fit_video_budget(assemble: Callable[[list[str]], str], candidates: list[str],
+                     limit: int) -> tuple[str, list[str]]:
+    """Drop lowest-priority clips until the UTF-8 page fits, including its posters."""
+    videos = list(candidates)
+    while True:
+        page = assemble(videos)
+        if len(page.encode("utf-8")) <= limit:
+            return page, videos
+        if not videos:
+            raise ValueError("Poster-only bundle exceeds the byte budget")
+        videos.pop()
 
 
 def inline_css(html: str, sources: tuple[tuple[str, str], ...]) -> str:
@@ -28,7 +43,7 @@ def emit_fragment(title: str, head_items: list[str], prepaint: str, body: str) -
     if any("<link" in item and "stylesheet" in item for item in head_items):
         raise ValueError("Portable fragment cannot depend on external stylesheets")
     return (
-        f"<title>{title}</title>\n"
+        f"<title>{escape(title, quote=False)}</title>\n"
         + prepaint + "\n"
         + "\n".join(head_items) + "\n"
         + body

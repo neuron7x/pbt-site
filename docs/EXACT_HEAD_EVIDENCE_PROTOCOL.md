@@ -32,8 +32,11 @@ invariant.
 
 ## Offline verifier
 
-The stdlib-only evaluator is `tools/meta_evidence_gate.py`. It expects a
-JSON manifest `pbt-exact-head-evidence-matrix-v2` with:
+The offline evaluator is `tools/meta_evidence_gate.py`. Its shared lock and
+workflow parsers require `packaging` and `PyYAML`; install the hash-locked
+`requirements.txt` with `python3 -m pip install --require-hashes -r requirements.txt`
+before running it. It expects a JSON manifest
+`pbt-exact-head-evidence-matrix-v2` with:
 
 - `head_sha`, `base_sha`, `target` (`kind`, `pr_number`, `ref`, bound by `config/evidence-policy.json`);
 - the run roles the target requires (`full`, `transport`, `visual`, `security`,
@@ -60,10 +63,23 @@ specified offline checks PASS; otherwise nonzero with a bounded reason.
 It does **not** sign or authenticate the GitHub API snapshot. Do not use
 a fabricated manifest to justify merging.
 
+The collector requires an explicit integer `total_count` for each attempt's
+job listing and rejects empty, truncated or inconsistent lists. Job names
+and IDs must be valid and unique within that attempt; a repeated name cannot
+overwrite an earlier failure. Failed and unfinished job facts are preserved
+for the offline evaluator instead of being converted into successful facts.
+
+The scoped static CLI binds `server/` and `ops/` Python files to the actual
+Git tree at its expected SHA. It rejects source inventory or byte drift,
+index-hidden edits, symlinks and unsupported tree entries, and disables Git
+replacement objects. Its per-file blob/SHA-256 inventory describes the same
+byte snapshots that the AST guard scans. This producer check does not turn
+the AST guard into a full SAST or independently authenticate its receipt.
+
 ## Automation that tests its own acceptance machinery
 
 `tests/test_meta_evidence_gate.py` generates a hermetic positive control and
-16 adversarial negative controls. Run:
+adversarial negative controls. Run:
 
 ```sh
 PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest -q \

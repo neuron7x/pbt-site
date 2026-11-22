@@ -117,7 +117,7 @@ def close(root, evidence_dir):
     load = lambda rel: (root / rel).read_bytes()
     decision = gate.verify_manifest(manifest, evidence_dir, gate.json_bytes(load('config/runtime-soak-budgets.json')), head, base,
                                     gate.json_bytes(load('config/evidence-policy.json')), gate.json_bytes(load('config/required-tests.json')),
-                                    load('config/mutation-catalog.json'))
+                                    load('config/mutation-catalog.json'), source_locks=gate.lock_sources_at(root, head))
     ledger = json.loads(load('assurance/ledger.json'))
     case = json.loads(load('assurance/case.json'))
     receipts = reconcile(manifest, evidence_dir, ledger, json.loads(load('config/mutation-catalog.json')))

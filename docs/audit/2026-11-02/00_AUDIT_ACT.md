@@ -1,9 +1,9 @@
 # PBT Site — Independent Engineering Audit Act (2026-11-02)
 
-**Repository:** `neuron7x/pbt-site` (private)  
-**Immutable audit target:** `main@382a476b3803f03a8dd1de53c69931f551719151`  
-**Scope:** repository source tree, existing machine-readable contracts, current GitHub Actions run/job/artifact *metadata*, open issues, historical PRs, and primary technical standards.  
-**Out of scope / not observed:** deployment host and keys, private CRM instance, external receiver, CDN/DNS/TLS edge, live user journeys, iOS hardware, authenticated customer permissions, actual owner decisions, download + independent hashing of all Actions ZIP bytes.  
+**Repository:** `neuron7x/pbt-site` (private)\
+**Immutable audit target:** `main@382a476b3803f03a8dd1de53c69931f551719151`\
+**Scope:** repository source tree, existing machine-readable contracts, current GitHub Actions run/job/artifact *metadata*, open issues, historical PRs, and primary technical standards.\
+**Out of scope / not observed:** deployment host and keys, private CRM instance, external receiver, CDN/DNS/TLS edge, live user journeys, iOS hardware, authenticated customer permissions, actual owner decisions, download + independent hashing of all Actions ZIP bytes.\
 **Decision:** SOURCE IMPLEMENTATION WITH FIVE GREEN EXACT-HEAD WORKFLOWS; INDEPENDENT ENGINEERING ACCEPTANCE **NOT RECORDED**; PRODUCTION **HOLD**.
 
 ## A. Evidence classification — non-negotiable

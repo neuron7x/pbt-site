@@ -1,36 +1,36 @@
-/* Дані інтерфейсу ПБТ. Джерела: прайс і парк — pbt-spectehnika.com.ua (03.10.2026); реквізити — config/business.json; відео — монтаж із TikTok @poltavabudtehnika (власна зйомка клієнта), tools/media.py. */
+/* Дані інтерфейсу ПЛЕЙНБУД. Реквізити — config/business.json; каталог і прайс від 03.10.2026 успадковано без нового затвердження; походження медіа — docs/PROVENANCE.md. */
 window.PBT = {
  "business": {
   "brand": {
-   "name": "ПБТ",
-   "nameUk": "ПолтаваБудТехніка",
-   "alternateName": "PBT Spectehnika"
+   "name": "ПЛЕЙНБУД",
+   "nameUk": "ПЛЕЙНБУД",
+   "alternateName": "PLAINBUD"
   },
-  "legalName": "ТОВ «ПолтаваБудТехніка»",
-  "edrpou": "45383082",
+  "legalName": "ТОВ «ПЛЕЙНБУД»",
+  "edrpou": "45318076",
   "city": "Полтава",
   "region": "Полтавська область",
-  "address": "36002, м. Полтава, вул. Довженка, 2А",
-  "url": "https://pbt-spectehnika.com.ua",
-  "logo": "/media/logo/pbt-logo.png",
+  "address": "36022, м. Полтава, вул. Небесної сотні, буд. 69 Б",
+  "url": null,
+  "logo": "/media/logo/plainbud-logo.png",
   "contacts": {
-   "phone": "+380978637777",
-   "phone2": "+380958637777",
-   "email": null,
+   "phone": "+380675550317",
+   "phone2": null,
+   "email": "plainbud@gmail.com",
    "telegram": null,
-   "viber": "+380978637777",
+   "viber": null,
    "whatsapp": null,
-   "instagram": "https://www.instagram.com/pbtspectehnika",
-   "tiktok": "https://www.tiktok.com/@poltavabudtehnika",
-   "facebook": "https://www.facebook.com/profile.php?id=61563404525960",
-   "youtube": "https://www.youtube.com/channel/UCvSkE5UV_uavxC7fwAU9Ssg"
+   "instagram": null,
+   "tiktok": null,
+   "facebook": null,
+   "youtube": null
   },
-  "responsiblePerson": null,
+  "responsiblePerson": "Любашевський Дмитро Васильович",
   "hours": {
-   "mo-fr": "09:00–18:00",
-   "sa": "09:00–15:00",
-   "su": "вихідний",
-   "dispatch": "техніка працює цілодобово"
+   "mo-fr": null,
+   "sa": null,
+   "su": null,
+   "dispatch": null
   },
   "regions": [
    "Полтавська",
@@ -42,10 +42,15 @@ window.PBT = {
    "Кіровоградська",
    "Чернігівська",
    "Житомирська"
-  ]
+  ],
+  "director": "Любашевський Дмитро Васильович",
+  "bank": {
+   "name": "АТ «А-БАНК»",
+   "iban": "UA393077700000026008411259048"
+  }
  },
  "priceDate": "2026-10-03",
- "priceSource": "pbt-spectehnika.com.ua",
+ "priceSource": "Архівний каталог від 03.10.2026; першоджерело — docs/PROVENANCE.md",
  "cats": [
   {
    "id": "exc",
@@ -766,42 +771,42 @@ window.PBT = {
    "poster": "media/video/proof-amph.webp",
    "t": "Екскаватор-амфібія",
    "s": "очищення заболоченої ділянки, Полтавщина",
-   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7625991020492098837"
+   "url": "media/video/proof-amph.mp4"
   },
   {
    "video": "proof-long",
    "poster": "media/video/proof-long.webp",
    "t": "Довгорукий екскаватор",
    "s": "«тут вода знову стане прозорою»",
-   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7579201889854606604"
+   "url": "media/video/proof-long.mp4"
   },
   {
    "video": "proof-sunset",
    "poster": "media/video/proof-sunset.webp",
    "t": "Hyundai на тралі",
    "s": "доставка амфібії на об’єкт",
-   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7688658909661334805"
+   "url": "media/video/proof-sunset.mp4"
   },
   {
    "video": "proof-trailer",
    "poster": "media/video/proof-trailer.webp",
    "t": "MAN + трал 60 т",
    "s": "JCB JS260 їде на об’єкт",
-   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7638993833958722837"
+   "url": "media/video/proof-trailer.mp4"
   },
   {
    "video": "proof-night",
    "poster": "media/video/proof-night.webp",
    "t": "Нічна зміна",
-   "s": "техніка працює 24/7",
-   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7600714811185401108"
+   "s": "робота техніки в темну пору доби",
+   "url": "media/video/proof-night.mp4"
   },
   {
    "video": "proof-winter",
    "poster": "media/video/proof-winter.webp",
    "t": "Зима — не пауза",
    "s": "розчищення взимку",
-   "url": "https://www.tiktok.com/@poltavabudtehnika/video/7588156683126459659"
+   "url": "media/video/proof-winter.mp4"
   }
  ],
  "partners": [
