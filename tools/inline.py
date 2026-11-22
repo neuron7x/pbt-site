@@ -67,8 +67,11 @@ for f in ('pbt-site.html', 'pbt-site.artifact.html'):
 # Повна якість: усі петлі й кіно-сцена «Масштаб»; бюджет одного публікування 64 МБ.
 import shutil
 MULTI = DIST / 'artifact'
+# Прев'ю в Artifact показує героя лише в 720 (window.PBT.heroSD): 1920-копія (9,4 МБ) не вміщається в 64 МБ
+# одного публікування. Живий сайт і однофайлова збірка не змінюються; жодне відео не перекодовується.
+ARTIFACT_OMIT = frozenset({'media/video/hero-wide.mp4'})
 shutil.rmtree(MULTI, ignore_errors=True)
-d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.mp4Only = true;\nwindow.PBT_BUNDLE = true;\n'
+d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.mp4Only = true;\nwindow.PBT.heroSD = true;\nwindow.PBT_BUNDLE = true;\n'
 h = (WEB / 'index.html').read_text(encoding='utf-8')
 h = inline_css(h, STYLES)
 h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/site.js"></script>', '<script>' + site + '</script>')
@@ -81,6 +84,8 @@ MULTI.mkdir(parents=True)
 (MULTI / 'index.html').write_text(emit_fragment(BRAND_NAME, mkeep, mearly, mbody), encoding='utf-8')
 n = 0
 for f in sorted((WEB / 'media').rglob('*')):
+    if f.relative_to(WEB).as_posix() in ARTIFACT_OMIT:
+        continue
     if f.is_file() and (f.suffix in ('.mp4', '.webp', '.png', '.svg', '.jpg') or f.name == 'plainbud-logo.webm'):   # логотип — лише webm (альфа)
         t = MULTI / f.relative_to(WEB); t.parent.mkdir(parents=True, exist_ok=True); shutil.copy2(f, t); n += 1
 # Аудит фактичних байтів ДО підгонки. Жоден кліп не пропускається.

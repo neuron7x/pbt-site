@@ -70,7 +70,7 @@
   /* ───── відео: джерела підставляються лише з JS, грають лише у кадрі ───── */
   function heroHD() {
     const c = navigator.connection || {};
-    if (D.videoData || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
+    if (D.videoData || D.heroSD || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
     return innerWidth * (devicePixelRatio || 1) >= 1600;
   }
   function attachVideo(video, name, { tall } = {}) {
