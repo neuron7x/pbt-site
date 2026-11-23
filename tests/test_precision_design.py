@@ -104,10 +104,13 @@ def test_hero_logo_is_compact_and_offer_is_clear(page_factory, theme, width, hei
     logo = page.locator('.logo-hero').bounding_box()
     assert logo and 70 <= logo['width'] <= 104 and logo['width'] <= width * .28
     assert page.locator('#nav .brand__logo').is_visible()
-    heading = page.locator('#heroTitle').inner_text()
-    assert 'спецтехніка' in heading.casefold() and len(heading.split()) <= 6
-    lead = page.locator('.hero__lead').text_content()
-    assert 'оператором' in lead and 'пальним' in lead and len(lead.split()) <= 9
+    heading = page.locator('#heroTitle').inner_text().casefold()
+    eyebrow_text = page.locator('#heroCenter .eyebrow').inner_text().casefold()
+    # Service intent sits immediately above the original brand headline.
+    assert 'оренда спецтехніки' in eyebrow_text and 'полтава' in eyebrow_text
+    assert 'важкі умови' in heading and 'техніка під об’єкт' in heading and len(heading.split()) <= 6
+    lead = page.locator('.hero__lead').text_content().casefold()
+    assert all(term in lead for term in ('амфібії', 'крани', 'трали')) and len(lead.split()) <= 18
     assert page.locator('.hero__lead').is_visible() is (height > 520)
     assert '24/7' not in page.locator('#heroCenter .eyebrow').inner_text()
     assert page.locator('#heroCenter .btn').count() == 2
