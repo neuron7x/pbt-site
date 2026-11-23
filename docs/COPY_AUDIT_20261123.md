@@ -63,3 +63,12 @@ No release or merge authorization is expressed by this document.
 - The word «диспетчер» asserted a staff role not attested in business.json. User-facing fallbacks now invite a phone call without implying a separate dispatch department. This does not change the actual contact channel.
 - Hero eyebrow now explicitly states «Оренда спецтехніки · Полтава» to pair an original value proposition with the buyer's service/location vocabulary. Google Search Central title-link guidance is a design constraint, not evidence of higher rankings: https://developers.google.com/search/docs/appearance/title-link .
 - Browser test tests/test_frontend_finish.py checks that every rendered priced card carries the historical rate date; field date and prices still require an owner-signed snapshot before launch.
+
+
+## Follow-up: geo and JSON-LD claim parity (2026-11-23)
+
+- The prior page contained **nine `areaServed` values** in `LocalBusiness` structured data even though PB-004 blocks independently verified dispatch coverage. The visible copy had been qualified, but search-facing metadata still implied a confirmed operating territory. Removed `areaServed` until owner evidence is received.
+- Renamed map state `served` → `inquiry` without removing the map aesthetic or interaction; route lines are explicitly illustrative, not confirmed logistics. The list says «за запитом» rather than «виїзд», and the page carries an adjacent disclaimer.
+- Extended `tools/copy_gate.py` to parse JSON-LD (malformed JSON fails) and reject `areaServed` claims; it now checks OG title and social metadata. Regression tests inject fake areas, corrupted JSON and an unsupported metadata superlative.
+- Repaired stale Playwright proof-counter expectation `9` → `8` to match the source-verified eight catalog categories; map tests now assert request-only regional labels. This is repository consistency, **not proof of geographic availability or conversion**.
+- Release stays **HOLD** pending exact-head CI, two-theme browser evidence, owner facts, and external permissions.

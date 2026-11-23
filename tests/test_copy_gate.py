@@ -61,3 +61,35 @@ def test_hero_cta_is_request_and_calculator_is_not_booking():
     assert "Замовити цю зміну" not in html
     for literal in ('name="type" value="rent"', 'name="type" value="material"', 'name="type" value="transport"', 'name="type" value="other"'):
         assert literal in html
+
+
+def test_unverified_service_area_in_jsonld_is_rejected():
+    html, catalog, claims, terms = _fixtures()
+    altered = html.replace('"makesOffer"', '"areaServed":["Полтавська область"],"makesOffer"', 1)
+    assert altered != html
+    assert "unverified-service-area-structured-data" in verify(altered, catalog, claims, terms)
+
+
+def test_malformed_jsonld_fails_closed():
+    html, catalog, claims, terms = _fixtures()
+    altered = html.replace('"@type":"LocalBusiness"', '"@type":BROKEN', 1)
+    assert altered != html
+    assert "structured-data-malformed" in verify(altered, catalog, claims, terms)
+
+
+def test_region_map_does_not_claim_approved_dispatch():
+    html, _, _, _ = _fixtures()
+    script = (ROOT / "web/js/site.js").read_text(encoding="utf-8")
+    assert 'class="obl served"' not in html
+    assert 'class="obl inquiry"' in html
+    assert "не підтверджена зона виїзду" in html
+    assert "const inquiryRegions = " in script
+    assert "'за запитом'" in script
+    assert "'виїзд'" not in script
+
+
+def test_social_metadata_is_scanned_for_unsupported_superlatives():
+    html, catalog, claims, terms = _fixtures()
+    altered = html.replace('property="og:title" content="ПЛЕЙНБУД"', 'property="og:title" content="№1"', 1)
+    assert altered != html
+    assert "unsubstantiated-claim:unsupported-rank" in verify(altered, catalog, claims, terms)

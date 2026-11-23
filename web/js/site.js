@@ -450,18 +450,18 @@
   function renderGeo() {
     const home = 'Полтавська', svg = $('#geoMap svg');
     const list = $('#geoList');
-    list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : 'виїзд'}</span></li>`).join('');
+    list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : 'за запитом'}</span></li>`).join('');
     if (!svg) return;
     $$('.obl', svg).forEach(p => { if (p.dataset.ua === home) p.classList.add('home'); });
-    /* маршрути з Полтави до кожної області — криві по центрах контурів, малюються при появі секції */
+    /* Ілюстративні лінії до напрямків запитів: не підтверджують маршрут або можливість подачі. */
     const center = p => { const b = p.getBBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
     const homeP = $$('.obl', svg).find(p => p.dataset.ua === home); if (!homeP) return;
     /* спершу всі читання геометрії, потім записи: getBBox/getTotalLength між appendChild змушували перераховувати розкладку
        на кожній ітерації (Lighthouse 09.10: renderGeo 344 мс при CPU ×4). Довжину кривої Безьє — аналітично, без DOM. */
     const build = () => {
     const [hx, hy] = center(homeP);
-    const served = $$('.obl.served', svg).filter(p => p.dataset.ua && p.dataset.ua !== home && p.dataset.name !== 'Kyiv');
-    const ends = served.map(center);
+    const inquiryRegions = $$('.obl.inquiry', svg).filter(p => p.dataset.ua && p.dataset.ua !== home && p.dataset.name !== 'Kyiv');
+    const ends = inquiryRegions.map(center);
     const qlen = (x0, y0, x1, y1, x2, y2) => { let L = 0, px = x0, py = y0; for (let k = 1; k <= 24; k++) { const t = k / 24, u = 1 - t, x = u * u * x0 + 2 * u * t * x1 + t * t * x2, y = u * u * y0 + 2 * u * t * y1 + t * t * y2; L += Math.hypot(x - px, y - py); px = x; py = y; } return L; };
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'routes');
     ends.forEach(([x, y], i) => {
@@ -479,7 +479,7 @@
     build();   // на старті, не ліниво: getBBox посеред скролу давав ривок і «примар» (A/B 09.10, p95 951 → 387 мс)
     $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
-    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база запитів' : 'у переліку регіонів'}` : `${p.dataset.name} — за запитом`; });
+    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база запитів' : 'можливість подачі уточнюється'}` : `${p.dataset.name} — за запитом`; });
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
   }
 

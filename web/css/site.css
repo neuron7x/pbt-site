@@ -574,8 +574,8 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .geo__map{min-width:0;position:relative}
 .geo__map svg{width:100%;height:auto;overflow:visible;filter:drop-shadow(0 20px 40px rgba(6,43,92,.18))}
 .obl{fill:#D6EBFC;stroke:var(--white);stroke-width:1.2;transition:fill .4s}
-.obl.served{fill:var(--sky-500)}
-.obl.served:hover{fill:var(--sky-700)}
+.obl.inquiry{fill:var(--sky-500)}
+.obl.inquiry:hover{fill:var(--sky-700)}
 .obl.home{fill:var(--gold);animation:var(--t-map-home-animation)}
 @keyframes home{0%,100%{fill:var(--gold)}50%{fill:var(--gold-2)}}
 .route{fill:none;stroke:var(--amber);stroke-width:2.2;stroke-linecap:round;stroke-dasharray:var(--len) var(--len);stroke-dashoffset:var(--len);opacity:.9}
@@ -592,6 +592,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .geo__base{margin-top:18px;padding:18px 20px;border-radius:12px;background:var(--white);display:grid;gap:6px;font-size:14.5px;color:var(--ink-2);box-shadow:0 6px 18px rgba(6,43,92,.06)}
 .geo__base .num{color:var(--ink);font-weight:500}
 .geo__hover{min-height:1.4em;font:600 12px/1.4 var(--f-m);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-top:12px;text-align:center}
+.geo__note{margin:12px 0 0;color:var(--ink-2);font-size:13px;line-height:1.5}
 
 /* ═══ S08 ЗАЯВКА ═══ */
 .act{display:grid;gap:clamp(28px,4vw,56px);max-width:1180px;margin:0 auto}

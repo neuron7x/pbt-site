@@ -17,26 +17,39 @@ class CopySurface(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.parts: list[str] = []
+        self.jsonld_sources: list[str] = []
+        self._jsonld_chunks: list[str] | None = None
         self.ignored = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         data = dict(attrs)
-        if tag in ("script", "style"):
+        if tag == "script":
             self.ignored += 1
+            if (data.get("type") or "").lower() == "application/ld+json":
+                self._jsonld_chunks = []
+            return
+        if tag == "style":
+            self.ignored += 1
+            return
         if self.ignored:
             return
-        if tag == "meta" and (data.get("name") == "description" or data.get("property") == "og:description"):
+        if tag == "meta" and (data.get("name") in ("description", "twitter:title", "twitter:description") or data.get("property") in ("og:title", "og:description")):
             self.parts.append(data.get("content") or "")
         for key in ("alt", "aria-label", "placeholder"):
             if data.get(key):
                 self.parts.append(data[key] or "")
 
     def handle_endtag(self, tag: str) -> None:
+        if tag == "script" and self._jsonld_chunks is not None:
+            self.jsonld_sources.append("".join(self._jsonld_chunks))
+            self._jsonld_chunks = None
         if tag in ("script", "style"):
             self.ignored = max(0, self.ignored - 1)
 
     def handle_data(self, data: str) -> None:
-        if not self.ignored:
+        if self._jsonld_chunks is not None:
+            self._jsonld_chunks.append(data)
+        elif not self.ignored:
             self.parts.append(data)
 
     @property
@@ -44,11 +57,33 @@ class CopySurface(HTMLParser):
         return " ".join(" ".join(self.parts).split())
 
 
+def _contains_key(node: object, key: str) -> bool:
+    if isinstance(node, dict):
+        return key in node or any(_contains_key(value, key) for value in node.values())
+    if isinstance(node, list):
+        return any(_contains_key(value, key) for value in node)
+    return False
+
+
 def verify(page: str, catalog: dict, claims: dict, terminology: dict) -> list[str]:
     errors: list[str] = []
     surface = CopySurface()
     surface.feed(page)
     text = surface.visible
+    if not surface.jsonld_sources:
+        errors.append("structured-data-missing")
+    for source in surface.jsonld_sources:
+        try:
+            structured = json.loads(source)
+        except json.JSONDecodeError:
+            errors.append("structured-data-malformed")
+            continue
+        if _contains_key(structured, "areaServed"):
+            errors.append("unverified-service-area-structured-data")
+    if 'class="obl served"' in page:
+        errors.append("map-declares-unverified-served-regions")
+    if "Регіони — за запитом" not in text or "не підтверджена зона виїзду" not in text:
+        errors.append("unverified-region-disclaimer-missing")
     fleet = catalog.get("fleet", [])
     categories = catalog.get("cats", [])
     all_cats = {item.get("id") for item in categories}

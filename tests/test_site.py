@@ -146,7 +146,7 @@ def test_sections_reveal_and_counters_finish(page_factory):
     assert pg.evaluate('[...document.querySelectorAll("#roboty .rv, #dokaz .rv")].every(e => e.classList.contains("is-in"))')
     assert pg.evaluate('[...document.querySelectorAll("#roboty .rv")].every(e => getComputedStyle(e).opacity === "1")')
     nums = pg.evaluate('[...document.querySelectorAll("#dokaz [data-count]")].map(e => e.textContent)')
-    assert nums == ['32', '9', '70 м'], nums
+    assert nums == ['32', '8', '70 м'], nums
     assert pg.locator('#geoMap .route').count() == 8 and pg.locator('#geoMap .beacon').count() == 1   # 8 маршрутів з Полтави
     assert pg.evaluate('document.getElementById("partners").children.length') == len(DATA['partners']) * 2  # стрічка подвоєна
 
@@ -181,11 +181,13 @@ def test_mobile_menu_opens_and_closes(page_factory):
     assert pg.locator('#menu').is_hidden()
 
 
-def test_geo_map_marks_home_and_served(page_factory):
+def test_geo_map_marks_home_and_inquiry_regions(page_factory):
     pg = page_factory()
     assert pg.locator('#geoMap .obl').count() >= 25
-    assert pg.locator('#geoMap .obl.served').count() == len(DATA['regions']) + 1   # + м. Київ як окремий контур у Київській
+    assert pg.locator('#geoMap .obl.inquiry').count() == len(DATA['regions']) + 1   # + м. Київ як окремий контур у Київській
     assert pg.locator('#geoMap .obl.home').count() == 1
+    assert pg.locator('#geoList li:not(.home) span').all_text_contents() == ['за запитом'] * (len(DATA['regions']) - 1)
+    assert pg.locator('.geo__note').is_visible()
 
 
 def test_404_page(page_factory):
