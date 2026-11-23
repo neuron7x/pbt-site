@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "policy": "PREREGISTER BEFORE MEASUREMENT; NO TRACKING UNTIL PRIVACY APPROVAL",
+  "baseline_status": "not_measured",
+  "north_star": "qualified_lead_rate",
+  "definitions": {
+    "qualified_lead": "A human-confirmed request containing a feasible service type, site, contact channel, and plausible timing; deduplicated by CRM lead ID.",
+    "denominator": "eligible human sessions when privacy-approved analytics exists; otherwise do not report conversion rate",
+    "guards": [
+      "form_errors_per_submit",
+      "contact_consistency",
+      "accessibility_regressions",
+      "page_load_vitals",
+      "duplicate_and_spam_leads"
+    ]
+  },
+  "candidates": [
+    {
+      "id": "E-COPY-01",
+      "hypothesis": "An object-first industrial headline increases the fraction of technically qualified leads compared with the old generic headline.",
+      "control": "Спецтехніка для складних робіт",
+      "variant": "Важкі умови. Техніка під об’єкт.",
+      "primary_metric": "qualified_lead_rate",
+      "secondary_metrics": [
+        "lead_to_contacted_rate",
+        "lead_to_quoted_rate"
+      ],
+      "status": "not_started",
+      "assignment": "stable client-side randomization only after approved measurement and baseline",
+      "stop_rule": "predefined evaluation window and power calculation required; never choose winner from raw click uplift"
+    },
+    {
+      "id": "E-COPY-02",
+      "hypothesis": "Making historical calculator rates explicit reduces misleading price expectations while preserving the share of viable inquiries.",
+      "control": "Current historical-rate footnote",
+      "variant": "Proximate, explicit historical-rate qualification",
+      "primary_metric": "qualified_quote_request_rate",
+      "secondary_metrics": [
+        "pricing_objection_rate",
+        "lead_abandonment"
+      ],
+      "status": "not_started",
+      "assignment": "pre-register; if low traffic use moderated task study instead of false statistical confidence",
+      "stop_rule": "No declaration of benefit without outcome evidence"
+    }
+  ],
+  "data_governance": {
+    "crm_contract": "Do not modify /api/v1/site/leads or PBT signature; join outcomes inside authorized CRM only.",
+    "privacy": "No analytics, session recording, fingerprinting or third-party tags in this PR.",
+    "causality": "Trends are associations absent randomized holdout; do not publish uplift."
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "language": "uk-UA",
+  "tone": "Industrial Exactitude",
+  "preferred": [
+    {
+      "term": "заявка",
+      "use": "Надіслати заявку / запит",
+      "why": "A lead is a request, not a reservation"
+    },
+    {
+      "term": "каталог",
+      "use": "позиції каталогу",
+      "why": "Avoid inferring ownership or availability"
+    },
+    {
+      "term": "подача",
+      "use": "подача техніки, маршрут, габарити",
+      "why": "Specific operation rather than vague delivery"
+    },
+    {
+      "term": "екскаватор-амфібія",
+      "use": "екскаватор-амфібія",
+      "why": "Precise class"
+    },
+    {
+      "term": "трал",
+      "use": "трал; вантажопідйомність, т",
+      "why": "Specify nominal capacity and actual conditions"
+    },
+    {
+      "term": "вартість",
+      "use": "орієнтовний розрахунок за історичними ставками",
+      "why": "Do not imply approved price"
+    },
+    {
+      "term": "документи",
+      "use": "документи конкретної партії — за підтвердженням",
+      "why": "Not all certificates universal"
+    },
+    {
+      "term": "виїзд",
+      "use": "можливість виїзду узгоджується",
+      "why": "No unverified dispatch SLA"
+    }
+  ],
+  "avoid": [
+    {
+      "term": "власний парк",
+      "reason": "No proof of title/lease and fleet availability"
+    },
+    {
+      "term": "кращі в Україні / №1",
+      "reason": "No comparative sampling or metric"
+    },
+    {
+      "term": "ціни від",
+      "reason": "Source catalog tariff discrepancy and unknown VAT"
+    },
+    {
+      "term": "гарантований виїзд",
+      "reason": "No SLA"
+    },
+    {
+      "term": "працюємо 24/7",
+      "reason": "Hours unknown"
+    },
+    {
+      "term": "всі сертифікати",
+      "reason": "Batch-specific documents unverified"
+    },
+    {
+      "term": "постійно є в наявності",
+      "reason": "No inventory sync"
+    },
+    {
+      "term": "заявка = бронювання",
+      "reason": "CRM lead does not create a deal"
+    }
+  ],
+  "syntax": [
+    "One claim per sentence; actor–action–object–condition.",
+    "Prefer tangible nouns and verbs over adjectives or superlatives.",
+    "Expose constraints next to amounts and actions; do not bury them in footer.",
+    "No countdowns, fake urgency, testimonials, invented customer logos.",
+    "Write Ukrainian copy uniquely for this site; no copied competitor taglines."
+  ]
+}

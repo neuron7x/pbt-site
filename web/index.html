@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ПЛЕЙНБУД — оренда спецтехніки в Полтаві: амфібії, крани, трали, сипучі матеріали</title>
-<meta name="description" content="ПЛЕЙНБУД: оренда спецтехніки з оператором у Полтаві та ще 8 областях. Екскаватори-амфібії, автокрани до 120 т, трали до 60 т, пісок і щебінь. Каталог, орієнтовний розрахунок і заявка на техніку.">
+<title>ПЛЕЙНБУД — оренда спецтехніки в Полтаві | Амфібії, крани, трали</title>
+<meta name="description" content="Екскаватори-амфібії, автокрани, трали й сипучі матеріали. Каталог техніки, попередній розрахунок за історичними ставками та заявка під умови об’єкта.">
 <meta name="theme-color" content="#0D6AE0">
 <meta property="og:title" content="ПЛЕЙНБУД">
-<meta property="og:description" content="Спецтехніка для складних робіт. Амфібії, крани й трали з оператором і пальним. Полтава та ще 8 областей.">
+<meta property="og:description" content="Важкі умови. Техніка під об’єкт. Водойми, земляні роботи, негабарит. Визначте параметри й надішліть запит.">
 <meta property="og:image" content="media/logo/og-plainbud.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -54,7 +54,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Ціна</a><a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a>
   </nav>
   <a class="nav__phone" href="tel:+380675550317" data-phone>067 555 03 17</a>
-  <a class="btn btn--sm nav__cta" href="#zapyt" data-req="rent">Викликати техніку</a>
+  <a class="btn btn--sm nav__cta" href="#zapyt" data-req="rent">Надіслати запит</a>
   <div class="theme-switch" role="group" aria-label="Візуальна тема сайту">
     <button class="theme-switch__button" type="button" data-theme-choice="sky" aria-label="Тема Небо і золото" aria-pressed="true">Небо</button>
     <button class="theme-switch__button" type="button" data-theme-choice="precision" aria-label="Графіт — Industrial Precision" aria-pressed="false">Графіт</button>
@@ -94,16 +94,16 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div class="hero__sky2" aria-hidden="true"></div>
     <canvas id="spark" class="hero__spark" aria-hidden="true"></canvas>
     <div class="hero__center" id="heroCenter">
-      <p class="eyebrow">Полтава · 9 областей</p>
+      <p class="eyebrow">Полтава · вода / ґрунт / негабарит</p>
       <div class="logo-hero" role="img" aria-label="ПЛЕЙНБУД"><img class="logo-hero__img" src="media/logo/plainbud-logo.webp" width="960" height="352" alt="" fetchpriority="high" decoding="async"><video class="logo-hero__anim" id="logoAnim" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video></div>
-      <h1 id="heroTitle"><span class="line">Спецтехніка</span> <span class="line" style="display:block">для складних робіт</span></h1>
-      <p class="hero__lead">Амфібії, крани, трали. З оператором і пальним.</p>
-      <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Порахувати зміну</a></div>
+      <h1 id="heroTitle"><span class="line">Важкі умови.</span> <span class="line" style="display:block">Техніка під об’єкт.</span></h1>
+      <p class="hero__lead">Амфібії для водойм. Крани для підйому. Трали для негабариту. Не вгадуйте машину — опишіть задачу.</p>
+      <div class="row"><a class="btn" href="#zapyt" data-req="rent">Надіслати запит</a><a class="btn btn--ghost" href="#cina">Орієнтовний розрахунок</a></div>
       <ul class="hero__stats" aria-label="Коротко про парк">
-        <li><b data-count="32">32</b><span>одиниці</span></li>
-        <li><b data-count="120" data-suffix=" т">120 т</b><span>кран</span></li>
-        <li><b data-count="60" data-suffix=" т">60 т</b><span>трал</span></li>
-        <li><b data-count="9">9</b><span>областей</span></li>
+        <li><b data-count="32">32</b><span>позиції каталогу</span></li>
+        <li><b data-count="120" data-suffix=" т">120 т</b><span>кран у каталозі</span></li>
+        <li><b data-count="60" data-suffix=" т">60 т</b><span>трал у каталозі</span></li>
+        <li><b data-count="8">8</b><span>категорій техніки</span></li>
       </ul>
     </div>
     <p class="hero__hint" aria-hidden="true">Гортайте</p>
@@ -118,15 +118,15 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <section class="sec on-light s-jobs" id="roboty">
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Роботи</p><h2>Що саме<span>зробимо</span></h2>
-      <p class="lead">П’ять видів робіт, за якими до нас дзвонять найчастіше. Техніка з оператором і пальним, подача тралом, акт виконаних робіт.</p>
+      <p class="eyebrow">Роботи</p><h2>Різні умови.<span>Конкретні машини.</span></h2>
+      <p class="lead">Вода, ґрунт, перевезення негабариту, розчищення та демонтаж. Виберіть напрям, а умови виконання уточнимо за параметрами об’єкта.</p>
     </div>
     <div class="jobs" id="jobs">
-      <article class="job"><figure><img src="media/video/job-voda.webp" alt="Довгорукий екскаватор очищає водойму" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-voda" poster="media/video/job-voda.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">01</span></figure><div class="job__body"><h3>Очищення водойм</h3><p class="job__v">Амфібія заходить туди, куди берегова техніка не дійде.</p><ul class="job__b"><li>Днопоглиблення</li><li>Мул, очерет, корчі</li><li>Намив земснарядом</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Екскаватор-амфібія">Замовити</a></div></article>
-      <article class="job"><figure><img src="media/video/job-zemlia.webp" alt="Екскаватор вантажить ґрунт у самоскид" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-zemlia" poster="media/video/job-zemlia.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">02</span></figure><div class="job__body"><h3>Земляні роботи</h3><p class="job__v">Котлован, траншея, планування — рахуємо за зміну, не за обіцянки.</p><ul class="job__b"><li>Риття котлованів</li><li>Розробка ґрунту</li><li>Планування бульдозером</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Гусеничний екскаватор 22 т">Замовити</a></div></article>
-      <article class="job"><figure><img src="media/video/job-trans.webp" alt="Екскаватор JCB на тралі" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-trans" poster="media/video/job-trans.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">03</span></figure><div class="job__body"><h3>Перевезення негабариту</h3><p class="job__v">Трал 40 або 60 т — техніка на об’єкті в домовлений день.</p><ul class="job__b"><li>Трал до 60 т</li><li>Вивіз будівельного сміття</li><li>Пісок і щебінь самоскидами</li></ul><a class="job__go" href="#zapyt" data-req="transport" data-subject="Перевезення техніки тралом">Замовити</a></div></article>
-      <article class="job"><figure><img src="media/video/job-lis.webp" alt="Екскаватор корчує пні на березі" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-lis" poster="media/video/job-lis.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">04</span></figure><div class="job__body"><h3>Розліснення, корчування</h3><p class="job__v">Мульчер і дробарка замість бригади з пилами.</p><ul class="job__b"><li>Вирубка дерев</li><li>Корчування коренів</li><li>Мульчування порослі</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Мульчер">Замовити</a></div></article>
-      <article class="job"><figure><img src="media/video/job-demont.webp" alt="Автокран знімає панелі даху при демонтажі" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-demont" poster="media/video/job-demont.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">05</span></figure><div class="job__body"><h3>Демонтаж</h3><p class="job__v">Гідромолот, гідроножиці, кран — від стіни до вивозу.</p><ul class="job__b"><li>Знесення будівель</li><li>Гідромолот, гідроножиці</li><li>Розбір завалів автокраном</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Демонтаж: екскаватор з гідромолотом">Замовити</a></div></article>
+      <article class="job"><figure><img src="media/video/job-voda.webp" alt="Довгорукий екскаватор очищає водойму" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-voda" poster="media/video/job-voda.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">01</span></figure><div class="job__body"><h3>Очищення водойм</h3><p class="job__v">Амфібії для водойм, мілководдя й ділянок зі складним під’їздом. Можливість роботи залежить від умов об’єкта.</p><ul class="job__b"><li>Днопоглиблення</li><li>Мул, очерет, корчі</li><li>Намив земснарядом</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Екскаватор-амфібія">Замовити</a></div></article>
+      <article class="job"><figure><img src="media/video/job-zemlia.webp" alt="Екскаватор вантажить ґрунт у самоскид" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-zemlia" poster="media/video/job-zemlia.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">02</span></figure><div class="job__body"><h3>Земляні роботи</h3><p class="job__v">Котлован, траншея, планування. Вкажіть ґрунт, обсяг і доступ на майданчик.</p><ul class="job__b"><li>Риття котлованів</li><li>Розробка ґрунту</li><li>Планування бульдозером</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Гусеничний екскаватор 22 т">Замовити</a></div></article>
+      <article class="job"><figure><img src="media/video/job-trans.webp" alt="Екскаватор JCB на тралі" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-trans" poster="media/video/job-trans.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">03</span></figure><div class="job__body"><h3>Перевезення негабариту</h3><p class="job__v">Перевезення спецтехніки й негабариту. Маршрут, габарити та дату подачі погоджуємо окремо.</p><ul class="job__b"><li>Трал до 60 т</li><li>Вивіз будівельного сміття</li><li>Пісок і щебінь самоскидами</li></ul><a class="job__go" href="#zapyt" data-req="transport" data-subject="Перевезення техніки тралом">Замовити</a></div></article>
+      <article class="job"><figure><img src="media/video/job-lis.webp" alt="Екскаватор корчує пні на березі" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-lis" poster="media/video/job-lis.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">04</span></figure><div class="job__body"><h3>Розліснення, корчування</h3><p class="job__v">Мульчери й техніка для корчування: вибір залежить від порослі, рельєфу та доступу.</p><ul class="job__b"><li>Вирубка дерев</li><li>Корчування коренів</li><li>Мульчування порослі</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Мульчер">Замовити</a></div></article>
+      <article class="job"><figure><img src="media/video/job-demont.webp" alt="Автокран знімає панелі даху при демонтажі" width="640" height="360" loading="lazy" decoding="async"><video data-video="job-demont" poster="media/video/job-demont.webp" aria-hidden="true" tabindex="-1"></video><span class="job__n">05</span></figure><div class="job__body"><h3>Демонтаж</h3><p class="job__v">Гідромолот, гідроножиці, кран. Підбір залежить від конструкцій і плану демонтажу.</p><ul class="job__b"><li>Знесення будівель</li><li>Гідромолот, гідроножиці</li><li>Розбір завалів автокраном</li></ul><a class="job__go" href="#zapyt" data-req="rent" data-subject="Демонтаж: екскаватор з гідромолотом">Замовити</a></div></article>
     </div>
   </div>
 </section>
@@ -140,7 +140,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   </div>
   <div class="cine__head">
     <p class="eyebrow">Масштаб робіт</p>
-    <h2 id="cineTitle">Робота різна.<span>Підхід один.</span></h2>
+    <h2 id="cineTitle">Різні ландшафти.<span>Різні машини.</span></h2>
     <p class="cine__note">Ілюстративна зйомка, не техніка ПЛЕЙНБУД. Кадри техніки — у розділі «Кадри з об’єктів».</p>
   </div>
   <ol class="cine__chs" id="cine"></ol>
@@ -152,12 +152,12 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#0A57C2" d="M0,60 C240,100 480,10 720,40 C960,70 1200,90 1440,30 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Техніка</p><h2>32 одиниці<span>у 8 категоріях</span></h2>
-      <p class="lead">Оберіть техніку під своє завдання. Для оренди вказано погодинну ставку, для перевезень — ціну за кілометр. Договірну вартість уточнюємо за умовами об’єкта.</p>
+      <p class="eyebrow">Техніка</p><h2>32 позиції каталогу<span>у 8 категоріях</span></h2>
+      <p class="lead">Від екскаваторів-амфібій до автокранів і тралів. Каталог показує типи й параметри; доступність машини, спосіб подачі та ставку підтверджують окремо.</p>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Категорії техніки"></div>
     <div class="park" id="park" aria-live="polite"><p class="content-fallback">Каталог тимчасово недоступний. <a href="tel:+380675550317">Зателефонуйте диспетчеру</a>.</p></div>
-    <p class="park__note">Ставки з вихідного каталогу станом на 03.10.2026. Актуальну вартість і умови підтверджуємо після уточнення об’єкта, обсягу й строків.</p>
+    <p class="park__note">Позиції та ставки перенесено з каталогу від 03.10.2026. Це не підтвердження наявності техніки чи чинності тарифів. Фінальну пропозицію формують після уточнення об’єкта.</p>
   </div>
 </section>
 
@@ -166,8 +166,8 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#FFFFFF" d="M0,40 C240,0 480,90 720,60 C960,30 1200,10 1440,60 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Ціна</p><h2>Скільки коштує<span>зміна</span></h2>
-      <p class="lead">Оберіть машину, задайте кількість годин і відстань подачі — розрахунок одразу тут, без дзвінка. Подачу тралом рахуємо за кілометрами, трал добираємо за масою машини.</p>
+      <p class="eyebrow">Розрахунок</p><h2>Спочатку параметри.<span>Потім сума.</span></h2>
+      <p class="lead">Оберіть машину, години роботи й відстань подачі. Калькулятор показує модельну суму за історичними ставками. Це не чинна комерційна пропозиція.</p>
     </div>
     <div class="calc rv rv--scale">
       <form class="calc__form" id="calcForm" aria-label="Калькулятор зміни">
@@ -179,9 +179,9 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
         <p class="eyebrow">Орієнтовна вартість</p>
         <p class="total" id="cTotal">—</p>
         <div class="lines" id="cLines"></div>
-        <p class="calc__note">Орієнтовно, за вихідним прайсом від 03.10.2026. Мінімальна зміна, простій, нічна робота та ПДВ — уточнюємо під час підтвердження заявки.</p>
+        <p class="calc__note">Розрахунок за ставками від 03.10.2026: актуальність не підтверджена. ПДВ, мінімальна зміна, простій, нічна робота й окремі витрати на подачу не погоджені. Суму перевіряють перед замовленням.</p>
         <p class="content-fallback" id="calcUnavailable">Розрахунок тимчасово недоступний. <a href="tel:+380675550317">Зателефонуйте диспетчеру</a>.</p>
-        <p class="calc__cta"><button class="btn" type="button" id="cOrder" data-req="rent" disabled>Замовити цю зміну</button></p>
+        <p class="calc__cta"><button class="btn" type="button" id="cOrder" data-req="rent" disabled>Додати параметри до заявки</button></p>
       </div>
     </div>
   </div>
@@ -192,11 +192,11 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#EAF7FF" d="M0,50 C240,90 480,20 720,50 C960,80 1200,40 1440,70 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Матеріали</p><h2>Сипучі матеріали<span>з паспортом якості</span></h2>
-      <p class="lead">Пісок, гранітний щебінь усіх фракцій, відсів, ЩПС і бут. Доставка самоскидами на об’єкт. На кожну фракцію — паспорт якості й радіаційний сертифікат.</p>
+      <p class="eyebrow">Матеріали</p><h2>Пісок. Щебінь. Відсів.<span>Конкретна фракція.</span></h2>
+      <p class="lead">Пісок, гранітний щебінь, відсів, ЩПС і бут у каталозі. У запиті зазначте фракцію, обсяг та адресу; умови доставки й документи партії потребують підтвердження.</p>
     </div>
     <div class="mats" id="mats"><p class="content-fallback">Каталог матеріалів тимчасово недоступний. <a href="tel:+380675550317">Зателефонуйте диспетчеру</a>.</p></div>
-    <div class="mats__note rv"><b>Документи йдуть із партією</b><span>Паспорт якості фракції, сертифікат відповідності ЩПС, протоколи випробувань піску, радіаційний сертифікат — надсилаємо до відвантаження, щоб технагляд не зупиняв роботу.</span></div>
+    <div class="mats__note rv"><b>Документи — під конкретну партію</b><span>Запитайте наявні протоколи випробувань і документи відповідності до погодження поставки. Не кожен документ автоматично поширюється на кожну фракцію.</span></div>
   </div>
 </section>
 
@@ -205,13 +205,13 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#0A57C2" d="M0,30 C240,90 480,60 720,30 C960,0 1200,60 1440,50 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Кадри з об’єктів</p><h2>Не слайди —<span>жива техніка</span></h2>
-      <p class="lead">Водойми, земляні роботи, доставка техніки. Техніка в роботі на об’єктах.</p>
+      <p class="eyebrow">Відеодобірка</p><h2>Кадр показує.<span>Джерело підтверджує.</span></h2>
+      <p class="lead">Вода, ґрунт, транспортування. Відео з вихідної добірки ілюструє види робіт; належність кадрів новому бренду та права на публікацію ще перевіряються.</p>
     </div>
     <div class="facts rv">
-      <div class="fact"><b data-count="32">32</b><span>одиниці техніки у 8 категоріях — від мінінавантажувача до крана 120 т</span></div>
-      <div class="fact"><b data-count="9">9</b><span>областей виїзду. Полтава та регіони</span></div>
-      <div class="fact"><b data-count="70" data-suffix=" м">70 м</b><span>стріла найбільшого автокрана (Liebherr LTM 1120), трал до 60 т</span></div>
+      <div class="fact"><b data-count="32">32</b><span>позиції каталогу у 8 категоріях — від навантажувачів до автокрана 120 т</span></div>
+      <div class="fact"><b data-count="8">8</b><span>категорій техніки в каталозі; фактичну доступність підтверджують перед виїздом</span></div>
+      <div class="fact"><b data-count="70" data-suffix=" м">70 м</b><span>заявлена в каталозі довжина стріли Liebherr LTM 1120; наявність машини уточнюють</span></div>
     </div>
     <div class="reel" id="reel"></div>
     <p class="eyebrow" style="margin-top:clamp(36px,5vw,56px)">Ілюстративна добірка логотипів</p>
@@ -225,8 +225,8 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#EAF7FF" d="M0,60 C240,20 480,90 720,50 C960,10 1200,70 1440,40 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Де працюємо</p><h2>Полтава<span>і ще 8 областей</span></h2>
-      <p class="lead">Техніка їде тралом із Полтави. Чим ближче об’єкт — тим дешевша подача: калькулятор вище рахує саме це.</p>
+      <p class="eyebrow">Географія запитів</p><h2>Полтава<span>та регіони подачі</span></h2>
+      <p class="lead">Вкажіть місце робіт, обмеження під’їзду та бажану дату. Маршрут, можливість виїзду й ціну подачі перевіряють під кожен запит.</p>
     </div>
     <div class="geo">
       <div class="geo__map" id="geoMap"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 690" role="img" aria-labelledby="mapTitle"><title id="mapTitle">Карта областей України: де працює ПЛЕЙНБУД</title>
@@ -272,8 +272,8 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#0A57C2" d="M0,50 C240,10 480,80 720,60 C960,40 1200,0 1440,50 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Заявка</p><h2>Викликати<span>техніку</span></h2>
-      <p class="lead">Заповніть форму — ми передзвонимо в робочий час і підтвердимо машину, дату й ціну. Або зателефонуйте: диспетчер відповість швидше.</p>
+      <p class="eyebrow">Заявка</p><h2>Не вгадуйте.<span>Опишіть об’єкт.</span></h2>
+      <p class="lead">Зазначте вид робіт, місце, строки й контакт. Форма фіксує запит, а не бронює техніку. Умови, тариф і можливість виїзду погоджуються окремо.</p>
     </div>
     <ol class="request-steps" aria-label="Як замовити техніку">
       <li><span class="num">01</span><h3>Розкажіть про об’єкт</h3><p>Завдання, адреса, бажана дата. Можна обрати машину в каталозі або описати потрібну роботу.</p></li>
@@ -283,7 +283,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div class="act">
       <aside class="act__aside rv">
         <div class="channels" id="channels"><a href="tel:+380675550317"><b>067 555 03 17</b><span>Телефон</span></a><a href="mailto:plainbud@gmail.com"><b>plainbud@gmail.com</b><span>Email</span></a></div>
-        <p class="act__note">Якщо зв’язок обірветься під час надсилання, повторне натискання не створить дубліката заявки.</p>
+        <p class="act__note">Якщо відповідь сервера не надійшла, повторіть ту саму заявку у цій вкладці: механізм відновлення повторно використовує її ключ протягом обмеженого часу.</p>
         <div class="request-faq">
           <details><summary>Не знаю, яка техніка потрібна</summary><p>Опишіть завдання у формі: що потрібно зробити, де розташований об’єкт і чи є під’їзд. Техніку доберемо під час розмови.</p></details>
           <details><summary>Що враховано в калькуляторі?</summary><p>Погодинну оренду й розрахункову подачу тралом. Мінімальну зміну, простій, нічну роботу, ПДВ та подачу автокрана уточнюємо окремо. Це орієнтир для планування.</p></details>
