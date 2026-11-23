@@ -1,6 +1,6 @@
 # ПЛЕЙНБУД — публічний сайт
 
-Техніка, що працює там, де інші не доїдуть. Оренда спецтехніки з оператором у Полтаві та 9 областях.
+Важкі умови. Техніка під об’єкт. Каталог і заявка для оренди спецтехніки у Полтаві; фактичні умови виїзду, доступність та тарифи потребують підтвердження власника.
 
 Назву, контакти та реквізити ТОВ «ПЛЕЙНБУД» оновлено за карткою компанії, наданою власником 21.11.2026.
 Межі перейменування й сумісність з наявною CRM: [`docs/PLAINBUD_REBRAND.md`](docs/PLAINBUD_REBRAND.md).
@@ -49,3 +49,12 @@ docs/       DESIGN.md · PROVENANCE.md · RELEASE_STATUS.md
 ## Assurance
 
 What the system guarantees and what it does not: `docs/ASSURANCE.md`. Production state and missing external facts: `docs/PRODUCTION_HOLD.md`.
+
+## Мова бренду та доказовість
+
+- [copy/style-guide.md](copy/style-guide.md) — індустріальний voice, UX copy, SEO й винятки.
+- [copy/claim-ledger.json](copy/claim-ledger.json) — класи доказів і заблоковані бізнес-обіцянки.
+- [copy/terminology.json](copy/terminology.json) — нормовані назви, антисуперлативи.
+- [copy/experiment-register.json](copy/experiment-register.json) — незапущені CRO-гіпотези з guardrails.
+- [docs/COPY_AUDIT_20261123.md](docs/COPY_AUDIT_20261123.md) — реєстр дефектів і меж.
+- `python3 tools/copy_gate.py` — статичний gate, який запускає також `tests/test_copy_gate.py` через `make test`.

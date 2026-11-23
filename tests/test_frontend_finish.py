@@ -61,7 +61,7 @@ def test_transport_cards_choose_transport_request(page_factory):
 
 def test_calculator_carries_quantities_and_preserves_customer_details(page_factory):
     page = page_factory(reduced=True)
-    expect(page.locator('#cOrder')).to_have_text('Замовити цю зміну')
+    expect(page.locator('#cOrder')).to_have_text('Додати параметри до заявки')
     page.locator('#name').fill('Олена')
     page.locator('#hours').fill('99')
     page.locator('#km').fill('999')
@@ -246,7 +246,7 @@ def test_known_contacts_show_before_config_request_finishes(browser, server):
         page.wait_for_function('() => window.PBT && document.querySelectorAll("#park .unit").length > 0')
         assert page.evaluate('window.__configPending === true')
         expect(page.locator('#channels a[href="tel:+380675550317"]')).to_have_count(1)
-        expect(page.locator('#cOrder')).to_have_text('Замовити цю зміну')
+        expect(page.locator('#cOrder')).to_have_text('Додати параметри до заявки')
     finally:
         ctx.close()
 
