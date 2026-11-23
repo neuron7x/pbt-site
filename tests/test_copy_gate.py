@@ -61,4 +61,3 @@ def test_hero_cta_is_request_and_calculator_is_not_booking():
     assert "Замовити цю зміну" not in html
     for literal in ('name="type" value="rent"', 'name="type" value="material"', 'name="type" value="transport"', 'name="type" value="other"'):
         assert literal in html
-
