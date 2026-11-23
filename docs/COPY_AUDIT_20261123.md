@@ -56,3 +56,10 @@ Fail on a new unconditional ownership, leadership, dispatch SLA, batch certifica
 
 No release or merge authorization is expressed by this document.
 
+
+## Follow-up: adjacent price provenance and operational titles
+
+- Fleet and material prices are generated from data/catalog.json in web/js/site.js. A general note beneath the catalog does not ensure the user notices the date. This PR now places the dated provenance directly next to every numeric card rate; current tariff approval is **still blocked**.
+- The word «диспетчер» asserted a staff role not attested in business.json. User-facing fallbacks now invite a phone call without implying a separate dispatch department. This does not change the actual contact channel.
+- Hero eyebrow now explicitly states «Оренда спецтехніки · Полтава» to pair an original value proposition with the buyer's service/location vocabulary. Google Search Central title-link guidance is a design constraint, not evidence of higher rankings: https://developers.google.com/search/docs/appearance/title-link .
+- Browser test tests/test_frontend_finish.py checks that every rendered priced card carries the historical rate date; field date and prices still require an owner-signed snapshot before launch.

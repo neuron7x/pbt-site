@@ -315,7 +315,7 @@
         <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__cat">${esc(catName(u.cat))}</span></figure>
         <div class="unit__body"><h3>${esc(u.name)}</h3>
           ${u.specs.length ? `<dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl>` : `<p class="unit__purpose">${esc(unitPurpose(u))}</p>`}</div>
-        <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
+        <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)} · 03.10.2026</small>` : 'договірна'}</p>
           <button class="btn btn--sm" type="button" data-req="${u.cat === 'trans' ? 'transport' : 'rent'}" data-subject="${esc(u.name)}">У заявку</button></div>
       </article>`).join('');
     const reveal1 = b => { if (chips.scrollWidth > chips.clientWidth + 1) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: motion() ? 'smooth' : 'auto' }); };
@@ -432,7 +432,7 @@
   function renderMats() {
     $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
       <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
-        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">У вихідному каталозі: ${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
+        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)} · 03.10.2026</small></p><p class="tile__doc">У вихідному каталозі: ${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
   }
   function renderProof() {
     const standalone = window.PBT_BUNDLE && !D.mp4Only;

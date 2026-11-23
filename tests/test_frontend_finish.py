@@ -258,3 +258,12 @@ def test_initial_deep_link_and_reload_reach_section(page_factory):
     page.reload(wait_until='networkidle')
     page.wait_for_function("""() => { const r = document.querySelector('#cina').getBoundingClientRect();
        return r.top >= 0 && r.top < innerHeight / 2; }""", timeout=5000)
+
+
+def test_historical_tariff_date_is_adjacent_to_every_card_price(page_factory):
+    page = page_factory(reduced=True)
+    park_prices = page.locator('#park .unit__price:not(.is-neg) small')
+    material_prices = page.locator('#mats .tile__price small')
+    assert park_prices.count() > 0 and material_prices.count() > 0
+    for price in park_prices.all() + material_prices.all():
+        assert '03.10.2026' in price.inner_text()
