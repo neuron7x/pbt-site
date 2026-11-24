@@ -161,6 +161,8 @@ def test_xray_draws_on_hover_only_for_fine_pointer(page_factory):
 
 def test_route_panel_prices_delivery_like_the_calculator(page_factory):
     pg = page_factory(1440, 900)
+    pg.evaluate("document.getElementById('geo').scrollIntoView({behavior:'instant'})")
+    pg.locator('#geoMap svg[data-ready="1"]').wait_for(state='attached')   # контури карти — ліниві дані
     D = _data(pg)
     served = [r for r in D['regions'] if r != 'Полтавська']
     assert set(served) == set(D['routes']['to']), 'кожна область виїзду має дорожню відстань'

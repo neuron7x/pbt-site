@@ -615,36 +615,51 @@
     const R = (D.routes && D.routes.to) || {};
     list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><button class="geo__pick" type="button" data-ua="${esc(r)}" aria-pressed="false" aria-controls="geoInfo"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'виїзд'}</span></button></li>`).join('');
     if (!svg) return;
-    $$('.obl', svg).forEach(p => { if (p.dataset.ua === home) p.classList.add('home'); });
-    /* маршрути з Полтави до кожної області — криві по центрах контурів, малюються при появі секції */
-    const center = p => { const b = p.getBBox(); return [b.x + b.width / 2, b.y + b.height / 2]; };
-    const homeP = $$('.obl', svg).find(p => p.dataset.ua === home); if (!homeP) return;
-    /* спершу всі читання геометрії, потім записи: getBBox/getTotalLength між appendChild змушували перераховувати розкладку
-       на кожній ітерації (Lighthouse 09.10: renderGeo 344 мс при CPU ×4). Довжину кривої Безьє — аналітично, без DOM. */
-    const build = () => {
-    const [hx, hy] = center(homeP);
-    const served = $$('.obl.served', svg).filter(p => p.dataset.ua && p.dataset.ua !== home && p.dataset.name !== 'Kyiv');
-    const ends = served.map(center);
-    const qlen = (x0, y0, x1, y1, x2, y2) => { let L = 0, px = x0, py = y0; for (let k = 1; k <= 24; k++) { const t = k / 24, u = 1 - t, x = u * u * x0 + 2 * u * t * x1 + t * t * x2, y = u * u * y0 + 2 * u * t * y1 + t * t * y2; L += Math.hypot(x - px, y - py); px = x; py = y; } return L; };
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.setAttribute('class', 'routes');
-    ends.forEach(([x, y], i) => {
-      const mx = (hx + x) / 2, my = (hy + y) / 2 - Math.abs(x - hx) * .18 - 14;
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', `M${hx.toFixed(1)},${hy.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`);
-      path.setAttribute('class', 'route'); path.dataset.ua = served[i].dataset.ua;
-      path.style.setProperty('--len', qlen(hx, hy, mx, my, x, y).toFixed(1)); path.style.setProperty('--d', `${.2 + i * .12}s`);
-      g.appendChild(path);
-    });
-    const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); ring.setAttribute('class', 'beacon-ring'); ring.setAttribute('cx', hx); ring.setAttribute('cy', hy); ring.setAttribute('r', 9);
-    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); dot.setAttribute('class', 'beacon'); dot.setAttribute('cx', hx); dot.setAttribute('cy', hy); dot.setAttribute('r', 6);
-    g.append(ring, dot); svg.appendChild(g);
-    };
-    build();   // на старті, не ліниво: getBBox посеред скролу давав ривок і «примар» (A/B 09.10, p95 951 → 387 мс)
     $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
     svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
     initRoutes(svg, list, home);
+    /* Контури — дані (media/map/oblasts.json, tools/geo_map.py), не 30 КБ gzip у критичному HTML. Вантажаться, коли секція
+       за ~1,5 екрана, будуються createElementNS без розбору розмітки; центри пораховано заздалегідь — без getBBox посеред
+       прокрутки (A/B 09.10: ривок 344 мс на CPU ×4). Збірка без сервера несе ті самі дані в D.geoMap. */
+    const NS = 'http://www.w3.org/2000/svg';
+    const qlen = (x0, y0, x1, y1, x2, y2) => { let L = 0, px = x0, py = y0; for (let k = 1; k <= 24; k++) { const t = k / 24, u = 1 - t, x = u * u * x0 + 2 * u * t * x1 + t * t * x2, y = u * u * y0 + 2 * u * t * y1 + t * t * y2; L += Math.hypot(x - px, y - py); px = x; py = y; } return L; };
+    function mount(map) {
+      if (!map || !Array.isArray(map.regions) || svg.querySelector('.obl')) return;
+      const shapes = document.createDocumentFragment();
+      for (const r of map.regions) {
+        const p = document.createElementNS(NS, 'path');
+        p.setAttribute('class', r.served ? 'obl served' : 'obl'); p.setAttribute('d', r.d);
+        p.dataset.name = r.name; p.dataset.ua = r.ua;
+        if (r.ua === home) p.classList.add('home');
+        shapes.appendChild(p);
+      }
+      svg.appendChild(shapes);
+      const homeR = map.regions.find(r => r.ua === home); if (!homeR) return;
+      const [hx, hy] = homeR.c;
+      const served = map.regions.filter(r => r.served && r.ua && r.ua !== home && r.name !== 'Kyiv');
+      const g = document.createElementNS(NS, 'g'); g.setAttribute('class', 'routes');
+      served.forEach((r, i) => {
+        const [x, y] = r.c, mx = (hx + x) / 2, my = (hy + y) / 2 - Math.abs(x - hx) * .18 - 14;
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', `M${hx.toFixed(1)},${hy.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`);
+        path.setAttribute('class', 'route'); path.dataset.ua = r.ua;
+        path.style.setProperty('--len', qlen(hx, hy, mx, my, x, y).toFixed(1)); path.style.setProperty('--d', `${.2 + i * .12}s`);
+        g.appendChild(path);
+      });
+      const ring = document.createElementNS(NS, 'circle'); ring.setAttribute('class', 'beacon-ring'); ring.setAttribute('cx', String(hx)); ring.setAttribute('cy', String(hy)); ring.setAttribute('r', '9');
+      const dot = document.createElementNS(NS, 'circle'); dot.setAttribute('class', 'beacon'); dot.setAttribute('cx', String(hx)); dot.setAttribute('cy', String(hy)); dot.setAttribute('r', '6');
+      g.append(ring, dot); svg.appendChild(g);
+      svg.dataset.ready = '1';
+      svg.dispatchEvent(new Event('mapready'));             // вибір, зроблений до приходу контурів, застосовується до них
+    }
+    const load = () => D.geoMap ? mount(D.geoMap)
+      : fetch('media/map/oblasts.json', { credentials: 'same-origin' }).then(r => (r.ok ? r.json() : null)).then(mount, () => { /* без карти лишається список областей */ });
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); load(); } }, { rootMargin: '150% 0px' });
+      io.observe($('#geoMap'));
+    } else load();
   }
 
   /* ───── МАРШРУТИ: область → відстань дорогою → ціна подачі тралом → калькулятор ───── */
@@ -673,6 +688,7 @@
       info.hidden = false;
     }
     list.addEventListener('click', e => { const b = e.target.closest('.geo__pick'); if (b) pick(b.dataset.ua); });
+    svg.addEventListener('mapready', () => { const b = $('.geo__pick[aria-pressed="true"]', list); if (b) pick(b.dataset.ua); });
     svg.addEventListener('click', e => { const p = e.target.closest('.obl'); if (p && p.dataset.ua && (R[p.dataset.ua] || p.dataset.ua === home)) pick(p.dataset.ua); });
     info.addEventListener('click', e => {
       const b = e.target.closest('.geo__calc'); if (!b) return;
