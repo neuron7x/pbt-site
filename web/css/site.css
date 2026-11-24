@@ -1086,7 +1086,6 @@ main section[id]{scroll-margin-top:88px}
 
 /* вирівнювання за лівою віссю заголовків; глибиномір без інверсії кольору */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .chips{justify-content:flex-start;margin:0 0 30px}
-@media (min-width:820px){S .chips{max-width:770px}}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .facts{max-width:none;margin:0 0 clamp(36px,5vw,56px)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .park__note,:is(:root[data-theme="sky"],:root:not([data-theme])) .proof__src{text-align:left;margin-left:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{mix-blend-mode:normal;color:#8D96A0}
@@ -1102,3 +1101,6 @@ main section[id]{scroll-margin-top:88px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure::after{content:"";position:absolute;inset:auto 0 0;height:38%;background:linear-gradient(180deg,transparent,rgba(5,8,13,.5));pointer-events:none}
 
 :is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(180deg,rgb(11, 16, 23),rgb(17, 24, 33));background-size:96px 96px,96px 96px,100% 100%}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle[aria-pressed=true]{background:#FDC501;border-color:#FDC501;color:#0B1017}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .dock__go:focus-visible{outline-color:#0B1017}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__m{background:#0B1017;color:#ECECE7;padding:3px 5px}
