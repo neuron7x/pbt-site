@@ -175,18 +175,33 @@ const functions = ['httpsUrl', 'proofUrl', 'renderProof'].map(name => {
   if (!found) throw new Error('Missing renderer dependency: ' + name);
   return found[0];
 });
-const esc = source.split('\n').find(line => line.trimStart().startsWith('const esc = '));
-if (!esc) throw new Error('Missing shared HTML escaping');
-const elements = {'#reel': {innerHTML: ''}, '#partners': {innerHTML: ''}};
+// Фабрика DOM сторінки (el, вартовий атрибутів, append, fill) — суцільний блок того самого site.js; нижче мінімальний DOM.
+const fStart = source.indexOf('  function el(');
+const fEnd = source.indexOf('\n', source.indexOf('  const fill = ', fStart));
+if (fStart < 0 || fEnd < 0) throw new Error('Missing DOM factory');
+const factoryBlock = source.slice(fStart, fEnd);
+const escText = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function node(tag) {
+  const n = {tag, attrs: {}, kids: [], style: {setProperty() {}},
+    setAttribute(k, v) { this.attrs[k] = String(v); },
+    set className(v) { this.attrs.class = v; },
+    append(...k) { this.kids.push(...k); },
+    replaceChildren() { this.kids = []; }};
+  return n;
+}
+const html = n => typeof n === 'string' ? escText(n)
+  : '<' + n.tag + Object.entries(n.attrs).map(([k, v]) => ' ' + k + '="' + escText(v) + '"').join('') + '>' + n.kids.map(html).join('') + '</' + n.tag + '>';
+const elements = {'#reel': node('div'), '#partners': node('ul')};
 const watched = [], selectors = [];
 const context = {
   D, URL, window: {PBT_BUNDLE: mode !== 'live'},
+  document: {createElement: node},
   $: selector => elements[selector],
   $$: selector => {selectors.push(selector); return D.proof;},
   watchVideo: proof => watched.push(proof.video)
 };
-vm.runInNewContext(esc + '\n' + functions.join('\n') + '\nrenderProof();', context);
-process.stdout.write(JSON.stringify({html: elements['#reel'].innerHTML, proof: D.proof, watched, selectors}));
+vm.runInNewContext(factoryBlock + '\n' + functions.join('\n') + '\nrenderProof();', context);
+process.stdout.write(JSON.stringify({html: elements['#reel'].kids.map(html).join(''), proof: D.proof, watched, selectors}));
 """
     run = subprocess.run([node, "-e", script, mode], cwd=ROOT,
                          capture_output=True, text=True, timeout=10, check=True)

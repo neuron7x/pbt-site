@@ -174,11 +174,11 @@
     ground(d);
   }
   function truck(d, o) {                                                           // тягач, трал, самоскид, напівпричіп
-    const kind = o.kind;
+    const variant = o.kind;
     d.main.push(poly([[312, 160], [312, 92], [352, 92], [372, 124], [372, 160]]));
     d.thin.push(poly([[318, 98], [348, 98], [362, 124], [318, 124]]));
     wheel(d, 350, 178, 16);
-    if (kind === 'dump') {
+    if (variant === 'dump') {
       d.main.push(rr(40, 150, 280, 14, 3));
       [80, 116, 280].forEach(x => wheel(d, x, 178, 16));
       d.main.push(poly([[44, 150], [32, 92], [298, 92], [300, 150]]));
@@ -187,7 +187,7 @@
       d.main.push(rr(236, 150, 136, 14, 3));
       [256, 288].forEach(x => wheel(d, x, 178, 16));
       d.main.push(rr(236, 140, 44, 10, 2));                                         // сідло
-      if (kind === 'semi') {
+      if (variant === 'semi') {
         d.main.push(rr(26, 132, 236, 14, 2));
         d.thin.push(line(26, 146, 26, 160), line(248, 146, 258, 150));
         [54, 86, 118].forEach(x => wheel(d, x, 178, 14));
@@ -220,7 +220,7 @@
   }
   const CLASS = { excavator: 'Гусеничний екскаватор', longreach: 'Екскаватор із довгою стрілою', amphibian: 'Екскаватор-амфібія',
     dozer: 'Бульдозер', crane: 'Автокран', loader: 'Колісний навантажувач', mulcher: 'Мульчер', grader: 'Автогрейдер',
-    roller: 'Каток', paver: 'Асфальтоукладач', crusher: 'Мобільна дробарка', lowboy: 'Тягач із тралом', semi: 'Тягач із напівпричепом', dump: 'Самоскид' };
+    roller: 'Коток', paver: 'Асфальтоукладач', crusher: 'Мобільна дробарка', lowboy: 'Тягач із тралом', semi: 'Тягач із напівпричепом', dump: 'Самоскид' };
 
   /* ── складання SVG ── */
   function el(name, attrs, parent) {
@@ -303,7 +303,7 @@
 
   /* Геометрія вильоту від осі повороту: r = L·cos θ, h = L·sin θ. Без висоти опори й прогину стріли. */
   function reach(boomM, angle) {
-    if (!(boomM > 0) || !(angle >= 0 && angle <= 90)) return null;
+    if (typeof boomM !== 'number' || !Number.isFinite(boomM) || boomM <= 0 || typeof angle !== 'number' || !(angle >= 0 && angle <= 90)) return null;   // лише скінченні числа: «42», ∞, NaN → null
     const a = angle * Math.PI / 180, r1 = x => Math.round(x * 10) / 10;
     return { r: r1(boomM * Math.cos(a)), h: r1(boomM * Math.sin(a)) };
   }
@@ -319,8 +319,9 @@
     const dg = el('g', { class: 'bp-dims' }, svg);
     geo.d.dims.forEach(dm => dimension(dg, dm));
     let setAngle = null;
-    if (geo.kind === 'crane') setAngle = craneBoom(svg, geo.extra.pivot, geo.extra.boomLen, meters(geo.o.boom));
-    if (setAngle) setAngle(geo.extra.angle);
+    const ex = geo.extra;
+    if (geo.kind === 'crane' && ex && ex.boomLen) setAngle = craneBoom(svg, ex.pivot, ex.boomLen, meters(geo.o.boom));
+    if (setAngle && ex) setAngle(ex.angle);
     return { svg, kind: geo.kind, cls: geo.cls, setAngle, boom: meters(geo.o.boom) };
   }
 

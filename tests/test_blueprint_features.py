@@ -33,7 +33,7 @@ def _module(page):
 
 
 def test_every_fleet_unit_has_a_drawing_without_invented_numbers(page_factory):
-    pg = _module(page_factory(1440, 900))
+    pg = _module(page_factory(1440, 900, bypass_csp=True))
     res = pg.evaluate("""() => PBT.fleet.map(u => {
         const r = PBTBlueprint.draw(u); if (!r) return {id: u.id, ok: false};
         const texts = [...r.svg.querySelectorAll('text')].filter(t => !t.closest('.bp-live')).map(t => t.textContent);
@@ -51,7 +51,7 @@ def test_every_fleet_unit_has_a_drawing_without_invented_numbers(page_factory):
 
 
 def test_reach_geometry_matches_formula_and_rejects_nonsense(page_factory):
-    pg = _module(page_factory(1440, 900))
+    pg = _module(page_factory(1440, 900, bypass_csp=True))
     for boom, angle in [(22, 0), (42, 38), (60, 45), (70, 80), (16.5, 90)]:
         got = pg.evaluate(f'PBTBlueprint.reach({boom}, {angle})')
         a = math.radians(angle)

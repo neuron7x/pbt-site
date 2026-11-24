@@ -1,149 +1,74 @@
 {
  "schema": "pbt-dom-sinks-v1",
  "sinks": {
-  "10fd0a87ced2fdabe716daa8": {
+  "34aaa06e14e8cd853c7ac0c2": {
    "file": "site.js",
-   "line": 1045,
-   "sink": ".innerHTML ="
-  },
-  "1b04d500a9cf7b897321ed94": {
-   "file": "site.js",
-   "line": 610,
-   "sink": ".innerHTML ="
-  },
-  "1f29d81c446e6a9b9362b47f": {
-   "file": "site.js",
-   "line": 747,
-   "sink": ".innerHTML ="
-  },
-  "26eddff4b6beae2fe1594de2": {
-   "file": "site.js",
-   "line": 1027,
-   "sink": ".innerHTML ="
-  },
-  "27b8df9630714d86b13e8a01": {
-   "file": "site.js",
-   "line": 409,
-   "sink": ".innerHTML ="
-  },
-  "27bca88c7a6477c5b8376bb5": {
-   "file": "site.js",
-   "line": 595,
-   "sink": ".innerHTML ="
+   "line": 67,
+   "sink": ".setAttribute("
   },
   "36066084db06d1d62f1c5122": {
    "file": "site.js",
-   "line": 728,
+   "line": 809,
    "sink": ".href ="
-  },
-  "3677724610d19b5e1bead521": {
-   "file": "site.js",
-   "line": 520,
-   "sink": ".innerHTML ="
-  },
-  "3befa4b60e6653472158c61e": {
-   "file": "site.js",
-   "line": 576,
-   "sink": ".innerHTML ="
   },
   "4a86e2ef94df587a3922d522": {
    "file": "site.js",
-   "line": 1030,
-   "sink": ".src ="
-  },
-  "4abcf0e6faf33c23f44ff3d5": {
-   "file": "site.js",
-   "line": 444,
+   "line": 1114,
    "sink": ".src ="
   },
   "4b0209349a849716f8d3be3a": {
    "file": "site.js",
-   "line": 130,
+   "line": 174,
    "sink": ".href ="
   },
-  "4dcc676143eaefbdcd6989f1": {
-   "file": "site.js",
-   "line": 616,
-   "sink": ".innerHTML ="
-  },
-  "4f86d52767ad03ed96acd1e5": {
-   "file": "site.js",
-   "line": 529,
-   "sink": ".innerHTML ="
-  },
-  "6c17070e6ab3637f69c0f0e0": {
-   "file": "site.js",
-   "line": 1016,
-   "sink": ".innerHTML ="
-  },
-  "6d2a15ddb61a46ab442e6b5d": {
-   "file": "site.js",
-   "line": 521,
-   "sink": ".innerHTML ="
+  "6092052d4fe0b73ff44acba4": {
+   "file": "blueprint.js",
+   "line": 228,
+   "sink": ".setAttribute("
   },
   "7bbc20ce1e4a7363a1bbd501": {
    "file": "site.js",
-   "line": 1032,
+   "line": 1116,
    "sink": ".src ="
   },
-  "86bebe943e9e15e894d8a9fe": {
+  "8174cdfe3f6058c047189315": {
    "file": "site.js",
-   "line": 601,
-   "sink": ".innerHTML ="
+   "line": 520,
+   "sink": ".src ="
   },
   "8b6925387f5f97fe129c2d57": {
    "file": "site.js",
-   "line": 715,
+   "line": 796,
    "sink": ".href ="
-  },
-  "8e30b524cf76ab2cd555e3b3": {
-   "file": "site.js",
-   "line": 1008,
-   "sink": ".innerHTML ="
-  },
-  "942f4e1df1b4060128458874": {
-   "file": "site.js",
-   "line": 749,
-   "sink": ".innerHTML ="
   },
   "a4c1ac2385e7246c283017b4": {
    "file": "site.js",
-   "line": 723,
+   "line": 804,
    "sink": ".href ="
   },
   "b02c8d26665d74e58c10fc25": {
    "file": "site.js",
-   "line": 343,
+   "line": 410,
    "sink": ".href ="
-  },
-  "bc1660a786baac325c0105ee": {
-   "file": "site.js",
-   "line": 1020,
-   "sink": ".innerHTML ="
-  },
-  "c7ed7482bad6e084c31f2b78": {
-   "file": "site.js",
-   "line": 411,
-   "sink": ".innerHTML ="
   },
   "c8d126937f634c989e231ff2": {
    "file": "site.js",
-   "line": 1091,
+   "line": 1175,
    "sink": ".src ="
   },
   "e192185711b5cd8f3ea86483": {
    "file": "site.js",
-   "line": 85,
+   "line": 129,
    "sink": ".src ="
   },
   "ebe92db9731b993c0d245a54": {
    "file": "site.js",
-   "line": 87,
+   "line": 131,
    "sink": ".src ="
   },
   "edc66bd555bd9d0ba30d872d": {
    "file": "site.js",
-   "line": 88,
+   "line": 132,
    "sink": ".src ="
   }
  }

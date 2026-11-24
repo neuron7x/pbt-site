@@ -7,8 +7,18 @@
   if (root) root.PBTQuote = api;
 })(typeof window === 'undefined' ? null : window, function () {
   'use strict';
-  const validInt = (n, lo, hi) => Number.isSafeInteger(n) && n >= lo && n <= hi;
+  /* Типи — JSDoc, перевірка: tools/js/tsconfig.kernel.json (strict, noImplicitAny, noUncheckedIndexedAccess).
+     Вхід — недовірені дані каталогу: параметри `unknown`, звуження — лише перевірками нижче. */
+  /** @typedef {{ name: string, maxT: number, rate: number }} Trailer */
+  /** @typedef {Readonly<{ reason: string | null, trailer: Readonly<Trailer> | null }>} TrailerChoice */
+  /** @typedef {Readonly<{ status: 'complete' | 'rent-only', reason: string | null, rental: number,
+   *   delivery: number | null, total: number | null, displayed: number, trailer: Readonly<Trailer> | null }>} Quote */
+  /** @typedef {{ unit?: unknown, price?: unknown, cat?: unknown, specs?: unknown }} Unit */
 
+  /** @param {unknown} n @param {number} lo @param {number} hi @returns {n is number} */
+  const validInt = (n, lo, hi) => typeof n === 'number' && Number.isSafeInteger(n) && n >= lo && n <= hi;
+
+  /** @param {unknown} specs @returns {number | null} */
   function massTonnes(specs) {
     if (!Array.isArray(specs)) return null;
     const masses = specs.filter(s => s && typeof s.k === 'string' && /^(?:Маса|Вага)(?:\s|$)/i.test(s.k));
@@ -16,10 +26,11 @@
     const found = String(masses[0].v == null ? '' : masses[0].v).trim()
       .match(/^(\d+(?:[.,]\d+)?)\s*т$/i);
     if (!found) return null;
-    const mass = Number(found[1].replace(',', '.'));
+    const mass = Number((found[1] || '').replace(',', '.'));
     return Number.isFinite(mass) && mass > 0 ? mass : null;
   }
 
+  /** @param {unknown} specs @param {unknown} trailers @returns {TrailerChoice} */
   function selectTrailer(specs, trailers) {
     const mass = massTonnes(specs);
     if (mass === null) return Object.freeze({ reason: 'mass-unknown', trailer: null });
@@ -27,6 +38,7 @@
       return Object.freeze({ reason: 'tariff-invalid', trailer: null });
     // O(T) часу, O(1) пам'яті. Перевіряємо ВСІ ставки: погані дані
     // не можна ігнорувати лише тому, що інший трал уже підходить.
+    /** @type {Trailer | null} */
     let best = null;
     for (const t of trailers) {
       if (!t || typeof t.name !== 'string' || !t.name.trim() ||
@@ -44,14 +56,18 @@
     }) });
   }
 
+  /** @param {Unit | null | undefined} unit @param {unknown} trailers @param {unknown} hours @param {unknown} km
+   *  @returns {Quote | null} */
   function quote(unit, trailers, hours, km) {
     if (!unit || unit.unit !== 'год' || !validInt(unit.price, 1, Number.MAX_SAFE_INTEGER) ||
         !validInt(hours, 1, 5000) || !validInt(km, 0, 3000)) return null;
     const rental = unit.price * hours;
     if (!Number.isSafeInteger(rental)) return null;
 
+    /** @param {'complete' | 'rent-only'} status @param {string | null} reason @param {number | null} delivery
+     *  @param {Readonly<Trailer> | null} trailer @returns {Quote | null} */
     const result = (status, reason, delivery, trailer) => {
-      const total = status === 'complete' ? rental + delivery : null;
+      const total = status === 'complete' && delivery !== null ? rental + delivery : null;
       if (total !== null && !Number.isSafeInteger(total)) return null;
       return Object.freeze({
         status, reason, rental, delivery, total,
@@ -68,10 +84,12 @@
   }
 
   // Сумісність попереднього числового API. Для кранів це *лише оренда*.
+  /** @param {Unit | null | undefined} unit @param {unknown} trailers @param {unknown} hours @param {unknown} km
+   *  @returns {number | null} */
   function legacyTotal(unit, trailers, hours, km) {
     const q = quote(unit, trailers, hours, km);
     return q === null ? null : q.status === 'complete' ? q.total :
-      unit.cat === 'crane' ? q.rental : null;
+      unit && unit.cat === 'crane' ? q.rental : null;
   }
 
   return Object.freeze({ massTonnes, selectTrailer, quote, legacyTotal });

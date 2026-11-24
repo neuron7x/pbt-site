@@ -427,8 +427,8 @@
    "edits": [
     {
      "file": "web/js/site.js",
-     "find": "`<a href=\"${esc(x.href)}\"><b>",
-     "replace": "`<a href=\"${x.href}\"><b>"
+     "find": "      else n.append(typeof k === 'string' || typeof k === 'number' ? String(k) : k);",
+     "replace": "      else if (typeof k === 'string' || typeof k === 'number') n.insertAdjacentHTML('beforeend', String(k)); else n.append(k);"
     },
     {
      "file": "web/js/site.js",
@@ -439,7 +439,7 @@
    "oracle": [
     "tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink"
    ],
-   "note": "Escaping alone is defense in depth: every href is already encoded, so removing only esc() is an equivalent mutant. The fault is losing both layers."
+   "note": "24.11.2026: розмітка будується лише вузлами DOM (el/append), escaping більше не потрібен — ін'єкцію виключає конструкція. Мутант повертає розбір HTML для тексту у фабриці й знімає кодування telegram: обидва шари втрачені — оракул мусить почервоніти."
   },
   {
    "id": "M-NET-06-any-scheme",
@@ -727,7 +727,7 @@
    "edits": [
     {
      "file": "web/js/quote.js",
-     "find": "const total = status === 'complete' ? rental + delivery : null;",
+     "find": "const total = status === 'complete' && delivery !== null ? rental + delivery : null;",
      "replace": "const total = rental + (delivery === null ? 0 : delivery);"
     }
    ],
@@ -974,6 +974,74 @@
    "oracle": [
     "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
    ]
+  },
+  {
+   "id": "M-NET-06-attr-handlers",
+   "task": "NET-06",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "    if (!ATTR_NAMES.has(name) && !/^(?:data|aria)-[a-z][a-z0-9-]*$/.test(name)) return false;\n",
+     "replace": "    if (/^on/i.test(name)) return false;\n"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/dom_factory.test.cjs"
+   ],
+   "note": "Білий список імен замінено чорним (лише on*): srcdoc/formaction/xlink:href проходять — той самий клас, що public_config з одним викресленим ключем."
+  },
+  {
+   "id": "M-NET-06-attr-schemes",
+   "task": "NET-06",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "    return !rule || rule.test(String(v));",
+     "replace": "    return !rule || rule.test(String(v)) || /^[a-z]+:/i.test(String(v));"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/dom_factory.test.cjs"
+   ],
+   "note": "Вартовий пропускає будь-яку схему URL (javascript:, data:text/html)."
+  },
+  {
+   "id": "M-MOTION-belt-per-frame",
+   "task": "MOTION-46",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "  const approach = (pos, target, dt, tau) => target + (pos - target) * Math.exp(-Math.min(dt, PHYS.dtMax) / tau);",
+     "replace": "  const approach = (pos, target, dt, tau) => pos + (target - pos) * .14;"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Згладжування ланцюга покадрово: τ залежить від частоти кадрів (аудит п.46)."
+  },
+  {
+   "id": "M-MOTION-gravity-per-frame",
+   "task": "MOTION-46",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "      const v1 = Math.min(d.vy + PHYS.gravity * dt, PHYS.vMax);",
+     "replace": "      const v1 = Math.min(d.vy + .16 / 16.7, PHYS.vMax);"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Гравітація масла покадрово: на 120 Гц падіння вдвічі швидше (аудит п.46)."
   }
  ]
 }
