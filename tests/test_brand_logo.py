@@ -46,13 +46,25 @@ def test_header_carries_the_name_once():
     assert 'plainbud-logo-nav.webp' in header and 'plainbud-logo-nav-ink.webp' in header
 
 
-@pytest.mark.parametrize('theme', ['sky', 'precision'])
-def test_solid_light_header_swaps_to_ink_lockup(page_factory, theme):
+def test_solid_light_header_swaps_to_ink_lockup(page_factory):
+    """«Графіт»: суцільна шапка світла — знак перемикається на чорнильний."""
     page = page_factory(1440, 900, reduced=True)
-    page.locator(f'[data-theme-choice="{theme}"]').click()
+    page.locator('[data-theme-choice="precision"]').click()
     assert page.locator('#nav .brand__logo').is_visible()
     assert not page.locator('#nav .brand__ink').is_visible()
     page.evaluate("document.getElementById('nav').classList.add('is-solid')")
     assert not page.locator('#nav .brand__logo').is_visible()
     assert page.locator('#nav .brand__ink').is_visible()
     assert page.evaluate("document.querySelector('#nav .brand__ink').naturalWidth") > 0
+
+
+def test_solid_steel_header_keeps_light_lockup(page_factory):
+    """«Сталь і золото» (sky): суцільна шапка темна — світлий знак лишається, чорнильний прихований."""
+    page = page_factory(1440, 900, reduced=True)
+    page.locator('[data-theme-choice="sky"]').click()
+    page.evaluate("document.getElementById('nav').classList.add('is-solid')")
+    assert page.locator('#nav .brand__logo').is_visible()
+    assert not page.locator('#nav .brand__ink').is_visible()
+    bg = page.evaluate("getComputedStyle(document.getElementById('nav')).backgroundColor")
+    rgb = [int(x) for x in bg[bg.index('(') + 1:bg.index(')')].split(',')[:3]]
+    assert max(rgb) < 40, bg

@@ -109,7 +109,7 @@
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
-  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge'), motionToggle, $('.skip')].filter(Boolean);
+  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge'), motionToggle, $('#dock'), $('.skip')].filter(Boolean);
   const menuInertBefore = new Map();
   let lastY = scrollY, navHidden = false, returnFocus = null;
   const themeButtons = Array.from(document.querySelectorAll('[data-theme-choice]'));
@@ -125,7 +125,7 @@
       button.setAttribute('aria-pressed', String(button.dataset.themeChoice === next));
     });
     const meta = $('meta[name="theme-color"]');
-    if (meta) meta.content = next === 'precision' ? '#101820' : '#0D6AE0';
+    if (meta) meta.content = next === 'precision' ? '#101820' : '#05080D';
     const face = $('#themeFontPreload');
     if (face) face.href = 'fonts/' + (next === 'precision' ? 'IBMPlexSans-600-cyrillic.woff2' : 'Tektur-var-cyrillic.woff2');
     if (persist) {
@@ -432,7 +432,7 @@
   function renderMats() {
     $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
       <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
-        <div class="tile__body"><h4>${esc(m.name)}</h4><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
+        <div class="tile__body"><h3>${esc(m.name)}</h3><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
   }
   function renderProof() {
     const standalone = window.PBT_BUNDLE && !D.mp4Only;
