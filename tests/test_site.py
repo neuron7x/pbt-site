@@ -211,10 +211,12 @@ GHOST_JS = """async (speed) => {
   const STEP = 1000 / 60, raf = () => new Promise(r => requestAnimationFrame(r));
   const els = [...document.querySelectorAll('.rv')].filter(e => !e.closest('#masshtab')), g = new Map(els.map(e => [e, 0]));
   const H = document.scrollingElement.scrollHeight - innerHeight; let t = 0;
-  document.getAnimations().forEach(a => a.pause());
+  // крок віртуального часу — лише для анімацій на часовій шкалі документа; scroll-driven (view()) веде сам скрол
+  const timed = () => document.getAnimations().filter(a => a.timeline instanceof DocumentTimeline);
+  timed().forEach(a => a.pause());
   while (true) { t += STEP; const y = Math.min(H, t / 1000 * speed);
     scrollTo({top: y, behavior: 'instant'}); await raf(); await raf();          // IntersectionObserver доставлено
-    document.getAnimations().forEach(a => { a.pause(); a.currentTime = (a.currentTime || 0) + STEP; });
+    timed().forEach(a => { a.pause(); a.currentTime = (a.currentTime || 0) + STEP; });
     for (const e of els) { if (e.hidden) continue; const b = e.getBoundingClientRect(); const vis = Math.min(b.bottom, innerHeight) - Math.max(b.top, 0);
       if (vis > Math.min(40, b.height / 2) && parseFloat(getComputedStyle(e).opacity) < 0.9) g.set(e, g.get(e) + STEP); }
     if (y >= H) break; }

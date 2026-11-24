@@ -80,7 +80,7 @@ def test_catalog_cards_remain_readable_and_actionable_on_small_screens(page_fact
       const rect = el => el.getBoundingClientRect();
       const c = rect(card), body = rect(card.querySelector('.unit__body'));
       const title = rect(card.querySelector('h3')), foot = rect(card.querySelector('.unit__foot'));
-      const price = rect(card.querySelector('.unit__price')), button = rect(card.querySelector('button'));
+      const price = rect(card.querySelector('.unit__price')), button = rect(card.querySelector('.unit__foot button'));   // кнопка заявки; «Паспорт» живе у фото
       const eps = 1;
       const issues = [];
       if (c.left < -eps || c.right > innerWidth + eps) issues.push('card outside viewport');
@@ -134,7 +134,7 @@ def test_user_text_spacing_override_preserves_content(page_factory, theme, width
         const title = card.querySelector('h3').getBoundingClientRect();
         const body = card.querySelector('.unit__body').getBoundingClientRect();
         const price = card.querySelector('.unit__price').getBoundingClientRect();
-        const button = card.querySelector('button').getBoundingClientRect();
+        const button = card.querySelector('.unit__foot button').getBoundingClientRect();
         if (title.right > body.right + 1) errors.push('card ' + card.dataset.id + ' title outside body');
         if (price.right > button.left + 1 && price.top < button.bottom && button.top < price.bottom)
           errors.push('card ' + card.dataset.id + ' price overlaps button');

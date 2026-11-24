@@ -262,6 +262,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <div>
         <ol class="geo__list" id="geoList"></ol>
         <p class="geo__hover" id="geoHover" aria-live="polite"></p>
+        <div class="geo__info" id="geoInfo" aria-live="polite" hidden></div>
         <div class="geo__base rv"><span>Адреса: <span class="num" data-address>36022, м. Полтава, вул. Небесної сотні, буд. 69 Б</span></span><span>Офіс: <span class="num" data-hours>Графік роботи уточнюється</span></span><span>Графік роботи техніки погоджуємо для кожного об’єкта.</span></div>
       </div>
     </div>
@@ -344,6 +345,25 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   </div>
 </footer>
 
+<dialog class="pass" id="passport" aria-labelledby="passTitle">
+  <div class="pass__sheet">
+    <div class="pass__head"><p class="pass__code" id="passCode"></p><button class="pass__x" type="button" data-pass-close aria-label="Закрити паспорт"><span aria-hidden="true">×</span></button></div>
+    <h2 class="pass__title" id="passTitle"></h2><p class="pass__cls" id="passCls"></p>
+    <div class="pass__grid">
+      <div class="pass__draw" id="passDraw"></div>
+      <div class="pass__side">
+        <div class="pass__reach" id="passReach" hidden>
+          <label for="passAngle">Кут стріли <output id="passAngleOut" for="passAngle">38°</output></label>
+          <input type="range" id="passAngle" min="0" max="80" step="1" value="38">
+          <p class="pass__out" id="passReachOut" aria-live="polite"></p>
+          <p class="pass__note">Геометрія за довжиною стріли з каталогу: r = L·cos θ, h = L·sin θ. Вантаж на вильоті — за вантажною таблицею цього крана, підтвердимо до виїзду.</p>
+        </div>
+        <table class="pass__stamp"><caption>Штамп паспорта</caption><tbody id="passStamp"></tbody></table>
+      </div>
+    </div>
+    <div class="pass__act"><button class="btn" type="button" id="passReq" data-req="rent">У заявку</button><button class="btn btn--ghost" type="button" id="passPrint">Друкувати паспорт</button></div>
+  </div>
+</dialog>
 <script src="js/data.js"></script>
 <script src="js/cine.js"></script>
 <script src="js/quote.js"></script>
