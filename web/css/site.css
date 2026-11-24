@@ -74,7 +74,7 @@
   --t-hero-center-align: center;
   --t-hero-center-gap: clamp(8px,1.7svh,24px);
   --t-hero-title-size: clamp(28px,min(7vw,10.5svh),128px);
-  --t-hero-title-max: 15ch;
+  --t-hero-title-max: 22ch;
   --t-hero-title-weight: 800;
   --t-hero-title-tracking: -.01em;
   --t-hero-line: #FFFFFF;
@@ -892,6 +892,28 @@ main section[id]{scroll-margin-top:88px}
 /* Світла шапка після прокрутки: золото на білому не читається — той самий блок із темно-синьою назвою. */
 .brand__ink{display:none}.nav.is-solid .brand__logo{display:none}.nav.is-solid .brand__ink{display:block}
 
+/* Нижня панель дій (телефон, портрет ≥600 px заввишки): дзвінок і заявка завжди під пальцем; кнопка руху — частина панелі,
+   тож не перекриває картки. Малі й landscape-екрани зберігають попереднє розташування кнопки руху. */
+.dock{display:none}
+@media (max-width:699px) and (orientation:portrait) and (min-height:600px){
+  body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+  .dock{display:grid;grid-template-columns:1fr 1fr;position:fixed;left:0;right:0;bottom:0;z-index:77;height:calc(60px + env(safe-area-inset-bottom));padding:0 60px env(safe-area-inset-bottom) 0;background:#0B1017;border-top:1px solid rgba(255,255,255,.14)}
+  .motion-toggle[hidden] ~ .dock{padding-right:0}
+  .dock a{display:flex;align-items:center;justify-content:center;gap:10px;font:700 13px/1 var(--f-b);letter-spacing:.1em;text-transform:uppercase}
+  .dock__call{color:#FFFFFF}
+  .dock__call::before{content:"";width:9px;height:9px;background:#3DDC84;box-shadow:0 0 0 3px rgba(61,220,132,.25)}
+  .dock__go{background:#FDC501;color:#0B1017}
+  .dock a:focus-visible{outline:3px solid #FFFFFF;outline-offset:-4px}
+  .motion-toggle,.motion-toggle[aria-pressed=true]{top:auto;left:auto;right:0;bottom:0;width:60px;max-width:none;height:calc(60px + env(safe-area-inset-bottom));padding:0 0 env(safe-area-inset-bottom);border:0;border-left:1px solid rgba(255,255,255,.14);border-radius:0;background:#0B1017;color:#FFFFFF;font-size:0;box-shadow:none;z-index:78;place-items:center}
+  :root:not([data-quality=static]) .motion-toggle:not([hidden]){display:grid}
+  [data-quality=static] .dock{padding-right:0}
+  .motion-toggle::before{content:"";width:12px;height:14px;border-inline:4px solid currentColor;box-sizing:border-box}
+  .motion-toggle[aria-pressed=true]::before{border:0;border-left:13px solid currentColor;border-block:8px solid transparent;width:0;height:0}
+  .motion-toggle:disabled::before{opacity:.4}
+  .hero__hint{bottom:76px}
+}
+@media (max-width:699px) and (orientation:portrait) and (min-height:600px) and (prefers-reduced-motion:reduce){:root:not([data-quality=static]) .motion-toggle:not([hidden]){display:none}.dock{padding-right:0}}
+
 /* ═══ «СТАЛЬ І ЗОЛОТО» (24.11.2026) — шар теми за замовчуванням ═══
    Напрям: важка промислова монументальність. Сталь #05080D–#1A232E як ґрунт, бетон #ECECE7 як світле поле,
    золото #FDC501 — дія, ціна, акцент. Кути 0–2 px, жорсткі лінії замість хвиль і м'яких тіней, великий Tektur,
@@ -1073,3 +1095,7 @@ main section[id]{scroll-margin-top:88px}
   :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats{padding-top:8px;padding-bottom:0;border-bottom:0}
   :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after,:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::before{display:none}
 }
+
+/* фото парку: одна обробка для різних джерел (без зміни файлів) */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit img{filter:saturate(.9) contrast(1.06)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure::after{content:"";position:absolute;inset:auto 0 0;height:38%;background:linear-gradient(180deg,transparent,rgba(5,8,13,.5));pointer-events:none}

@@ -109,7 +109,7 @@
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
-  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge'), motionToggle, $('.skip')].filter(Boolean);
+  const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge'), motionToggle, $('#dock'), $('.skip')].filter(Boolean);
   const menuInertBefore = new Map();
   let lastY = scrollY, navHidden = false, returnFocus = null;
   const themeButtons = Array.from(document.querySelectorAll('[data-theme-choice]'));
