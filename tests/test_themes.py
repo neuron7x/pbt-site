@@ -159,7 +159,8 @@ def test_prepaint_restores_storage_under_enforced_browser_csp(browser, server, t
         )
         executed = page.evaluate("""() => {
           const el = document.createElement('script');
-          el.textContent = 'window.__pbtUnexpectedInline = true';
+          // Два незалежні шари: Trusted Types забороняє сам рядок скрипта (TypeError), хеш-CSP — його виконання.
+          try { el.textContent = 'window.__pbtUnexpectedInline = true'; } catch (e) { if (e.name === 'TypeError') return false; throw e; }
           document.head.appendChild(el);
           el.remove();
           return window.__pbtUnexpectedInline === true;
@@ -264,7 +265,7 @@ def test_other_tab_selection_does_not_shift_page_and_reload_restores_choice(pw, 
         assert first.locator(f'[data-theme-choice="{initial}"]').get_attribute('aria-pressed') == 'false'
         executed = first.evaluate("""() => {
           const script = document.createElement('script');
-          script.textContent = 'window.__unexpectedInline = true';
+          try { script.textContent = 'window.__unexpectedInline = true'; } catch (e) { if (e.name === 'TypeError') return false; throw e; }   // Trusted Types
           document.head.appendChild(script); script.remove();
           return window.__unexpectedInline === true;
         }""")

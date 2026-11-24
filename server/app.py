@@ -744,8 +744,11 @@ SEC_HEADERS = {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Frame-Options': 'DENY',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Resource-Policy': 'same-origin',
     'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; media-src 'self'; style-src 'self' 'unsafe-inline'; "
-                               f"script-src 'self' {_inline_script_hashes()}; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+                               f"script-src 'self' {_inline_script_hashes()}; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; "
+                               "object-src 'none'; require-trusted-types-for 'script'; trusted-types pbt",
 }
 
 
