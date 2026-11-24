@@ -183,9 +183,7 @@
 
   /* ───── ГЕРОЙ ───── */
   const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
-  $$('#heroTitle .line').forEach(line => {       /* слова — окремі спани для появи */
-    line.innerHTML = line.textContent.trim().split(/\s+/).map((w, i) => `<span class="w" style="transition-delay:${.45 + i * .07}s">${esc(w)}</span>`).join(' ');
-  });
+  /* слова заголовка розмічено в HTML: перезапис DOM після JS створював новий кандидат LCP (simulate: render delay 4,7 с) */
   let heroTop = 0, heroTotal = 1, heroP = 0;
   function heroRender(y) {
     const p = clamp((y - heroTop) / heroTotal, 0, 1);
