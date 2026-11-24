@@ -9,3 +9,7 @@ data/backups/
 data/.ip_salt
 *.pyc
 data/server.log
+tools/js/node_modules/
+.env
+.env.*
+!.env.example

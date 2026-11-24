@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noImplicitAny": true, "exactOptionalPropertyTypes": true, "noUncheckedIndexedAccess": true },
+  "files": ["globals.d.ts", "../../web/js/quote.js"]
+}
