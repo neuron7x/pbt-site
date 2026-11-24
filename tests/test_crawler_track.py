@@ -20,8 +20,11 @@ def test_track_reports_true_progress_and_stations(page_factory):
     assert s['stops'] == ['#roboty', '#tekhnika', '#cina', '#materialy', '#dokaz', '#geo', '#zapyt']
     for frac in (.25, .5, .9):
         pg.evaluate(f"scrollTo(0, (document.scrollingElement.scrollHeight - innerHeight) * {frac})")
-        pg.wait_for_timeout(250)
-        s = pg.evaluate(STATE)
+        for _ in range(40):                                               # кадр рендера під навантаженням може запізнитись — чекаємо стан, не час
+            pg.wait_for_timeout(50)
+            s = pg.evaluate(STATE)
+            if abs(s['tp'] - s['p']) < .002:
+                break
         assert abs(s['tp'] - s['p']) < .002, s
         assert abs(s['sprocket'] - s['p'] * s['w']) <= 2, s               # зірочка стоїть точно на межі пройденого
 
