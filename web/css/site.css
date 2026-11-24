@@ -956,7 +956,8 @@ main section[id]{scroll-margin-top:88px}
 @keyframes pass-in{from{opacity:0;transform:translateY(18px) scale(.985)}}
 .pass__sheet{position:relative;margin:14px;padding:clamp(18px,3vw,34px);border:1px solid rgba(236,236,231,.28);background-image:linear-gradient(rgba(118,202,252,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(118,202,252,.06) 1px,transparent 1px);background-size:24px 24px}
 .pass__sheet::before{content:"";position:absolute;inset:6px;border:1px solid rgba(236,236,231,.1);pointer-events:none}
-.pass__head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:14px}
+.pass__head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:16px;margin:calc(clamp(18px,3vw,34px) * -1) calc(clamp(18px,3vw,34px) * -1) 14px;padding:clamp(12px,2vw,20px) clamp(18px,3vw,34px);background:rgba(11,16,23,.94);backdrop-filter:blur(6px)}
+html:has(#passport[open]){overflow:hidden}
 .pass__code{margin:0;font:600 12px/1 var(--f-m);letter-spacing:.16em;text-transform:uppercase;color:#FDC501}
 .pass__x{width:44px;height:44px;border:1px solid rgba(236,236,231,.35);background:transparent;color:#FFFFFF;font:300 28px/1 var(--f-b);cursor:pointer}
 .pass__x:hover{background:#FDC501;color:#0B1017;border-color:#FDC501}
@@ -983,6 +984,7 @@ main section[id]{scroll-margin-top:88px}
 @media (max-width:760px){.pass__grid{grid-template-columns:1fr}.pass__sheet{margin:8px}}
 @media (prefers-reduced-motion:reduce){.pass[open]{animation:none}.unit__bp,.unit__bp::after{transition:none}.unit figure:hover .unit__bp::after{animation:none}}
 [data-motion=paused] .unit__bp,[data-motion=paused] .unit__bp::after{transition:none!important;animation:none!important}
+[data-quality=static] .pass[open],[data-motion=paused] .pass[open],[data-quality=static] .geo__info,[data-motion=paused] .geo__info{animation:none!important}
 @media print{
   body:has(#passport[open]) > :not(#passport){display:none!important}
   .pass{position:static;width:auto;max-height:none;box-shadow:none;background:#FFFFFF;color:#0B1017;overflow:visible}

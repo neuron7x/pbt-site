@@ -343,7 +343,7 @@
   const loadBP = () => window.PBTBlueprint ? Promise.resolve(window.PBTBlueprint) : (bpLoad = bpLoad || new Promise((ok, fail) => {
     const s = document.createElement('script'); s.src = 'js/blueprint.js';
     s.onload = () => window.PBTBlueprint ? ok(window.PBTBlueprint) : fail(new Error('blueprint'));
-    s.onerror = () => { bpLoad = null; fail(new Error('blueprint')); };
+    s.onerror = () => { bpLoad = null; s.remove(); fail(new Error('blueprint')); };
     document.head.appendChild(s);
   }));
   const unitById = id => D.fleet.find(x => x.id === id);
@@ -365,7 +365,7 @@
       }, () => {});
     });
     grid.addEventListener('focusin', e => { if (e.target.closest('[data-pass]')) loadBP().catch(() => {}); });   // клавіатура: модуль їде, поки фокус на кнопці
-    grid.addEventListener('click', e => { const b = e.target.closest('[data-pass]'); if (b) loadBP().then(BP => openPassport(BP, b.dataset.pass), () => {}); });
+    grid.addEventListener('click', e => { const b = e.target.closest('[data-pass]'); if (b) loadBP().then(BP => openPassport(BP, b.dataset.pass), () => { const r = b.closest('.unit').querySelector('[data-req]'); if (r) r.click(); }); });
   }
   const pass = $('#passport');
   function openPassport(BP, id) {
@@ -382,7 +382,7 @@
       const upd = () => {
         const a = angle.valueAsNumber, m = r.setAngle(a);
         $('#passAngleOut').textContent = `${a}°`;
-        $('#passReachOut').textContent = m ? `Виліт ${m.r.toLocaleString('uk-UA')} м · висота оголовка ${m.h.toLocaleString('uk-UA')} м від осі повороту` : '';
+        $('#passReachOut').textContent = m ? `Виліт ${m.r.toLocaleString('uk-UA')} м · оголовок на ${m.h.toLocaleString('uk-UA')} м вище п’яти стріли` : '';
       };
       angle.value = '38'; angle.oninput = upd; upd();
     }
@@ -579,7 +579,7 @@
       const n = $('#cKmN'), cin = $('#cina'); if (!n || !cin) return;
       n.value = b.dataset.km; n.dispatchEvent(new Event('input', { bubbles: true }));
       cin.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'start' });
-      n.focus({ preventScroll: true });
+      (n.disabled ? $('#cMachine') : n).focus({ preventScroll: true });   // автокран їде своїм ходом: подача не тралом — обрати іншу техніку
     });
   }
 
@@ -599,10 +599,14 @@
     const c = b.contacts || {};
     const tel = p => p ? `tel:${String(p).replace(/[^+\d]/g, '')}` : '#zapyt';
     $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = tel(c.phone); });
-    $$('[data-phone2]').forEach(a => {
-      const present = !!c.phone2, row = a.closest('[data-phone2-row]') || a;
-      row.hidden = !present; a.textContent = phoneHuman(c.phone2) || '';
-      if (a.tagName === 'A') { if (present) a.href = tel(c.phone2); else a.removeAttribute('href'); }
+    /* другий телефон не наданий — у розмітці <span>-заготовка: <a> без href псувало crawlable-anchors */
+    $$('[data-phone2]').forEach(el => {
+      const present = !!c.phone2, row = el.closest('[data-phone2-row]') || el;
+      row.hidden = !present; el.textContent = phoneHuman(c.phone2) || '';
+      if (!present) return;
+      let a = el;
+      if (el.tagName !== 'A') { a = document.createElement('a'); a.className = el.className; a.dataset.phone2 = ''; a.textContent = el.textContent; el.replaceWith(a); }
+      a.href = tel(c.phone2);
     });
     const email = typeof c.email === 'string' && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email) ? c.email : '';
     $$('[data-email]').forEach(a => {

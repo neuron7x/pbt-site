@@ -44,9 +44,10 @@ def test_every_fleet_unit_has_a_drawing_without_invented_numbers(page_factory):
         assert r['ok'], r
         assert r['paths'] >= 10, r
         assert r['label'].startswith('Креслення: '), r
+        allowed = set(NUM.findall(r['specs']))
         for text in r['texts']:
             for n in NUM.findall(text):
-                assert n in r['specs'], (r['id'], text, r['specs'])
+                assert n in allowed, (r['id'], text, r['specs'])          # ціле число-токен, не підрядок («2» ≠ «22»)
 
 
 def test_reach_geometry_matches_formula_and_rejects_nonsense(page_factory):
@@ -100,7 +101,7 @@ def test_crane_passport_reach_follows_the_slider(page_factory):
         r, h = round(boom * math.cos(math.radians(angle)), 1), round(boom * math.sin(math.radians(angle)), 1)
         want = f"Виліт {str(r).replace('.', ',').removesuffix(',0')} м"
         assert out.startswith(want), (angle, out, want)
-        assert f"{str(h).replace('.', ',').removesuffix(',0')} м від осі" in out, (angle, out)
+        assert f"оголовок на {str(h).replace('.', ',').removesuffix(',0')} м вище п’яти стріли" in out, (angle, out)
         assert pg.locator('#passAngleOut').text_content() == f'{angle}°'
         tip = pg.evaluate("""() => { const b = document.querySelector('#passDraw .bp-boom').getBBox(),
             v = document.querySelector('#passDraw svg').viewBox.baseVal; return {top: b.y, vtop: v.y} }""")
@@ -173,8 +174,56 @@ def test_route_panel_prices_delivery_like_the_calculator(page_factory):
         costs = [re.sub(r'\s', '', c) for c in pg.locator('#geoInfo .geo__cost dd').all_text_contents()]
         assert costs == [f"≈{t['rate'] * km}грн" for t in sorted(D['trailers'], key=lambda t: t['maxT'])], costs
         assert pg.evaluate(f"document.querySelector('.route.is-sel').dataset.ua") == region
+    # та сама модель, що й калькулятор: доставка з PBTQuote для 22-тонного екскаватора = рядок «Трал 40 т» панелі
+    e1 = next(u for u in D['fleet'] if u['id'] == 'e-1')
+    for region, r in D['routes']['to'].items():
+        q = pg.evaluate(f"PBTQuote.quote(PBT.fleet.find(u => u.id === 'e-1'), PBT.trailers, 1, {r['km']})")
+        pg.locator(f'.geo__pick[data-ua="{region}"]').click()
+        row = re.sub(r'\s', '', pg.locator('#geoInfo .geo__cost div').first.text_content())
+        assert q['status'] == 'complete' and row.endswith(f"≈{q['delivery']}грн"), (region, q, row)
+        assert q['trailer']['name'] in pg.locator('#geoInfo .geo__cost dt').first.text_content().replace('\u00a0', ' ')
+    assert e1['specs'][0]['k'] == 'Маса'
     pg.locator('.geo__pick[data-ua="Київська"]').click()
     pg.locator('.geo__calc').click()
     pg.wait_for_timeout(800)
     assert pg.locator('#cKmN').input_value() == str(D['routes']['to']['Київська']['km'])
     assert pg.evaluate('document.activeElement.id') == 'cKmN'
+    # повзунок (крок 5 км) стоїть на найближчій поділці до відстані, а не впирається в межу 300
+    assert abs(int(pg.locator('#cKm').input_value()) - int(pg.locator('#cKmN').input_value())) <= 2.5
+    # автокран: подача не тралом — фокус на вибір машини, а не «нічого не сталось»
+    crane = pg.evaluate("[...document.querySelectorAll('#cMachine option')].findIndex(o => /Автокран/.test(o.textContent))")
+    pg.select_option('#cMachine', index=crane)
+    pg.evaluate("document.getElementById('geo').scrollIntoView({behavior:'instant'})")
+    pg.locator('.geo__pick[data-ua="Житомирська"]').click()
+    pg.locator('.geo__calc').click()
+    pg.wait_for_timeout(800)
+    assert pg.evaluate('document.activeElement.id') == 'cMachine'
+
+
+def test_passport_close_stays_reachable_and_page_does_not_scroll_under_it(page_factory):
+    pg = page_factory(320, 568, mobile=True)
+    pg.evaluate("document.getElementById('tekhnika').scrollIntoView({behavior:'instant'})")
+    pg.locator('.unit[data-id="ak-2"] .unit__pass').click()
+    pg.locator('#passport[open]').wait_for()
+    y0 = pg.evaluate('scrollY')                                          # після кліку: Playwright сам докручує до кнопки
+    pg.evaluate("document.getElementById('passport').scrollTop = 99999")
+    pg.wait_for_timeout(200)
+    box = pg.locator('.pass__x').bounding_box()
+    assert box and box['y'] >= 0 and box['y'] + box['height'] <= 568, box
+    pg.mouse.move(4, 300)                                                 # смуга фону (::backdrop) поза аркушем
+    pg.mouse.wheel(0, 800)
+    pg.wait_for_timeout(300)
+    assert pg.evaluate('scrollY') == y0
+    pg.locator('.pass__x').click()
+    assert not pg.evaluate("document.getElementById('passport').open")
+
+
+def test_failed_drawing_load_falls_back_to_the_request_form(page_factory):
+    pg = page_factory(1440, 900)
+    pg.route('**/js/blueprint.js', lambda route: route.abort())
+    pg.locator('.unit[data-id="e-2"] .unit__pass').click()
+    pg.wait_for_timeout(800)
+    assert not pg.evaluate("document.getElementById('passport').open")
+    assert pg.locator('#subject').input_value() == next(u['name'] for u in _data(pg)['fleet'] if u['id'] == 'e-2')
+    assert pg.evaluate('document.querySelectorAll(\'script[src="js/blueprint.js"]\').length') == 0
+    pg.errors.clear()                                                   # навмисний обрив — не помилка сторінки
