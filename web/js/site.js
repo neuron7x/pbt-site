@@ -250,13 +250,14 @@
   }
   /* ───── ГУСЕНИЦЯ: прогрес сторінки як гусеничний ланцюг; траки й зірочка котяться за скролом з інерцією ───── */
   const track = $('#track'), trackStops = $('#trackStops');
-  let beltPos = 0, beltRaf = 0;
+  let beltPos = 0, beltRaf = 0, beltTx = 0, beltDx = 0;
   function beltStep() {
     const target = scrollY, d = target - beltPos;
     beltPos = Math.abs(d) < .5 || !motion() ? target : beltPos + d * .14;      // «маса»: ланцюг дотягується після зупинки
     track.style.setProperty('--tx', `${(-(beltPos * .55) % 16).toFixed(2)}px`);
-    track.style.setProperty('--rot', `${(beltPos * .9 % 360).toFixed(1)}deg`);
-    beltRaf = beltPos !== target ? requestAnimationFrame(beltStep) : 0;
+    const tx = beltPos * .55; beltDx = tx - beltTx; beltTx = tx;
+    track.style.setProperty('--rot', `${(tx / 144 * 360 % 360).toFixed(1)}deg`);   // зуби входять у проміжки траків
+    beltRaf = beltPos !== target ? requestAnimationFrame(beltStep) : (beltDx = 0, 0);   // ланцюг став — краплі більше не їдуть
   }
   function trackRender(p) {
     if (!track) return;
@@ -264,7 +265,8 @@
     if (!beltRaf) beltRaf = requestAnimationFrame(beltStep);
     oilFeed(p);
   }
-  /* масло: краплі зриваються з-під зірочки, коли ланцюг котиться; видовжуються, падають і тануть, трохи йдучи за ланцюгом */
+  /* масло: крапля набрякає під ланцюгом і їде разом із ним, тягне в'язку шийку, відривається й падає;
+     чорне тіло, дзеркальний відблиск, райдужна плівка по краю. Лише поки ланцюг котиться; rAF спить без крапель. */
   const oil = $('#trackOil'), oilCtx = oil && oil.getContext ? oil.getContext('2d') : null, drops = [];
   let oilRaf = 0, oilLastY = scrollY, oilW = 0, oilH = 0, oilDpr = 1, oilAcc = 0;
   function oilSize() {
@@ -276,32 +278,58 @@
     if (!oilCtx || !motion() || getComputedStyle(track).display === 'none') { oilLastY = scrollY; return; }
     if (oil.clientWidth !== oilW) oilSize();                              // перший раз і після зміни ширини
     const v = scrollY - oilLastY; oilLastY = scrollY;
-    oilAcc += Math.min(Math.abs(v), 160) / 110;                         // ≈ одна крапля на 110 px прокрутки
-    while (oilAcc >= 1 && drops.length < 14) {
+    oilAcc += Math.min(Math.abs(v), 160) / 130;                          // ≈ одна крапля на 130 px прокрутки
+    while (oilAcc >= 1 && drops.length < 10) {
       oilAcc -= 1;
-      drops.push({ x: p * oilW + (Math.random() - .5) * 10, y: 1, vy: .35 + Math.random() * .5, vx: -Math.sign(v) * (.25 + Math.random() * .35),
-        r: 1.6 + Math.random() * 1.6, life: 0, ttl: 70 + Math.random() * 50 });
+      drops.push({ x: p * oilW - 6 - Math.random() * 26, y: 0, r: 0, rMax: 2.8 + Math.random() * 1.6,
+        phase: 0, t: 0, bead: 16 + Math.random() * 18, vy: 0, vx: 0, neck: 0, rem: 1, life: 0 });
     }
     if (oilAcc > 3) oilAcc = 0;
     if (!oilRaf && drops.length) oilRaf = requestAnimationFrame(oilStep);
+  }
+  const swell = t => 1 - Math.pow(1 - Math.min(1, t), 3);
+  function oilBody(c, x, y, r, h) {
+    c.beginPath(); c.moveTo(x, y - h);
+    c.bezierCurveTo(x + r * .55, y - h * .45, x + r, y - r * .2, x + r, y + r * .15);
+    c.bezierCurveTo(x + r, y + r * .85, x - r, y + r * .85, x - r, y + r * .15);
+    c.bezierCurveTo(x - r, y - r * .2, x - r * .55, y - h * .45, x, y - h); c.closePath();
   }
   function oilStep() {
     const c = oilCtx, k = oilDpr;
     c.setTransform(k, 0, 0, k, 0, 0); c.clearRect(0, 0, oilW, oilH);
     for (let i = drops.length - 1; i >= 0; i--) {
-      const d = drops[i]; d.life++;
-      d.vy = Math.min(d.vy + .035, 2.2); d.y += d.vy; d.x += d.vx; d.vx *= .97;
-      const t = d.life / d.ttl, a = t < .15 ? t / .15 : 1 - Math.max(0, (t - .55) / .45);
-      if (t >= 1 || d.y > oilH) { drops.splice(i, 1); continue; }
-      const stretch = 1 + Math.min(2.4, d.vy * 1.1), h = d.r * stretch;
-      c.globalAlpha = Math.max(0, a) * .92;
-      c.strokeStyle = 'rgba(20,14,4,.55)'; c.lineWidth = .7;                 // тонкий слід, що тягнеться від ланцюга
-      c.beginPath(); c.moveTo(d.x - d.vx * 3, Math.max(0, d.y - h * 3)); c.lineTo(d.x, d.y - h); c.stroke();
-      const g = c.createRadialGradient(d.x - d.r * .35, d.y - h * .35, .2, d.x, d.y, h);
-      g.addColorStop(0, 'rgba(253,197,1,.85)'); g.addColorStop(.18, 'rgba(120,82,10,.95)'); g.addColorStop(.55, '#140E04'); g.addColorStop(1, '#05080D');
-      c.fillStyle = g;
-      c.beginPath(); c.moveTo(d.x, d.y - h); c.bezierCurveTo(d.x + d.r, d.y - h * .3, d.x + d.r, d.y + d.r * .6, d.x, d.y + d.r * .8);
-      c.bezierCurveTo(d.x - d.r, d.y + d.r * .6, d.x - d.r, d.y - h * .3, d.x, d.y - h); c.fill();
+      const d = drops[i]; d.t++; d.life++;
+      if (d.phase === 0) {                                               // набрякає й їде з ланцюгом
+        d.x -= beltDx * .25; d.r = d.rMax * swell(d.t / d.bead); d.y = d.r * .9;
+        if (d.t >= d.bead) { d.phase = 1; d.t = 0; }
+      } else if (d.phase === 1) {                                        // тягне шийку
+        d.x -= beltDx * .15; d.y += .55 + d.t * .05; d.neck = d.y - d.r;
+        if (d.t >= 10) { d.phase = 2; d.t = 0; d.vy = .9; d.vx = -beltDx * .12; }
+      } else {                                                           // падає; залишок шийки втягується в ланцюг
+        d.vy = Math.min(d.vy + .16, 5.5); d.y += d.vy; d.x += d.vx; d.vx *= .96; d.rem = Math.max(0, d.rem - .1);
+      }
+      const fade = d.phase === 2 ? Math.max(0, 1 - Math.max(0, d.y - oilH * .45) / (oilH * .55)) : 1;
+      if (fade <= 0 || d.life > 240) { drops.splice(i, 1); continue; }
+      const r = d.r, h = r * (1 + Math.min(1.6, (d.phase === 2 ? d.vy : 0) * .32)), x = d.x, y = d.y;
+      c.globalAlpha = fade;
+      if (d.phase === 1 || d.rem > 0) {                                  // в'язка шийка: звужується від ланцюга до краплі
+        const top = 0, end = d.phase === 1 ? y - h : Math.min(y - h, top + 3 + (1 - d.rem) * 6), w = d.phase === 1 ? r * .55 : r * .4 * d.rem;
+        c.fillStyle = '#0B0805';
+        c.beginPath(); c.moveTo(x - w * 1.6, top); c.quadraticCurveTo(x - w * .35, (top + end) / 2, x - .35, end);
+        c.lineTo(x + .35, end); c.quadraticCurveTo(x + w * .35, (top + end) / 2, x + w * 1.6, top); c.closePath(); c.fill();
+      }
+      if (d.phase === 2 || r > .4) {
+        const g = c.createRadialGradient(x - r * .35, y - h * .3, r * .1, x, y, h * 1.05);
+        g.addColorStop(0, '#4A3612'); g.addColorStop(.35, '#1A1206'); g.addColorStop(1, '#030201');
+        c.fillStyle = g; oilBody(c, x, y, r, h); c.fill();
+        const film = c.createLinearGradient(x - r, y - h, x + r, y + r);         // тонка плівка: фіолет → бірюза → золото
+        film.addColorStop(0, 'rgba(140,90,255,.55)'); film.addColorStop(.5, 'rgba(40,210,190,.45)'); film.addColorStop(1, 'rgba(253,197,1,.6)');
+        c.strokeStyle = film; c.lineWidth = .7; oilBody(c, x, y, r, h); c.stroke();
+        c.fillStyle = 'rgba(255,255,255,.85)';                                   // дзеркальний відблиск
+        c.beginPath(); c.ellipse(x - r * .38, y - h * .18, r * .2, r * .32, -.5, 0, Math.PI * 2); c.fill();
+        c.fillStyle = 'rgba(253,197,1,.28)';                                    // теплий рефлекс знизу
+        c.beginPath(); c.ellipse(x + r * .25, y + r * .45, r * .35, r * .14, 0, 0, Math.PI * 2); c.fill();
+      }
     }
     c.globalAlpha = 1;
     oilRaf = drops.length ? requestAnimationFrame(oilStep) : (c.clearRect(0, 0, oilW, oilH), 0);
