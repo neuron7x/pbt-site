@@ -183,9 +183,7 @@
 
   /* ───── ГЕРОЙ ───── */
   const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
-  $$('#heroTitle .line').forEach(line => {       /* слова — окремі спани для появи */
-    line.innerHTML = line.textContent.trim().split(/\s+/).map((w, i) => `<span class="w" style="transition-delay:${.45 + i * .07}s">${esc(w)}</span>`).join(' ');
-  });
+  /* слова заголовка розмічено в HTML: перезапис DOM після JS створював новий кандидат LCP (simulate: render delay 4,7 с) */
   let heroTop = 0, heroTotal = 1, heroP = 0;
   function heroRender(y) {
     const p = clamp((y - heroTop) / heroTotal, 0, 1);
@@ -312,7 +310,7 @@
       .concat(D.cats.map(c => `<button class="chip" type="button" data-cat="${c.id}" aria-pressed="false">${esc(c.name)} <span class="num">${counts[c.id] || 0}</span></button>`)).join('');
     grid.innerHTML = D.fleet.map((u, i) => `
       <article class="unit rv rv--scale" style="--d:${(i % 8) * 60}ms" data-cat="${u.cat}" data-id="${u.id}">
-        <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__cat">${esc(catName(u.cat))}</span></figure>
+        <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__bp" aria-hidden="true"></span><span class="unit__cat">${esc(catName(u.cat))}</span><button class="unit__pass" type="button" data-pass="${esc(u.id)}" aria-haspopup="dialog" aria-label="Паспорт: ${esc(u.name)}">Паспорт</button></figure>
         <div class="unit__body"><h3>${esc(u.name)}</h3>
           ${u.specs.length ? `<dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl>` : `<p class="unit__purpose">${esc(unitPurpose(u))}</p>`}</div>
         <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
@@ -334,8 +332,72 @@
       const r = u.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
       u.style.setProperty('--ry', `${(x * 7).toFixed(2)}deg`); u.style.setProperty('--rx', `${(-y * 7).toFixed(2)}deg`);
     });
+    initBlueprints(grid);
     grid.addEventListener('pointerleave', e => { $$('.unit', grid).forEach(u => { u.style.removeProperty('--rx'); u.style.removeProperty('--ry'); }); }, true);
     grid.addEventListener('pointerout', e => { const u = e.target.closest('.unit'); if (u && !u.contains(e.relatedTarget)) { u.style.removeProperty('--rx'); u.style.removeProperty('--ry'); } });
+  }
+
+  /* ───── КРЕСЛЕННЯ І ПАСПОРТ МАШИНИ ───── */
+  /* креслення — лише на намір (наведення на парк, «Паспорт»): поза критичним бюджетом байтів; у бандлі вже вбудовано */
+  let bpLoad = null;
+  const loadBP = () => window.PBTBlueprint ? Promise.resolve(window.PBTBlueprint) : (bpLoad = bpLoad || new Promise((ok, fail) => {
+    const s = document.createElement('script'); s.src = 'js/blueprint.js';
+    s.onload = () => window.PBTBlueprint ? ok(window.PBTBlueprint) : fail(new Error('blueprint'));
+    s.onerror = () => { bpLoad = null; s.remove(); fail(new Error('blueprint')); };
+    document.head.appendChild(s);
+  }));
+  const unitById = id => D.fleet.find(x => x.id === id);
+  function h(tag, attrs, kids) {
+    const n = document.createElement(tag);
+    if (attrs) for (const k in attrs) { if (k === 'text') n.textContent = attrs[k]; else n.setAttribute(k, attrs[k]); }
+    (kids || []).forEach(k => n.append(k));
+    return n;
+  }
+  /* штрихування заново при кожному наведенні: прибрати клас, змусити перерахунок, повернути */
+  const replay = svg => { if (!motion()) return; svg.classList.remove('bp-anim'); void svg.getBoundingClientRect(); svg.classList.add('bp-anim'); };
+  function initBlueprints(grid) {
+    if (finePointer) grid.addEventListener('pointerover', e => {
+      const fig = e.target.closest('.unit figure'); if (!fig || fig.contains(e.relatedTarget)) return;
+      const host = $('.unit__bp', fig), card = fig.closest('.unit'); if (!host || !card) return;
+      loadBP().then(BP => {
+        if (!host.firstChild) { const u = unitById(card.dataset.id), r = u && BP.draw(u); if (!r) return; host.appendChild(r.svg); }
+        if (fig.matches(':hover')) replay(host.firstChild);
+      }, () => {});
+    });
+    grid.addEventListener('focusin', e => { if (e.target.closest('[data-pass]')) loadBP().catch(() => {}); });   // клавіатура: модуль їде, поки фокус на кнопці
+    grid.addEventListener('click', e => { const b = e.target.closest('[data-pass]'); if (b) loadBP().then(BP => openPassport(BP, b.dataset.pass), () => { const r = b.closest('.unit').querySelector('[data-req]'); if (r) r.click(); }); });
+  }
+  const pass = $('#passport');
+  function openPassport(BP, id) {
+    const u = unitById(id); if (!u || !pass || pass.open || typeof pass.showModal !== 'function') return;
+    const r = BP.draw(u, { angle: 38 }); if (!r) return;
+    const n = D.fleet.indexOf(u) + 1, total = D.fleet.length;
+    $('#passCode').textContent = `ПБ · ${u.id.toUpperCase()} · арк. ${String(n).padStart(2, '0')}/${total}`;
+    $('#passTitle').textContent = u.name;
+    $('#passCls').textContent = `${r.cls} · контур класу, масштаб умовний`;
+    const draw = $('#passDraw'); draw.replaceChildren(r.svg);
+    const reachBox = $('#passReach'), angle = $('#passAngle');
+    reachBox.hidden = !(r.setAngle && r.boom);
+    if (!reachBox.hidden) {
+      const upd = () => {
+        const a = angle.valueAsNumber, m = r.setAngle(a);
+        $('#passAngleOut').textContent = `${a}°`;
+        $('#passReachOut').textContent = m ? `Виліт ${m.r.toLocaleString('uk-UA')} м · оголовок на ${m.h.toLocaleString('uk-UA')} м вище п’яти стріли` : '';
+      };
+      angle.value = '38'; angle.oninput = upd; upd();
+    }
+    const rows = [['Найменування', u.name], ['Клас', r.cls]].concat((u.specs || []).map(x => [x.k, x.v]))
+      .concat([['Ставка', u.price ? `${fmt(u.price)} грн/${u.unit}` : 'договірна'], ['Ставки станом на', D.priceDate.split('-').reverse().join('.')], ['Аркуш', `${n} з ${total}`], ['Виконавець', 'ПЛЕЙНБУД · Полтава']]);
+    $('#passStamp').replaceChildren(...rows.map(([k, v]) => h('tr', null, [h('th', { scope: 'row', text: k }), h('td', { text: v })])));
+    const req = $('#passReq'); req.dataset.req = u.cat === 'trans' ? 'transport' : 'rent'; req.dataset.subject = u.name;
+    pass.showModal();
+    replay(r.svg);
+  }
+  if (pass) {
+    pass.addEventListener('click', e => {
+      if (e.target === pass || e.target.closest('[data-pass-close]') || e.target.closest('[data-req]')) pass.close();
+      else if (e.target.closest('#passPrint')) window.print();
+    });
   }
 
   /* ───── РОБОТИ: відео на картках ───── */
@@ -450,7 +512,8 @@
   function renderGeo() {
     const home = 'Полтавська', svg = $('#geoMap svg');
     const list = $('#geoList');
-    list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : 'виїзд'}</span></li>`).join('');
+    const R = (D.routes && D.routes.to) || {};
+    list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><button class="geo__pick" type="button" data-ua="${esc(r)}" aria-pressed="false" aria-controls="geoInfo"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'виїзд'}</span></button></li>`).join('');
     if (!svg) return;
     $$('.obl', svg).forEach(p => { if (p.dataset.ua === home) p.classList.add('home'); });
     /* маршрути з Полтави до кожної області — криві по центрах контурів, малюються при появі секції */
@@ -468,7 +531,7 @@
       const mx = (hx + x) / 2, my = (hy + y) / 2 - Math.abs(x - hx) * .18 - 14;
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', `M${hx.toFixed(1)},${hy.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x.toFixed(1)},${y.toFixed(1)}`);
-      path.setAttribute('class', 'route');
+      path.setAttribute('class', 'route'); path.dataset.ua = served[i].dataset.ua;
       path.style.setProperty('--len', qlen(hx, hy, mx, my, x, y).toFixed(1)); path.style.setProperty('--d', `${.2 + i * .12}s`);
       g.appendChild(path);
     });
@@ -481,6 +544,43 @@
     const hov = $('#geoHover');
     svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
+    initRoutes(svg, list, home);
+  }
+
+  /* ───── МАРШРУТИ: область → відстань дорогою → ціна подачі тралом → калькулятор ───── */
+  function initRoutes(svg, list, home) {
+    const info = $('#geoInfo'), R = D.routes && D.routes.to; if (!info || !R) return;
+    const geo = info.closest('.geo');
+    function pick(ua) {
+      const r = R[ua], isHome = ua === home;
+      $$('.geo__pick', list).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ua === ua)));
+      $$('.route', svg).forEach(p => p.classList.toggle('is-sel', p.dataset.ua === ua));
+      $$('.obl', svg).forEach(p => p.classList.toggle('is-sel', p.dataset.ua === ua));
+      geo.classList.toggle('has-sel', !!r);
+      const kids = [];
+      if (isHome) {
+        kids.push(h('p', { class: 'geo__leg', text: 'Полтава · база' }), h('p', { class: 'geo__km', text: 'від 0 км' }),
+          h('p', { class: 'geo__cost', text: 'Подача по області — за фактичним кілометражем від бази.' }));
+      } else if (r) {
+        const t = (D.trailers || []).filter(x => Number.isSafeInteger(x.rate) && x.rate > 0).sort((a, b) => a.maxT - b.maxT);
+        kids.push(h('p', { class: 'geo__leg', text: `${D.routes.from} → ${r.city}` }),
+          h('p', { class: 'geo__km' }, [h('b', { text: fmt(r.km) }), ' км дорогою']),
+          h('dl', { class: 'geo__cost' }, t.map(x => h('div', null, [h('dt', { text: `${x.name}, ${fmt(x.rate)} грн/км` }), h('dd', { text: `≈ ${fmt(x.rate * r.km)} грн` })]))),
+          h('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-km': String(r.km), text: `Підставити ${r.km} км у калькулятор` }));
+      }
+      kids.push(h('p', { class: 'geo__src', text: `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Ставки тралу — станом на ${D.priceDate.split('-').reverse().join('.')}.` }));
+      info.replaceChildren(...kids);
+      info.hidden = false;
+    }
+    list.addEventListener('click', e => { const b = e.target.closest('.geo__pick'); if (b) pick(b.dataset.ua); });
+    svg.addEventListener('click', e => { const p = e.target.closest('.obl'); if (p && p.dataset.ua && (R[p.dataset.ua] || p.dataset.ua === home)) pick(p.dataset.ua); });
+    info.addEventListener('click', e => {
+      const b = e.target.closest('.geo__calc'); if (!b) return;
+      const n = $('#cKmN'), cin = $('#cina'); if (!n || !cin) return;
+      n.value = b.dataset.km; n.dispatchEvent(new Event('input', { bubbles: true }));
+      cin.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'start' });
+      (n.disabled ? $('#cMachine') : n).focus({ preventScroll: true });   // автокран їде своїм ходом: подача не тралом — обрати іншу техніку
+    });
   }
 
   /* External links from configuration: https only, parsed by the platform, not by a prefix check. */
@@ -499,10 +599,14 @@
     const c = b.contacts || {};
     const tel = p => p ? `tel:${String(p).replace(/[^+\d]/g, '')}` : '#zapyt';
     $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = tel(c.phone); });
-    $$('[data-phone2]').forEach(a => {
-      const present = !!c.phone2, row = a.closest('[data-phone2-row]') || a;
-      row.hidden = !present; a.textContent = phoneHuman(c.phone2) || '';
-      if (a.tagName === 'A') { if (present) a.href = tel(c.phone2); else a.removeAttribute('href'); }
+    /* другий телефон не наданий — у розмітці <span>-заготовка: <a> без href псувало crawlable-anchors */
+    $$('[data-phone2]').forEach(el => {
+      const present = !!c.phone2, row = el.closest('[data-phone2-row]') || el;
+      row.hidden = !present; el.textContent = phoneHuman(c.phone2) || '';
+      if (!present) return;
+      let a = el;
+      if (el.tagName !== 'A') { a = document.createElement('a'); a.className = el.className; a.dataset.phone2 = ''; a.textContent = el.textContent; el.replaceWith(a); }
+      a.href = tel(c.phone2);
     });
     const email = typeof c.email === 'string' && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email) ? c.email : '';
     $$('[data-email]').forEach(a => {
