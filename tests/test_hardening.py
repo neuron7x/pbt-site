@@ -273,7 +273,7 @@ def test_server_5xx_is_transient(srv):
 def test_request_log_strips_control_characters(srv):
     """M12 (S9): an injected request line may not persist URL PII or ANSI controls."""
     s = srv()
-    journal = ROOT / 'data' / 'server.log'
+    journal = s.data / 'server.log'
     offset = journal.stat().st_size
     marker = f'LOGINJ{time.time_ns()}'
     with socket.create_connection(('127.0.0.1', s.port)) as c:
@@ -289,7 +289,7 @@ def test_ip_hash_uses_secret_salt_not_constant(srv):
     s = srv(IP_HASH_SALT='')
     s.post(LEAD, 'k-salt-0000001')
     h = s.rows('SELECT ip_hash FROM leads')[0][0]
-    salt = (ROOT / 'data' / '.ip_salt').read_text().strip()
+    salt = (s.data / '.ip_salt').read_text().strip()
     assert h == hmac.new(salt.encode(), b'127.0.0.1', hashlib.sha256).hexdigest()[:16]
     assert h != hmac.new(b'pbt', b'127.0.0.1', hashlib.sha256).hexdigest()[:16] and len(salt) >= 32
 

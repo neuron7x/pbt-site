@@ -16,7 +16,9 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
-DATA = ROOT / 'data'
+# Каталог стану (журнал, сіль IP, база за замовчуванням): PBT_DATA_DIR з оточення процесу, інакше <repo>/data як і раніше.
+# Береться ДО .env навмисно: шлях до стану — властивість розгортання (systemd/тести), а не файла в робочому дереві.
+DATA = Path(os.environ.get('PBT_DATA_DIR') or ROOT / 'data').resolve()
 CONFIG = ROOT / 'config' / 'business.json'
 os.umask(0o077)  # PII, logs and SQLite sidecars must not inherit permissive host modes.
 DATA.mkdir(mode=0o700, exist_ok=True)
