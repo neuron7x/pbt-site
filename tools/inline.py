@@ -30,6 +30,7 @@ css = (WEB / 'css' / 'site.css').read_text(encoding='utf-8')
 STYLES = (('css/fonts.css', fonts), ('css/site.css', css))
 data = re.sub(r'"(media/[^"]+\.(?:webp|png|svg))"', lambda m: '"' + data_uri(m.group(1)) + '"', (WEB / 'js' / 'data.js').read_text(encoding='utf-8'))
 quote = (WEB / 'js' / 'quote.js').read_text(encoding='utf-8')
+geo_map = (WEB / 'media' / 'map' / 'oblasts.json').read_text(encoding='utf-8').strip()
 blueprint = (WEB / 'js' / 'blueprint.js').read_text(encoding='utf-8')
 site = (WEB / 'js' / 'site.js').read_text(encoding='utf-8')
 cine = (WEB / 'js' / 'cine.js').read_text(encoding='utf-8')
@@ -42,7 +43,7 @@ html = re.sub(r'<link rel="preload"[^>]*>\n?', '', html)
 def assemble(videos):
     vmap = ',\n'.join(f'"{n}.mp4": "{data_uri("media/video/" + n + ".mp4")}"' for n in videos)
     cmap = ',\n'.join(f'"{i}": "{data_uri("media/cine/" + i + "-w.webp")}"' for i in CINE_IDS)
-    d = data + '\nwindow.PBT.videoData = {' + vmap + '};\nwindow.PBT.cinePosters = {' + cmap + '};\nwindow.PBT_BUNDLE = true;\n'
+    d = data + '\nwindow.PBT.geoMap = ' + geo_map + ';' + '\nwindow.PBT.videoData = {' + vmap + '};\nwindow.PBT.cinePosters = {' + cmap + '};\nwindow.PBT_BUNDLE = true;\n'
     h = inline_css(html, STYLES)
     h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/site.js"></script>', '<script>' + blueprint + '</script><script>' + site + '</script>')
     return h
@@ -72,7 +73,7 @@ MULTI = DIST / 'artifact'
 # одного публікування. Живий сайт і однофайлова збірка не змінюються; жодне відео не перекодовується.
 ARTIFACT_OMIT = frozenset({'media/video/hero-wide.mp4'})
 shutil.rmtree(MULTI, ignore_errors=True)
-d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.mp4Only = true;\nwindow.PBT.heroSD = true;\nwindow.PBT_BUNDLE = true;\n'
+d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.geoMap = ' + geo_map + ';' + '\nwindow.PBT.mp4Only = true;\nwindow.PBT.heroSD = true;\nwindow.PBT_BUNDLE = true;\n'
 h = (WEB / 'index.html').read_text(encoding='utf-8')
 h = inline_css(h, STYLES)
 h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/site.js"></script>', '<script>' + blueprint + '</script><script>' + site + '</script>')

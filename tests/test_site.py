@@ -183,6 +183,8 @@ def test_mobile_menu_opens_and_closes(page_factory):
 
 def test_geo_map_marks_home_and_served(page_factory):
     pg = page_factory()
+    pg.evaluate('document.getElementById("geo").scrollIntoView({behavior: "instant"})')
+    pg.locator('#geoMap svg[data-ready="1"]').wait_for(state='attached')     # контури — ліниві дані (media/map/oblasts.json)
     assert pg.locator('#geoMap .obl').count() >= 25
     assert pg.locator('#geoMap .obl.served').count() == len(DATA['regions']) + 1   # + м. Київ як окремий контур у Київській
     assert pg.locator('#geoMap .obl.home').count() == 1
