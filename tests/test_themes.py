@@ -53,6 +53,7 @@ def test_theme_toggle_keyboard_storage_and_back_forward(page_factory, width, hei
     assert page.evaluate("document.documentElement.dataset.theme") == "sky"
     assert sky.get_attribute("aria-pressed") == "true"
     assert page.evaluate("localStorage.getItem('pbt-theme')") == "sky"
+    assert page.evaluate("document.querySelector('meta[name=theme-color]').content") == "#05080D"
 
 
 def test_no_cross_theme_media_fetches_or_dom_rebuild(page_factory):
