@@ -904,6 +904,7 @@ main section[id]{scroll-margin-top:88px}
   .dock__call::before{content:"";width:9px;height:9px;background:#3DDC84;box-shadow:0 0 0 3px rgba(61,220,132,.25)}
   .dock__go{background:#FDC501;color:#0B1017}
   .dock a:focus-visible{outline:3px solid #FFFFFF;outline-offset:-4px}
+  .dock a.dock__go:focus-visible{outline-color:#0B1017}
   .motion-toggle,.motion-toggle[aria-pressed=true]{top:auto;left:auto;right:0;bottom:0;width:60px;max-width:none;height:calc(60px + env(safe-area-inset-bottom));padding:0 0 env(safe-area-inset-bottom);border:0;border-left:1px solid rgba(255,255,255,.14);border-radius:0;background:#0B1017;color:#FFFFFF;font-size:0;box-shadow:none;z-index:78;place-items:center}
   :root:not([data-quality=static]) .motion-toggle:not([hidden]){display:grid}
   [data-quality=static] .dock{padding-right:0}
@@ -1102,5 +1103,4 @@ main section[id]{scroll-margin-top:88px}
 
 :is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(180deg,rgb(11, 16, 23),rgb(17, 24, 33));background-size:96px 96px,96px 96px,100% 100%}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle[aria-pressed=true]{background:#FDC501;border-color:#FDC501;color:#0B1017}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .dock__go:focus-visible{outline-color:#0B1017}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__m{background:#0B1017;color:#ECECE7;padding:3px 5px}
