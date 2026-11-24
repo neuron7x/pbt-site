@@ -19,6 +19,7 @@ def test_gauge_stops_sit_on_their_own_sections(page_factory):
 def test_unserved_regions_are_named_in_ukrainian(page_factory):
     pg = page_factory(1440, 900)
     pg.evaluate("document.getElementById('geo').scrollIntoView({behavior:'instant'})")
+    pg.locator('#geoMap svg[data-ready="1"]').wait_for(state='attached')    # контури — ліниві дані
     names = pg.evaluate("[...document.querySelectorAll('#geoMap .obl:not([data-ua=\"\"])')].length")
     assert names >= 9
     seen = []
