@@ -531,7 +531,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .tile__group{position:absolute;left:12px;top:12px;font:600 10.5px/1 var(--f-m);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);background:rgba(255,255,255,.88);padding:7px 10px;border-radius:999px}
 .tile__body{padding:22px;display:flex;flex-direction:column;gap:12px}
 .tile__order{align-self:flex-start;margin-top:auto;min-height:44px}
-.tile__body h4{font:600 clamp(17px,1.2vw,20px)/1.22 var(--f-b);letter-spacing:-.01em;text-transform:none}
+.tile__body h3{font:600 clamp(17px,1.2vw,20px)/1.22 var(--f-b);letter-spacing:-.01em;text-transform:none}
 .tile__price{font:700 20px/1 var(--f-d);color:var(--sky-800);font-variant-numeric:tabular-nums}
 .tile__price small{font:500 11px/1 var(--f-m);color:var(--ink-3);margin-left:6px;letter-spacing:.06em}
 .tile__doc{font-size:12.5px;color:var(--ink-3);display:flex;gap:8px;align-items:center}
@@ -1047,7 +1047,7 @@ main section[id]{scroll-margin-top:88px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile{box-shadow:inset 0 0 0 1px rgba(11,16,23,.14);position:relative}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:inset 0 0 0 1px #0B1017}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__group{border-radius:0;left:0;top:0;background:#0B1017;color:#FFFFFF;font-weight:700}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__body h4{font:800 clamp(18px,1.3vw,21px)/1.1 var(--f-d);text-transform:uppercase;letter-spacing:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__body h3{font:800 clamp(18px,1.3vw,21px)/1.1 var(--f-d);text-transform:uppercase;letter-spacing:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__price{color:#0B1017;font-size:24px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__doc::before{border-radius:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .mats__note{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,0 0 0 1px rgba(11,16,23,.12);text-align:left}

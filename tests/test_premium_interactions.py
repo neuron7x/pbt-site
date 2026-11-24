@@ -14,7 +14,7 @@ def test_every_material_opens_its_request_without_sending(page_factory):
     assert cards.count() == 8
     assert cards.get_by_role("button", name="У заявку", exact=True).count() == 8
     for card in cards.all():
-        name = card.locator("h4").text_content()
+        name = card.locator("h3").text_content()
         card.get_by_role("button", name="У заявку", exact=True).click()
         expect(page.locator("#subject")).to_have_value(name)
         expect(page.locator('input[name="type"][value="material"]')).to_be_checked()
