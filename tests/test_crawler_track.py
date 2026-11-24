@@ -59,3 +59,28 @@ def test_track_absent_in_graphite_and_print(page_factory, media):
     else:
         pg.emulate_media(media='print')
     assert pg.evaluate("getComputedStyle(document.getElementById('track')).display") == 'none'
+
+
+OIL_INK = """() => { const c = document.getElementById('trackOil'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 8) n++; return n }"""
+
+
+def test_oil_drips_only_while_rolling_and_then_dries(page_factory):
+    pg = page_factory(1440, 900)
+    assert pg.evaluate(OIL_INK) == 0                                        # спокій — жодної краплі
+    for _ in range(6):
+        pg.mouse.wheel(0, 260)
+        pg.wait_for_timeout(40)
+    pg.wait_for_timeout(150)
+    assert pg.evaluate(OIL_INK) > 20                                        # ланцюг котиться — масло тече
+    pg.wait_for_timeout(2600)
+    assert pg.evaluate(OIL_INK) == 0                                        # краплі тануть, rAF засинає
+
+
+def test_no_oil_under_reduced_motion(page_factory):
+    pg = page_factory(1440, 900, reduced=True)
+    for _ in range(6):
+        pg.mouse.wheel(0, 260)
+        pg.wait_for_timeout(40)
+    pg.wait_for_timeout(150)
+    assert pg.evaluate(OIL_INK) == 0

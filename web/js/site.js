@@ -262,6 +262,49 @@
     if (!track) return;
     track.style.setProperty('--tp', p.toFixed(4));
     if (!beltRaf) beltRaf = requestAnimationFrame(beltStep);
+    oilFeed(p);
+  }
+  /* масло: краплі зриваються з-під зірочки, коли ланцюг котиться; видовжуються, падають і тануть, трохи йдучи за ланцюгом */
+  const oil = $('#trackOil'), oilCtx = oil && oil.getContext ? oil.getContext('2d') : null, drops = [];
+  let oilRaf = 0, oilLastY = scrollY, oilW = 0, oilH = 0, oilDpr = 1, oilAcc = 0;
+  function oilSize() {
+    if (!oilCtx) return;
+    oilDpr = Math.min(2, devicePixelRatio || 1); oilW = oil.clientWidth; oilH = oil.clientHeight;
+    oil.width = Math.round(oilW * oilDpr); oil.height = Math.round(oilH * oilDpr);
+  }
+  function oilFeed(p) {
+    if (!oilCtx || !motion() || getComputedStyle(track).display === 'none') { oilLastY = scrollY; return; }
+    if (oil.clientWidth !== oilW) oilSize();                              // перший раз і після зміни ширини
+    const v = scrollY - oilLastY; oilLastY = scrollY;
+    oilAcc += Math.min(Math.abs(v), 160) / 110;                         // ≈ одна крапля на 110 px прокрутки
+    while (oilAcc >= 1 && drops.length < 14) {
+      oilAcc -= 1;
+      drops.push({ x: p * oilW + (Math.random() - .5) * 10, y: 1, vy: .35 + Math.random() * .5, vx: -Math.sign(v) * (.25 + Math.random() * .35),
+        r: 1.6 + Math.random() * 1.6, life: 0, ttl: 70 + Math.random() * 50 });
+    }
+    if (oilAcc > 3) oilAcc = 0;
+    if (!oilRaf && drops.length) oilRaf = requestAnimationFrame(oilStep);
+  }
+  function oilStep() {
+    const c = oilCtx, k = oilDpr;
+    c.setTransform(k, 0, 0, k, 0, 0); c.clearRect(0, 0, oilW, oilH);
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i]; d.life++;
+      d.vy = Math.min(d.vy + .035, 2.2); d.y += d.vy; d.x += d.vx; d.vx *= .97;
+      const t = d.life / d.ttl, a = t < .15 ? t / .15 : 1 - Math.max(0, (t - .55) / .45);
+      if (t >= 1 || d.y > oilH) { drops.splice(i, 1); continue; }
+      const stretch = 1 + Math.min(2.4, d.vy * 1.1), h = d.r * stretch;
+      c.globalAlpha = Math.max(0, a) * .92;
+      c.strokeStyle = 'rgba(20,14,4,.55)'; c.lineWidth = .7;                 // тонкий слід, що тягнеться від ланцюга
+      c.beginPath(); c.moveTo(d.x - d.vx * 3, Math.max(0, d.y - h * 3)); c.lineTo(d.x, d.y - h); c.stroke();
+      const g = c.createRadialGradient(d.x - d.r * .35, d.y - h * .35, .2, d.x, d.y, h);
+      g.addColorStop(0, 'rgba(253,197,1,.85)'); g.addColorStop(.18, 'rgba(120,82,10,.95)'); g.addColorStop(.55, '#140E04'); g.addColorStop(1, '#05080D');
+      c.fillStyle = g;
+      c.beginPath(); c.moveTo(d.x, d.y - h); c.bezierCurveTo(d.x + d.r, d.y - h * .3, d.x + d.r, d.y + d.r * .6, d.x, d.y + d.r * .8);
+      c.bezierCurveTo(d.x - d.r, d.y + d.r * .6, d.x - d.r, d.y - h * .3, d.x, d.y - h); c.fill();
+    }
+    c.globalAlpha = 1;
+    oilRaf = drops.length ? requestAnimationFrame(oilStep) : (c.clearRect(0, 0, oilW, oilH), 0);
   }
   function trackStations() {
     if (!trackStops) return;

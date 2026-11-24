@@ -1021,16 +1021,20 @@ html:has(#passport[open]){overflow:hidden}
 
 /* ═══ ГУСЕНИЦЯ — фірмовий прогрес сторінки («Сталь») ═══ */
 .track{display:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .track{display:block;position:fixed;left:0;right:0;top:0;z-index:79;height:12px;transform:translateY(var(--nav-h,64px));transition:transform .45s var(--ease);pointer-events:none;background:#05080D;box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 14px rgba(0,0,0,.35)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .track{display:block;position:fixed;left:0;right:0;top:0;z-index:79;height:14px;transform:translateY(var(--nav-h,64px));transition:transform .45s var(--ease);pointer-events:none;background:#05080D;box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 14px rgba(0,0,0,.35)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .track.is-up{transform:translateY(0)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .nav__bar{display:none}
-.track__belt{position:absolute;inset:2px 0;overflow:hidden}
+.track__belt{position:absolute;inset:1px 0;overflow:hidden}
 .track__shoes,.track__gold{position:absolute;top:0;bottom:0;left:-16px;right:-16px;transform:translateX(var(--tx,0px));will-change:transform;
-  background:repeating-linear-gradient(90deg,var(--shoe) 0 11px,rgba(0,0,0,0) 11px 13px,var(--pin) 13px 14px,rgba(0,0,0,0) 14px 16px)}
-.track__shoes{--shoe:#262E38;--pin:#3A4450}
-.track__gold{--shoe:#FDC501;--pin:#8A6B00;clip-path:inset(0 calc((1 - var(--tp,0)) * (100% - 32px) + 16px + var(--tx,0px)) 0 0)}
-.track__sprocket{position:absolute;top:-6px;left:calc(var(--tp,0) * 100%);width:24px;height:24px;margin-left:-12px;transform:rotate(var(--rot,0deg));fill:#FDC501;stroke:#05080D;stroke-width:1.2;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
-.track__sprocket circle{fill:#05080D;stroke:#FDC501;stroke-width:1.4}
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,0) 0 12px,#05080D 12px 12.6px,var(--pin) 12.6px 14.2px,#05080D 14.2px 16px),
+    linear-gradient(180deg,rgba(255,255,255,0) 44%,rgba(255,255,255,.22) 50%,rgba(255,255,255,0) 56%),
+    linear-gradient(180deg,var(--s1) 0,var(--s2) 38%,var(--s3) 62%,var(--s4) 100%)}
+.track__shoes{--s1:#59626C;--s2:#2C343D;--s3:#161C23;--s4:#323A44;--pin:#4C5560}
+.track__gold{--s1:#E4EAF0;--s2:#9AA5B1;--s3:#4E5864;--s4:#AEB8C3;--pin:#FDC501;clip-path:inset(0 calc((1 - var(--tp,0)) * (100% - 32px) + 16px + var(--tx,0px)) 0 0)}
+.track__belt::after{content:"";position:absolute;inset:auto 0 0;height:1px;background:linear-gradient(90deg,#FDC501 calc(var(--tp,0) * 100%),rgba(0,0,0,0) 0)}
+.track__sprocket{position:absolute;top:-6px;left:calc(var(--tp,0) * 100%);width:26px;height:26px;margin-left:-13px;transform:rotate(var(--rot,0deg));fill:url(#trkSteel);stroke:#05080D;stroke-width:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.track__sprocket circle{fill:#FDC501;stroke:#05080D;stroke-width:1.2}
+.track__oil{position:absolute;left:0;top:100%;width:100%;height:84px;pointer-events:none}
 .track__stops{position:absolute;inset:0;margin:0;padding:0;list-style:none}
 .track__stops li{position:absolute;top:0;bottom:0;width:0}
 .track__stops a{position:absolute;top:-2px;left:-6px;width:12px;height:16px;pointer-events:auto}
