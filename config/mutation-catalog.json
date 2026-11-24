@@ -1048,6 +1048,21 @@
     "tests/motion_physics.test.cjs"
    ],
    "note": "Гравітація масла покадрово: на 120 Гц падіння вдвічі швидше (аудит п.46)."
+  },
+  {
+   "id": "M-MEDIA-cine-ignores-power",
+   "task": "MEDIA-444",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": ".then(i => !!(i.supported && i.smooth && (finePointer || i.powerEfficient)), () => finePointer));",
+     "replace": ".then(i => !!(i.supported && i.smooth), () => finePointer));"
+    }
+   ],
+   "oracle": [
+    "tests/test_cine.py::test_phone_without_power_efficient_vp9_444_gets_hardware_h264"
+   ],
+   "note": "Вибір джерела ігнорує powerEfficient: телефон знову декодує VP9 4:4:4 програмно."
   }
  ]
 }

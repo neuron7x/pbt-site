@@ -1105,16 +1105,34 @@
     const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), railDots = $$('a', rail);
     let cur = -1, front = 0, inView = false;
     const prof = () => (mobileLayout() && innerHeight > innerWidth ? 'm' : 'w');
+    /* Кліпи «Масштабу» у WebM — VP9 Profile 1 (4:4:4): майже ніде не декодується апаратно. W3C Media Capabilities:
+       на дотику WebM лише якщо декодування енергоефективне, інакше апаратний H.264 того самого кадру; на ПК — як і досі,
+       якщо плавно. canPlayType('vp9') без профілю відповідав «так» і на телефонах, що потім декодували 4:4:4 програмно. */
+    const CINE_WEBM = 'video/webm; codecs="vp09.01.41.08"', webmPick = {};
+    function webmFor(p) {
+      if (webmPick[p]) return webmPick[p];
+      const can = !D.mp4Only && !!document.createElement('video').canPlayType(CINE_WEBM);
+      const size = p === 'm' ? { width: 720, height: 1280 } : { width: 1920, height: 1080 };
+      return (webmPick[p] = !can ? Promise.resolve(false)
+        : !(navigator.mediaCapabilities && navigator.mediaCapabilities.decodingInfo) ? Promise.resolve(finePointer)
+        : navigator.mediaCapabilities.decodingInfo({ type: 'file', video: { contentType: CINE_WEBM, ...size, bitrate: 4e6, framerate: 30 } })
+          .then(i => !!(i.supported && i.smooth && (finePointer || i.powerEfficient)), () => finePointer));
+    }
     function load(v, id) {
-      const n = id + '-' + prof();
+      const p = prof(), n = id + '-' + p;
       if (v.dataset.clip === n) return;
       v.dataset.clip = n; v.removeAttribute('src'); v.replaceChildren();
       v.poster = C_BASE + n + '.webp';
-      if (!D.mp4Only && document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
-        const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = 'video/webm'; v.append(a);
-      }
-      const b = document.createElement('source'); b.src = C_BASE + n + '.mp4'; b.type = 'video/mp4'; v.append(b);
-      v.load();
+      webmFor(p).then(webm => {
+        if (v.dataset.clip !== n) return;                                  // кадр уже змінився, поки браузер відповідав
+        v.replaceChildren();
+        if (webm) { const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = CINE_WEBM; v.append(a); }
+        const b = document.createElement('source'); b.src = C_BASE + n + '.mp4'; b.type = 'video/mp4'; v.append(b);
+        v.dataset.codec = webm ? 'vp9-444' : 'h264';
+        v.load();
+        // play() з show() міг прийти раніше за джерела (рішення асинхронне) — відтворення відновлюється тут
+        if (v.classList.contains('is-on') && inView && videoAllowed()) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      });
     }
     function show(i) {
       if (i === cur) return;
