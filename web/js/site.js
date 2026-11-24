@@ -4,12 +4,15 @@
   'use strict';
   const D = window.PBT || {};
   const doc = document.documentElement;
+  /** Запити до статичної розмітки: незнайдений вузол — дефект розмітки, який ловлять браузерні тести.
+   * @param {string} s @param {ParentNode} [r] @returns {any} */
   const $ = (s, r) => (r || document).querySelector(s);
+  /** @param {string} s @param {ParentNode} [r] @returns {any[]} */
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const reduceQuery = matchMedia('(prefers-reduced-motion: reduce)');
   let reduced = reduceQuery.matches, manualPaused = false;
   const MOTION_KEY = 'pbt-motion-paused';
-  try { manualPaused = localStorage.getItem(MOTION_KEY) === '1'; } catch (_) { /* приватне сховище */ }
+  try { manualPaused = localStorage.getItem(MOTION_KEY) === '1'; } catch { /* приватне сховище */ }
   // Завантажений профіль static — обмеження якості; зміна системної переваги його не скасовує.
   const quality = () => doc.dataset.quality || 'full';
   const motion = () => quality() !== 'static' && !reduced && !manualPaused;
@@ -41,17 +44,57 @@
   motionToggle?.addEventListener('click', () => {
     if (quality() === 'static' || reduced) return;
     manualPaused = !manualPaused;
-    try { localStorage.setItem(MOTION_KEY, manualPaused ? '1' : '0'); } catch (_) { /* приватне сховище */ }
+    try { localStorage.setItem(MOTION_KEY, manualPaused ? '1' : '0'); } catch { /* приватне сховище */ }
     syncMotion();
   });
   reduceQuery.addEventListener('change', event => { reduced = event.matches; syncMotion(); });
   // Відкладений play() не повинен обійти паузу або системне обмеження руху.
   document.addEventListener('play', event => {
-    if (event.target.tagName === 'VIDEO' && !videoAllowed()) event.target.pause();
+    const media = /** @type {HTMLElement} */ (event.target);
+    if (media instanceof HTMLVideoElement && !videoAllowed()) media.pause();
   }, true);
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
-  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  /* Розмітку будуємо лише вузлами DOM: текст → Text, атрибути → setAttribute. Жодного HTML-рядка, отже жодного
+     синку розбору (OWASP DOM-based XSS Prevention, правило «безпечні синки»; W3C Trusted Types: require-trusted-types-for 'script'). */
+  function el(tag, attrs, ...kids) {
+    const n = document.createElement(tag);
+    for (const k in attrs || {}) {
+      const v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === 'class') n.className = v;
+      else if (k === 'style') for (const p in v) n.style.setProperty(p, v[p]);
+      else if (attrOk(k, v)) n.setAttribute(k, v === true ? '' : String(v));
+    }
+    append(n, kids);
+    return n;
+  }
+  /* Вартовий атрибутів фабрики (fail-closed): обробники подій не ставляться ніколи; адреси — лише з дозволених схем.
+     href: https:, mailto:, tel:, viber://chat, якір або відносний шлях того ж походження; src/poster/srcset: відносний шлях або
+     data:image|video (однофайлова збірка). Усе інше — атрибут не ставиться (javascript:, data:text/html, //чужий-хост). */
+  const URL_ATTR = { href: /^(?:https:\/\/|mailto:|tel:|viber:\/\/chat\?number=|#|(?![a-z][a-z0-9+.-]*:|\/\/)[\w./?=&%-]*$)/i,
+    src: /^(?:data:(?:image|video)\/[\w.+-]+;base64,|(?![a-z][a-z0-9+.-]*:|\/\/)[\w./-]+$)/i };
+  URL_ATTR.poster = URL_ATTR.src;
+  URL_ATTR.srcset = /^(?:(?![a-z][a-z0-9+.-]*:|\/\/)[\w./-]+ \dx(?:, (?![a-z][a-z0-9+.-]*:|\/\/)[\w./@-]+ \dx)*)$/i;
+  /* Білий список імен (fail-closed): лише атрибути, які сайт реально вживає, плюс data-* і aria-* (не виконуються).
+     Невідоме ім'я не ставиться (вбудований документ, formaction, action, xlink:href, ping, data) — так само, як on*. */
+  const ATTR_NAMES = new Set(['alt', 'decoding', 'height', 'href', 'id', 'loading', 'poster', 'rel', 'scope', 'src', 'srcset',
+    'tabindex', 'target', 'type', 'value', 'width']);
+  function attrOk(k, v) {
+    const name = k.toLowerCase();
+    if (!ATTR_NAMES.has(name) && !/^(?:data|aria)-[a-z][a-z0-9-]*$/.test(name)) return false;
+    const rule = URL_ATTR[name];
+    return !rule || rule.test(String(v));
+  }
+  function append(n, kids) {
+    for (const k of kids) {
+      if (k == null || k === false) continue;
+      if (Array.isArray(k)) append(n, k);
+      else n.append(typeof k === 'string' || typeof k === 'number' ? String(k) : k);
+    }
+    return n;
+  }
+  const fill = (n, ...kids) => { n.replaceChildren(); return append(n, kids); };
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const seg = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
   const ease = t => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -73,6 +116,7 @@
     if (D.videoData || D.heroSD || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
     return innerWidth * (devicePixelRatio || 1) >= 1600;
   }
+  /** @param {HTMLVideoElement} video @param {string} name @param {{ tall?: boolean }} [opt] */
   function attachVideo(video, name, { tall } = {}) {
     if (!video) return false;
     if (video.dataset.ready) return true;
@@ -105,14 +149,14 @@
     if (e.isIntersecting) visibleCards.add(e.target); else visibleCards.delete(e.target);
     syncCardVideo(e.target);
   }), { threshold: .45 }) : null;
-  const watchVideo = el => { if (vio) vio.observe(el); };
+  const watchVideo = node => { if (vio) vio.observe(node); };
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
   const menuBackdrop = [nav, $('#main'), $('.foot'), $('#gauge'), motionToggle, $('#dock'), $('.skip')].filter(Boolean);
   const menuInertBefore = new Map();
   let lastY = scrollY, navHidden = false, returnFocus = null;
-  const themeButtons = Array.from(document.querySelectorAll('[data-theme-choice]'));
+  const themeButtons = $$('[data-theme-choice]');
   const THEME_KEY = 'pbt-theme';
   function applyTheme(value, persist) {
     const next = value === 'precision' ? 'precision' : 'sky';
@@ -129,7 +173,7 @@
     const face = $('#themeFontPreload');
     if (face) face.href = 'fonts/' + (next === 'precision' ? 'IBMPlexSans-600-cyrillic.woff2' : 'Tektur-var-cyrillic.woff2');
     if (persist) {
-      try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* приватний режим / заблоковане сховище */ }
+      try { localStorage.setItem(THEME_KEY, next); } catch { /* приватний режим / заблоковане сховище */ }
     }
     // Обидві теми спільно використовують DOM і медіа. Після зміни стилю
     // перераховуємо геометрію й не підтримуємо прихований Canvas-цикл.
@@ -147,9 +191,9 @@
     document.body.style.overflow = on ? 'hidden' : '';
     if (on) nav.classList.remove('is-hidden');
     /* Модальний навігаційний шар: фон неактивний для Tab і скринридерів. */
-    menuBackdrop.forEach(el => {
-      if (on) { menuInertBefore.set(el, el.inert); el.inert = true; }
-      else el.inert = menuInertBefore.get(el) || false;
+    menuBackdrop.forEach(node => {
+      if (on) { menuInertBefore.set(node, node.inert); node.inert = true; }
+      else node.inert = menuInertBefore.get(node) || false;
     });
     if (!on) menuInertBefore.clear();
     if (on) menuClose.focus();
@@ -172,7 +216,7 @@
     if (menu.hidden) return;
     if (e.key === 'Escape') { e.preventDefault(); openMenu(false); return; }
     if (e.key !== 'Tab') return;
-    const focusable = Array.from(menu.querySelectorAll('button:not([disabled]), a[href]')).filter(el => el.getClientRects().length);
+    const focusable = Array.from(menu.querySelectorAll('button:not([disabled]), a[href]')).filter(node => node.getClientRects().length);
     if (!focusable.length) { e.preventDefault(); return; }
     if (e.shiftKey && document.activeElement === focusable[0]) {
       e.preventDefault(); focusable[focusable.length - 1].focus();
@@ -243,21 +287,51 @@
     heroTop = sHero.offsetTop; heroTotal = Math.max(1, sHero.offsetHeight - innerHeight);
     docMax = Math.max(1, doc.scrollHeight - innerHeight);
     secTops = sections.map(s => ({ id: s.id, top: s.offsetTop }));
-    $$('.gauge__stops li').forEach((li, i) => { const s = secTops[i]; if (s) li.style.top = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; });
+    /* зупинки глибиноміра — за id секції, не за індексом: секцій 9 (з «Масштабом»), зупинок 8 (аудит п.14) */
+    $$('.gauge__stops li').forEach(li => { const id = li.firstElementChild.getAttribute('href').slice(1), s = secTops.find(x => x.id === id); if (s) li.style.top = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; });
     trackStations();
     doc.style.setProperty('--nav-h', nav.offsetHeight + 'px');
     sparkSize();
   }
   /* ───── ГУСЕНИЦЯ: прогрес сторінки як гусеничний ланцюг; траки й зірочка котяться за скролом з інерцією ───── */
   const track = $('#track'), trackStops = $('#trackStops');
-  let beltPos = 0, beltRaf = 0, beltTx = 0, beltDx = 0;
-  function beltStep() {
-    const target = scrollY, d = target - beltPos;
-    beltPos = Math.abs(d) < .5 || !motion() ? target : beltPos + d * .14;      // «маса»: ланцюг дотягується після зупинки
-    track.style.setProperty('--tx', `${(-(beltPos * .55) % 16).toFixed(2)}px`);
-    const tx = beltPos * .55; beltDx = tx - beltTx; beltTx = tx;
+  /* фізика:початок — чисті функції руху; інтегруються за часом dt (мс), не за кадрами: однаково на 30, 60, 120 і 144 Гц.
+     Сталі відкалібровано так, щоб на 60 Гц рух збігся з попередньою покадровою версією; dt обрізано до 50 мс (згорнута вкладка). */
+  const PHYS = Object.freeze({ beltTau: 110, beltRatio: .55, gravity: 5.76e-4, vMax: .33, driftTau: 408, life: 4000,
+    neckMs: 167, neckV0: .033, neckA: 1.8e-4, fallV0: .054, remRate: .006, dtMax: 50 });
+  /** Експоненційне наближення до цілі: k = 1 − e^(−dt/τ) — інваріантне до частоти кадрів. */
+  const approach = (pos, target, dt, tau) => target + (pos - target) * Math.exp(-Math.min(dt, PHYS.dtMax) / tau);
+  /** Один крок краплі масла; beltV — швидкість ланцюга, px/мс. Повертає false, коли крапля прожила своє. */
+  function oilAdvance(d, dtRaw, beltV, carried) {
+    let dt = Math.min(dtRaw, PHYS.dtMax);
+    if (!carried) d.life += dt;
+    if (d.phase === 0) {                                                 // набрякає й їде з ланцюгом (¼ його ходу)
+      const over = Math.max(0, d.t + dt - d.bead); dt -= over; d.t += dt;
+      d.x -= beltV * dt * .25; d.r = d.rMax * (1 - Math.pow(1 - Math.min(1, d.t / d.bead), 3)); d.y = d.r * .9;
+      if (d.t >= d.bead) { d.phase = 1; d.t = 0; if (over > 0) oilAdvance(d, over, beltV, true); }   // залишок кроку — у наступну фазу
+    } else if (d.phase === 1) {                                          // в'язка шийка: рівноприскорено
+      const over = Math.max(0, d.t + dt - PHYS.neckMs); dt -= over; d.t += dt;
+      d.x -= beltV * dt * .15; d.y += (PHYS.neckV0 + PHYS.neckA * (d.t - dt / 2)) * dt;
+      if (d.t >= PHYS.neckMs) { d.phase = 2; d.t = 0; d.vy = PHYS.fallV0; d.vx = -beltV * .12; if (over > 0) oilAdvance(d, over, beltV, true); }
+    } else {
+      d.t += dt;                                                             // вільне падіння зі стелею швидкості (в'язкий опір)
+      const v1 = Math.min(d.vy + PHYS.gravity * dt, PHYS.vMax);
+      d.y += (d.vy + v1) / 2 * dt; d.vy = v1;
+      d.x += d.vx * PHYS.driftTau * (1 - Math.exp(-dt / PHYS.driftTau)); d.vx *= Math.exp(-dt / PHYS.driftTau);
+      d.rem = Math.max(0, d.rem - PHYS.remRate * dt);
+    }
+    return d.life <= PHYS.life;
+  }
+  /* фізика:кінець */
+  let beltPos = 0, beltRaf = 0, beltTx = 0, beltV = 0, beltT = 0;
+  function beltStep(now) {
+    const target = scrollY, dt = beltT ? now - beltT : 16.7; beltT = now;
+    beltPos = !motion() || Math.abs(target - beltPos) < .5 ? target : approach(beltPos, target, dt, PHYS.beltTau);   // «маса»
+    const tx = beltPos * PHYS.beltRatio;
+    beltV = dt > 0 ? (tx - beltTx) / Math.min(dt, PHYS.dtMax) : 0; beltTx = tx;
+    track.style.setProperty('--tx', `${(-tx % 16).toFixed(2)}px`);
     track.style.setProperty('--rot', `${(tx / 144 * 360 % 360).toFixed(1)}deg`);   // зуби входять у проміжки траків
-    beltRaf = beltPos !== target ? requestAnimationFrame(beltStep) : (beltDx = 0, 0);   // ланцюг став — краплі більше не їдуть
+    beltRaf = beltPos !== target ? requestAnimationFrame(beltStep) : (beltV = 0, beltT = 0, 0);   // ланцюг став — краплі більше не їдуть
   }
   function trackRender(p) {
     if (!track) return;
@@ -275,42 +349,35 @@
     oil.width = Math.round(oilW * oilDpr); oil.height = Math.round(oilH * oilDpr);
   }
   function oilFeed(p) {
-    if (!oilCtx || !motion() || getComputedStyle(track).display === 'none') { oilLastY = scrollY; return; }
+    if (!oilCtx || !motion() || doc.dataset.theme === 'precision') { oilLastY = scrollY; return; }   // без примусового перерахунку стилів на кадр
     if (oil.clientWidth !== oilW) oilSize();                              // перший раз і після зміни ширини
     const v = scrollY - oilLastY; oilLastY = scrollY;
     oilAcc += Math.min(Math.abs(v), 160) / 130;                          // ≈ одна крапля на 130 px прокрутки
     while (oilAcc >= 1 && drops.length < 10) {
       oilAcc -= 1;
       drops.push({ x: p * oilW - 6 - Math.random() * 26, y: 0, r: 0, rMax: 2.8 + Math.random() * 1.6,
-        phase: 0, t: 0, bead: 16 + Math.random() * 18, vy: 0, vx: 0, neck: 0, rem: 1, life: 0 });
+        phase: 0, t: 0, bead: 270 + Math.random() * 300, vy: 0, vx: 0, rem: 1, life: 0 });
     }
     if (oilAcc > 3) oilAcc = 0;
-    if (!oilRaf && drops.length) oilRaf = requestAnimationFrame(oilStep);
+    if (!oilRaf && drops.length) { oilT = 0; oilRaf = requestAnimationFrame(oilStep); }
   }
-  const swell = t => 1 - Math.pow(1 - Math.min(1, t), 3);
+  let oilT = 0;
   function oilBody(c, x, y, r, h) {
     c.beginPath(); c.moveTo(x, y - h);
     c.bezierCurveTo(x + r * .55, y - h * .45, x + r, y - r * .2, x + r, y + r * .15);
     c.bezierCurveTo(x + r, y + r * .85, x - r, y + r * .85, x - r, y + r * .15);
     c.bezierCurveTo(x - r, y - r * .2, x - r * .55, y - h * .45, x, y - h); c.closePath();
   }
-  function oilStep() {
-    const c = oilCtx, k = oilDpr;
+  function oilStep(now) {
+    const c = oilCtx, k = oilDpr, dt = oilT ? now - oilT : 16.7; oilT = now;
     c.setTransform(k, 0, 0, k, 0, 0); c.clearRect(0, 0, oilW, oilH);
+    if (!motion()) { drops.length = 0; oilRaf = 0; return; }                 // пауза/reduced-motion посеред падіння — масло зникає одразу
     for (let i = drops.length - 1; i >= 0; i--) {
-      const d = drops[i]; d.t++; d.life++;
-      if (d.phase === 0) {                                               // набрякає й їде з ланцюгом
-        d.x -= beltDx * .25; d.r = d.rMax * swell(d.t / d.bead); d.y = d.r * .9;
-        if (d.t >= d.bead) { d.phase = 1; d.t = 0; }
-      } else if (d.phase === 1) {                                        // тягне шийку
-        d.x -= beltDx * .15; d.y += .55 + d.t * .05; d.neck = d.y - d.r;
-        if (d.t >= 10) { d.phase = 2; d.t = 0; d.vy = .9; d.vx = -beltDx * .12; }
-      } else {                                                           // падає; залишок шийки втягується в ланцюг
-        d.vy = Math.min(d.vy + .16, 5.5); d.y += d.vy; d.x += d.vx; d.vx *= .96; d.rem = Math.max(0, d.rem - .1);
-      }
+      const d = drops[i];
+      if (!oilAdvance(d, dt, beltV)) { drops.splice(i, 1); continue; }
       const fade = d.phase === 2 ? Math.max(0, 1 - Math.max(0, d.y - oilH * .45) / (oilH * .55)) : 1;
-      if (fade <= 0 || d.life > 240) { drops.splice(i, 1); continue; }
-      const r = d.r, h = r * (1 + Math.min(1.6, (d.phase === 2 ? d.vy : 0) * .32)), x = d.x, y = d.y;
+      if (fade <= 0) { drops.splice(i, 1); continue; }
+      const r = d.r, h = r * (1 + Math.min(1.6, (d.phase === 2 ? d.vy * 16.7 : 0) * .32)), x = d.x, y = d.y;
       c.globalAlpha = fade;
       if (d.phase === 1 || d.rem > 0) {                                  // в'язка шийка: звужується від ланцюга до краплі
         const top = 0, end = d.phase === 1 ? y - h : Math.min(y - h, top + 3 + (1 - d.rem) * 6), w = d.phase === 1 ? r * .55 : r * .4 * d.rem;
@@ -381,19 +448,20 @@
   /* ───── ПОЯВА СЕКЦІЙ, ЛІЧИЛЬНИКИ, МАРШРУТИ ───── */
   const rio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
     if (!e.isIntersecting) return;
-    e.target.classList.add('is-in'); rio.unobserve(e.target);
+    const t = /** @type {HTMLElement} */ (e.target);
+    t.classList.add('is-in'); if (rio) rio.unobserve(t);
     $$('[data-count]', e.target).forEach(countUp);
-    if (e.target.dataset.count !== undefined) countUp(e.target);
+    if (t.dataset.count !== undefined) countUp(t);
   }), { threshold: 0, rootMargin: '20% 0px 20% 0px' }) : null;   // симетрична зона появи: стрибок до центру високої сітки не пропускає заголовок
   function reveal(root) {
-    $$('.rv', root || document).forEach(el => { if (!rio || !motion()) el.classList.add('is-in'); else rio.observe(el); });
-    $$('[data-count]', root || document).forEach(el => { if (el.closest('.rv')) return; if (!rio || !motion()) countUp(el); else rio.observe(el); });   /* лічильники поза .rv (герой) */
+    $$('.rv', root || document).forEach(node => { if (!rio || !motion()) node.classList.add('is-in'); else rio.observe(node); });
+    $$('[data-count]', root || document).forEach(node => { if (node.closest('.rv')) return; if (!rio || !motion()) countUp(node); else rio.observe(node); });   /* лічильники поза .rv (герой) */
   }
-  function countUp(el) {
-    if (el.dataset.done) return; el.dataset.done = '1';
-    const to = parseFloat(el.dataset.count), suf = el.dataset.suffix || '', dur = 1400, t0 = performance.now();
-    if (!motion()) { el.textContent = fmt(to) + suf; return; }
-    const step = t => { const k = motion() ? ease(clamp((t - t0) / dur, 0, 1)) : 1; el.textContent = fmt(to * k) + suf; if (k < 1) requestAnimationFrame(step); };
+  function countUp(node) {
+    if (node.dataset.done) return; node.dataset.done = '1';
+    const to = parseFloat(node.dataset.count), suf = node.dataset.suffix || '', dur = 1400, t0 = performance.now();
+    if (!motion()) { node.textContent = fmt(to) + suf; return; }
+    const step = t => { const k = motion() ? ease(clamp((t - t0) / dur, 0, 1)) : 1; node.textContent = fmt(to * k) + suf; if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
 
@@ -406,16 +474,20 @@
     const grid = $('#park'), chips = $('#chips');
     const counts = {};
     D.fleet.forEach(u => counts[u.cat] = (counts[u.cat] || 0) + 1);
-    chips.innerHTML = [`<button class="chip" type="button" data-cat="all" aria-pressed="true">Уся техніка <span class="num">${D.fleet.length}</span></button>`]
-      .concat(D.cats.map(c => `<button class="chip" type="button" data-cat="${c.id}" aria-pressed="false">${esc(c.name)} <span class="num">${counts[c.id] || 0}</span></button>`)).join('');
-    grid.innerHTML = D.fleet.map((u, i) => `
-      <article class="unit rv rv--scale" style="--d:${(i % 8) * 60}ms" data-cat="${u.cat}" data-id="${u.id}">
-        <figure><img src="${u.img}" alt="${esc(u.name)}" width="800" height="600" loading="lazy" decoding="async"><span class="unit__bp" aria-hidden="true"></span><span class="unit__cat">${esc(catName(u.cat))}</span><button class="unit__pass" type="button" data-pass="${esc(u.id)}" aria-haspopup="dialog" aria-label="Паспорт: ${esc(u.name)}">Паспорт</button></figure>
-        <div class="unit__body"><h3>${esc(u.name)}</h3>
-          ${u.specs.length ? `<dl class="unit__specs">${u.specs.map(s => `<div><dt>${esc(s.k)}</dt><dd>${esc(s.v)}</dd></div>`).join('')}</dl>` : `<p class="unit__purpose">${esc(unitPurpose(u))}</p>`}</div>
-        <div class="unit__foot"><p class="unit__price${u.price ? '' : ' is-neg'}">${u.price ? `${fmt(u.price)} <small>грн/${esc(u.unit)}</small>` : 'договірна'}</p>
-          <button class="btn btn--sm" type="button" data-req="${u.cat === 'trans' ? 'transport' : 'rent'}" data-subject="${esc(u.name)}">У заявку</button></div>
-      </article>`).join('');
+    const chip = (cat, name, n, on) => el('button', { class: 'chip', type: 'button', 'data-cat': cat, 'aria-pressed': String(on) }, name, ' ', el('span', { class: 'num' }, String(n)));
+    fill(chips, chip('all', 'Уся техніка', D.fleet.length, true), D.cats.map(c => chip(c.id, c.name, counts[c.id] || 0, false)));
+    fill(grid, D.fleet.map((u, i) => el('article', { class: 'unit rv rv--scale', style: { '--d': `${(i % 8) * 60}ms` }, 'data-cat': u.cat, 'data-id': u.id },
+      el('figure', null,
+        el('img', { src: u.img, alt: u.name, width: 800, height: 600, loading: 'lazy', decoding: 'async' }),
+        el('span', { class: 'unit__bp', 'aria-hidden': 'true' }),
+        el('span', { class: 'unit__cat' }, catName(u.cat)),
+        el('button', { class: 'unit__pass', type: 'button', 'data-pass': u.id, 'aria-haspopup': 'dialog', 'aria-label': `Паспорт: ${u.name}` }, 'Паспорт')),
+      el('div', { class: 'unit__body' }, el('h3', null, u.name),
+        u.specs.length ? el('dl', { class: 'unit__specs' }, u.specs.map(sp => el('div', null, el('dt', null, sp.k), el('dd', null, sp.v))))
+          : el('p', { class: 'unit__purpose' }, unitPurpose(u))),
+      el('div', { class: 'unit__foot' },
+        el('p', { class: u.price ? 'unit__price' : 'unit__price is-neg' }, u.price ? [`${fmt(u.price)} `, el('small', null, `грн/${u.unit}`)] : 'договірна'),
+        el('button', { class: 'btn btn--sm', type: 'button', 'data-req': u.cat === 'trans' ? 'transport' : 'rent', 'data-subject': u.name }, 'У заявку')))));
     const reveal1 = b => { if (chips.scrollWidth > chips.clientWidth + 1) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: motion() ? 'smooth' : 'auto' }); };
     chips.addEventListener('focusin', e => { const b = e.target.closest('.chip'); if (b) reveal1(b); });   // Tab не лишає фокус за краєм (аудит a5951a5: 107 px поза контейнером на 390)
     chips.addEventListener('click', e => {
@@ -439,20 +511,18 @@
 
   /* ───── КРЕСЛЕННЯ І ПАСПОРТ МАШИНИ ───── */
   /* креслення — лише на намір (наведення на парк, «Паспорт»): поза критичним бюджетом байтів; у бандлі вже вбудовано */
+  /* W3C Trusted Types: CSP require-trusted-types-for 'script' забороняє рядки в синках скриптів; єдиний дозволений URL —
+     модуль креслень того ж походження. Браузер без Trusted Types отримує той самий рядок. */
+  const ttPolicy = window.trustedTypes && window.trustedTypes.createPolicy
+    ? window.trustedTypes.createPolicy('pbt', { createScriptURL: u => { if (u !== 'js/blueprint.js') throw new TypeError('script URL'); return u; } }) : null;
   let bpLoad = null;
   const loadBP = () => window.PBTBlueprint ? Promise.resolve(window.PBTBlueprint) : (bpLoad = bpLoad || new Promise((ok, fail) => {
-    const s = document.createElement('script'); s.src = 'js/blueprint.js';
+    const s = document.createElement('script'); s.src = /** @type {any} */ (ttPolicy ? ttPolicy.createScriptURL('js/blueprint.js') : 'js/blueprint.js');
     s.onload = () => window.PBTBlueprint ? ok(window.PBTBlueprint) : fail(new Error('blueprint'));
     s.onerror = () => { bpLoad = null; s.remove(); fail(new Error('blueprint')); };
     document.head.appendChild(s);
   }));
   const unitById = id => D.fleet.find(x => x.id === id);
-  function h(tag, attrs, kids) {
-    const n = document.createElement(tag);
-    if (attrs) for (const k in attrs) { if (k === 'text') n.textContent = attrs[k]; else n.setAttribute(k, attrs[k]); }
-    (kids || []).forEach(k => n.append(k));
-    return n;
-  }
   /* штрихування заново при кожному наведенні: прибрати клас, змусити перерахунок, повернути */
   const replay = svg => { if (!motion()) return; svg.classList.remove('bp-anim'); void svg.getBoundingClientRect(); svg.classList.add('bp-anim'); };
   function initBlueprints(grid) {
@@ -488,7 +558,7 @@
     }
     const rows = [['Найменування', u.name], ['Клас', r.cls]].concat((u.specs || []).map(x => [x.k, x.v]))
       .concat([['Ставка', u.price ? `${fmt(u.price)} грн/${u.unit}` : 'договірна'], ['Ставки станом на', D.priceDate.split('-').reverse().join('.')], ['Аркуш', `${n} з ${total}`], ['Виконавець', 'ПЛЕЙНБУД · Полтава']]);
-    $('#passStamp').replaceChildren(...rows.map(([k, v]) => h('tr', null, [h('th', { scope: 'row', text: k }), h('td', { text: v })])));
+    $('#passStamp').replaceChildren(...rows.map(([k, v]) => el('tr', null, el('th', { scope: 'row' }, k), el('td', null, v))));
     const req = $('#passReq'); req.dataset.req = u.cat === 'trans' ? 'transport' : 'rent'; req.dataset.subject = u.name;
     pass.showModal();
     replay(r.svg);
@@ -515,10 +585,11 @@
     throw new Error('Відсутнє ядро кошторису PBTQuote');
 
   let totalShown = 0, totalAnim = 0;
-  function tweenTotal(el, to) {
+  function tweenTotal(out, to) {
     const from = totalShown, t0 = performance.now(), id = ++totalAnim;
-    if (!motion()) { totalShown = to; el.innerHTML = `${fmt(to)} <small>грн</small>`; return; }
-    const step = t => { if (id !== totalAnim) return; const k = motion() ? ease(clamp((t - t0) / 520, 0, 1)) : 1; totalShown = from + (to - from) * k; el.innerHTML = `${fmt(totalShown)} <small>грн</small>`; if (k < 1) requestAnimationFrame(step); };
+    const show = v => fill(out, `${fmt(v)}\u00a0`, el('small', null, 'грн'));
+    if (!motion()) { totalShown = to; show(to); return; }
+    const step = t => { if (id !== totalAnim) return; const k = motion() ? ease(clamp((t - t0) / 520, 0, 1)) : 1; totalShown = from + (to - from) * k; show(totalShown); if (k < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
   }
   function renderCalc() {
@@ -526,10 +597,10 @@
     // Hashed CSP forbids inline handlers; keyboard Enter must not submit this form.
     $('#calcForm').addEventListener('submit', event => event.preventDefault());
     const priced = D.fleet.filter(u => u.price && u.unit === 'год');
-    sel.innerHTML = priced.map(u => `<option value="${u.id}">${esc(u.name)} — ${fmt(u.price)} грн/год</option>`).join('');
+    fill(sel, priced.map(u => el('option', { value: u.id }, `${u.name} — ${fmt(u.price)} грн/год`)));
     sel.disabled = !priced.length;
-    const fill = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min) * 100).toFixed(1)}%`);
-    const sync = (a, b) => a.addEventListener('input', () => { b.value = a.value; fill(hr); fill(km); calc(); });
+    const paintRange = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min) * 100).toFixed(1)}%`);
+    const sync = (a, b) => a.addEventListener('input', () => { b.value = a.value; paintRange(hr); paintRange(km); calc(); });
     sync(hr, hrN); sync(hrN, hr); sync(km, kmN); sync(kmN, km);
     sel.addEventListener('change', calc);
     function calc() {
@@ -566,23 +637,20 @@
       const tr = estimate.trailer, transportKnown = estimate.status === 'complete';
       const rent = estimate.rental, deliv = estimate.delivery, total = estimate.displayed;
       tweenTotal($('#cTotal'), total);
-      const deliveryLine = crane
-        ? '<div><span>Подача автокрана</span><b>уточнюється</b></div>'
-        : !needsTrailer
-          ? '<div><span>Подача тралом</span><b>не заявлена</b></div>'
-          : tr
-            ? `<div><span>Подача тралом ${esc(tr.name.replace(/^Трал\s*/, ''))}: ${kmv} км × ${tr.rate} грн</span><b>${fmt(deliv)} грн</b></div>`
-            : '<div><span>Подача тралом: маса невідома або поза діапазоном</span><b>уточнюється</b></div>';
-      $('#cLines').innerHTML = `<div><span>Оренда: ${hours} год × ${fmt(u.price)} грн</span><b>${fmt(rent)} грн</b></div>` +
-        deliveryLine +
-        `<div><span>${transportKnown ? 'Разом, орієнтовно' : 'Оренда без подачі'}</span><b>${fmt(total)} грн</b></div>`;
+      const line = (label, value) => el('div', null, el('span', null, label), el('b', null, value));
+      const deliveryLine = crane ? line('Подача автокрана', 'уточнюється')
+        : !needsTrailer ? line('Подача тралом', 'не заявлена')
+          : tr ? line(`Подача тралом ${tr.name.replace(/^Трал\s*/, '')}: ${kmv} км × ${tr.rate} грн`, `${fmt(deliv)} грн`)
+            : line('Подача тралом: маса невідома або поза діапазоном', 'уточнюється');
+      fill($('#cLines'), line(`Оренда: ${hours} год × ${fmt(u.price)} грн`, `${fmt(rent)} грн`), deliveryLine,
+        line(transportKnown ? 'Разом, орієнтовно' : 'Оренда без подачі', `${fmt(total)} грн`));
       $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км${transportKnown ? '' : ' (ціну уточнити)'}`}`;
       $('#cOrder').dataset.calcHours = String(hours);
       $('#cOrder').dataset.calcKm = crane ? '' : String(kmv);
       $('#cOut').dataset.total = transportKnown ? String(total) : '';
       $('#cOut').dataset.estimate = transportKnown ? 'with-delivery' : 'rent-only';
     }
-    fill(hr); fill(km); calc(); $('#calcUnavailable').hidden = true;
+    paintRange(hr); paintRange(km); calc(); $('#calcUnavailable').hidden = true;
     window.PBTcalc = (id, hours, kmv) => {
       const u = priced.find(x => x.id === id);
       return quoteModel.legacyTotal(u, D.trailers, hours, kmv);
@@ -590,41 +658,52 @@
   }
 
   /* ───── МАТЕРІАЛИ, ДОКАЗ, ГЕОГРАФІЯ ───── */
-  const x2 = src => /^media\/.+\.webp$/.test(src) ? ` srcset="${src} 1x, ${src.replace(/\.webp$/, '@2x.webp')} 2x"` : '';   // data:URI однофайлової збірки — без srcset
+  const x2 = src => /^media\/.+\.webp$/.test(src) ? `${src} 1x, ${src.replace(/\.webp$/, '@2x.webp')} 2x` : null;   // data:URI однофайлової збірки — без srcset
   function renderMats() {
-    $('#mats').innerHTML = `<div class="tiles">${D.materials.map((m, i) => `
-      <article class="tile rv" style="--d:${(i % 4) * 80}ms"><figure><img src="${m.img}"${x2(m.img)} alt="${esc(m.name)}" width="639" height="396" loading="lazy" decoding="async"><span class="tile__group">${esc(m.group)}</span></figure>
-        <div class="tile__body"><h3>${esc(m.name)}</h3><p class="tile__price">${fmt(m.price)} <small>грн/${esc(m.unit)}</small></p><p class="tile__doc">${esc(m.doc)}</p><button class="btn btn--sm tile__order" type="button" data-req="material" data-subject="${esc(m.name)}">У заявку</button></div></article>`).join('')}</div>`;
+    fill($('#mats'), el('div', { class: 'tiles' }, D.materials.map((m, i) => el('article', { class: 'tile rv', style: { '--d': `${(i % 4) * 80}ms` } },
+      el('figure', null, el('img', { src: m.img, srcset: x2(m.img), alt: m.name, width: 639, height: 396, loading: 'lazy', decoding: 'async' }), el('span', { class: 'tile__group' }, m.group)),
+      el('div', { class: 'tile__body' }, el('h3', null, m.name), el('p', { class: 'tile__price' }, `${fmt(m.price)}\u00a0`, el('small', null, `грн/${m.unit}`)),
+        el('p', { class: 'tile__doc' }, m.doc), el('button', { class: 'btn btn--sm tile__order', type: 'button', 'data-req': 'material', 'data-subject': m.name }, 'У заявку'))))));
   }
   function renderProof() {
     const standalone = window.PBT_BUNDLE && !D.mp4Only;
-    $('#reel').innerHTML = D.proof.map((p, i) => {
-      const tag = standalone ? 'article' : 'a';
-      const link = standalone ? '' : ` href="${esc(proofUrl(p.url) || '#roboty')}" target="_blank" rel="noopener"`;
-      return `<${tag} class="proof-card rv" style="--d:${(i % 3) * 90}ms"${link} aria-label="${esc(p.t)}: ${esc(p.s)}${standalone ? '' : ' — відкрити відео'}">
-        <figure><img src="${p.poster}" alt="" width="640" height="360" loading="lazy" decoding="async"><video data-video="${p.video}" poster="${p.poster}" aria-hidden="true" tabindex="-1"></video>
-        ${standalone ? '' : '<i aria-hidden="true"></i>'}<figcaption><b>${esc(p.t)}</b><span>${esc(p.s)}</span></figcaption></figure></${tag}>`;
-    }).join('');
+    fill($('#reel'), D.proof.map((p, i) => el(standalone ? 'article' : 'a', {
+      class: 'proof-card rv', style: { '--d': `${(i % 3) * 90}ms` },
+      href: standalone ? null : (proofUrl(p.url) || '#roboty'), target: standalone ? null : '_blank', rel: standalone ? null : 'noopener',
+      'aria-label': `${p.t}: ${p.s}${standalone ? '' : ' — відкрити відео'}` },
+    el('figure', null, el('img', { src: p.poster, alt: '', width: 640, height: 360, loading: 'lazy', decoding: 'async' }),
+      el('video', { 'data-video': p.video, poster: p.poster, 'aria-hidden': 'true', tabindex: '-1' }),
+      standalone ? null : el('i', { 'aria-hidden': 'true' }),
+      el('figcaption', null, el('b', null, p.t), el('span', null, p.s))))));
     $$('#reel .proof-card').forEach(watchVideo);
-    const logos = duplicate => D.partners.map((p, i) => `<li${duplicate ? ' aria-hidden="true"' : ''}><img src="${p}" alt="${duplicate ? '' : `Логотип в ілюстративній добірці ${i + 1}`}" width="196" height="196" loading="lazy" decoding="async"></li>`).join('');
-    $('#partners').innerHTML = logos(false) + logos(true);      /* декоративний повтор не дублює доступний список */
+    const logos = duplicate => D.partners.map((p, i) => el('li', { 'aria-hidden': duplicate ? 'true' : null },
+      el('img', { src: p, alt: duplicate ? '' : `Логотип в ілюстративній добірці ${i + 1}`, width: 196, height: 196, loading: 'lazy', decoding: 'async' })));
+    fill($('#partners'), logos(false), logos(true));      /* декоративний повтор не дублює доступний список */
   }
+  /* назви областей поза зоною виїзду — українською (у SVG-джерелі вони англійською, аудит п.41) */
+  const OBL_UA = { 'Autonomous Republic of Crimea': 'Автономна Республіка Крим', 'Sevastopol': 'Севастополь', 'Chernivtsi Oblast': 'Чернівецька область',
+    'Donetsk Oblast': 'Донецька область', 'Ivano-Frankivsk Oblast': 'Івано-Франківська область', 'Kherson Oblast': 'Херсонська область',
+    'Khmelnytskyi Oblast': 'Хмельницька область', 'Luhansk Oblast': 'Луганська область', 'Lviv Oblast': 'Львівська область',
+    'Mykolaiv Oblast': 'Миколаївська область', 'Odessa Oblast': 'Одеська область', 'Rivne Oblast': 'Рівненська область', 'Sumy Oblast': 'Сумська область',
+    'Ternopil Oblast': 'Тернопільська область', 'Vinnytsia Oblast': 'Вінницька область', 'Volyn Oblast': 'Волинська область', 'Zakarpattia Oblast': 'Закарпатська область' };
   function renderGeo() {
     const home = 'Полтавська', svg = $('#geoMap svg');
     const list = $('#geoList');
     const R = (D.routes && D.routes.to) || {};
-    list.innerHTML = D.regions.map((r, i) => `<li class="rv ${r === home ? 'home' : ''}" style="--d:${i * 50}ms"><button class="geo__pick" type="button" data-ua="${esc(r)}" aria-pressed="false" aria-controls="geoInfo"><b>${esc(r)} область</b><span>${r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'виїзд'}</span></button></li>`).join('');
+    fill(list, D.regions.map((r, i) => el('li', { class: r === home ? 'rv home' : 'rv', style: { '--d': `${i * 50}ms` } },
+      el('button', { class: 'geo__pick', type: 'button', 'data-ua': r, 'aria-pressed': 'false', 'aria-controls': 'geoInfo' },
+        el('b', null, `${r} область`), el('span', null, r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'виїзд')))));
     if (!svg) return;
     $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
-    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${p.dataset.name} — за запитом`; });
+    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${OBL_UA[p.dataset.name] || 'Регіон'} — за запитом`; });
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
     initRoutes(svg, list, home);
     /* Контури — дані (media/map/oblasts.json, tools/geo_map.py), не 30 КБ gzip у критичному HTML. Вантажаться, коли секція
        за ~1,5 екрана, будуються createElementNS без розбору розмітки; центри пораховано заздалегідь — без getBBox посеред
        прокрутки (A/B 09.10: ривок 344 мс на CPU ×4). Збірка без сервера несе ті самі дані в D.geoMap. */
     const NS = 'http://www.w3.org/2000/svg';
-    const qlen = (x0, y0, x1, y1, x2, y2) => { let L = 0, px = x0, py = y0; for (let k = 1; k <= 24; k++) { const t = k / 24, u = 1 - t, x = u * u * x0 + 2 * u * t * x1 + t * t * x2, y = u * u * y0 + 2 * u * t * y1 + t * t * y2; L += Math.hypot(x - px, y - py); px = x; py = y; } return L; };
+    const qlen = (x0, y0, x1, y1, qx, y2) => { let L = 0, px = x0, py = y0; for (let k = 1; k <= 24; k++) { const t = k / 24, u = 1 - t, x = u * u * x0 + 2 * u * t * x1 + t * t * qx, y = u * u * y0 + 2 * u * t * y1 + t * t * y2; L += Math.hypot(x - px, y - py); px = x; py = y; } return L; };
     function mount(map) {
       if (!map || !Array.isArray(map.regions) || svg.querySelector('.obl')) return;
       const shapes = document.createDocumentFragment();
@@ -674,16 +753,16 @@
       geo.classList.toggle('has-sel', !!r);
       const kids = [];
       if (isHome) {
-        kids.push(h('p', { class: 'geo__leg', text: 'Полтава · база' }), h('p', { class: 'geo__km', text: 'від 0 км' }),
-          h('p', { class: 'geo__cost', text: 'Подача по області — за фактичним кілометражем від бази.' }));
+        kids.push(el('p', { class: 'geo__leg' }, 'Полтава · база'), el('p', { class: 'geo__km' }, 'від 0 км'),
+          el('p', { class: 'geo__cost' }, 'Подача по області — за фактичним кілометражем від бази.'));
       } else if (r) {
         const t = (D.trailers || []).filter(x => Number.isSafeInteger(x.rate) && x.rate > 0).sort((a, b) => a.maxT - b.maxT);
-        kids.push(h('p', { class: 'geo__leg', text: `${D.routes.from} → ${r.city}` }),
-          h('p', { class: 'geo__km' }, [h('b', { text: fmt(r.km) }), ' км дорогою']),
-          h('dl', { class: 'geo__cost' }, t.map(x => h('div', null, [h('dt', { text: `${x.name}, ${fmt(x.rate)} грн/км` }), h('dd', { text: `≈ ${fmt(x.rate * r.km)} грн` })]))),
-          h('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-km': String(r.km), text: `Підставити ${r.km} км у калькулятор` }));
+        kids.push(el('p', { class: 'geo__leg' }, `${D.routes.from} → ${r.city}`),
+          el('p', { class: 'geo__km' }, [el('b', null, fmt(r.km)), ' км дорогою']),
+          el('dl', { class: 'geo__cost' }, t.map(x => el('div', null, [el('dt', null, `${x.name}, ${fmt(x.rate)} грн/км`), el('dd', null, `≈ ${fmt(x.rate * r.km)} грн`)]))),
+          el('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-km': String(r.km) }, `Підставити ${r.km} км у калькулятор`));
       }
-      kids.push(h('p', { class: 'geo__src', text: `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Ставки тралу — станом на ${D.priceDate.split('-').reverse().join('.')}.` }));
+      kids.push(el('p', { class: 'geo__src' }, `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Ставки тралу — станом на ${D.priceDate.split('-').reverse().join('.')}.`));
       info.replaceChildren(...kids);
       info.hidden = false;
     }
@@ -701,7 +780,7 @@
 
   /* External links from configuration: https only, parsed by the platform, not by a prefix check. */
   function httpsUrl(value) {
-    try { const u = new URL(String(value)); return u.protocol === 'https:' && !/["'<>\s]/.test(String(value)) ? u.href : null; } catch (_) { return null; }
+    try { const u = new URL(String(value)); return u.protocol === 'https:' && !/["'<>\s]/.test(String(value)) ? u.href : null; } catch { return null; }
   }
 
   function proofUrl(value) {
@@ -716,12 +795,12 @@
     const tel = p => p ? `tel:${String(p).replace(/[^+\d]/g, '')}` : '#zapyt';
     $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = tel(c.phone); });
     /* другий телефон не наданий — у розмітці <span>-заготовка: <a> без href псувало crawlable-anchors */
-    $$('[data-phone2]').forEach(el => {
-      const present = !!c.phone2, row = el.closest('[data-phone2-row]') || el;
-      row.hidden = !present; el.textContent = phoneHuman(c.phone2) || '';
+    $$('[data-phone2]').forEach(node => {
+      const present = !!c.phone2, row = node.closest('[data-phone2-row]') || node;
+      row.hidden = !present; node.textContent = phoneHuman(c.phone2) || '';
       if (!present) return;
-      let a = el;
-      if (el.tagName !== 'A') { a = document.createElement('a'); a.className = el.className; a.dataset.phone2 = ''; a.textContent = el.textContent; el.replaceWith(a); }
+      let a = node;
+      if (node.tagName !== 'A') { a = document.createElement('a'); a.className = node.className; a.dataset.phone2 = ''; a.textContent = node.textContent; node.replaceWith(a); }
       a.href = tel(c.phone2);
     });
     const email = typeof c.email === 'string' && /^[^\s@"<>]+@[^\s@"<>]+$/.test(c.email) ? c.email : '';
@@ -746,9 +825,10 @@
     if (c.viber) ch.push({ k: 'Viber', v: phoneHuman(c.viber), href: `viber://chat?number=${encodeURIComponent(c.viber)}` });
     if (c.telegram) ch.push({ k: 'Telegram', v: c.telegram, href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}` });
     if (email) ch.push({ k: 'Email', v: email, href: `mailto:${email}` });
-    $('#channels').innerHTML = ch.map(x => `<a href="${esc(x.href)}"><b>${esc(x.v)}</b><span>${x.k}</span></a>`).join('') || '<div><b>Канали зв’язку</b><span>уточнюються</span></div>';
+    fill($('#channels'), ch.length ? ch.map(x => el('a', { href: x.href }, el('b', null, x.v), el('span', null, x.k)))
+      : el('div', null, el('b', null, 'Канали зв’язку'), el('span', null, 'уточнюються')));
     const soc = [['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['youtube', 'YouTube']].filter(([k]) => httpsUrl(c[k]));
-    $$('[data-social]').forEach(ul => { ul.hidden = !soc.length; ul.innerHTML = soc.map(([k, n]) => `<li><a href="${esc(httpsUrl(c[k]))}" target="_blank" rel="noopener">${n}</a></li>`).join(''); });
+    $$('[data-social]').forEach(ul => { ul.hidden = !soc.length; fill(ul, soc.map(([k, n]) => el('li', null, el('a', { href: httpsUrl(c[k]), target: '_blank', rel: 'noopener' }, n)))); });
   }
   function loadBusiness() {
     const fb = () => applyBusiness(D.business || {});
@@ -759,6 +839,7 @@
 
   /* ───── ВАЛІДАЦІЯ ЗАЯВКИ: той самий контракт, що й сервер ───── */
   const kyivToday = () => {
+    /** @type {Intl.DateTimeFormatOptions} */
     const opts = { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'iso8601', numberingSystem: 'latn' };
     // Locale fallback can reorder date fields; compare only explicitly assembled ISO dates.
     const iso = formatter => {
@@ -767,7 +848,7 @@
     };
     // Browsers with tzdata older than 2022b know only the old zone name; a RangeError here would silently block the form.
     for (const timeZone of ['Europe/Kyiv', 'Europe/Kiev']) {
-      try { return iso(new Intl.DateTimeFormat('en-CA', { ...opts, timeZone })); } catch (_) { /* next name */ }
+      try { return iso(new Intl.DateTimeFormat('en-CA', { ...opts, timeZone })); } catch { /* next name */ }
     }
     return iso(new Intl.DateTimeFormat('en-CA', opts));
   };
@@ -775,7 +856,7 @@
     contact(method, s) {
       s = (s || '').trim(); if (!s) return null;
       if (method === 'telegram' && s.startsWith('@')) return /^@[A-Za-z0-9_]{5,32}$/.test(s) ? s : null;
-      let d = s.replace(/[\s()\-]/g, '');
+      let d = s.replace(/[\s()-]/g, '');
       if (/^0\d{9}$/.test(d)) d = '+38' + d;
       if (/^380\d{9}$/.test(d)) d = '+' + d;
       if (/^\+3800\d{9}$/.test(d)) d = '+380' + d.slice(5);
@@ -855,15 +936,15 @@
      a keyed digest of the request and an expiry are kept: no field value, per tab, for 30 minutes. */
   const PENDING = 'pbt.pendingLead', PENDING_TTL_MS = 30 * 60 * 1000;
   const pendingRead = () => {
-    try { const r = JSON.parse(sessionStorage.getItem(PENDING)); return r && typeof r.k === 'string' && typeof r.d === 'string' && r.x > Date.now() ? r : null; } catch (_) { return null; }
+    try { const r = JSON.parse(sessionStorage.getItem(PENDING) || 'null'); return r && typeof r.k === 'string' && typeof r.d === 'string' && r.x > Date.now() ? r : null; } catch { return null; }
   };
-  const pendingWrite = r => { try { sessionStorage.setItem(PENDING, JSON.stringify(r)); } catch (_) { /* blocked storage: in-memory idempotency only */ } };
-  const pendingClear = () => { try { sessionStorage.removeItem(PENDING); } catch (_) { /* nothing was stored */ } };
+  const pendingWrite = r => { try { sessionStorage.setItem(PENDING, JSON.stringify(r)); } catch { /* blocked storage: in-memory idempotency only */ } };
+  const pendingClear = () => { try { sessionStorage.removeItem(PENDING); } catch { /* nothing was stored */ } };
   async function leadDigest(key, body) {
     try {
       const raw = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${key}\n${body}`));
       return Array.from(new Uint8Array(raw), b => b.toString(16).padStart(2, '0')).join('');
-    } catch (_) { return null; }   // crypto.subtle needs a secure context; plain HTTP degrades to in-memory.
+    } catch { return null; }   // crypto.subtle needs a secure context; plain HTTP degrades to in-memory.
   }
   async function bindIdempotencyKey(body) {
     if (body !== idemHash) {
@@ -941,7 +1022,7 @@
         if (first) first.focus();
       } else if (r.status === 429) { msg.textContent = j.message || 'Забагато запитів. Спробуйте через 10 хвилин або зателефонуйте.'; msg.classList.add('is-on'); }
       else { msg.textContent = 'Сервер не прийняв заявку. Спробуйте ще раз або зателефонуйте — номери поруч.'; msg.classList.add('is-on'); }
-    } catch (_) {
+    } catch {
       form.hidden = true; fallback.classList.add('is-on'); $('#fbText').textContent = humanText(p);
       fallback.focus();
     } finally { clearTimeout(deadline); btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
@@ -950,7 +1031,7 @@
   $('#formUnavailable').hidden = true;
   $('#fbCopy').addEventListener('click', async () => {
     const t = $('#fbText').textContent; const b = $('#fbCopy');
-    try { await navigator.clipboard.writeText(t); b.textContent = 'Скопійовано'; } catch (_) { const r = document.createRange(); r.selectNodeContents($('#fbText')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Виділено — скопіюй'; }
+    try { await navigator.clipboard.writeText(t); b.textContent = 'Скопійовано'; } catch { const r = document.createRange(); r.selectNodeContents($('#fbText')); const s = getSelection(); if (s) { s.removeAllRanges(); s.addRange(r); } b.textContent = 'Виділено — скопіюй'; }
     setTimeout(() => b.textContent = 'Скопіювати текст', 2500);
   });
   $('#again').addEventListener('click', () => { done.classList.remove('is-on'); form.hidden = false; form.reset(); idemHash = ''; pendingClear(); $('#subject').focus(); });
@@ -961,7 +1042,7 @@
   });
 
   document.addEventListener('click', e => {
-    const b = e.target.closest('[data-req]'); if (!b) return;
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-req]'); if (!(b instanceof HTMLElement)) return;
     e.preventDefault();
     const t = b.dataset.req, s = b.dataset.subject;
     // Після підтвердженого успіху CTA означає новий намір; після обриву — безпечний повтор.
@@ -1007,26 +1088,27 @@
     const sec = $('#masshtab'), list = $('#cine'), rail = $('#cineRail'), C = window.PBT_CINE;
     if (!sec || !list || !C || !C.chapters) return;
     const chs = C.chapters, total = String(chs.length).padStart(2, '0');
-    list.innerHTML = chs.map((c, i) => `<li class="cine__ch" id="cine-${esc(c.id)}" data-i="${i}">
-      <figure><img src="${cposter(c.id)}" alt="${esc(c.word)}: ${esc(c.line)}" width="1920" height="1080" loading="lazy" decoding="async"></figure>
-      <p class="cine__n num">${String(i + 1).padStart(2, '0')} / ${total}</p>
-      <h3 class="cine__w">${esc(c.word)}</h3>
-      <p class="cine__l">${esc(c.line)}</p>
-    </li>`).join('');
+    fill(list, chs.map((c, i) => el('li', { class: 'cine__ch', id: `cine-${c.id}`, 'data-i': i },
+      el('figure', null, el('img', { src: cposter(c.id), alt: `${c.word}: ${c.line}`, width: 1920, height: 1080, loading: 'lazy', decoding: 'async' })),
+      el('p', { class: 'cine__n num' }, `${String(i + 1).padStart(2, '0')} / ${total}`),
+      el('h3', { class: 'cine__w' }, c.word),
+      el('p', { class: 'cine__l' }, c.line))));
     /* атрибуція CC BY / BY-SA — одним списком у підвалі, не поверх кадрів (ліцензія дозволяє «будь-яким розумним способом») */
     const cr = $('#cineCredits');
-    if (cr) cr.innerHTML = `<details class="credits"><summary>Джерела ілюстративних кадрів «Масштабу»</summary><ul>${chs.map(c =>
-      `<li><a href="${esc(c.credit.page)}" target="_blank" rel="noopener">«${esc(c.credit.title)}»</a>, ${esc(c.credit.author)} · <a href="${esc(c.credit.license_url)}" target="_blank" rel="noopener">${esc(c.credit.license)}</a> · Wikimedia Commons; кадровано, виконано колірну корекцію</li>`).join('')}</ul></details>`;
+    const ext = (href, text) => el('a', { href: httpsUrl(href), target: '_blank', rel: 'noopener' }, text);
+    if (cr) fill(cr, el('details', { class: 'credits' }, el('summary', null, 'Джерела ілюстративних кадрів «Масштабу»'),
+      el('ul', null, chs.map(c => el('li', null, ext(c.credit.page, `«${c.credit.title}»`), `, ${c.credit.author} · `,
+        ext(c.credit.license_url, c.credit.license), ' · Wikimedia Commons; кадровано, виконано колірну корекцію')))));
     if (!videoCapable() || D.cinePosters || !('IntersectionObserver' in window)) return;   /* однофайловий бандл: лише постери */
     sec.classList.add('is-pinned');
-    rail.innerHTML = chs.map(c => `<a href="#cine-${esc(c.id)}"><span>${esc(c.word)}</span></a>`).join('');
-    const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), dots = $$('a', rail);
+    fill(rail, chs.map(c => el('a', { href: `#cine-${c.id}` }, el('span', null, c.word))));
+    const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), railDots = $$('a', rail);
     let cur = -1, front = 0, inView = false;
     const prof = () => (mobileLayout() && innerHeight > innerWidth ? 'm' : 'w');
     function load(v, id) {
       const n = id + '-' + prof();
       if (v.dataset.clip === n) return;
-      v.dataset.clip = n; v.removeAttribute('src'); v.innerHTML = '';
+      v.dataset.clip = n; v.removeAttribute('src'); v.replaceChildren();
       v.poster = C_BASE + n + '.webp';
       if (!D.mp4Only && document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
         const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = 'video/webm'; v.append(a);
@@ -1037,14 +1119,14 @@
     function show(i) {
       if (i === cur) return;
       cur = i;
-      items.forEach((el, k) => el.classList.toggle('is-cur', k === i));
-      dots.forEach((el, k) => el.classList.toggle('is-on', k === i));
+      items.forEach((node, k) => node.classList.toggle('is-cur', k === i));
+      railDots.forEach((node, k) => node.classList.toggle('is-on', k === i));
       const next = layers[1 - front], prev = layers[front];
       next.poster = C_BASE + chs[i].id + '-' + prof() + '.webp';
       if (videoAllowed()) load(next, chs[i].id);
       else {
         // Новий розділ у паузі показує власний постер, а не кадр попереднього кліпу.
-        next.removeAttribute('src'); next.innerHTML = ''; delete next.dataset.clip; next.load();
+        next.removeAttribute('src'); next.replaceChildren(); delete next.dataset.clip; next.load();
       }
       next.classList.add('is-on'); prev.classList.remove('is-on');
       if (inView && videoAllowed()) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
@@ -1062,8 +1144,8 @@
       } else layers.forEach(v => { v.pause(); playing.delete(v); });
     }
     mediaSync.add(syncCine);
-    const cio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) show(+e.target.dataset.i); }), { rootMargin: '-45% 0px -45% 0px' });
-    items.forEach(el => cio.observe(el));
+    const cio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) show(Number(/** @type {HTMLElement} */ (e.target).dataset.i)); }), { rootMargin: '-45% 0px -45% 0px' });
+    items.forEach(node => cio.observe(node));
     new IntersectionObserver(es => es.forEach(e => {
       inView = e.isIntersecting;
       syncCine();

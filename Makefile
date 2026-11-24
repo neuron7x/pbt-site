@@ -38,7 +38,11 @@ assurance:      ## ledger and specification well-formed; accepts nothing
 accept:         ## engineering acceptance from real artifact ZIPs: make accept EVIDENCE=dir
 	$(PY) tools/assurance_check.py --require engineering --evidence-dir $(EVIDENCE)
 
-gate: test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
+js:             ## статичний аналіз JS: ESLint (recommended + Mozilla no-unsanitized), TypeScript checkJs strict, property-тести ядер
+	cd tools/js && npm ci --ignore-scripts --no-audit --no-fund && npm audit signatures && npm run check
+	node --test tests/quote_engine.test.cjs tests/blueprint_geometry.test.cjs tests/dom_factory.test.cjs tests/motion_physics.test.cjs
+
+gate: js test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
 	@status="$$(git status --porcelain)"; test -z "$$status" || { echo "дерево брудне після гейта"; printf '%s\n' "$$status"; exit 1; }; echo "GATE PASS"
 
 clean:
@@ -50,4 +54,4 @@ ops-install:    ## systemd --user: сервіс + сторож здоров'я +
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/ —/'
 
-.PHONY: mutation assurance accept run test test-api test-site media stock shots media-audit bundle gate clean ops-install help
+.PHONY: js mutation assurance accept run test test-api test-site media stock shots media-audit bundle gate clean ops-install help

@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import sys
 
-SINK = re.compile(r"""\.innerHTML\s*=(?!=)|\.outerHTML\s*=(?!=)|insertAdjacentHTML\s*\(|document\.write|\beval\s*\(|new\s+Function\s*\(|\.setAttribute\s*\(\s*['"]on|\.(?:href|src)\s*=(?!=)|srcdoc""")
+SINK = re.compile(r"""\.innerHTML\s*=(?!=)|\.outerHTML\s*=(?!=)|insertAdjacentHTML\s*\(|document\.write|\beval\s*\(|new\s+Function\s*\(|\.setAttribute\s*\(\s*['"]on|\.(?:href|src)\s*=(?!=)|srcdoc|\.setAttribute\s*\(\s*(?!['"])""")
 
 
 def inventory(root):
