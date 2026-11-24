@@ -954,7 +954,7 @@ main section[id]{scroll-margin-top:88px}
 
 /* заголовок секції: номер, жорстка вертикаль, гігантська цифра-контур */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head{position:relative;counter-increment:sec;width:100%}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .eyebrow::before{content:counter(sec,decimal-leading-zero);width:auto;height:auto;padding:6px 7px;background:#FDC501;color:#0B1017;border-radius:0;font:700 11px/1 var(--f-m);letter-spacing:.06em}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .eyebrow::before{content:counter(sec,decimal-leading-zero);width:auto;height:auto;padding:2px 6px;background:#FDC501;color:#0B1017;border-radius:0;font:700 11px/1 var(--f-m);letter-spacing:.06em}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head::after{content:counter(sec,decimal-leading-zero);position:absolute;right:0;top:-.06em;font:800 clamp(110px,17vw,300px)/.78 var(--f-d);letter-spacing:-.04em;color:transparent;-webkit-text-stroke:2px #0B1017;opacity:.16;pointer-events:none;z-index:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head > *{position:relative;z-index:1}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .lead{border-left:3px solid #FDC501;padding-left:20px}
@@ -1028,7 +1028,7 @@ main section[id]{scroll-margin-top:88px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price.is-neg{color:#C9CED4}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn{background:transparent;color:#FDC501;box-shadow:inset 0 0 0 1.5px #FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn:hover{background:#FDC501;color:#0B1017;box-shadow:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .chip{font:600 12px/1 var(--f-b);letter-spacing:.08em;text-transform:uppercase}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .chip{font:600 12px/1 var(--f-b);letter-spacing:.05em;text-transform:uppercase;padding:11px 12px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .park__note{color:#A9B0B8}
 
 /* ЦІНА */
@@ -1085,7 +1085,8 @@ main section[id]{scroll-margin-top:88px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .cine__note{color:#C9CED4}
 
 /* вирівнювання за лівою віссю заголовків; глибиномір без інверсії кольору */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .chips{justify-content:flex-start;margin:0 0 30px;max-width:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .chips{justify-content:flex-start;margin:0 0 30px}
+@media (min-width:820px){S .chips{max-width:770px}}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .facts{max-width:none;margin:0 0 clamp(36px,5vw,56px)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .park__note,:is(:root[data-theme="sky"],:root:not([data-theme])) .proof__src{text-align:left;margin-left:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{mix-blend-mode:normal;color:#8D96A0}
@@ -1099,3 +1100,5 @@ main section[id]{scroll-margin-top:88px}
 /* фото парку: одна обробка для різних джерел (без зміни файлів) */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit img{filter:saturate(.9) contrast(1.06)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure::after{content:"";position:absolute;inset:auto 0 0;height:38%;background:linear-gradient(180deg,transparent,rgba(5,8,13,.5));pointer-events:none}
+
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(180deg,rgb(11, 16, 23),rgb(17, 24, 33));background-size:96px 96px,96px 96px,100% 100%}
