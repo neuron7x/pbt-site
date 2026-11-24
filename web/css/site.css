@@ -23,103 +23,103 @@
   --t-body-leading: 1.55;
   --t-focus: var(--gold);
   --t-heading-case: uppercase;
-  --t-heading-tracking: .01em;
+  --t-heading-tracking: -.005em;
   --t-heading-weight: 800;
-  --t-h2-size: clamp(34px,4.6vw,66px);
-  --t-h2-line: 1;
-  --t-h2-light: var(--sky-700);
+  --t-h2-size: clamp(42px,6.2vw,108px);
+  --t-h2-line: .9;
+  --t-h2-light: #59616B;
   --t-h2-deep-bg: none;
-  --t-h2-deep-color: #FFFFFF;
+  --t-h2-deep-color: #FDC501;
   --t-h3-weight: 700;
   --t-lead: var(--ink-2);
-  --t-lead-max: 66ch;
-  --t-lead-margin: auto;
-  --t-deep-lead: #F2F9FF;
-  --t-head-align: center;
-  --t-head-justify: center;
-  --t-head-margin: 0 auto clamp(36px,5vw,64px);
-  --t-head-max: 880px;
-  --t-head-gap: 18px;
-  --t-eyebrow-align: center;
-  --t-eyebrow-gap: 16px;
-  --t-eyebrow-tracking: .24em;
+  --t-lead-max: 58ch;
+  --t-lead-margin: 0;
+  --t-deep-lead: #C9CED4;
+  --t-head-align: left;
+  --t-head-justify: start;
+  --t-head-margin: 0 0 clamp(44px,5.5vw,88px);
+  --t-head-max: none;
+  --t-head-gap: 22px;
+  --t-eyebrow-align: flex-start;
+  --t-eyebrow-gap: 14px;
+  --t-eyebrow-tracking: .22em;
   --t-eyebrow-color: var(--ink-2);
-  --t-eyebrow-after: block;
+  --t-eyebrow-after: none;
   --t-eyebrow-width: 34px;
-  --t-btn-radius: 999px;
-  --t-btn-padding: 17px 28px;
+  --t-btn-radius: 0;
+  --t-btn-padding: 19px 30px;
   --t-btn-bg: #FDC501;
-  --t-btn-fg: var(--ink);
-  --t-btn-shadow: var(--sh-gold);
+  --t-btn-fg: #0B1017;
+  --t-btn-shadow: none;
   --t-btn-shine: block;
-  --t-btn-hover-transform: translateY(-2px) scale(1.02);
-  --t-btn-hover-shadow: 0 16px 40px rgba(249,115,22,.45);
-  --t-btn-hover-bg: #FFE073;
-  --t-btn-ghost-bg: rgba(255,255,255,.14);
-  --t-row-justify: center;
-  --t-nav-bg: rgba(255,255,255,.86);
-  --t-nav-shadow: 0 1px 0 var(--line),0 10px 30px rgba(6,43,92,.08);
-  --t-nav-rule: transparent;
+  --t-btn-hover-transform: none;
+  --t-btn-hover-shadow: none;
+  --t-btn-hover-bg: #FFFFFF;
+  --t-btn-ghost-bg: transparent;
+  --t-row-justify: flex-start;
+  --t-nav-bg: rgba(7,10,15,.92);
+  --t-nav-shadow: none;
+  --t-nav-rule: rgba(255,255,255,.08);
   --t-nav-hide: translateY(-110%);
   --t-decor: block;
-  --t-menu-bg: var(--grad-deep);
-  --t-hero-bg: var(--sky-800);
-  --t-hero-grade: saturate(1.08);
+  --t-menu-bg: #05080D;
+  --t-hero-bg: #05080D;
+  --t-hero-grade: saturate(.82) contrast(1.14) brightness(.8);
   --t-hero-video-pos: 50% 45%;
-  --t-hero-overlay: linear-gradient(180deg,rgba(9,26,42,.78),rgba(9,26,42,.50) 36%,rgba(9,26,42,.62) 72%,rgba(9,26,42,.90));
+  --t-hero-overlay: linear-gradient(180deg,rgba(5,8,13,.86),rgba(5,8,13,.42) 34%,rgba(5,8,13,.5) 66%,rgba(5,8,13,.96));
   --t-hero-blend: normal;
   --t-hero-center-right: var(--gut);
   --t-hero-center-width: auto;
   --t-hero-center-justify: center;
   --t-hero-center-align: center;
   --t-hero-center-gap: clamp(8px,1.7svh,24px);
-  --t-hero-title-size: clamp(28px,min(4.2vw,5.8svh),64px);
-  --t-hero-title-max: 26ch;
+  --t-hero-title-size: clamp(28px,min(7vw,10.5svh),128px);
+  --t-hero-title-max: 15ch;
   --t-hero-title-weight: 800;
-  --t-hero-title-tracking: .01em;
+  --t-hero-title-tracking: -.01em;
   --t-hero-line: #FFFFFF;
-  --t-hero-line-accent: #FFFFFF;
+  --t-hero-line-accent: #FDC501;
   --t-logo-margin: 6px auto 0;
-  --t-hero-lead-color: #EAF6FF;
-  --t-hero-lead-glow: 0 1px 14px rgba(6,43,92,.5);
-  --t-hero-lead-scrim: radial-gradient(closest-side,rgba(6,43,92,.86),rgba(6,43,92,.74) 60%,rgba(6,43,92,0));
+  --t-hero-lead-color: #E4E7EB;
+  --t-hero-lead-glow: none;
+  --t-hero-lead-scrim: radial-gradient(closest-side,rgba(5,8,13,.88),rgba(5,8,13,.72) 60%,rgba(5,8,13,0));
   --t-hero-stats-justify: center;
-  --t-hero-stats-gap: clamp(14px,3vw,48px);
+  --t-hero-stats-gap: 0px;
   --t-hero-stats-color: #FFFFFF;
-  --t-hero-stats-font: 800 clamp(22px,min(3vw,5svh),44px)/1 var(--f-d);
-  --t-hero-stats-shadow: 0 2px 16px rgba(6,43,92,.45);
-  --t-hero-wipe-bg: linear-gradient(180deg,var(--sky-300),var(--sky-50) 55%);
-  --t-hero-wipe-svg: block;
-  --t-job-radius: 18px;
-  --t-job-shadow: var(--sh-card);
-  --t-job-border: 0 solid transparent;
-  --t-job-hover-transform: translateY(-6px);
-  --t-job-hover-shadow: 0 28px 60px rgba(6,43,92,.2);
+  --t-hero-stats-font: 800 clamp(22px,min(3.4vw,5.6svh),54px)/1 var(--f-d);
+  --t-hero-stats-shadow: none;
+  --t-hero-wipe-bg: #ECECE7;
+  --t-hero-wipe-svg: none;
+  --t-job-radius: 0;
+  --t-job-shadow: none;
+  --t-job-border: 1px solid rgba(11,16,23,.14);
+  --t-job-hover-transform: none;
+  --t-job-hover-shadow: 0 0 0 1px #0B1017;
   --t-job-columns: repeat(12,minmax(0,1fr));
   --t-job-col: span 4;
   --t-job-first: span 6;
   --t-job-second: span 6;
   --t-job-last-max: calc(50% - 9px);
-  --t-unit-radius: 16px;
-  --t-unit-shadow: 0 10px 30px rgba(6,43,92,.18);
-  --t-unit-transform: perspective(900px) rotateX(var(--rx,0)) rotateY(var(--ry,0)) translateY(var(--ty,0));
-  --t-unit-hover-shadow: 0 28px 60px rgba(6,43,92,.28);
-  --t-unit-hover-translate: -6px;
-  --t-unit-img-hover: scale(1.06);
-  --t-chip-radius: 999px;
-  --t-chip-bg: rgba(255,255,255,.12);
-  --t-chip-active-bg: var(--grad-gold);
-  --t-chip-active-fg: var(--ink);
-  --t-card-radius: 16px;
-  --t-calc-radius: 24px;
-  --t-calc-max: 1120px;
-  --t-calc-margin: 0 auto;
-  --t-quote-bg: var(--grad-deep);
+  --t-unit-radius: 0;
+  --t-unit-shadow: none;
+  --t-unit-transform: none;
+  --t-unit-hover-shadow: 0 0 0 1px #FDC501;
+  --t-unit-hover-translate: 0px;
+  --t-unit-img-hover: scale(1.04);
+  --t-chip-radius: 0;
+  --t-chip-bg: transparent;
+  --t-chip-active-bg: #FDC501;
+  --t-chip-active-fg: #0B1017;
+  --t-card-radius: 0;
+  --t-calc-radius: 0;
+  --t-calc-max: none;
+  --t-calc-margin: 0;
+  --t-quote-bg: #0B1017;
   --t-total-bg: var(--grad-gold);
   --t-total-color: transparent;
-  --t-total-font: 800 clamp(44px,5vw,78px)/1 var(--f-d);
-  --t-cine-bg: #041F45;
-  --t-cine-font: 800 clamp(44px,9vw,148px)/.9 var(--f-d);
+  --t-total-font: 800 clamp(56px,6vw,100px)/.95 var(--f-d);
+  --t-cine-bg: #05080D;
+  --t-cine-font: 800 clamp(56px,11vw,196px)/.84 var(--f-d);
   --t-cine-case: uppercase;
   --t-cine-tracking: .01em;
   --t-cine-bgtext: var(--grad-gold);
@@ -128,13 +128,13 @@
   --t-marquee-dup: grid;
   --t-map-home-animation: home 2.6s var(--ease) infinite;
   --t-map-ring-animation: ring 2.2s var(--ease) infinite;
-  --t-footer-bg: var(--ink);
-  --t-tag-bg:var(--grad-gold); --t-tag-fg:var(--ink);
-  --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:rgba(255,255,255,.1);
+  --t-footer-bg: #05080D;
+  --t-tag-bg:#FDC501; --t-tag-fg:#0B1017;
+  --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:transparent;
   --t-cine-veil:radial-gradient(62% 34% at 50% 52%,rgba(4,31,69,.66),rgba(4,31,69,.46) 55%,transparent),linear-gradient(180deg,rgba(4,31,69,.82),rgba(4,31,69,.12) 30%,rgba(4,31,69,.12) 62%,rgba(4,31,69,.9));
   --t-marquee-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
-  --t-hero-stats-border:1px solid rgba(255,255,255,.28); --t-hero-stats-padding:16px; --t-footer-legal:#A9C3E3;
-  --t-404-bg: var(--sky-900);
+  --t-hero-stats-border:1px solid rgba(255,255,255,.2); --t-hero-stats-padding:20px; --t-footer-legal:#A9B0B8;
+  --t-404-bg: #05080D;
   --t-404-color: #fff;
 }
 :root[data-theme="precision"] {
@@ -891,3 +891,185 @@ main section[id]{scroll-margin-top:88px}
 @media (max-width:1599px){#nav .brand__name{display:none}}
 /* Світла шапка після прокрутки: золото на білому не читається — той самий блок із темно-синьою назвою. */
 .brand__ink{display:none}.nav.is-solid .brand__logo{display:none}.nav.is-solid .brand__ink{display:block}
+
+/* ═══ «СТАЛЬ І ЗОЛОТО» (24.11.2026) — шар теми за замовчуванням ═══
+   Напрям: важка промислова монументальність. Сталь #05080D–#1A232E як ґрунт, бетон #ECECE7 як світле поле,
+   золото #FDC501 — дія, ціна, акцент. Кути 0–2 px, жорсткі лінії замість хвиль і м'яких тіней, великий Tektur,
+   номер кожної секції. Тема «Графіт» (precision) цим шаром не зачіпається. */
+:is(:root[data-theme="sky"],:root:not([data-theme])){
+  --sky-900:#05080D;
+  --sky-800:#0B1017;
+  --sky-500:#1C2633;
+  --sky-300:#ECECE7;
+  --sky-100:#D9DAD4;
+  --sky-50:#ECECE7;
+  --ink:#0B1017;
+  --ink-2:#3A424C;
+  --ink-3:#4F5761;
+  --steel:#111821;
+  --steel-2:#1A232E;
+  --bone:#F7F7F4;
+  --line:rgba(11,16,23,.16);
+  --line-w:rgba(255,255,255,.14);
+  --line-w2:rgba(255,255,255,.5);
+  --grad-deep:linear-gradient(180deg,#0B1017,#0E141C);
+  --grad-gold:linear-gradient(180deg,#FFE04A 0%,#FDC501 52%,#E3A400 100%);
+  --sh-card:none;
+  --sh-gold:none;
+}
+:is(:root[data-theme="sky"],:root:not([data-theme])) body{background:#ECECE7}
+:is(:root[data-theme="sky"],:root:not([data-theme])) main{counter-reset:sec}
+
+/* декор «неба» прибрано: без хвиль, променів, блискіток */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .wave, :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__beams, :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky2, :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__spark{display:none}
+
+/* поля: креслярська сітка */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep{background-color:#0B1017;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:96px 96px;background-position:center top}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light{background-color:#ECECE7;background-image:linear-gradient(rgba(11,16,23,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(11,16,23,.045) 1px,transparent 1px);background-size:96px 96px;background-position:center top}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light.alt{background-color:#F7F7F4}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec{border-top:1px solid rgba(11,16,23,.12)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep.sec{border-top-color:rgba(255,255,255,.08)}
+
+/* заголовок секції: номер, жорстка вертикаль, гігантська цифра-контур */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head{position:relative;counter-increment:sec;width:100%}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .eyebrow::before{content:counter(sec,decimal-leading-zero);width:auto;height:auto;padding:6px 7px;background:#FDC501;color:#0B1017;border-radius:0;font:700 11px/1 var(--f-m);letter-spacing:.06em}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head::after{content:counter(sec,decimal-leading-zero);position:absolute;right:0;top:-.06em;font:800 clamp(110px,17vw,300px)/.78 var(--f-d);letter-spacing:-.04em;color:transparent;-webkit-text-stroke:2px #0B1017;opacity:.16;pointer-events:none;z-index:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head > *{position:relative;z-index:1}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .lead{border-left:3px solid #FDC501;padding-left:20px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .eyebrow{color:#FFFFFF}
+
+/* кнопки: прямокутник, капітель, стрілка */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn{font:700 14px/1 var(--f-b);letter-spacing:.09em;text-transform:uppercase;transition:background .25s,color .25s,box-shadow .25s}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn:not(.btn--sm)::before{content:"";order:2;width:16px;height:2px;background:currentColor;box-shadow:none;transition:width .3s var(--ease)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn:hover::before{width:26px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn--ghost{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.7);backdrop-filter:none;-webkit-backdrop-filter:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn--ghost:hover{background:#FFFFFF;color:#0B1017;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero .btn--ghost{background:rgba(5,8,13,.55)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero .btn--ghost:hover{background:#FFFFFF}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light .btn:not(.btn--ghost):hover{background:#0B1017;color:#FDC501}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn--sm{font-size:12px;letter-spacing:.08em;padding:12px 16px}
+
+/* навігація: темне скло, логотип світлий */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav.is-solid{color:#FFFFFF;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav.is-solid .brand__logo{display:block} :is(:root[data-theme="sky"],:root:not([data-theme])) .nav.is-solid .brand__ink{display:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav__bar{background:#FDC501;height:2px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav__links{text-transform:uppercase;letter-spacing:.08em;font:600 12.5px/1 var(--f-b)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav__links a::after{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .theme-switch{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .theme-switch__button{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav.is-solid .theme-switch{background:rgba(255,255,255,.04)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav.is-solid .theme-switch__button:hover{background:rgba(255,255,255,.14)}
+
+/* ГЕРОЙ: монумент */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center::before{background:radial-gradient(ellipse closest-side,rgba(5,8,13,.82) 0%,rgba(5,8,13,.74) 64%,rgba(5,8,13,.4) 84%,transparent 100%);width:min(1100px,140vw)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1{line-height:.9;text-shadow:0 4px 40px rgba(0,0,0,.55)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats{gap:0;border-top:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:18px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li{padding:0 clamp(18px,2.8vw,44px);min-width:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li + li{border-left:1px solid rgba(255,255,255,.2)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats span{color:#C9CED4;letter-spacing:.16em}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after{content:"";position:absolute;inset:clamp(84px,11vh,104px) var(--gut) clamp(22px,4vh,40px);pointer-events:none;
+  background:
+   linear-gradient(#FDC501,#FDC501) left top/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) left top/2px 28px no-repeat,
+   linear-gradient(#FDC501,#FDC501) right top/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) right top/2px 28px no-repeat,
+   linear-gradient(#FDC501,#FDC501) left bottom/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) left bottom/2px 28px no-repeat,
+   linear-gradient(#FDC501,#FDC501) right bottom/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) right bottom/2px 28px no-repeat}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::before{content:"49°35′N · 34°33′E · ПОЛТАВА";position:absolute;left:calc(var(--gut) + 40px);bottom:calc(clamp(22px,4vh,40px) + 14px);font:500 11px/1 var(--f-m);letter-spacing:.2em;color:rgba(255,255,255,.72);pointer-events:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__hint::after{border-radius:0;background:#FDC501}
+@media (max-width:699px){
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li{padding:0 10px}
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::before{display:none}
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after{inset:76px 14px 16px}
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head::after{font-size:120px;top:-.1em}
+}
+
+/* РОБОТИ */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job{background:#FFFFFF;transition:box-shadow .3s}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#FDC501;transform:scaleX(0);transform-origin:left;transition:transform .45s var(--ease)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job:hover::after,:is(:root[data-theme="sky"],:root:not([data-theme])) .job:focus-within::after{transform:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job figure::after{background:linear-gradient(180deg,transparent,rgba(5,8,13,.55))}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job__n{border-radius:0;font:700 12px/1 var(--f-m);padding:8px 10px;left:0;top:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job__body h3{font:800 clamp(20px,1.6vw,26px)/1.05 var(--f-d);text-transform:uppercase;letter-spacing:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job__b li::before{border-radius:0;width:7px;height:7px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job__go{color:#0B1017;font:700 12px/1 var(--f-b);letter-spacing:.12em;text-transform:uppercase}
+
+/* ПАРК: сталеві картки */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background:#111821;color:#FFFFFF;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure{background:#1A232E}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__cat{border-radius:0;background:#FDC501;color:#0B1017;backdrop-filter:none;left:0;top:0;font-weight:700}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__body h3{color:#FFFFFF}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs{color:#A9B0B8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs div{border-bottom:1px solid rgba(255,255,255,.08)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs dd{color:#FFFFFF}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__purpose{color:#C9CED4}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price{color:#FDC501;font-size:clamp(21px,1.6vw,26px)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price small{color:#A9B0B8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price.is-neg{color:#C9CED4}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn{background:transparent;color:#FDC501;box-shadow:inset 0 0 0 1.5px #FDC501}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn:hover{background:#FDC501;color:#0B1017;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .chip{font:600 12px/1 var(--f-b);letter-spacing:.08em;text-transform:uppercase}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .park__note{color:#A9B0B8}
+
+/* ЦІНА */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc{box-shadow:0 0 0 1px rgba(11,16,23,.16)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{border-radius:0;background:#F7F7F4;border:1.5px solid rgba(11,16,23,.2)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#0B1017;box-shadow:0 0 0 3px rgba(253,197,1,.65)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field label,:is(:root[data-theme="sky"],:root:not([data-theme])) .field .lab{font:700 11.5px/1.25 var(--f-b);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]{height:4px;border-radius:0;background:linear-gradient(90deg,#FDC501 0 var(--p,30%),#D9DAD4 var(--p,30%) 100%)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-webkit-slider-thumb{border-radius:0;width:20px;height:28px;background:#0B1017;border:3px solid #FDC501;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-moz-range-thumb{border-radius:0;background:#0B1017;border:3px solid #FDC501;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:48px 48px;border-left:4px solid #FDC501}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .total{filter:none}
+
+/* МАТЕРІАЛИ */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile{box-shadow:inset 0 0 0 1px rgba(11,16,23,.14);position:relative}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:inset 0 0 0 1px #0B1017}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__group{border-radius:0;left:0;top:0;background:#0B1017;color:#FFFFFF;font-weight:700}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__body h4{font:800 clamp(18px,1.3vw,21px)/1.1 var(--f-d);text-transform:uppercase;letter-spacing:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__price{color:#0B1017;font-size:24px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__doc::before{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .mats__note{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,0 0 0 1px rgba(11,16,23,.12);text-align:left}
+
+/* ДОКАЗ */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .reel .proof-card{box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .reel figcaption{background:linear-gradient(180deg,transparent,rgba(5,8,13,.92))}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .reel i{border-radius:0;background:#FDC501}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .fact{backdrop-filter:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);text-align:left;padding:26px 22px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .fact b{font-size:clamp(40px,4vw,64px)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .marquee li{border-radius:0}
+
+/* ГЕОГРАФІЯ */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__map svg{filter:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl{fill:#D3D4CE;stroke:#ECECE7}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served{fill:#1C2633}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served:hover{fill:#2C3948}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li{border-radius:0;box-shadow:inset 0 0 0 1px rgba(11,16,23,.12)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li.home{background:#FDC501;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__base{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,inset 0 0 0 1px rgba(11,16,23,.12)}
+
+/* ЗАЯВКА */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{border-top:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act::before,:is(:root[data-theme="sky"],:root:not([data-theme])) .foot::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;background:repeating-linear-gradient(-45deg,#FDC501 0 14px,#0B1017 14px 28px);pointer-events:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{position:relative;color:#B8BEC6}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot h4{color:#8D96A0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .channels a,:is(:root[data-theme="sky"],:root:not([data-theme])) .channels div{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .form,:is(:root[data-theme="sky"],:root:not([data-theme])) .done,:is(:root[data-theme="sky"],:root:not([data-theme])) .fallback{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .seg{border-radius:0;background:#ECECE7}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .seg label{border-radius:0;text-transform:uppercase;letter-spacing:.06em;font-size:12.5px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .seg label:has(input:checked){background:#0B1017;color:#FDC501}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .form__msg,:is(:root[data-theme="sky"],:root:not([data-theme])) .fallback pre{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle{border-radius:0;background:#0B1017;border-color:rgba(255,255,255,.3);letter-spacing:.06em}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle:hover{background:#1A232E}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .cine__ch figure{border-radius:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .cine__note{color:#C9CED4}
+
+/* вирівнювання за лівою віссю заголовків; глибиномір без інверсії кольору */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .chips{justify-content:flex-start;margin:0 0 30px;max-width:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .facts{max-width:none;margin:0 0 clamp(36px,5vw,56px)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .park__note,:is(:root[data-theme="sky"],:root:not([data-theme])) .proof__src{text-align:left;margin-left:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{mix-blend-mode:normal;color:#8D96A0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__float{border-radius:0;width:10px;height:10px;margin:-5px 0 0 -5px;box-shadow:0 0 0 3px rgba(253,197,1,.3)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .sec-head::after{-webkit-text-stroke-color:#FFFFFF;opacity:.13}
+@media (max-height:520px){
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats{padding-top:8px;padding-bottom:0;border-bottom:0}
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after,:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::before{display:none}
+}
