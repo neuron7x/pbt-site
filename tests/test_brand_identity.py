@@ -108,7 +108,7 @@ def test_search_metadata_and_no_javascript_contacts_match_plainbud():
             for tag, attrs in doc.nodes if tag == 'meta'}
     assert 'ПЛЕЙНБУД' in meta['og:title']
     assert meta['og:image'].endswith('/og-plainbud.jpg')
-    assert meta['theme-color'] == '#0D6AE0'
+    assert meta['theme-color'] == '#05080D'
 
 
 def test_public_brand_assets_exist_and_retired_logos_are_not_referenced():

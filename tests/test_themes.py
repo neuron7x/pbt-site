@@ -154,7 +154,7 @@ def test_prepaint_restores_storage_under_enforced_browser_csp(browser, server, t
         assert response.status == (200 if path == "/" else 404)
         assert page.evaluate("document.documentElement.dataset.theme") == theme
         assert page.evaluate("document.querySelector('meta[name=theme-color]').content") == (
-            "#101820" if theme == "precision" else "#0D6AE0"
+            "#101820" if theme == "precision" else "#05080D"
         )
         executed = page.evaluate("""() => {
           const el = document.createElement('script');
@@ -171,7 +171,7 @@ def test_prepaint_restores_storage_under_enforced_browser_csp(browser, server, t
 def test_default_browser_chrome_color_agrees_with_sky_before_prepaint():
     html = (ROOT / "web" / "index.html").read_text(encoding="utf-8")
     assert '<html lang="uk" data-theme="sky">' in html
-    assert '<meta name="theme-color" content="#0D6AE0">' in html
+    assert '<meta name="theme-color" content="#05080D">' in html
 
 
 
