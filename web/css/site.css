@@ -1019,6 +1019,28 @@ html:has(#passport[open]){overflow:hidden}
 .geo__src{margin:14px 0 0;font:400 11.5px/1.45 var(--f-b);color:#A9B0B8}
 @media (prefers-reduced-motion:reduce){.geo__info:not([hidden]){animation:none}}
 
+/* ═══ ГУСЕНИЦЯ — фірмовий прогрес сторінки («Сталь») ═══ */
+.track{display:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .track{display:block;position:fixed;left:0;right:0;top:0;z-index:79;height:12px;transform:translateY(var(--nav-h,64px));transition:transform .45s var(--ease);pointer-events:none;background:#05080D;box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 14px rgba(0,0,0,.35)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .track.is-up{transform:translateY(0)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .nav__bar{display:none}
+.track__belt{position:absolute;inset:2px 0;overflow:hidden}
+.track__shoes,.track__gold{position:absolute;top:0;bottom:0;left:-16px;right:-16px;transform:translateX(var(--tx,0px));will-change:transform;
+  background:repeating-linear-gradient(90deg,var(--shoe) 0 11px,rgba(0,0,0,0) 11px 13px,var(--pin) 13px 14px,rgba(0,0,0,0) 14px 16px)}
+.track__shoes{--shoe:#262E38;--pin:#3A4450}
+.track__gold{--shoe:#FDC501;--pin:#8A6B00;clip-path:inset(0 calc((1 - var(--tp,0)) * (100% - 32px) + 16px + var(--tx,0px)) 0 0)}
+.track__sprocket{position:absolute;top:-6px;left:calc(var(--tp,0) * 100%);width:24px;height:24px;margin-left:-12px;transform:rotate(var(--rot,0deg));fill:#FDC501;stroke:#05080D;stroke-width:1.2;filter:drop-shadow(0 2px 4px rgba(0,0,0,.55))}
+.track__sprocket circle{fill:#05080D;stroke:#FDC501;stroke-width:1.4}
+.track__stops{position:absolute;inset:0;margin:0;padding:0;list-style:none}
+.track__stops li{position:absolute;top:0;bottom:0;width:0}
+.track__stops a{position:absolute;top:-2px;left:-6px;width:12px;height:16px;pointer-events:auto}
+.track__stops a::before{content:"";position:absolute;left:5px;top:2px;width:2px;height:12px;background:#ECECE7;opacity:.55}
+.track__stops a::after{content:attr(data-n) " · " attr(data-name);position:absolute;top:18px;left:50%;transform:translate(-50%,-4px);padding:5px 8px;background:#FDC501;color:#0B1017;font:700 10.5px/1 var(--f-m);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
+@media (pointer:fine){.track__stops a:hover::after{opacity:1;transform:translate(-50%,0)}.track__stops a:hover::before{opacity:1;background:#FDC501}}
+@media (prefers-reduced-motion:reduce){.track{transition:none}.track__shoes,.track__gold{will-change:auto}}
+[data-quality=static] .track__shoes,[data-quality=static] .track__gold{will-change:auto}
+@media print{.track{display:none!important}}
+
 /* ═══ «СТАЛЬ І ЗОЛОТО» (24.11.2026) — шар теми за замовчуванням ═══
    Напрям: важка промислова монументальність. Сталь #05080D–#1A232E як ґрунт, бетон #ECECE7 як світле поле,
    золото #FDC501 — дія, ціна, акцент. Кути 0–2 px, жорсткі лінії замість хвиль і м'яких тіней, великий Tektur,

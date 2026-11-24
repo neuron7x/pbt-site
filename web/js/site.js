@@ -244,11 +244,39 @@
     docMax = Math.max(1, doc.scrollHeight - innerHeight);
     secTops = sections.map(s => ({ id: s.id, top: s.offsetTop }));
     $$('.gauge__stops li').forEach((li, i) => { const s = secTops[i]; if (s) li.style.top = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; });
+    trackStations();
+    doc.style.setProperty('--nav-h', nav.offsetHeight + 'px');
     sparkSize();
+  }
+  /* ───── ГУСЕНИЦЯ: прогрес сторінки як гусеничний ланцюг; траки й зірочка котяться за скролом з інерцією ───── */
+  const track = $('#track'), trackStops = $('#trackStops');
+  let beltPos = 0, beltRaf = 0;
+  function beltStep() {
+    const target = scrollY, d = target - beltPos;
+    beltPos = Math.abs(d) < .5 || !motion() ? target : beltPos + d * .14;      // «маса»: ланцюг дотягується після зупинки
+    track.style.setProperty('--tx', `${(-(beltPos * .55) % 16).toFixed(2)}px`);
+    track.style.setProperty('--rot', `${(beltPos * .9 % 360).toFixed(1)}deg`);
+    beltRaf = beltPos !== target ? requestAnimationFrame(beltStep) : 0;
+  }
+  function trackRender(p) {
+    if (!track) return;
+    track.style.setProperty('--tp', p.toFixed(4));
+    if (!beltRaf) beltRaf = requestAnimationFrame(beltStep);
+  }
+  function trackStations() {
+    if (!trackStops) return;
+    const names = { roboty: 'Роботи', tekhnika: 'Техніка', cina: 'Ціна', materialy: 'Матеріали', dokaz: 'Кадри', geo: 'Де працюємо', zapyt: 'Заявка' };
+    const list = secTops.filter(s => names[s.id]);
+    trackStops.replaceChildren(...list.map((s, i) => {
+      const li = document.createElement('li'), a = document.createElement('a');
+      a.href = '#' + s.id; a.tabIndex = -1; a.dataset.n = String(i + 1).padStart(2, '0'); a.dataset.name = names[s.id];
+      li.style.left = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; li.append(a); return li;
+    }));
   }
   function gaugeRender(y) {
     const p = clamp(y / docMax, 0, 1);
     nav.style.setProperty('--sp', p.toFixed(4));
+    trackRender(p);
     gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
@@ -271,6 +299,7 @@
       if (dy > 2 && y > 160 && !navHidden) { navHidden = true; nav.classList.add('is-hidden'); }
       else if ((dy < -2 || y < 160) && navHidden) { navHidden = false; nav.classList.remove('is-hidden'); }
     }
+    if (track) track.classList.toggle('is-up', navHidden);   // після рішення про шапку: ланцюг іде за нею
     lastY = y;
   }
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(render); } };
