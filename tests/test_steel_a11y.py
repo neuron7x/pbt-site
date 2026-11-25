@@ -193,6 +193,9 @@ def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced)
     end = pg.evaluate(cls)
     assert 'is-falling' not in end and 'has-load' not in end, end
     assert pg.evaluate(ground + ".backgroundPositionX") == '-216px'      # кадр плями
+    fx = "getComputedStyle(document.querySelector('.gauge__m'), '%s').animationName"
+    expected = ('none', 'none', 'none') if reduced else ('crane-jolt', 'impact-ring', 'impact-burst')   # удар: поштовх, кільце пилу, бризки
+    assert (pg.evaluate("getComputedStyle(document.getElementById('gauge')).animationName"), pg.evaluate(fx % '::before'), pg.evaluate(fx % '::after')) == expected
     assert pg.evaluate(ground + ".display") == 'block'
     assert pg.evaluate("getComputedStyle(document.querySelector('.gauge__float'), '::after').content") == 'none'   # гак порожній
     # гак повертається по пляму й бере її вже грудкою
