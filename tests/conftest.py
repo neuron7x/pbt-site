@@ -11,11 +11,19 @@ def _free_port():
     s = socket.socket(); s.bind(('127.0.0.1', 0)); p = s.getsockname()[1]; s.close(); return p
 
 
+def pytest_configure(config):
+    """Стан сервера (журнал, сіль IP) усіх тестів — у тимчасовому каталозі сесії, не в репозиторному data/: імпорт
+    server/app.py у процесі і кожен підпроцес успадковують PBT_DATA_DIR (за 9 год прогонів data/server.log виріс до 8 МБ)."""
+    import tempfile
+    os.environ.setdefault('PBT_DATA_DIR', tempfile.mkdtemp(prefix='pbt-test-data-'))
+
+
 @pytest.fixture(scope='session')
 def server(tmp_path_factory):
     port = _free_port()
     db = tmp_path_factory.mktemp('db') / 'leads.db'
-    env = {**os.environ, 'PORT': str(port), 'HOST': '127.0.0.1', 'LEAD_DB': str(db),
+    data_dir = tmp_path_factory.mktemp('data')        # журнал і сіль тестового сервера — не в репозиторний data/
+    env = {**os.environ, 'PORT': str(port), 'HOST': '127.0.0.1', 'LEAD_DB': str(db), 'PBT_DATA_DIR': str(data_dir),
            'RATE_ANY_10MIN': '10000', 'RATE_LEAD_10MIN': '10000', 'RATE_LEAD_DAY': '10000',
            'TELEGRAM_BOT_TOKEN': '', 'LEAD_WEBHOOK_URL': '', 'TRUST_PROXY': '1'}   # як у розгортанні (ops/systemd)
     proc = subprocess.Popen([sys.executable, str(ROOT / 'server' / 'app.py')], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -25,7 +33,7 @@ def server(tmp_path_factory):
             urllib.request.urlopen(base + '/api/health', timeout=.5); break
         except Exception:
             time.sleep(.1)
-    yield {'base': base, 'db': db}
+    yield {'base': base, 'db': db, 'data': data_dir}
     proc.terminate(); proc.wait(5)
 
 

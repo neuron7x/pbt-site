@@ -106,9 +106,9 @@ def test_migration_failure_rolls_back_every_schema_write_then_retry_converges(tm
 def test_legacy_orphan_is_reported_never_repaired_and_never_lost(tmp_path, srv):
     db = tmp_path / 'db0.db'
     _legacy_db(db, orphan=True)
-    log_file = ROOT / 'data' / 'server.log'
-    offset = log_file.stat().st_size if log_file.exists() else 0  # The log accumulates across tests.
     s = Srv(db, DELIVERY_WORKER='0')
+    log_file = s.data / 'server.log'                    # власний каталог стану сервера: журнал без сусідніх тестів
+    offset = 0
     try:
         assert s.post(LEAD, 'k-after-orphan-1')[0] == 201  # Unrelated intake continues.
         rows = s.rows('SELECT lead_id, status FROM outbox')

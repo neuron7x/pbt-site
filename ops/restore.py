@@ -124,7 +124,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description='restore leads.db from backup with a monotonic id sequence')
     ap.add_argument('backup')
     ap.add_argument('--db', default=os.environ.get('LEAD_DB') or str(ROOT / 'data' / 'leads.db'))
-    ap.add_argument('--log', default=str(ROOT / 'data' / 'server.log'))
+    ap.add_argument('--log', default=str(Path(os.environ.get('PBT_DATA_DIR') or ROOT / 'data') / 'server.log'))
     ap.add_argument('--min-seq', type=int, default=None)
     ap.add_argument('--allow-rpo-gap', action='store_true',
                     help='explicit break-glass acknowledgment of unrecoverable accepted leads after the snapshot')

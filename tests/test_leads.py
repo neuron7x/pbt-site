@@ -1,6 +1,6 @@
 """Життєвий цикл заявки: ідемпотентність (рівень БД), сталий outbox, повтори, ін'єкція збоїв доставки, перезапуск.
 Кожен тест піднімає власний server/app.py (окрема БД) і, де треба, локальний стаб Telegram/вебхука."""
-import json, os, signal, socket, sqlite3, subprocess, sys, threading, time, urllib.error, urllib.request
+import json, os, signal, socket, sqlite3, subprocess, sys, tempfile, threading, time, urllib.error, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -17,7 +17,8 @@ def _port():
 class Srv:
     def __init__(self, db, **env):
         self.port = _port(); self.base = f'http://127.0.0.1:{self.port}'; self.db = db
-        e = {**os.environ, 'PORT': str(self.port), 'HOST': '127.0.0.1', 'LEAD_DB': str(db), 'RATE_ANY_10MIN': '10000',
+        self.data = Path(env.pop('PBT_DATA_DIR', None) or tempfile.mkdtemp(prefix='pbt-srv-data-'))   # журнал і сіль — свої, не репозиторні; незалежно від каталогу БД
+        e = {**os.environ, 'PORT': str(self.port), 'HOST': '127.0.0.1', 'LEAD_DB': str(db), 'PBT_DATA_DIR': str(self.data), 'RATE_ANY_10MIN': '10000',
              'RATE_LEAD_10MIN': '10000', 'RATE_LEAD_DAY': '10000', 'TELEGRAM_BOT_TOKEN': '', 'TELEGRAM_CHAT_ID': '',
              'LEAD_WEBHOOK_URL': '', 'LEAD_WEBHOOK_SECRET': '', 'DELIVERY_POLL_S': '0.1', 'DELIVERY_BACKOFF_S': '0.05',
              'DELIVERY_TIMEOUT': '1', **{k: str(v) for k, v in env.items()}}
@@ -412,7 +413,7 @@ def test_valid_json_surrogate_pair_preserves_201_and_emoji(srv):
 def test_http_access_and_rejected_origin_logs_are_pseudonymous(srv):
     """Negative falsifier: the old handler emitted raw XFF, query and Origin."""
     s = srv(TRUST_PROXY='1', DELIVERY_WORKER='0')
-    journal = ROOT / 'data' / 'server.log'
+    journal = s.data / 'server.log'
     offset = journal.stat().st_size
     raw_ip = '198.51.100.237'
     marker = 'pbt-private-query-314159'

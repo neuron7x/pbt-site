@@ -31,7 +31,8 @@ def test_accepted_leads_logs_and_database_are_private_under_umask_022(tmp_path, 
 
     env = os.environ.copy()
     for name in ("IP_HASH_SALT", "LEAD_WEBHOOK_URL", "LEAD_WEBHOOK_SECRET",
-                 "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "TELEGRAM_API_BASE"):
+                 "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "TELEGRAM_API_BASE",
+                 "PBT_DATA_DIR"):                  # перевіряється типовий <site>/data, не сесійний каталог тестів
         env.pop(name, None)
     env.update({
         "LEAD_DB": str(database),
