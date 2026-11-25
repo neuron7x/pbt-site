@@ -27,14 +27,14 @@
   --t-heading-weight: 800;
   --t-h2-size: clamp(42px,6.2vw,108px);
   --t-h2-line: .9;
-  --t-h2-light: #59616B;
+  --t-h2-light: #1D4ED8;
   --t-h2-deep-bg: none;
   --t-h2-deep-color: #FDC501;
   --t-h3-weight: 700;
   --t-lead: var(--ink-2);
   --t-lead-max: 58ch;
   --t-lead-margin: 0;
-  --t-deep-lead: #C9CED4;
+  --t-deep-lead: #C6D6EC;
   --t-head-align: left;
   --t-head-justify: start;
   --t-head-margin: 0 0 clamp(44px,5.5vw,88px);
@@ -49,7 +49,7 @@
   --t-btn-radius: 0;
   --t-btn-padding: 19px 30px;
   --t-btn-bg: #FDC501;
-  --t-btn-fg: #0B1017;
+  --t-btn-fg: #06122B;
   --t-btn-shadow: none;
   --t-btn-shine: block;
   --t-btn-hover-transform: none;
@@ -57,16 +57,16 @@
   --t-btn-hover-bg: #FFFFFF;
   --t-btn-ghost-bg: transparent;
   --t-row-justify: flex-start;
-  --t-nav-bg: rgba(7,10,15,.92);
+  --t-nav-bg: rgba(3,10,28,.9);
   --t-nav-shadow: none;
   --t-nav-rule: rgba(255,255,255,.08);
   --t-nav-hide: translateY(-110%);
   --t-decor: block;
-  --t-menu-bg: #05080D;
-  --t-hero-bg: #05080D;
+  --t-menu-bg: #040A16;
+  --t-hero-bg: #040A16;
   --t-hero-grade: saturate(.82) contrast(1.14) brightness(.8);
   --t-hero-video-pos: 50% 45%;
-  --t-hero-overlay: linear-gradient(180deg,rgba(5,8,13,.86),rgba(5,8,13,.42) 34%,rgba(5,8,13,.5) 66%,rgba(5,8,13,.96));
+  --t-hero-overlay: linear-gradient(180deg,rgba(2,7,22,.88),rgba(5,20,60,.46) 34%,rgba(8,30,86,.5) 66%,rgba(2,7,22,.97));
   --t-hero-blend: normal;
   --t-hero-center-right: var(--gut);
   --t-hero-center-width: auto;
@@ -80,21 +80,21 @@
   --t-hero-line: #FFFFFF;
   --t-hero-line-accent: #FDC501;
   --t-logo-margin: 6px auto 0;
-  --t-hero-lead-color: #E4E7EB;
+  --t-hero-lead-color: #E3ECF8;
   --t-hero-lead-glow: none;
-  --t-hero-lead-scrim: radial-gradient(closest-side,rgba(5,8,13,.88),rgba(5,8,13,.72) 60%,rgba(5,8,13,0));
+  --t-hero-lead-scrim: radial-gradient(closest-side,rgba(3,10,28,.88),rgba(3,10,28,.72) 60%,rgba(3,10,28,0));
   --t-hero-stats-justify: center;
   --t-hero-stats-gap: 0px;
   --t-hero-stats-color: #FFFFFF;
   --t-hero-stats-font: 800 clamp(22px,min(3.4vw,5.6svh),54px)/1 var(--f-d);
   --t-hero-stats-shadow: none;
-  --t-hero-wipe-bg: #ECECE7;
+  --t-hero-wipe-bg: #D3E6FB;
   --t-hero-wipe-svg: none;
   --t-job-radius: 0;
   --t-job-shadow: none;
-  --t-job-border: 1px solid rgba(11,16,23,.14);
+  --t-job-border: 1px solid rgba(29,78,216,.16);
   --t-job-hover-transform: none;
-  --t-job-hover-shadow: 0 0 0 1px #0B1017;
+  --t-job-hover-shadow: 0 0 0 1px #1D4ED8;
   --t-job-columns: repeat(12,minmax(0,1fr));
   --t-job-col: span 4;
   --t-job-first: span 6;
@@ -109,16 +109,16 @@
   --t-chip-radius: 0;
   --t-chip-bg: transparent;
   --t-chip-active-bg: #FDC501;
-  --t-chip-active-fg: #0B1017;
+  --t-chip-active-fg: #06122B;
   --t-card-radius: 0;
   --t-calc-radius: 0;
   --t-calc-max: none;
   --t-calc-margin: 0;
-  --t-quote-bg: #0B1017;
+  --t-quote-bg: #061230;
   --t-total-bg: var(--grad-gold);
   --t-total-color: transparent;
   --t-total-font: 800 clamp(56px,6vw,100px)/.95 var(--f-d);
-  --t-cine-bg: #05080D;
+  --t-cine-bg: #040A16;
   --t-cine-font: 800 clamp(56px,11vw,196px)/.84 var(--f-d);
   --t-cine-case: uppercase;
   --t-cine-tracking: .01em;
@@ -128,13 +128,13 @@
   --t-marquee-dup: grid;
   --t-map-home-animation: home 2.6s var(--ease) infinite;
   --t-map-ring-animation: ring 2.2s var(--ease) infinite;
-  --t-footer-bg: #05080D;
-  --t-tag-bg:#FDC501; --t-tag-fg:#0B1017;
+  --t-footer-bg: #020716;
+  --t-tag-bg:#FDC501; --t-tag-fg:#06122B;
   --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:transparent;
   --t-cine-veil:radial-gradient(62% 34% at 50% 52%,rgba(4,31,69,.66),rgba(4,31,69,.46) 55%,transparent),linear-gradient(180deg,rgba(4,31,69,.82),rgba(4,31,69,.12) 30%,rgba(4,31,69,.12) 62%,rgba(4,31,69,.9));
   --t-marquee-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
-  --t-hero-stats-border:1px solid rgba(255,255,255,.2); --t-hero-stats-padding:20px; --t-footer-legal:#A9B0B8;
-  --t-404-bg: #05080D;
+  --t-hero-stats-border:1px solid rgba(255,255,255,.2); --t-hero-stats-padding:20px; --t-footer-legal:#A9B9CF;
+  --t-404-bg: #040A16;
   --t-404-color: #fff;
 }
 :root[data-theme="precision"] {
@@ -1021,81 +1021,81 @@ html:has(#passport[open]){overflow:hidden}
 
 /* ═══ ГУСЕНИЦЯ — фірмовий прогрес сторінки («Сталь») ═══ */
 .track{display:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .track{display:block;position:fixed;left:0;right:0;top:0;z-index:79;height:14px;transform:translateY(var(--nav-h,64px));transition:transform .45s var(--ease);pointer-events:none;background:#05080D;box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 14px rgba(0,0,0,.35)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .track{display:block;position:fixed;left:0;right:0;top:0;z-index:79;height:14px;transform:translateY(var(--nav-h,64px));transition:transform .45s var(--ease);pointer-events:none;background:#040A16;box-shadow:0 1px 0 rgba(255,255,255,.08),0 6px 14px rgba(0,0,0,.35)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .track.is-up{transform:translateY(0)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .nav__bar{display:none}
 .track__belt{position:absolute;inset:1px 0;overflow:hidden}
 .track__shoes,.track__gold{position:absolute;top:0;bottom:0;left:-16px;right:-16px;transform:translateX(var(--tx,0px));will-change:transform;
-  background:repeating-linear-gradient(90deg,rgba(0,0,0,0) 0 12px,#05080D 12px 12.6px,var(--pin) 12.6px 14.2px,#05080D 14.2px 16px),
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,0) 0 12px,#040A16 12px 12.6px,var(--pin) 12.6px 14.2px,#040A16 14.2px 16px),
     linear-gradient(180deg,rgba(255,255,255,0) 44%,rgba(255,255,255,.22) 50%,rgba(255,255,255,0) 56%),
     linear-gradient(180deg,var(--s1) 0,var(--s2) 38%,var(--s3) 62%,var(--s4) 100%)}
-.track__shoes{--s1:#59626C;--s2:#2C343D;--s3:#161C23;--s4:#323A44;--pin:#4C5560}
+.track__shoes{--s1:#5C7194;--s2:#263856;--s3:#111C30;--s4:#2E4266;--pin:#4A5F84}
 .track__shoes::before,.track__gold::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 3.5px 30%,var(--bolt) 0 .8px,rgba(0,0,0,0) 1.1px),radial-gradient(circle at 8.5px 70%,var(--bolt) 0 .8px,rgba(0,0,0,0) 1.1px);background-size:16px 100%}
-.track__shoes{--bolt:#78838E}.track__gold{--bolt:#FFFFFF}
+.track__shoes{--bolt:#7F93B4}.track__gold{--bolt:#FFFFFF}
 /* змаз на кидку (аудит п.47): усереднений за період 16 px візерунок — 12/16 сталь, 2,4/16 темний проміжок, 1,6/16 палець,
    болти → дві тонкі смуги на 30 % і 70 %; непрозорість = var(--smear) із texStep, у спокої 0 */
 .track__shoes::after,.track__gold::after{content:"";position:absolute;inset:0;opacity:var(--smear,0);
   background:linear-gradient(180deg,rgba(0,0,0,0) 26%,color-mix(in srgb,var(--bolt) 22%,transparent) 30%,rgba(0,0,0,0) 34%,rgba(0,0,0,0) 66%,color-mix(in srgb,var(--bolt) 22%,transparent) 70%,rgba(0,0,0,0) 74%),
-    linear-gradient(color-mix(in srgb,var(--pin) 10%,rgba(5,8,13,.15)),color-mix(in srgb,var(--pin) 10%,rgba(5,8,13,.15))),
+    linear-gradient(color-mix(in srgb,var(--pin) 10%,rgba(4,10,22,.15)),color-mix(in srgb,var(--pin) 10%,rgba(4,10,22,.15))),
     linear-gradient(180deg,rgba(255,255,255,0) 44%,rgba(255,255,255,.22) 50%,rgba(255,255,255,0) 56%),
     linear-gradient(180deg,var(--s1) 0,var(--s2) 38%,var(--s3) 62%,var(--s4) 100%)}
 .track__gold{--s1:#E4EAF0;--s2:#9AA5B1;--s3:#4E5864;--s4:#AEB8C3;--pin:#FDC501;clip-path:inset(0 calc((1 - var(--tp,0)) * (100% - 32px) + 16px + var(--tx,0px)) 0 0)}
 .track__belt::after{content:"";position:absolute;inset:auto 0 0;height:1px;background:linear-gradient(90deg,#FDC501 calc(var(--tp,0) * 100%),rgba(0,0,0,0) 0)}
-.track__sprocket{position:absolute;top:-6px;left:calc(var(--tp,0) * 100%);width:26px;height:26px;margin-left:-13px;transform:rotate(var(--rot,0deg));fill:url(#trkSteel);stroke:#05080D;stroke-width:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
-.track__sprocket circle{fill:#FDC501;stroke:#05080D;stroke-width:1.2}
+.track__sprocket{position:absolute;top:-6px;left:calc(var(--tp,0) * 100%);width:26px;height:26px;margin-left:-13px;transform:rotate(var(--rot,0deg));fill:url(#trkSteel);stroke:#040A16;stroke-width:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
+.track__sprocket circle{fill:#FDC501;stroke:#040A16;stroke-width:1.2}
 .track__oil{position:absolute;left:0;top:100%;width:100%;height:120px;pointer-events:none}
 .track__stops{position:absolute;inset:0;margin:0;padding:0;list-style:none}
 .track__stops li{position:absolute;top:0;bottom:0;width:0}
 .track__stops a{position:absolute;top:-2px;left:-6px;width:12px;height:16px;pointer-events:auto}
-.track__stops a::before{content:"";position:absolute;left:5px;top:2px;width:2px;height:12px;background:#ECECE7;opacity:.55}
-.track__stops a::after{content:attr(data-n) " · " attr(data-name);position:absolute;top:18px;left:50%;transform:translate(-50%,-4px);padding:5px 8px;background:#FDC501;color:#0B1017;font:700 10.5px/1 var(--f-m);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
+.track__stops a::before{content:"";position:absolute;left:5px;top:2px;width:2px;height:12px;background:#E8EFF8;opacity:.55}
+.track__stops a::after{content:attr(data-n) " · " attr(data-name);position:absolute;top:18px;left:50%;transform:translate(-50%,-4px);padding:5px 8px;background:#FDC501;color:#08142A;font:700 10.5px/1 var(--f-m);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
 @media (pointer:fine){.track__stops a:hover::after{opacity:1;transform:translate(-50%,0)}.track__stops a:hover::before{opacity:1;background:#FDC501}}
 @media (prefers-reduced-motion:reduce){.track{transition:none}.track__shoes,.track__gold{will-change:auto}}
 [data-quality=static] .track__shoes,[data-quality=static] .track__gold{will-change:auto}
 @media print{.track{display:none!important}}
 
 /* ═══ «СТАЛЬ І ЗОЛОТО» (24.11.2026) — шар теми за замовчуванням ═══
-   Напрям: важка промислова монументальність. Сталь #05080D–#1A232E як ґрунт, бетон #ECECE7 як світле поле,
+   Напрям: важка промислова монументальність. Сталь #040A16–#14284A як ґрунт, бетон #E8EFF8 як світле поле,
    золото #FDC501 — дія, ціна, акцент. Кути 0–2 px, жорсткі лінії замість хвиль і м'яких тіней, великий Tektur,
    номер кожної секції. Тема «Графіт» (precision) цим шаром не зачіпається. */
 :is(:root[data-theme="sky"],:root:not([data-theme])){
-  --sky-900:#05080D;
-  --sky-800:#0B1017;
-  --sky-500:#1C2633;
-  --sky-300:#ECECE7;
-  --sky-100:#D9DAD4;
-  --sky-50:#ECECE7;
-  --ink:#0B1017;
-  --ink-2:#3A424C;
-  --ink-3:#4F5761;
-  --steel:#111821;
-  --steel-2:#1A232E;
-  --bone:#F7F7F4;
-  --line:rgba(11,16,23,.16);
+  --sky-900:#040A16;
+  --sky-800:#08142A;
+  --sky-500:#1A3157;
+  --sky-300:#E8EFF8;
+  --sky-100:#CFDBEA;
+  --sky-50:#E8EFF8;
+  --ink:#08142A;
+  --ink-2:#33445E;
+  --ink-3:#48597A;
+  --steel:#0D1C35;
+  --steel-2:#14284A;
+  --bone:#F3F7FC;
+  --line:rgba(8,20,42,.16);
   --line-w:rgba(255,255,255,.14);
   --line-w2:rgba(255,255,255,.5);
-  --grad-deep:linear-gradient(180deg,#0B1017,#0E141C);
+  --grad-deep:linear-gradient(180deg,#08142A,#0B1A33);
   --grad-gold:linear-gradient(180deg,#FFE04A 0%,#FDC501 52%,#E3A400 100%);
   --sh-card:none;
   --sh-gold:none;
 }
-:is(:root[data-theme="sky"],:root:not([data-theme])) body{background:#ECECE7}
+:is(:root[data-theme="sky"],:root:not([data-theme])) body{background:#E8EFF8}
 :is(:root[data-theme="sky"],:root:not([data-theme])) main{counter-reset:sec}
 
 /* декор «неба» прибрано: без хвиль, променів, блискіток */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .wave, :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__beams, :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky2, :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__spark{display:none}
 
 /* поля: креслярська сітка */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep{background-color:#0B1017;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:96px 96px;background-position:center top}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light{background-color:#ECECE7;background-image:linear-gradient(rgba(11,16,23,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(11,16,23,.045) 1px,transparent 1px);background-size:96px 96px;background-position:center top}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light.alt{background-color:#F7F7F4}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .sec{border-top:1px solid rgba(11,16,23,.12)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep{background-color:#08142A;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:96px 96px;background-position:center top}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light{background-color:#E8EFF8;background-image:linear-gradient(rgba(31,98,214,.085) 1px,transparent 1px),linear-gradient(90deg,rgba(31,98,214,.085) 1px,transparent 1px);background-size:96px 96px;background-position:center top}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light.alt{background-color:#F3F7FC}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec{border-top:1px solid rgba(8,20,42,.12)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep.sec{border-top-color:rgba(255,255,255,.08)}
 
 /* заголовок секції: номер, жорстка вертикаль, гігантська цифра-контур */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head{position:relative;counter-increment:sec;width:100%}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .eyebrow::before{content:counter(sec,decimal-leading-zero);width:auto;height:auto;padding:2px 6px;background:#FDC501;color:#0B1017;border-radius:0;font:700 11px/1 var(--f-m);letter-spacing:.06em}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head::after{content:counter(sec,decimal-leading-zero);position:absolute;right:0;top:-.06em;font:800 clamp(110px,17vw,300px)/.78 var(--f-d);letter-spacing:-.04em;color:transparent;-webkit-text-stroke:2px #0B1017;opacity:.16;pointer-events:none;z-index:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .eyebrow::before{content:counter(sec,decimal-leading-zero);width:auto;height:auto;padding:2px 6px;background:#FDC501;color:#08142A;border-radius:0;font:700 11px/1 var(--f-m);letter-spacing:.06em}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head::after{content:counter(sec,decimal-leading-zero);position:absolute;right:0;top:-.06em;font:800 clamp(110px,17vw,300px)/.78 var(--f-d);letter-spacing:-.04em;color:transparent;-webkit-text-stroke:2px #08142A;opacity:.16;pointer-events:none;z-index:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head > *{position:relative;z-index:1}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head .lead{border-left:3px solid #FDC501;padding-left:20px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .eyebrow{color:#FFFFFF}
@@ -1105,10 +1105,10 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .btn:not(.btn--sm)::before{content:"";order:2;width:16px;height:2px;background:currentColor;box-shadow:none;transition:width .3s var(--ease)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .btn:hover::before{width:26px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .btn--ghost{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.7);backdrop-filter:none;-webkit-backdrop-filter:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .btn--ghost:hover{background:#FFFFFF;color:#0B1017;box-shadow:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .hero .btn--ghost{background:rgba(5,8,13,.55)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn--ghost:hover{background:#FFFFFF;color:#08142A;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero .btn--ghost{background:rgba(4,10,22,.55)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero .btn--ghost:hover{background:#FFFFFF}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light .btn:not(.btn--ghost):hover{background:#0B1017;color:#FDC501}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light .btn:not(.btn--ghost):hover{background:#08142A;color:#FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .btn--sm{font-size:12px;letter-spacing:.08em;padding:12px 16px}
 
 /* навігація: темне скло, логотип світлий */
@@ -1123,12 +1123,12 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .nav.is-solid .theme-switch__button:hover{background:rgba(255,255,255,.14)}
 
 /* ГЕРОЙ: монумент */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center::before{background:radial-gradient(ellipse closest-side,rgba(5,8,13,.82) 0%,rgba(5,8,13,.74) 64%,rgba(5,8,13,.4) 84%,transparent 100%);width:min(1100px,140vw)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center::before{background:radial-gradient(ellipse closest-side,rgba(4,10,22,.82) 0%,rgba(4,10,22,.74) 64%,rgba(4,10,22,.4) 84%,transparent 100%);width:min(1100px,140vw)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1{line-height:.9;text-shadow:0 4px 40px rgba(0,0,0,.55)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats{gap:0;border-top:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:18px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li{padding:0 clamp(18px,2.8vw,44px);min-width:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li + li{border-left:1px solid rgba(255,255,255,.2)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats span{color:#C9CED4;letter-spacing:.16em}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats span{color:#C6D2E2;letter-spacing:.16em}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after{content:"";position:absolute;inset:clamp(84px,11vh,104px) var(--gut) clamp(22px,4vh,40px);pointer-events:none;
   background:
    linear-gradient(#FDC501,#FDC501) left top/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) left top/2px 28px no-repeat,
@@ -1148,52 +1148,52 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job{background:#FFFFFF;transition:box-shadow .3s}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:#FDC501;transform:scaleX(0);transform-origin:left;transition:transform .45s var(--ease)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job:hover::after,:is(:root[data-theme="sky"],:root:not([data-theme])) .job:focus-within::after{transform:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .job figure::after{background:linear-gradient(180deg,transparent,rgba(5,8,13,.55))}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job figure::after{background:linear-gradient(180deg,transparent,rgba(4,10,22,.55))}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job__n{border-radius:0;font:700 12px/1 var(--f-m);padding:8px 10px;left:0;top:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job__body h3{font:800 clamp(20px,1.6vw,26px)/1.05 var(--f-d);text-transform:uppercase;letter-spacing:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job__b li::before{border-radius:0;width:7px;height:7px}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .job__go{color:#0B1017;font:700 12px/1 var(--f-b);letter-spacing:.12em;text-transform:uppercase}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job__go{color:#08142A;font:700 12px/1 var(--f-b);letter-spacing:.12em;text-transform:uppercase}
 
 /* ПАРК: сталеві картки */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background:#111821;color:#FFFFFF;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure{background:#1A232E}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__cat{border-radius:0;background:#FDC501;color:#0B1017;backdrop-filter:none;left:0;top:0;font-weight:700}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background:#0D1C35;color:#FFFFFF;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure{background:#14284A}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__cat{border-radius:0;background:#FDC501;color:#08142A;backdrop-filter:none;left:0;top:0;font-weight:700}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit__body h3{color:#FFFFFF}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs{color:#A9B0B8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs{color:#A9B9CF}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs div{border-bottom:1px solid rgba(255,255,255,.08)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs dd{color:#FFFFFF}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__purpose{color:#C9CED4}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__purpose{color:#C6D2E2}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price{color:#FDC501;font-size:clamp(21px,1.6vw,26px)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price small{color:#A9B0B8}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price.is-neg{color:#C9CED4}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price small{color:#A9B9CF}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__price.is-neg{color:#C6D2E2}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn{background:transparent;color:#FDC501;box-shadow:inset 0 0 0 1.5px #FDC501}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn:hover{background:#FDC501;color:#0B1017;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn:hover{background:#FDC501;color:#08142A;box-shadow:none}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .chip{font:600 12px/1 var(--f-b);letter-spacing:.05em;text-transform:uppercase;padding:11px 12px}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .park__note{color:#A9B0B8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .park__note{color:#A9B9CF}
 
 /* ЦІНА */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .calc{box-shadow:0 0 0 1px rgba(11,16,23,.16)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{border-radius:0;background:#F7F7F4;border:1.5px solid rgba(11,16,23,.2)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#0B1017;box-shadow:0 0 0 3px rgba(253,197,1,.65)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc{box-shadow:0 0 0 1px rgba(8,20,42,.16)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{border-radius:0;background:#F3F7FC;border:1.5px solid rgba(8,20,42,.2)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#08142A;box-shadow:0 0 0 3px rgba(253,197,1,.65)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field label,:is(:root[data-theme="sky"],:root:not([data-theme])) .field .lab{font:700 11.5px/1.25 var(--f-b);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]{height:4px;border-radius:0;background:linear-gradient(90deg,#FDC501 0 var(--p,30%),#D9DAD4 var(--p,30%) 100%)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-webkit-slider-thumb{border-radius:0;width:20px;height:28px;background:#0B1017;border:3px solid #FDC501;box-shadow:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-moz-range-thumb{border-radius:0;background:#0B1017;border:3px solid #FDC501;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]{height:4px;border-radius:0;background:linear-gradient(90deg,#FDC501 0 var(--p,30%),#CFDBEA var(--p,30%) 100%)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-webkit-slider-thumb{border-radius:0;width:20px;height:28px;background:#08142A;border:3px solid #FDC501;box-shadow:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-moz-range-thumb{border-radius:0;background:#08142A;border:3px solid #FDC501;box-shadow:none}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:48px 48px;border-left:4px solid #FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .total{filter:none}
 
 /* МАТЕРІАЛИ */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .tile{box-shadow:inset 0 0 0 1px rgba(11,16,23,.14);position:relative}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:inset 0 0 0 1px #0B1017}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__group{border-radius:0;left:0;top:0;background:#0B1017;color:#FFFFFF;font-weight:700}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile{box-shadow:inset 0 0 0 1px rgba(8,20,42,.14);position:relative}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:inset 0 0 0 1px #08142A}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__group{border-radius:0;left:0;top:0;background:#08142A;color:#FFFFFF;font-weight:700}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__body h3{font:800 clamp(18px,1.3vw,21px)/1.1 var(--f-d);text-transform:uppercase;letter-spacing:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__price{color:#0B1017;font-size:24px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__price{color:#08142A;font-size:24px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__doc::before{border-radius:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .mats__note{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,0 0 0 1px rgba(11,16,23,.12);text-align:left}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .mats__note{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,0 0 0 1px rgba(8,20,42,.12);text-align:left}
 
 /* ДОКАЗ */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .reel .proof-card{box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .reel figcaption{background:linear-gradient(180deg,transparent,rgba(5,8,13,.92))}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .reel figcaption{background:linear-gradient(180deg,transparent,rgba(4,10,22,.92))}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .reel i{border-radius:0;background:#FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .fact{backdrop-filter:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);text-align:left;padding:26px 22px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .fact b{font-size:clamp(40px,4vw,64px)}
@@ -1201,34 +1201,34 @@ html:has(#passport[open]){overflow:hidden}
 
 /* ГЕОГРАФІЯ */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .geo__map svg{filter:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .obl{fill:#D3D4CE;stroke:#ECECE7}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served{fill:#1C2633}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served:hover{fill:#2C3948}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li{border-radius:0;box-shadow:inset 0 0 0 1px rgba(11,16,23,.12)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl{fill:#C9D6E8;stroke:#E8EFF8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served{fill:#1A3157}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served:hover{fill:#24406E}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li{border-radius:0;box-shadow:inset 0 0 0 1px rgba(8,20,42,.12)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li.home{background:#FDC501;box-shadow:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__base{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,inset 0 0 0 1px rgba(11,16,23,.12)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__base{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,inset 0 0 0 1px rgba(8,20,42,.12)}
 
 /* ЗАЯВКА */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{border-top:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act::before,:is(:root[data-theme="sky"],:root:not([data-theme])) .foot::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;background:repeating-linear-gradient(-45deg,#FDC501 0 14px,#0B1017 14px 28px);pointer-events:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{position:relative;color:#B8BEC6}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .foot h4{color:#8D96A0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act::before,:is(:root[data-theme="sky"],:root:not([data-theme])) .foot::before{content:"";position:absolute;left:0;right:0;top:0;height:10px;background:repeating-linear-gradient(-45deg,#FDC501 0 14px,#08142A 14px 28px);pointer-events:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{position:relative;color:#B6C4D8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot h4{color:#8C9DB5}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .channels a,:is(:root[data-theme="sky"],:root:not([data-theme])) .channels div{border-radius:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .form,:is(:root[data-theme="sky"],:root:not([data-theme])) .done,:is(:root[data-theme="sky"],:root:not([data-theme])) .fallback{border-radius:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .seg{border-radius:0;background:#ECECE7}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .seg{border-radius:0;background:#E8EFF8}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .seg label{border-radius:0;text-transform:uppercase;letter-spacing:.06em;font-size:12.5px}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .seg label:has(input:checked){background:#0B1017;color:#FDC501}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .seg label:has(input:checked){background:#08142A;color:#FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .form__msg,:is(:root[data-theme="sky"],:root:not([data-theme])) .fallback pre{border-radius:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle{border-radius:0;background:#0B1017;border-color:rgba(255,255,255,.3);letter-spacing:.06em}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle:hover{background:#1A232E}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle{border-radius:0;background:#08142A;border-color:rgba(255,255,255,.3);letter-spacing:.06em}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle:hover{background:#14284A}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .cine__ch figure{border-radius:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .cine__note{color:#C9CED4}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .cine__note{color:#C6D2E2}
 
 /* вирівнювання за лівою віссю заголовків; глибиномір без інверсії кольору */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .chips{justify-content:flex-start;margin:0 0 30px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .facts{max-width:none;margin:0 0 clamp(36px,5vw,56px)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .park__note,:is(:root[data-theme="sky"],:root:not([data-theme])) .proof__src{text-align:left;margin-left:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{mix-blend-mode:normal;color:#8D96A0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{mix-blend-mode:normal;color:#8C9DB5}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__float{border-radius:0;width:10px;height:10px;margin:-5px 0 0 -5px;box-shadow:0 0 0 3px rgba(253,197,1,.3)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .sec-head::after{-webkit-text-stroke-color:#FFFFFF;opacity:.13}
 @media (max-height:520px){
@@ -1238,11 +1238,97 @@ html:has(#passport[open]){overflow:hidden}
 
 /* фото парку: одна обробка для різних джерел (без зміни файлів) */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit img{filter:saturate(.9) contrast(1.06)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure::after{content:"";position:absolute;inset:auto 0 0;height:38%;background:linear-gradient(180deg,transparent,rgba(5,8,13,.5));pointer-events:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure::after{content:"";position:absolute;inset:auto 0 0;height:38%;background:linear-gradient(180deg,transparent,rgba(4,10,22,.5));pointer-events:none}
 
-:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(180deg,rgb(11, 16, 23),rgb(17, 24, 33));background-size:96px 96px,96px 96px,100% 100%}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle[aria-pressed=true]{background:#FDC501;border-color:#FDC501;color:#0B1017}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__m{background:#0B1017;color:#ECECE7;padding:3px 5px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle[aria-pressed=true]{background:#FDC501;border-color:#FDC501;color:#08142A}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__m{background:#08142A;color:#E8EFF8;padding:3px 5px}
+/* ═══ «ВОРОНЕНА СТАЛЬ» (25.11.2026, запит замовника: більше синього) ═══
+   Воронування — реальна обробка сталі: окисна плівка дає глибокий синій. Нейтральна сталь шару вище стала синьою
+   (#040A16–#14284A), бетон — кригою креслення (#E8EFF8 / #F3F7FC) із кобальтовою сіткою 96 px. Золото лишається
+   дією й ціною. Другий рядок заголовка на світлому — кобальт #1D4ED8 (5,8:1 на #E8EFF8, AA). На темному — холодний
+   ультрамариновий відблиск згори, як світло на воронованому листі. Кольори відпуску сталі (солома → бронза → пурпур →
+   синь) — підпис при наведенні на картки: так золото бренду переходить у синь фізично, а не декоративно. */
+:is(:root[data-theme="sky"],:root:not([data-theme])){--temper:linear-gradient(90deg,#FDC501 0%,#E0A03A 22%,#A8577A 46%,#5B3FC4 64%,#1D4ED8 82%,#5AA8FF 100%)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc,:is(:root[data-theme="sky"],:root:not([data-theme])) .form{box-shadow:0 0 0 1px rgba(29,78,216,.22),0 18px 40px -24px rgba(8,20,42,.35)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job{box-shadow:0 0 0 1px rgba(29,78,216,.14)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job::after{background:var(--temper);transition:transform .32s cubic-bezier(.16,1,.3,1)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{position:relative}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;z-index:4;background:var(--temper);transform:scaleX(0);transform-origin:left;transition:transform .32s cubic-bezier(.16,1,.3,1);pointer-events:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:hover::after,:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:focus-within::after{transform:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:hover{box-shadow:inset 0 0 0 1px rgba(90,168,255,.35)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:inset 0 0 0 1px #1D4ED8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#1D4ED8}
+@media (prefers-reduced-motion:reduce){:is(:root[data-theme="sky"],:root:not([data-theme])) .unit::after{transition:none}}
+/* креслення — справжня синька (ціанотипія): рентген картки, паспорт, панель маршруту */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__bp,:is(:root[data-theme="sky"],:root:not([data-theme])) .pass,:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__info{background-color:#0B1E40}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pass__head{background:rgba(11,30,64,.96)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__pick[aria-pressed=true]{background:#0B1E40}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__pass{background:rgba(8,20,42,.84)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pass::backdrop{background:rgba(4,10,22,.8)}
+
+/* ═══ «АТМОСФЕРА» (25.11.2026, слово власника: замість білого й чорного — сині й блакитні з переходом, як атмосфера планети з космосу) ═══
+   Модель — знімок лімба з орбіти: космос #020716 → нічна синь #071A40 → кобальт #1D4ED8 → лазур #3B8FF5 → світіння #7CC8FF →
+   серпанок #CDEBFF → денне небо #D3E6FB…#F1F7FE. Темна секція = космос над планетою: згори тонка лінія світіння, донизу густішає
+   до #020716. Перехід темне → світле = лімб: дуга серпанку, під нею денне небо наступної секції. Світла секція донизу сутеніє.
+   Яскраві зупинки градієнтів лежать лише в полях секцій, не під текстом; текст стоїть на зупинках, де контраст ≥ 4,5:1.
+   Золото #FDC501 — як і раніше лише дія, ціна, номер. Тема «Графіт» цим шаром не зачіпається. */
+:is(:root[data-theme="sky"],:root:not([data-theme])){
+  --a-space:#020716;--a-day-1:#D3E6FB;
+  --a-limb-h:clamp(96px,13vw,190px);
+  --a-grid-l:linear-gradient(rgba(31,98,214,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(31,98,214,.07) 1px,transparent 1px);
+  --a-grid-d:linear-gradient(rgba(124,200,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(124,200,255,.035) 1px,transparent 1px);
+  --a-sky:linear-gradient(180deg,#D3E6FB 0,#D3E6FB var(--a-limb-h),#E6F1FC 26%,#F1F7FE 50%,#E9F2FD 74%,#D9E9FA 100%);
+  --a-sun:radial-gradient(60% 34% at 88% 30%,rgba(255,255,255,.75),rgba(255,255,255,0) 70%);
+  --a-dusk:linear-gradient(0deg,rgba(29,78,216,.26),rgba(59,143,245,.1) 45%,rgba(59,143,245,0));
+  --a-ice:linear-gradient(165deg,#F6FAFF 0%,#E2EEFC 100%);
+  --a-night:linear-gradient(180deg,rgb(10,36,89) 0%,rgb(7,26,64) 22%,rgb(4,13,36) 60%,rgb(2,7,22) 100%);
+  --a-aurora:radial-gradient(70% 34% at 86% 0%,rgba(37,99,235,.3),rgba(37,99,235,0) 70%),radial-gradient(46% 26% at 4% 46%,rgba(29,78,216,.14),rgba(29,78,216,0) 70%);
+  /* лімб: усередині дуги прозоро (видно небо секції), зовні — непрозорий космос попередньої секції */
+  --a-limb-cap:radial-gradient(90% 150% at 50% 190%,rgba(244,250,255,0) 0,rgba(244,250,255,0) 94%,rgba(244,250,255,.92) 99%,#CDEBFF 100%,#5EB2FF 101.2%,#17409A 103.6%,#08173F 109%,#020716 119%);
+  /* лімб поверх кадру: усередині небо, зовні світіння сходить у прозоре */
+  --a-limb-rise:radial-gradient(90% 150% at 50% 190%,#D3E6FB 0,#D3E6FB 94%,#F4FAFF 99%,#CDEBFF 100%,rgba(94,178,255,.95) 101.2%,rgba(37,99,235,.62) 103.6%,rgba(23,64,170,.28) 109%,rgba(11,42,102,0) 119%);
+  --a-limb-planet:radial-gradient(90% 150% at 50% 190%,#0C2F86 0,#0E3BA8 70%,#1D5FE0 93%,#5EB2FF 98.6%,#CDEBFF 100%,rgba(94,178,255,.9) 101.2%,rgba(37,99,235,.55) 103.6%,rgba(23,64,170,.25) 109%,rgba(11,42,102,0) 119%);
+}
+/* денне небо */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light{--_cap:none;--_dusk:var(--a-dusk);
+  background-image:var(--_cap),var(--_dusk),var(--a-grid-l),var(--a-sun),var(--a-sky);
+  background-size:100% var(--a-limb-h),100% clamp(90px,12vw,170px),96px 96px,96px 96px,100% 100%,100% 100%;
+  background-position:center top,center bottom,center top,center top,center,center;
+  background-repeat:no-repeat,no-repeat,repeat,repeat,no-repeat,no-repeat}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light.alt{--_dusk:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep + .on-light{--_cap:var(--a-limb-cap);padding-top:calc(var(--sec) + var(--a-limb-h) * .5);border-top-color:#020716}
+/* герой без «води» (спокій, короткий телефон, без JS): лімб на вході в «Роботи» */
+[data-quality=static]:is(:root[data-theme="sky"],:root:not([data-theme])) #roboty,:is(:root[data-theme="sky"],:root:not([data-theme])):not(.js) #roboty{--_cap:var(--a-limb-cap);padding-top:calc(var(--sec) + var(--a-limb-h) * .5);border-top-color:#020716}
+@media (max-width:699px) and (max-height:700px){:is(:root[data-theme="sky"],:root:not([data-theme])) #roboty{--_cap:var(--a-limb-cap);padding-top:calc(var(--sec) + var(--a-limb-h) * .5);border-top-color:#020716}}
+/* «вода» героя = схід планети: дуга лімба над денним небом */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__water::before{content:"";position:absolute;left:0;right:0;top:calc(14vh - var(--a-limb-h));height:var(--a-limb-h);background:var(--a-limb-rise)}
+/* космос над планетою */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep{
+  background-image:linear-gradient(90deg,rgba(124,200,255,0),rgba(124,200,255,.85) 22%,rgba(205,235,255,.95) 50%,rgba(124,200,255,.85) 78%,rgba(124,200,255,0)),linear-gradient(180deg,rgba(59,143,245,.3),rgba(59,143,245,0)),var(--a-aurora),var(--a-grid-d),var(--a-night);
+  background-size:100% 1px,100% clamp(70px,9vw,130px),100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;
+  background-position:center top;
+  background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat,repeat,no-repeat}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep.sec{border-top-color:transparent}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:var(--a-aurora),var(--a-grid-d),var(--a-night);background-size:100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;background-repeat:no-repeat,no-repeat,repeat,repeat,no-repeat}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-cine{box-shadow:inset 0 1px 0 rgba(124,200,255,.55)}
+/* другий рядок заголовка на небі: кобальт із переходом (найсвітліша зупинка #2563EB — 4,0:1 на #D3E6FB, великий текст) */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light h2 span{background:linear-gradient(90deg,#1740B8 0%,#1D4ED8 50%,#2563EB 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+@media (forced-colors:active){:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light h2 span{background:none;-webkit-text-fill-color:currentColor}}
+/* поверхні: лід замість білого, ніч замість чорного */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job,:is(:root[data-theme="sky"],:root:not([data-theme])) .calc,:is(:root[data-theme="sky"],:root:not([data-theme])) .form,:is(:root[data-theme="sky"],:root:not([data-theme])) .done,:is(:root[data-theme="sky"],:root:not([data-theme])) .fallback,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile,:is(:root[data-theme="sky"],:root:not([data-theme])) .mats__note,:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li,:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__base{background-color:#E2EEFC;background-image:var(--a-ice)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li.home{background-image:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{background:#F8FBFF;border-color:rgba(29,78,216,.3)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .seg{background:#D3E3F7}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-color:#061230;background-image:radial-gradient(80% 60% at 100% 0%,rgba(59,143,245,.28),rgba(59,143,245,0) 70%),linear-gradient(rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(170deg,#0B2A66 0%,#061230 52%,#020716 100%);background-size:100% 100%,48px 48px,48px 48px,100% 100%}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background-color:#0A1B3D;background-image:linear-gradient(180deg,#0F2857 0%,#0A1B3D 55%,#071330 100%)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure{background:#0F2857}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl{fill:#BCD3F0;stroke:#EAF3FD}
+/* підвал: планета під обрієм */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{background-image:var(--a-limb-planet),linear-gradient(180deg,#020716 0%,#040D24 100%);background-size:100% var(--a-limb-h),100% 100%;background-position:center bottom,center;background-repeat:no-repeat;padding-bottom:calc(36px + var(--a-limb-h) * .8)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .menu{background-image:radial-gradient(90% 40% at 100% 0%,rgba(37,99,235,.3),rgba(37,99,235,0) 70%),linear-gradient(180deg,#071A40 0%,#040D24 55%,#020716 100%)}
+@media (max-width:699px) and (orientation:portrait) and (min-height:600px){:is(:root[data-theme="sky"],:root:not([data-theme])) .dock,:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle:not([aria-pressed=true]){background:#040D24}}
+@media print{:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light,:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep,:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{background-image:none}}
+
 /* нативний скрол-моушн: контурний номер секції пливе повільніше за текст і «набирає чорнило» біля центру екрана (без JS) */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion:no-preference) {

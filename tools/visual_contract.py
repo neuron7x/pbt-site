@@ -102,8 +102,8 @@ def audit_layout(probe: dict) -> list[str]:
     # Позначка data-theme недостатня: перевіряємо реальний computed-style.
     expected = {
         "sky": {
-            "surface": "rgb(236, 236, 231)",
-            "hero": "rgb(5, 8, 13)",
+            "surface": "rgb(232, 239, 248)",
+            "hero": "rgb(4, 10, 22)",
             "heading_font": "Tektur",
             "cta_radius": "0px",
         },

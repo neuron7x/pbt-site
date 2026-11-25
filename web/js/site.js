@@ -130,7 +130,7 @@
       button.setAttribute('aria-pressed', String(button.dataset.themeChoice === next));
     });
     const meta = $('meta[name="theme-color"]');
-    if (meta) meta.content = next === 'precision' ? '#101820' : '#05080D';
+    if (meta) meta.content = next === 'precision' ? '#101820' : '#040A16';
     const face = $('#themeFontPreload');
     if (face) face.href = 'fonts/' + (next === 'precision' ? 'IBMPlexSans-600-cyrillic.woff2' : 'Tektur-var-cyrillic.woff2');
     if (persist) {
