@@ -17,7 +17,7 @@ def valid_probe():
     return {
         "theme": "sky", "quality": "static",
         "appearance": {
-            "surface": "rgb(236, 236, 231)", "hero": "rgb(5, 8, 13)",
+            "surface": "rgb(232, 239, 248)", "hero": "rgb(4, 10, 22)",
             "heading_font": "Tektur, system-ui", "cta_radius": "0px",
             "pressed": ["sky"],
         },

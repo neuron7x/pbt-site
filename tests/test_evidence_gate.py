@@ -26,7 +26,7 @@ def evidence(tmp_path, monkeypatch):
         records.append(vc.capture_record(blob, filename, "tiny", "top", 16, 12, theme))
         if theme == "sky":
             appearance = {
-                "surface": "rgb(236, 236, 231)", "hero": "rgb(5, 8, 13)",
+                "surface": "rgb(232, 239, 248)", "hero": "rgb(4, 10, 22)",
                 "heading_font": "Tektur", "cta_radius": "0px", "pressed": ["sky"],
             }
         else:

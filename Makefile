@@ -42,7 +42,13 @@ js:             ## статичний аналіз JS: ESLint (recommended + Moz
 	cd tools/js && npm ci --ignore-scripts --no-audit --no-fund && npm audit signatures && npm run check
 	node --test tests/quote_engine.test.cjs tests/blueprint_geometry.test.cjs tests/dom_factory.test.cjs tests/motion_physics.test.cjs
 
-gate: js test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
+sky:            ## палітра «небо над Полтавою і вода»: блок у site.css мусить відповідати моделі tools/sky.py (fail-closed)
+	$(PY) tools/sky.py --check
+
+crane:          ## кран-глибиномір: канат, гак і кадри вантажу в site.css мусять відповідати tools/crane.py (fail-closed)
+	$(PY) tools/crane.py --check
+
+gate: js sky crane test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
 	@status="$$(git status --porcelain)"; test -z "$$status" || { echo "дерево брудне після гейта"; printf '%s\n' "$$status"; exit 1; }; echo "GATE PASS"
 
 clean:
@@ -54,4 +60,4 @@ ops-install:    ## systemd --user: сервіс + сторож здоров'я +
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/ —/'
 
-.PHONY: js mutation assurance accept run test test-api test-site media stock shots media-audit bundle gate clean ops-install help
+.PHONY: js sky crane mutation assurance accept run test test-api test-site media stock shots media-audit bundle gate clean ops-install help

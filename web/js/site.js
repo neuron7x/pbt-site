@@ -130,7 +130,7 @@
       button.setAttribute('aria-pressed', String(button.dataset.themeChoice === next));
     });
     const meta = $('meta[name="theme-color"]');
-    if (meta) meta.content = next === 'precision' ? '#101820' : '#05080D';
+    if (meta) meta.content = next === 'precision' ? '#101820' : '#040A16';
     const face = $('#themeFontPreload');
     if (face) face.href = 'fonts/' + (next === 'precision' ? 'IBMPlexSans-600-cyrillic.woff2' : 'Tektur-var-cyrillic.woff2');
     if (persist) {
@@ -352,6 +352,22 @@
       li.style.left = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; li.append(a); return li;
     }));
   }
+  let gaugeP = 0, liftTimer = 0;
+  /* клік по вантажу: відчіпляється й падає туди, де стояв. Гак — декоративний <i>, тому слухаємо саме нижню частину (вантаж нижче 58 px). */
+  gFloat.addEventListener('click', e => {
+    if (!gauge.classList.contains('has-load') || e.offsetY < 58) return;
+    gauge.classList.remove('has-load', 'is-lifting');
+    const fall = (1 - gaugeP) * gauge.clientHeight;
+    if (!motion() || fall < 4) { gauge.classList.add('is-splat'); return; }
+    gauge.style.setProperty('--drop', (-fall).toFixed(1) + 'px');
+    gauge.style.setProperty('--drop-t', (.25 + Math.sqrt(fall) / 40).toFixed(2) + 's');   // t ∝ √h, як у вільному падінні
+    gauge.classList.add('is-falling');
+  });
+  gauge.addEventListener('animationend', e => {
+    if (e.animationName !== 'load-drop') return;
+    gauge.classList.remove('is-falling');
+    gauge.classList.add('is-splat');
+  });
   function gaugeRender(y) {
     const p = clamp(y / docMax, 0, 1);
     nav.style.setProperty('--sp', p.toFixed(4));
@@ -359,6 +375,16 @@
     gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
+    if (p >= .985 && !gauge.classList.contains('is-falling')) {   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
+      if (gauge.classList.contains('is-splat')) { gauge.classList.remove('is-splat'); gauge.classList.add('is-mush'); }   // після падіння гак бере вже грудку
+      gauge.classList.add('has-load');
+    }
+    if (motion() && p < gaugeP - .0004 && gauge.classList.contains('has-load')) {   // підйом: вантаж махає й губить монети, поки гак іде вгору
+      gauge.classList.add('is-lifting');
+      clearTimeout(liftTimer);
+      liftTimer = setTimeout(() => gauge.classList.remove('is-lifting'), 650);
+    }
+    gaugeP = p;
     let active = secTops[0] ? secTops[0].id : '';
     for (const s of secTops) if (s.top <= y + innerHeight * .42) active = s.id;
     gStops.forEach(a => a.classList.toggle('is-on', a.getAttribute('href').slice(1) === active));

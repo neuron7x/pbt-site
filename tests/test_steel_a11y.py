@@ -72,26 +72,151 @@ def test_dock_focus_ring_contrasts_with_its_own_fill(page_factory, theme, sel):
     assert _ratio(_rgb(s['ring']), _rgb(s['bg'])) >= 3, s
 
 
-@pytest.mark.parametrize('section', ['roboty', 'tekhnika', 'cina', 'materialy', 'zapyt'])
-def test_gauge_depth_label_readable_over_every_section(page_factory, section):
-    """Підпис глибиноміра фіксований і пливе над темними й світлими секціями. Вимога — читабельність за будь-якого фону:
-    зараз її дає власна непрозора плашка, тому тест червоніє, якщо плашку прибрати (bf9a335: 3 світлі секції 2,5–2,8:1).
-    Вимір пікселями: текст сховано, 90-й перцентиль і 10-й перцентиль яскравості фону під ним проти кольору тексту.
-    Лише «Сталь»: у «Графіті» підпис змішується (mix-blend), обчислений колір ≠ відмальований."""
-    from PIL import Image
+def test_gauge_depth_label_is_removed_in_steel_theme(page_factory):
+    """Слово власника 25.11.2026: підпис глибини під гаком прибрано. До того тут перевірялась читабельність підпису над
+    кожною секцією (bf9a335: 3 світлі секції 2,5–2,8:1); об'єкта перевірки більше немає, тож вимога — що його справді
+    не видно ні над світлою, ні над темною секцією, а сам глибиномір лишається."""
     pg = page_factory(1366, 768, reduced=True)
     pg.locator('[data-theme-choice="sky"]').click()
-    assert pg.evaluate(f"!!document.getElementById('{section}')"), section
-    pg.evaluate(f"document.getElementById('{section}').scrollIntoView({{behavior:'instant', block:'center'}})")
-    pg.wait_for_timeout(700)
-    label = pg.locator('.gauge__m')
-    assert label.is_visible()
-    fg = _rgb(pg.evaluate("getComputedStyle(document.querySelector('.gauge__m')).color"))
-    pg.add_style_tag(content='.gauge__m{color:transparent!important;text-shadow:none!important}')
-    pg.wait_for_timeout(100)
-    im = Image.open(io.BytesIO(pg.screenshot(clip=label.bounding_box()))).convert('RGB')
-    ls = sorted(_lum(px) for px in im.getdata())
-    fl = _lum(fg)
-    for bg in (ls[int(len(ls) * .1)], ls[int(len(ls) * .9)]):
-        r = (max(fl, bg) + .05) / (min(fl, bg) + .05)
-        assert r >= 4.5, (section, fg, round(r, 2))
+    for section in ('roboty', 'tekhnika', 'zapyt'):
+        pg.evaluate(f"document.getElementById('{section}').scrollIntoView({{behavior:'instant', block:'center'}})")
+        pg.wait_for_timeout(300)
+        assert not pg.locator('.gauge__m').is_visible(), section
+        assert pg.locator('#gauge').is_visible(), section
+
+
+def test_hook_picks_up_the_load_at_page_bottom_and_carries_it_back_up(page_factory):
+    """Гак опускається з прокруткою; унизу сторінки підчіплює вантаж і далі несе його. Стан не скидається дорогою вгору."""
+    pg = page_factory(1440, 900, reduced=True)
+    pg.locator('[data-theme-choice="sky"]').click()
+    state = "({load: document.getElementById('gauge').classList.contains('has-load')," \
+            " ground: getComputedStyle(document.getElementById('gauge'), '::after').display," \
+            " carried: getComputedStyle(document.querySelector('.gauge__float'), '::after').content," \
+            " y: new DOMMatrix(getComputedStyle(document.querySelector('.gauge__float')).transform).m42," \
+            " h: document.getElementById('gauge').clientHeight})"
+    pg.evaluate("window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.5)")
+    pg.wait_for_timeout(400)
+    mid = pg.evaluate(state)
+    assert mid['load'] is False and mid['ground'] == 'block' and mid['carried'] == 'none', mid   # вантаж стоїть унизу, гак порожній
+    assert 0.4 * mid['h'] < mid['y'] < 0.6 * mid['h'], mid
+    pg.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    pg.wait_for_timeout(400)
+    bottom = pg.evaluate(state)
+    assert bottom['load'] is True and bottom['ground'] == 'none' and bottom['carried'] != 'none', bottom
+    assert bottom['y'] > 0.97 * bottom['h'], bottom
+    pg.evaluate("window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.1)")
+    pg.wait_for_timeout(400)
+    up = pg.evaluate(state)
+    assert up['load'] is True and up['ground'] == 'none' and up['carried'] != 'none', up            # вантаж їде вгору разом із гаком
+    assert up['y'] < 0.2 * up['h'], up
+
+
+def test_hook_load_is_hidden_on_short_viewports_and_in_graphite(page_factory):
+    pg = page_factory(1366, 600, reduced=True)
+    pg.locator('[data-theme-choice="sky"]').click()
+    assert pg.evaluate("getComputedStyle(document.getElementById('gauge'), '::after').display") == 'none'
+    pg.locator('[data-theme-choice="precision"]').click()
+    assert pg.evaluate("getComputedStyle(document.getElementById('gauge')).display") == 'none'
+
+
+@pytest.mark.parametrize('fraction', [0.0, 0.23, 0.5, 0.77, 1.0])
+def test_rope_leaves_the_track_and_reaches_the_hook_at_every_scroll_position(page_factory, fraction):
+    """Канат і гусениця — одна система: верх каната впритул до нижнього краю гусениці, низ — у підвісці гака; розриву немає."""
+    pg = page_factory(1440, 900, reduced=True)
+    pg.locator('[data-theme-choice="sky"]').click()
+    pg.evaluate(f"window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * {fraction})")
+    pg.wait_for_timeout(400)
+    m = pg.evaluate("""() => { const r = e => e.getBoundingClientRect(), g = document.getElementById('gauge'), f = document.querySelector('.gauge__float');
+      const rope = getComputedStyle(f, '::before'), cs = getComputedStyle(g);
+      return {track: r(document.getElementById('track')).bottom, anchorTop: r(document.querySelector('.gauge__scale')).top, gaugeTop: r(g).top, hookTop: r(f).top,
+              travel: new DOMMatrix(getComputedStyle(f).transform).m42, h: g.clientHeight, ropeH: parseFloat(rope.height), winch: g.style.getPropertyValue('--gr'),
+              anchorRot: getComputedStyle(document.querySelector('.gauge__scale')).transform}; }""")
+    assert abs(m['anchorTop'] - m['track']) <= 1.0, m                 # втулка каната сидить на гусениці
+    assert abs(m['travel'] - fraction * m['h']) <= 1.0, m             # хід гака = частка прокрутки
+    assert m['ropeH'] >= m['travel'] + 8, m                           # каната вистачає від гака до гусениці в найнижчій точці
+    assert m['winch'] == '' and m['anchorRot'] == 'none', m           # окремої шестерні-лебідки більше немає
+
+
+def test_load_waves_and_drops_coins_only_while_being_lifted(page_factory):
+    """Махання й монети — лише поки гак іде вгору з вантажем; у спокої й при обмеженні руху кадр статичний."""
+    pg = page_factory(1440, 900)
+    pg.locator('[data-theme-choice="sky"]').click()
+    anim = "getComputedStyle(document.querySelector('.gauge__float'), '::after').animationName"
+    lifting = "document.getElementById('gauge').classList.contains('is-lifting')"
+    pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")   # плавна прокрутка 18 000 px не встигає за 0,9 с
+    pg.locator('#gauge.has-load').wait_for(state='attached', timeout=5000)   # wait_for_function тут не годиться: CSP сайту забороняє eval
+    pg.wait_for_timeout(300)
+    assert pg.evaluate(lifting) is False and 'load-wave' not in pg.evaluate(anim)
+    pg.mouse.move(700, 450)
+    pg.mouse.wheel(0, -600)
+    pg.wait_for_timeout(250)
+    assert pg.evaluate(lifting) is True and 'load-wave' in pg.evaluate(anim)
+    pg.wait_for_timeout(1100)                                                     # гак зупинився — вантаж заспокоюється
+    assert pg.evaluate(lifting) is False and 'load-wave' not in pg.evaluate(anim)
+    calm = page_factory(1440, 900, reduced=True)
+    calm.locator('[data-theme-choice="sky"]').click()
+    calm.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    calm.wait_for_timeout(300)
+    calm.evaluate("window.scrollTo(0, 400)")
+    calm.wait_for_timeout(300)
+    assert calm.evaluate(lifting) is False
+    assert calm.evaluate(anim) == 'none'
+
+
+def _hook_load_point(pg):
+    box = pg.locator('.gauge__float').bounding_box()
+    return box['x'] + box['width'] / 2 - 3, box['y'] + 78          # вантаж висить під гаком: 63…95 px від верху підвіски
+
+
+@pytest.mark.parametrize('reduced', [False, True])
+def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced):
+    """Клік по вантажу: відчіпляється, падає туди, де стояв, лишається плямою; гак, повернувшись униз, бере її грудкою; цикл повторюється."""
+    pg = page_factory(1440, 900, reduced=reduced)
+    pg.locator('[data-theme-choice="sky"]').click()
+    cls = "document.getElementById('gauge').className"
+    ground = "getComputedStyle(document.getElementById('gauge'), '::after')"
+    pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
+    pg.locator('#gauge.has-load').wait_for(state='attached', timeout=5000)
+    pg.evaluate("window.scrollTo({top: (document.documentElement.scrollHeight - innerHeight) * 0.3, behavior: 'instant'})")
+    pg.wait_for_timeout(900)
+    box = pg.locator('.gauge__float').bounding_box()
+    pg.mouse.click(box['x'] + box['width'] / 2, box['y'] + 20)        # клік по самому гаку нічого не робить
+    pg.wait_for_timeout(150)
+    assert 'has-load' in pg.evaluate(cls)
+    pg.mouse.click(*_hook_load_point(pg))
+    if not reduced:
+        pg.wait_for_timeout(120)
+        mid = pg.evaluate(cls)
+        assert 'is-falling' in mid and 'has-load' not in mid, mid
+        assert pg.evaluate(ground + ".animationName") == 'load-drop'
+    pg.locator('#gauge.is-splat').wait_for(state='attached', timeout=5000)
+    end = pg.evaluate(cls)
+    assert 'is-falling' not in end and 'has-load' not in end, end
+    assert pg.evaluate(ground + ".backgroundPositionX") == '-216px'      # кадр плями
+    fx = "getComputedStyle(document.querySelector('.gauge__m'), '%s').animationName"
+    expected = ('none', 'none', 'none') if reduced else ('crane-jolt', 'impact-ring', 'impact-burst')   # удар: поштовх, кільце пилу, бризки
+    assert (pg.evaluate("getComputedStyle(document.getElementById('gauge')).animationName"), pg.evaluate(fx % '::before'), pg.evaluate(fx % '::after')) == expected
+    assert pg.evaluate(ground + ".display") == 'block'
+    assert pg.evaluate("getComputedStyle(document.querySelector('.gauge__float'), '::after').content") == 'none'   # гак порожній
+    # гак повертається по пляму й бере її вже грудкою
+    carried = "getComputedStyle(document.querySelector('.gauge__float'), '::after')"
+    pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
+    pg.locator('#gauge.has-load.is-mush').wait_for(state='attached', timeout=5000)
+    again = pg.evaluate(cls)
+    assert 'is-splat' not in again, again
+    assert pg.evaluate(carried + ".backgroundPositionX") == '-432px'      # кадр грудки у спокої
+    assert pg.evaluate(ground + ".display") == 'none'                      # на землі нічого не лишилось
+    if not reduced:
+        pg.wait_for_timeout(300)
+        pg.mouse.move(700, 450)
+        pg.mouse.wheel(0, -600)
+        pg.wait_for_timeout(250)
+        assert 'mush-drip' in pg.evaluate(carried + ".animationName")      # під час підйому тече й крапає
+        assert 'load-wave' not in pg.evaluate(carried + ".animationName")
+    # грудку теж можна скинути: цикл замкнений
+    pg.evaluate("window.scrollTo({top: (document.documentElement.scrollHeight - innerHeight) * 0.4, behavior: 'instant'})")
+    pg.wait_for_timeout(900)
+    pg.mouse.click(*_hook_load_point(pg))
+    pg.locator('#gauge.is-splat').wait_for(state='attached', timeout=5000)
+    assert 'has-load' not in pg.evaluate(cls) and 'is-mush' in pg.evaluate(cls)
+    assert not pg.errors, pg.errors
