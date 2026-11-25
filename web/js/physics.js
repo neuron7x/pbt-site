@@ -9,9 +9,23 @@
   /* фізика:початок — чисті функції руху; інтегруються за часом dt (мс), не за кадрами: однаково на 30, 60, 120 і 144 Гц.
      Сталі відкалібровано так, щоб на 60 Гц рух збігся з попередньою покадровою версією; dt обрізано до 50 мс (згорнута вкладка). */
   const PHYS = Object.freeze({ beltTau: 110, beltRatio: .55, gravity: 5.76e-4, vMax: .33, driftTau: 408, life: 4000,
-    neckMs: 167, neckV0: .033, neckA: 1.8e-4, fallV0: .054, remRate: .006, dtMax: 50 });
+    neckMs: 167, neckV0: .033, neckA: 1.8e-4, fallV0: .054, remRate: .006, dtMax: 50,
+    pitch: 16, smear0: .75, smear1: 2.25, smearMax: .92 });
   /** Експоненційне наближення до цілі: k = 1 − e^(−dt/τ) — інваріантне до частоти кадрів. */
   const approach = (pos, target, dt, tau) => target + (pos - target) * Math.exp(-Math.min(dt, PHYS.dtMax) / tau);
+  /** Видимий крок періодичної текстури траків за кадр (аудит п.47, «колесо диліжанса»).
+      Візерунок із кроком p, зсунутий за кадр більше ніж на p/2, око читає як нерухомий або зворотний; на 29,1 px/кадр при
+      60 Гц ланцюг стояв. Тому: (а) крок насичується м'якою стелею ρ·x/(1+x⁴)^¼, x = raw/ρ, ρ = 0,9·p/4 — |крок| < p/4
+      за будь-якої швидкості й частоти кадрів, знак зберігається (ланцюг ніколи не їде назад); на відміну від tanh крива
+      майже лінійна до ρ/2 (повільна прокрутка не відстає, < 1 %), строго монотонна; (б) понад ~¾q підмішується змазаний шар
+      (усереднений за період візерунок) — часове інтегрування сітківки/затвора, smoothstep від smear0·q до smear1·q.
+      @param {number} raw справжній зсув стрічки за кадр, px
+      @returns {{ step: number, smear: number }} видимий крок, px; непрозорість змазу 0…smearMax */
+  function texStep(raw) {
+    const q = PHYS.pitch / 4, rho = .9 * q, u = raw / rho, s = Math.abs(raw) / q;
+    const x = Math.min(1, Math.max(0, (s - PHYS.smear0) / (PHYS.smear1 - PHYS.smear0)));
+    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: PHYS.smearMax * x * x * (3 - 2 * x) };
+  }
   /** Один крок краплі масла; beltV — швидкість ланцюга, px/мс. Повертає false, коли крапля прожила своє. */
   function oilAdvance(d, dtRaw, beltV, carried) {
     let dt = Math.min(dtRaw, PHYS.dtMax);
@@ -33,5 +47,5 @@
     }
     return d.life <= PHYS.life;
   }
-  return Object.freeze({ PHYS, approach, oilAdvance });
+  return Object.freeze({ PHYS, approach, texStep, oilAdvance });
 });

@@ -60,3 +60,39 @@ test('falling speed is capped (viscous drag), life is bounded in wall time', () 
   assert.ok(d.vy <= PHYS.vMax + 1e-12);
   assert.ok(Math.abs(t - PHYS.life) <= 1000 / 60 + 1e-9, `life ${t}`);
 });
+
+/* ── аліасинг текстури траків (аудит п.47) ──
+   Стрічка їде 0,55 × прокрутки, крок траків 16 px. Без насичення: > 873 px/с @60 Гц візерунок за кадр зсувається
+   більше ніж на пів кроку — ланцюг стоїть або їде назад. Інваріант: за будь-якої швидкості прокрутки 0…10 000 px/с
+   і частоти 30/60/120/144 Гц видимий крок за кадр < p/4 і того ж знака; де справжній крок ≥ p/2 — різкий шар
+   переважно змазаний (smear ≥ 0,75). */
+const { texStep } = require(path.join(__dirname, '..', 'web', 'js', 'physics.js'));
+const lcg = seed => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
+
+test('texture step per frame stays below p/4, never reverses, smears where it would alias (0…10 000 px/s)', () => {
+  const q = PHYS.pitch / 4, rnd = lcg(47);
+  const speeds = [0, 1, 50, 300, 873, 1745, 3000, 8000, 10000];
+  for (let i = 0; i < 400; i++) speeds.push(rnd() * 10000);
+  for (const hz of [...HZ, 240]) for (const v of speeds) for (const dir of [1, -1]) {
+    const raw = dir * v * PHYS.beltRatio / hz;                             // справжній зсув стрічки за кадр, px
+    const { step, smear } = texStep(raw);
+    assert.ok(Math.abs(step) < q, `${hz} Hz, ${v.toFixed(0)} px/s: |step| ${Math.abs(step).toFixed(2)} ≥ p/4`);
+    if (raw !== 0) assert.equal(Math.sign(step), Math.sign(raw), `${hz} Hz, ${v} px/s: reversed`);
+    if (Math.abs(raw) >= PHYS.pitch / 2) assert.ok(smear >= .75, `${hz} Hz, ${v.toFixed(0)} px/s: raw ${raw.toFixed(1)} px, smear ${smear}`);
+    assert.ok(smear >= 0 && smear <= PHYS.smearMax);
+  }
+});
+
+test('slow scroll is untouched: texture follows the belt within 2 %, no smear', () => {
+  for (const raw of [.05, .3, .8, 1, 1.4]) {                              // до ≈ 150 px/с прокрутки @60 Гц
+    const { step, smear } = texStep(raw);
+    assert.ok(Math.abs(step - raw) <= .02 * raw + 1e-12, `${raw}: ${step}`);
+    assert.equal(smear, 0);
+  }
+  assert.deepEqual(texStep(0), { step: 0, smear: 0 });
+});
+
+test('smear rises monotonically with speed (no flicker band)', () => {
+  let last = -1;
+  for (let raw = 0; raw <= 40; raw += .05) { const { smear } = texStep(raw); assert.ok(smear >= last - 1e-12, `${raw}`); last = smear; }
+});

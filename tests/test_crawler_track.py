@@ -87,3 +87,26 @@ def test_no_oil_under_reduced_motion(page_factory):
         pg.wait_for_timeout(40)
     pg.wait_for_timeout(150)
     assert pg.evaluate(OIL_INK) == 0
+
+
+FLING = """async () => {
+  const t = document.getElementById('track'), tx = () => parseFloat(t.style.getPropertyValue('--tx') || '0'),
+        sm = () => parseFloat(t.style.getPropertyValue('--smear') || '0'), frame = () => new Promise(r => requestAnimationFrame(r));
+  await frame(); await frame();
+  let last = tx(), steps = [], smear = 0;
+  scrollTo({top: scrollY + 6000, behavior: 'instant'});                    // кидок: 6000 px за кадр
+  for (let i = 0; i < 90; i++) { await frame(); const x = tx(); steps.push(((x - last + 24) % 16) - 8); last = x; smear = Math.max(smear, sm()); }
+  for (let i = 0; i < 200 && t.style.getPropertyValue('--smear') !== '0'; i++) await frame();
+  return {maxStep: Math.max(...steps.map(Math.abs)), smear, rest: sm()}; }"""
+
+
+def test_fling_never_strobes_the_chain(page_factory):
+    """Аудит п.47: на кидку траки не стоять і не їдуть назад — крок текстури за кадр < 4 px (p/4), різкий шар змазаний;
+    у спокої змаз зникає. Старий код: крок ≈ 465 px за перший кадр, зведений до ±8 px — випадковий напрям."""
+    pg = page_factory(1440, 900)
+    pg.evaluate("scrollTo(0, 2000)")
+    pg.wait_for_timeout(1200)
+    r = pg.evaluate(FLING)
+    assert r['maxStep'] < 4, r
+    assert r['smear'] > .5, r
+    assert r['rest'] == 0, r

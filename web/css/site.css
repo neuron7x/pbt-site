@@ -1032,6 +1032,13 @@ html:has(#passport[open]){overflow:hidden}
 .track__shoes{--s1:#59626C;--s2:#2C343D;--s3:#161C23;--s4:#323A44;--pin:#4C5560}
 .track__shoes::before,.track__gold::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 3.5px 30%,var(--bolt) 0 .8px,rgba(0,0,0,0) 1.1px),radial-gradient(circle at 8.5px 70%,var(--bolt) 0 .8px,rgba(0,0,0,0) 1.1px);background-size:16px 100%}
 .track__shoes{--bolt:#78838E}.track__gold{--bolt:#FFFFFF}
+/* змаз на кидку (аудит п.47): усереднений за період 16 px візерунок — 12/16 сталь, 2,4/16 темний проміжок, 1,6/16 палець,
+   болти → дві тонкі смуги на 30 % і 70 %; непрозорість = var(--smear) із texStep, у спокої 0 */
+.track__shoes::after,.track__gold::after{content:"";position:absolute;inset:0;opacity:var(--smear,0);
+  background:linear-gradient(180deg,rgba(0,0,0,0) 26%,color-mix(in srgb,var(--bolt) 22%,transparent) 30%,rgba(0,0,0,0) 34%,rgba(0,0,0,0) 66%,color-mix(in srgb,var(--bolt) 22%,transparent) 70%,rgba(0,0,0,0) 74%),
+    linear-gradient(color-mix(in srgb,var(--pin) 10%,rgba(5,8,13,.15)),color-mix(in srgb,var(--pin) 10%,rgba(5,8,13,.15))),
+    linear-gradient(180deg,rgba(255,255,255,0) 44%,rgba(255,255,255,.22) 50%,rgba(255,255,255,0) 56%),
+    linear-gradient(180deg,var(--s1) 0,var(--s2) 38%,var(--s3) 62%,var(--s4) 100%)}
 .track__gold{--s1:#E4EAF0;--s2:#9AA5B1;--s3:#4E5864;--s4:#AEB8C3;--pin:#FDC501;clip-path:inset(0 calc((1 - var(--tp,0)) * (100% - 32px) + 16px + var(--tx,0px)) 0 0)}
 .track__belt::after{content:"";position:absolute;inset:auto 0 0;height:1px;background:linear-gradient(90deg,#FDC501 calc(var(--tp,0) * 100%),rgba(0,0,0,0) 0)}
 .track__sprocket{position:absolute;top:-6px;left:calc(var(--tp,0) * 100%);width:26px;height:26px;margin-left:-13px;transform:rotate(var(--rot,0deg));fill:url(#trkSteel);stroke:#05080D;stroke-width:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6))}
