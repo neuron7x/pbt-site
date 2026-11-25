@@ -1112,6 +1112,61 @@
     "tests/test_cine.py::test_phone_without_power_efficient_vp9_444_gets_hardware_h264"
    ],
    "note": "Вибір джерела ігнорує powerEfficient: телефон знову декодує VP9 4:4:4 програмно."
+  },
+  {
+   "id": "M-MOTION-loops-run-offscreen",
+   "task": "MOTION-50",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "e.target.toggleAttribute('data-off', !e.isIntersecting)",
+     "replace": "e.target.toggleAttribute('data-off', false)"
+    }
+   ],
+   "oracle": [
+    "tests/test_calm_periphery.py::test_loops_off_screen_are_paused"
+   ],
+   "note": "Декоративні цикли біжать поза в'юпортом (аудит п.50г)."
+  },
+  {
+   "id": "M-MOTION-form-focus-ignored",
+   "task": "MOTION-50",
+   "edits": [
+    {
+     "file": "web/css/site.css",
+     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::after{animation-play-state:paused!important}",
+     "replace": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::after{}"
+    },
+    {
+     "file": "web/css/site.css",
+     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *,\n",
+     "replace": ".never-matches-a,\n"
+    },
+    {
+     "file": "web/css/site.css",
+     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::before,\n",
+     "replace": ".never-matches-b,\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_calm_periphery.py::test_form_focus_freezes_decorative_loops"
+   ],
+   "note": "Фокус у полі форми не зупиняє декоративні цикли (аудит п.50в)."
+  },
+  {
+   "id": "M-MOTION-beacon-infinite",
+   "task": "MOTION-50",
+   "edits": [
+    {
+     "file": "web/css/site.css",
+     "find": "--t-map-ring-animation: ring 2.2s var(--ease) 3;",
+     "replace": "--t-map-ring-animation: ring 2.2s var(--ease) infinite;"
+    }
+   ],
+   "oracle": [
+    "tests/test_calm_periphery.py::test_beacons_are_finite_and_no_flicker_band"
+   ],
+   "note": "Маяк карти пульсує вічно (аудит п.50б)."
   }
  ]
 }

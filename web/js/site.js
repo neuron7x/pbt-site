@@ -240,6 +240,12 @@
     }
   }
 
+  /* ───── СПОКІЙ ПЕРИФЕРІЇ (аудит п.50): декоративний цикл поза в'юпортом — на паузі (CSS [data-off]) ───── */
+  if ('IntersectionObserver' in window) {
+    const loopIO = new IntersectionObserver(es => es.forEach(e => e.target.toggleAttribute('data-off', !e.isIntersecting)));
+    $$('.hero, .marquee, .wave, #geoMap').forEach(n => loopIO.observe(n));
+  }
+
   /* ───── ГЛИБИНОМІР, АКТИВНА СЕКЦІЯ, ПРОГРЕС ───── */
   const gauge = $('#gauge'), gFloat = $('.gauge__float'), gOut = $('.gauge__m'), gStops = $$('.gauge__stops a'), navLinks = $$('.nav__links a');
   const sections = $$('main section[id]');

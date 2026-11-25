@@ -126,8 +126,8 @@
   --t-cine-fg: transparent;
   --t-marquee-animation: marquee 40s linear infinite;
   --t-marquee-dup: grid;
-  --t-map-home-animation: home 2.6s var(--ease) infinite;
-  --t-map-ring-animation: ring 2.2s var(--ease) infinite;
+  --t-map-home-animation: home 2.6s var(--ease) 3;
+  --t-map-ring-animation: ring 2.2s var(--ease) 3;
   --t-footer-bg: #05080D;
   --t-tag-bg:#FDC501; --t-tag-fg:#0B1017;
   --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:transparent;
@@ -404,7 +404,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .hero__water svg{display:var(--t-hero-wipe-svg);position:absolute;left:0;right:0;top:-1px;width:100%;height:14vh;min-height:90px}
 .hero__water .fill{position:absolute;left:0;right:0;top:calc(14vh - 2px);bottom:-20vh;background:var(--t-hero-wipe-bg)}
 .hero__hint{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:clamp(16px,4vh,36px);font:600 10.5px/1 var(--f-m);letter-spacing:.24em;text-transform:uppercase;color:var(--white);display:grid;justify-items:center;gap:8px}
-.hero__hint::after{content:"";width:2px;height:34px;border-radius:1px;background:linear-gradient(180deg,var(--gold),transparent);animation:dip 2.2s var(--ease) infinite}
+.hero__hint::after{content:"";width:2px;height:34px;border-radius:1px;background:linear-gradient(180deg,var(--gold),transparent);animation:dip 2.2s var(--ease) 3}
 @keyframes dip{0%{transform:translateY(-6px);opacity:0}30%{opacity:1}100%{transform:translateY(10px);opacity:0}}
 @media (prefers-reduced-motion:reduce){.hero__hint::after,.hero__beams,.logo-hero{animation:none}}
 @media (max-height:820px){.hero__hint{display:none}}   /* низький екран: декоративна підказка «Гортайте» налазила на цифри героя */
@@ -649,6 +649,13 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .motion-toggle:focus-visible{outline-color:var(--gold)}
 .motion-toggle[aria-pressed=true]{background:#FFFFFF;color:#062B5C;border-color:#062B5C}
 [data-motion=paused]{scroll-behavior:auto}
+/* Спокій периферії (аудит п.50): маяки (dip, ring, home) — 3 повтори, далі тиша; цикл поза в'юпортом стоїть
+   (data-off ставить IntersectionObserver у site.js, тож маяк карти відпрацьовує, коли його видно, а не за 1,5 екрана);
+   поки відвідувач у полі форми — жоден декоративний цикл не тягне погляд від ціни й заявки. */
+[data-off],[data-off] *,[data-off] *::before,[data-off] *::after,
+:root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *,
+:root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::before,
+:root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::after{animation-play-state:paused!important}
 [data-motion=paused] *,[data-motion=paused] *::before,[data-motion=paused] *::after{animation-play-state:paused!important;transition:none!important;scroll-behavior:auto!important}
 [data-motion=paused] .rv,[data-motion=paused] .hero__center h1 .w{opacity:1!important;transform:none!important}
 [data-motion=paused] .glow,[data-motion=paused] .hero__spark,[data-motion=paused] .hero__beams{display:none}
