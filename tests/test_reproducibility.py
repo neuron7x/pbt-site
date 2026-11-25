@@ -16,8 +16,10 @@ ENVIRONMENTS = [{'TZ': 'UTC', 'LC_ALL': 'C'}, {'TZ': 'Pacific/Auckland', 'LC_ALL
 
 
 def _build(tree, env):
+    # -s: без site-packages користувача — чужий .pth з не-ASCII шляхом падав під LC_ALL=C ще до збірки (локально
+    # гейт ніколи не був зеленим). Не -I: той ігнорує PYTHONHASHSEED, а саме його ця перевірка й варіює.
     shutil.rmtree(tree / 'dist', ignore_errors=True)
-    proc = subprocess.run([sys.executable, 'tools/inline.py'], cwd=tree, env={**os.environ, **env},
+    proc = subprocess.run([sys.executable, '-s', 'tools/inline.py'], cwd=tree, env={**os.environ, **env},
                           check=False, capture_output=True, text=True, timeout=180)
     if proc.returncode != 0:
         # A size-guarded package can fail *deterministically* while remaining
