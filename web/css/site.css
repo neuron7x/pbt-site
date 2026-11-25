@@ -1129,18 +1129,9 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li{padding:0 clamp(18px,2.8vw,44px);min-width:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li + li{border-left:1px solid rgba(255,255,255,.2)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats span{color:#C6D2E2;letter-spacing:.16em}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after{content:"";position:absolute;inset:clamp(84px,11vh,104px) var(--gut) clamp(22px,4vh,40px);pointer-events:none;
-  background:
-   linear-gradient(#FDC501,#FDC501) left top/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) left top/2px 28px no-repeat,
-   linear-gradient(#FDC501,#FDC501) right top/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) right top/2px 28px no-repeat,
-   linear-gradient(#FDC501,#FDC501) left bottom/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) left bottom/2px 28px no-repeat,
-   linear-gradient(#FDC501,#FDC501) right bottom/28px 2px no-repeat, linear-gradient(#FDC501,#FDC501) right bottom/2px 28px no-repeat}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::before{content:"49°35′N · 34°33′E · ПОЛТАВА";position:absolute;left:calc(var(--gut) + 40px);bottom:calc(clamp(22px,4vh,40px) + 14px);font:500 11px/1 var(--f-m);letter-spacing:.2em;color:rgba(255,255,255,.72);pointer-events:none}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__hint::after{border-radius:0;background:#FDC501}
 @media (max-width:699px){
   :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li{padding:0 10px}
-  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::before{display:none}
-  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after{inset:76px 14px 16px}
   :is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head::after{font-size:120px;top:-.1em}
 }
 
@@ -1232,7 +1223,6 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .sec-head::after{-webkit-text-stroke-color:#FFFFFF;opacity:.13}
 @media (max-height:520px){
   :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats{padding-top:8px;padding-bottom:0;border-bottom:0}
-  :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::after,:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky::before{display:none}
 }
 
 /* фото парку: одна обробка для різних джерел (без зміни файлів) */
@@ -1425,9 +1415,6 @@ html:has(#passport[open]){overflow:hidden}
 .js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .line:nth-child(2) .w{transition-delay:.14s}
 .js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w:nth-child(2){transition-delay:.07s}.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .line:nth-child(2) .w:nth-child(2){transition-delay:.21s}
 .js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w:nth-child(3){transition-delay:.14s}.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .line:nth-child(2) .w:nth-child(3){transition-delay:.28s}
-/* золоті кутові мітки кадру розкриваються від центру — один раз */
-.js :is(:root[data-theme="sky"],:root:not([data-theme])):not([data-quality=static]) .hero.is-lit .hero__sky::after{animation:frame-in 1.5s cubic-bezier(.16,1,.3,1) .25s both}
-@keyframes frame-in{from{clip-path:inset(34% 34% 34% 34%);opacity:0}to{clip-path:inset(0);opacity:1}}
 /* поява блоків: більший хід за ті самі 0,8 с (контракт: картка стабільна через 0,9 с), експоненційне гальмування; кадр у картці «наїжджає» з 1,1 до 1 */
 .js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv{transform:translateY(30px);transition:opacity .6s cubic-bezier(.16,1,.3,1) min(var(--d),160ms),transform .8s cubic-bezier(.16,1,.3,1) min(var(--d),160ms)}
 .js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv--scale{transform:translateY(30px) scale(.955)}
