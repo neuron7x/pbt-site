@@ -222,8 +222,10 @@ process.stdout.write(JSON.stringify({html: elements['#reel'].kids.map(html).join
     videos = [attrs for tag, attrs in parsed.nodes if tag == "video"]
     images = [attrs for tag, attrs in parsed.nodes if tag == "img"]
     assert [attrs["data-video"] for attrs in videos] == actual["watched"]
-    assert [attrs["poster"] for attrs in videos] == [proof["poster"] for proof in actual["proof"]]
+    assert all("poster" not in attrs for attrs in videos)
+    assert [attrs["data-poster"] for attrs in videos] == [proof["poster"] for proof in actual["proof"]]
     assert len(images) == 6 and all(attrs.get("loading") == "lazy" for attrs in images)
+    assert [attrs["src"] for attrs in images] == [attrs["data-poster"] for attrs in videos]
     assert all("src" not in attrs for attrs in videos), "video sources must stay lazy"
     if mode == "standalone":
         assert all(tag == "article" and "href" not in attrs for tag, attrs in cards)

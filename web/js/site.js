@@ -55,7 +55,7 @@
   }, true);
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
-  const { el, fill } = window.PBTDom;                  // web/js/dom.js
+  const { el, fill, attrOk } = window.PBTDom;          // web/js/dom.js
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const seg = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
   const ease = t => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -100,6 +100,7 @@
   function syncCardVideo(card) {
     const v = $('video', card); if (!v) return;
     if (visibleCards.has(card) && videoAllowed() && attachVideo(v, v.dataset.video)) {
+      if (!v.poster && v.dataset.poster && attrOk('poster', v.dataset.poster)) v.poster = v.dataset.poster;
       v.preload = 'auto';
       const p = v.play(); if (p && p.catch) p.catch(() => {});
       card.classList.add('is-playing'); playing.add(v);
@@ -639,7 +640,7 @@
       href: standalone ? null : (proofUrl(p.url) || '#roboty'), target: standalone ? null : '_blank', rel: standalone ? null : 'noopener',
       'aria-label': `${p.t}: ${p.s}${standalone ? '' : ' — відкрити відео'}` },
     el('figure', null, el('img', { src: p.poster, alt: '', width: 640, height: 360, loading: 'lazy', decoding: 'async' }),
-      el('video', { 'data-video': p.video, poster: p.poster, 'aria-hidden': 'true', tabindex: '-1' }),
+      el('video', { 'data-video': p.video, 'data-poster': p.poster, 'aria-hidden': 'true', tabindex: '-1' }),
       standalone ? null : el('i', { 'aria-hidden': 'true' }),
       el('figcaption', null, el('b', null, p.t), el('span', null, p.s))))));
     $$('#reel .proof-card').forEach(watchVideo);
