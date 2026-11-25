@@ -4,7 +4,10 @@ references/ (не версіюється; імена → docs/PROVENANCE.md):
   compilation.mp4 = 7589580903878380856   hyundai.mp4 = 7587032869399301432   sunset.mp4 = 7688658909661334805
   amph3.mp4 = 7625991020492098837 (три смуги)  longreach.mp4 = 7579201889854606604   trailer.mp4 = 7638993833958722837
   night.mp4 = 7600714811185401108   winter.mp4 = 7588156683126459659   snowjcb.mp4 = 7604826347097050375
-Вихід: web/media/video/<name>.mp4 + .webm + .webp (постер). Усі кадри вихідні 576×1024; кропи прибирають накладені написи.
+Вихід: web/media/video/<name>.mp4 + .webm + .webp (постер).
+Кодування (25.11.2026): шматки — проміжні без втрат (qp 0), тож фінальний файл має одне покоління втрат, а не два;
+H.264 і VP9 — у два проходи на цільовому бітрейті. Вимір на hero-wide проти еталона без втрат, той самий розмір:
+VP9 36,55 → 37,60 дБ PSNR (SSIM 0,9623 → 0,9697), H.264 36,31 → 36,72 дБ (SSIM 0,9667 → 0,9688). docs/PROVENANCE.md. Усі кадри вихідні 576×1024; кропи прибирають накладені написи.
 Якщо є references/sr/<name>.mp4 (tools/sr.py, Real-ESRGAN ×2) — беремо його, кропи множимо на 2.
 SR не відновлює доказово справжні деталі; розмір виходу не є роздільністю оригінальної зйомки."""
 import argparse
@@ -41,7 +44,8 @@ GRADE = ('normalize=blackpt=black:whitept=white:smoothing=24:independence=0:stre
 def seg(name, ss, to, vf, out):
     path, _ = src(name)
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-threads', '2', '-filter_complex_threads', '1', '-ss', str(ss), '-to', str(to), '-i', path,
-                    '-filter_complex', f'{vf},{GRADE}', *X264, '-crf', '14', str(out)], check=True)
+                    '-filter_complex', f'{vf},{GRADE}', '-c:v', 'libx264', '-threads', '2', '-preset', 'ultrafast', '-qp', '0',
+                    '-pix_fmt', 'yuv420p', '-an', '-r', '30', str(out)], check=True)   # проміжний без втрат
 
 
 def poster(name):
@@ -63,10 +67,17 @@ def build(name, parts, scale, cap):
             lines.append(f"file '{f}'")
         lst.write_text('\n'.join(lines))
         base = ['ffmpeg', '-v', 'error', '-y', '-threads', '2', '-f', 'concat', '-safe', '0', '-i', str(lst)]
-        subprocess.run(base + X264 + ['-crf', '21', '-maxrate', f'{cap}M', '-bufsize', f'{cap * 2}M', str(OUT / f'{name}.mp4')], check=True)
-        subprocess.run(base + VP9 + ['-crf', '30', '-b:v', f'{cap * 0.75:.2f}M', str(OUT / f'{name}.webm')], check=True)
-        poster(name)
-    sizes = {ext: round((OUT / f'{name}.{ext}').stat().st_size / 1024) for ext in ('mp4', 'webm', 'webp')}
+        kh, kv = TARGET_KBPS.get(name, (round(cap * 970), round(cap * 740)))
+        h264 = base + X264 + ['-b:v', f'{kh}k', '-maxrate', f'{round(kh * 1.65)}k', '-bufsize', f'{kh * 3}k', '-passlogfile', str(Path(td) / 'x264')]
+        subprocess.run(h264 + ['-pass', '1', '-f', 'null', '/dev/null'], check=True)
+        subprocess.run(h264 + ['-pass', '2', str(OUT / f'{name}.mp4')], check=True)
+        vp9 = base + VP9 + ['-deadline', 'good', '-cpu-used', '1', '-auto-alt-ref', '1', '-lag-in-frames', '25', '-b:v', f'{kv}k',
+                            '-passlogfile', str(Path(td) / 'vp9')]
+        subprocess.run(vp9 + ['-pass', '1', '-f', 'null', '/dev/null'], check=True)
+        subprocess.run(vp9 + ['-pass', '2', str(OUT / f'{name}.webm')], check=True)
+        if POSTERS:
+            poster(name)
+    sizes = {ext: round((OUT / f'{name}.{ext}').stat().st_size / 1024) for ext in ('mp4', 'webm', 'webp') if (OUT / f'{name}.{ext}').exists()}
     print(name, sizes)
 
 
@@ -98,14 +109,23 @@ BUILDS = {
 }
 
 
+POSTERS = True
+# цільовий бітрейт (кбіт/с) = розмір попереднього файлу: якість порівнюється на тому самому бюджеті ваги
+TARGET_KBPS = {'hero-tall': (2741, 2430), 'job-voda': (1815, 1370), 'job-zemlia': (1747, 1588), 'job-lis': (1722, 1812), 'job-demont': (1648, 1426), 'proof-amph': (1760, 1419), 'proof-long': (1707, 1149), 'proof-night': (1239, 745), 'proof-winter': (1606, 1583), 'proof-sunset': (526, 634)}
+
+
 def main():
-    global REF
+    global REF, OUT, POSTERS
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--reference-dir', type=Path, default=REF, help='тека вихідних кліпів, лише читання')
     parser.add_argument('--only', nargs='+', choices=BUILDS, help='генерувати лише названі кліпи')
+    parser.add_argument('--out-dir', type=Path, default=OUT, help='куди писати (за замовчуванням web/media/video)')
+    parser.add_argument('--no-posters', action='store_true', help='не перезаписувати постери .webp (їхні sha256 закріплено)')
     parser.add_argument('--posters-only', action='store_true', help='постери з готових mp4 без перекодування відео')
     args = parser.parse_args()
     REF = args.reference_dir.resolve()
+    OUT = args.out_dir.resolve()
+    POSTERS = not args.no_posters
     OUT.mkdir(parents=True, exist_ok=True)
     for name in args.only or BUILDS:
         if args.posters_only:
