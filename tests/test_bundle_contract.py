@@ -175,11 +175,8 @@ const functions = ['httpsUrl', 'proofUrl', 'renderProof'].map(name => {
   if (!found) throw new Error('Missing renderer dependency: ' + name);
   return found[0];
 });
-// Фабрика DOM сторінки (el, вартовий атрибутів, append, fill) — суцільний блок того самого site.js; нижче мінімальний DOM.
-const fStart = source.indexOf('  function el(');
-const fEnd = source.indexOf('\n', source.indexOf('  const fill = ', fStart));
-if (fStart < 0 || fEnd < 0) throw new Error('Missing DOM factory');
-const factoryBlock = source.slice(fStart, fEnd);
+// Фабрика DOM — справжній модуль web/js/dom.js (той самий файл, що вантажить сторінка), з мінімальним DOM нижче.
+const domSource = fs.readFileSync('web/js/dom.js', 'utf8');
 const escText = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 function node(tag) {
   const n = {tag, attrs: {}, kids: [], style: {setProperty() {}},
@@ -200,7 +197,7 @@ const context = {
   $$: selector => {selectors.push(selector); return D.proof;},
   watchVideo: proof => watched.push(proof.video)
 };
-vm.runInNewContext(factoryBlock + '\n' + functions.join('\n') + '\nrenderProof();', context);
+vm.runInNewContext(domSource + '\nconst { el, append, fill } = window.PBTDom;\n' + functions.join('\n') + '\nrenderProof();', context);
 process.stdout.write(JSON.stringify({html: elements['#reel'].kids.map(html).join(''), proof: D.proof, watched, selectors}));
 """
     run = subprocess.run([node, "-e", script, mode], cwd=ROOT,

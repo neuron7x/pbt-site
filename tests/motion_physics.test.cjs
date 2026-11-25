@@ -1,19 +1,12 @@
 'use strict';
-/* Фізика руху «Гусениці» й масла (web/js/site.js, блок «фізика:початок … фізика:кінець») — інваріантна до частоти кадрів.
+/* Фізика руху «Гусениці» й масла (web/js/physics.js) — інваріантна до частоти кадрів.
    Аудит 24.11 (п.46): покадрові сталі давали τ 221 мс @30 Гц і 55 мс @120 Гц, гравітацію ×4 між 60 і 120 Гц.
    Інваріант: та сама подія, промодельована з кроком 1/30, 1/60, 1/120, 1/144 с, дає ту саму траєкторію (≤ 2 % шляху). */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'web', 'js', 'site.js'), 'utf8');
-const a = src.indexOf('/* фізика:початок'), b = src.indexOf('/* фізика:кінець */');
-assert.ok(a > 0 && b > a, 'physics block not found');
-const ctx = {};
-vm.runInNewContext(src.slice(a, b) + '\nthis.PHYS = PHYS; this.approach = approach; this.oilAdvance = oilAdvance;', ctx);
-const { PHYS, approach, oilAdvance } = ctx;
+const { PHYS, approach, oilAdvance } = require(path.join(__dirname, '..', 'web', 'js', 'physics.js'));
 
 const HZ = [30, 60, 120, 144];
 const drop = () => ({ x: 100, y: 0, r: 0, rMax: 3.4, phase: 0, t: 0, bead: 400, vy: 0, vx: 0, rem: 1, life: 0 });

@@ -1,27 +1,18 @@
 'use strict';
-/* Фабрика DOM сторінки (web/js/site.js: el/attrOk/append/fill) — єдина точка, де код ставить атрибути.
+/* Фабрика DOM сторінки (web/js/dom.js: el/attrOk/append/fill) — єдина точка, де код ставить атрибути.
    Вартовий fail-closed: обробники on* не ставляться; href/src/poster/srcset — лише дозволені схеми.
-   Блок береться з того самого site.js (не копія), виконується з мінімальним DOM. */
+   Модуль імпортується напряму (не вирізка), виконується з мінімальним DOM. */
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
-
-const src = fs.readFileSync(path.join(__dirname, '..', 'web', 'js', 'site.js'), 'utf8');
-const start = src.indexOf('  function el(');
-const fillAt = src.indexOf('  const fill = ', start);
-assert.ok(start > 0 && fillAt > start, 'factory block not found');
-const block = src.slice(start, src.indexOf('\n', fillAt));
 
 function node(tag) {
   return { tag, attrs: {}, kids: [], style: { props: {}, setProperty(k, v) { this.props[k] = v; } },
     setAttribute(k, v) { this.attrs[k] = v; }, set className(v) { this.attrs.class = v; },
     append(...k) { this.kids.push(...k); }, replaceChildren() { this.kids = []; } };
 }
-const ctx = { document: { createElement: node } };
-vm.runInNewContext(block + '\nthis.el = el; this.fill = fill;', ctx);
-const { el, fill } = ctx;
+global.document = { createElement: node };                                  // мінімальний DOM для модуля
+const { el, fill } = require(path.join(__dirname, '..', 'web', 'js', 'dom.js'));
 
 test('event handler attributes are never set, whatever the case', () => {
   for (const k of ['onclick', 'onerror', 'ONLOAD', 'onMouseOver', 'onfocus']) {
