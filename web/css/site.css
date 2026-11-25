@@ -57,16 +57,16 @@
   --t-btn-hover-bg: #FFFFFF;
   --t-btn-ghost-bg: transparent;
   --t-row-justify: flex-start;
-  --t-nav-bg: rgba(3,10,28,.9);
+  --t-nav-bg: linear-gradient(180deg,rgba(7,24,68,.93),rgba(3,10,28,.9));
   --t-nav-shadow: none;
-  --t-nav-rule: rgba(255,255,255,.08);
+  --t-nav-rule: rgba(124,200,255,.2);
   --t-nav-hide: translateY(-110%);
   --t-decor: block;
   --t-menu-bg: #040A16;
   --t-hero-bg: #040A16;
   --t-hero-grade: saturate(.82) contrast(1.14) brightness(.8);
   --t-hero-video-pos: 50% 45%;
-  --t-hero-overlay: linear-gradient(180deg,rgba(2,7,22,.88),rgba(5,20,60,.46) 34%,rgba(8,30,86,.5) 66%,rgba(2,7,22,.97));
+  --t-hero-overlay: radial-gradient(120% 46% at 50% 106%,rgba(59,143,245,.3),rgba(29,78,216,.14) 46%,rgba(29,78,216,0) 72%),linear-gradient(180deg,rgba(2,7,22,.88),rgba(5,20,60,.46) 34%,rgba(8,30,86,.5) 66%,rgba(2,7,22,.97));
   --t-hero-blend: normal;
   --t-hero-center-right: var(--gut);
   --t-hero-center-width: auto;
@@ -88,7 +88,7 @@
   --t-hero-stats-color: #FFFFFF;
   --t-hero-stats-font: 800 clamp(22px,min(3.4vw,5.6svh),54px)/1 var(--f-d);
   --t-hero-stats-shadow: none;
-  --t-hero-wipe-bg: #D3E6FB;
+  --t-hero-wipe-bg: #CBE1FA;
   --t-hero-wipe-svg: none;
   --t-job-radius: 0;
   --t-job-shadow: none;
@@ -1268,33 +1268,35 @@ html:has(#passport[open]){overflow:hidden}
 
 /* ═══ «АТМОСФЕРА» (25.11.2026, слово власника: замість білого й чорного — сині й блакитні з переходом, як атмосфера планети з космосу) ═══
    Модель — знімок лімба з орбіти: космос #020716 → нічна синь #071A40 → кобальт #1D4ED8 → лазур #3B8FF5 → світіння #7CC8FF →
-   серпанок #CDEBFF → денне небо #D3E6FB…#F1F7FE. Темна секція = космос над планетою: згори тонка лінія світіння, донизу густішає
+   серпанок #CDEBFF → денне небо #CBE1FA…#F1F7FE. Темна секція = космос над планетою: згори тонка лінія світіння, донизу густішає
    до #020716. Перехід темне → світле = лімб: дуга серпанку, під нею денне небо наступної секції. Світла секція донизу сутеніє.
    Яскраві зупинки градієнтів лежать лише в полях секцій, не під текстом; текст стоїть на зупинках, де контраст ≥ 4,5:1.
    Золото #FDC501 — як і раніше лише дія, ціна, номер. Тема «Графіт» цим шаром не зачіпається. */
 :is(:root[data-theme="sky"],:root:not([data-theme])){
-  --a-space:#020716;--a-day-1:#D3E6FB;
+  --a-space:#020716;--a-day-1:#CBE1FA;
   --a-limb-h:clamp(96px,13vw,190px);
   --a-grid-l:linear-gradient(rgba(31,98,214,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(31,98,214,.07) 1px,transparent 1px);
   --a-grid-d:linear-gradient(rgba(124,200,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(124,200,255,.035) 1px,transparent 1px);
-  --a-sky:linear-gradient(180deg,#D3E6FB 0,#D3E6FB var(--a-limb-h),#E6F1FC 26%,#F1F7FE 50%,#E9F2FD 74%,#D9E9FA 100%);
-  --a-sun:radial-gradient(60% 34% at 88% 30%,rgba(255,255,255,.75),rgba(255,255,255,0) 70%);
+  --a-sky:linear-gradient(180deg,#CBE1FA 0,#CBE1FA var(--a-limb-h),#E1EEFC 24%,#F2F8FE 50%,#E6F1FD 74%,#D2E5FA 100%);
+  --a-sun:radial-gradient(60% 34% at 88% 30%,rgba(255,255,255,.8),rgba(255,255,255,0) 70%),radial-gradient(52% 30% at 0% 64%,rgba(59,143,245,.13),rgba(59,143,245,0) 70%);
   --a-dusk:linear-gradient(0deg,rgba(29,78,216,.26),rgba(59,143,245,.1) 45%,rgba(59,143,245,0));
+  /* зерно проти смуг на довгих темних градієнтах: SVG-шум у data-URI, без запиту в мережу */
+  --a-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .75 0 0 0 0 .87 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.11'/%3E%3C/svg%3E");
   --a-ice:linear-gradient(165deg,#F6FAFF 0%,#E2EEFC 100%);
-  --a-night:linear-gradient(180deg,rgb(10,36,89) 0%,rgb(7,26,64) 22%,rgb(4,13,36) 60%,rgb(2,7,22) 100%);
-  --a-aurora:radial-gradient(70% 34% at 86% 0%,rgba(37,99,235,.3),rgba(37,99,235,0) 70%),radial-gradient(46% 26% at 4% 46%,rgba(29,78,216,.14),rgba(29,78,216,0) 70%);
+  --a-night:linear-gradient(180deg,rgb(11,40,112) 0%,rgb(8,29,82) 18%,rgb(5,17,50) 52%,rgb(2,7,22) 100%);
+  --a-aurora:radial-gradient(70% 34% at 86% 0%,rgba(46,123,232,.36),rgba(37,99,235,0) 70%),radial-gradient(46% 26% at 4% 46%,rgba(29,78,216,.18),rgba(29,78,216,0) 70%);
   /* лімб: усередині дуги прозоро (видно небо секції), зовні — непрозорий космос попередньої секції */
   --a-limb-cap:radial-gradient(90% 150% at 50% 190%,rgba(244,250,255,0) 0,rgba(244,250,255,0) 94%,rgba(244,250,255,.92) 99%,#CDEBFF 100%,#5EB2FF 101.2%,#17409A 103.6%,#08173F 109%,#020716 119%);
   /* лімб поверх кадру: усередині небо, зовні світіння сходить у прозоре */
-  --a-limb-rise:radial-gradient(90% 150% at 50% 190%,#D3E6FB 0,#D3E6FB 94%,#F4FAFF 99%,#CDEBFF 100%,rgba(94,178,255,.95) 101.2%,rgba(37,99,235,.62) 103.6%,rgba(23,64,170,.28) 109%,rgba(11,42,102,0) 119%);
+  --a-limb-rise:radial-gradient(90% 150% at 50% 190%,#CBE1FA 0,#CBE1FA 94%,#F4FAFF 99%,#CDEBFF 100%,rgba(94,178,255,.95) 101.2%,rgba(37,99,235,.62) 103.6%,rgba(23,64,170,.28) 109%,rgba(11,42,102,0) 119%);
   --a-limb-planet:radial-gradient(90% 150% at 50% 190%,#0C2F86 0,#0E3BA8 70%,#1D5FE0 93%,#5EB2FF 98.6%,#CDEBFF 100%,rgba(94,178,255,.9) 101.2%,rgba(37,99,235,.55) 103.6%,rgba(23,64,170,.25) 109%,rgba(11,42,102,0) 119%);
 }
 /* денне небо */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-light{--_cap:none;--_dusk:var(--a-dusk);
   background-image:var(--_cap),var(--_dusk),var(--a-grid-l),var(--a-sun),var(--a-sky);
-  background-size:100% var(--a-limb-h),100% clamp(90px,12vw,170px),96px 96px,96px 96px,100% 100%,100% 100%;
-  background-position:center top,center bottom,center top,center top,center,center;
-  background-repeat:no-repeat,no-repeat,repeat,repeat,no-repeat,no-repeat}
+  background-size:100% var(--a-limb-h),100% clamp(90px,12vw,170px),96px 96px,96px 96px,100% 100%,100% 100%,100% 100%;
+  background-position:center top,center bottom,center top,center top,center,center,center;
+  background-repeat:no-repeat,no-repeat,repeat,repeat,no-repeat,no-repeat,no-repeat}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-light.alt{--_dusk:none}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep + .on-light{--_cap:var(--a-limb-cap);padding-top:calc(var(--sec) + var(--a-limb-h) * .5);border-top-color:#020716}
 /* герой без «води» (спокій, короткий телефон, без JS): лімб на вході в «Роботи» */
@@ -1304,14 +1306,14 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__water::before{content:"";position:absolute;left:0;right:0;top:calc(14vh - var(--a-limb-h));height:var(--a-limb-h);background:var(--a-limb-rise)}
 /* космос над планетою */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep{
-  background-image:linear-gradient(90deg,rgba(124,200,255,0),rgba(124,200,255,.85) 22%,rgba(205,235,255,.95) 50%,rgba(124,200,255,.85) 78%,rgba(124,200,255,0)),linear-gradient(180deg,rgba(59,143,245,.3),rgba(59,143,245,0)),var(--a-aurora),var(--a-grid-d),var(--a-night);
-  background-size:100% 1px,100% clamp(70px,9vw,130px),100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;
+  background-image:var(--a-grain),linear-gradient(90deg,rgba(124,200,255,0),rgba(124,200,255,.85) 22%,rgba(205,235,255,.95) 50%,rgba(124,200,255,.85) 78%,rgba(124,200,255,0)),linear-gradient(180deg,rgba(59,143,245,.3),rgba(59,143,245,0)),var(--a-aurora),var(--a-grid-d),var(--a-night);
+  background-size:180px 180px,100% 1px,100% clamp(70px,9vw,130px),100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;
   background-position:center top;
-  background-repeat:no-repeat,no-repeat,no-repeat,no-repeat,repeat,repeat,no-repeat}
+  background-repeat:repeat,no-repeat,no-repeat,no-repeat,no-repeat,repeat,repeat,no-repeat}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep.sec{border-top-color:transparent}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:var(--a-aurora),var(--a-grid-d),var(--a-night);background-size:100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;background-repeat:no-repeat,no-repeat,repeat,repeat,no-repeat}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:var(--a-grain),var(--a-aurora),var(--a-grid-d),var(--a-night);background-size:180px 180px,100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;background-repeat:repeat,no-repeat,no-repeat,repeat,repeat,no-repeat}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .s-cine{box-shadow:inset 0 1px 0 rgba(124,200,255,.55)}
-/* другий рядок заголовка на небі: кобальт із переходом (найсвітліша зупинка #2563EB — 4,0:1 на #D3E6FB, великий текст) */
+/* другий рядок заголовка на небі: кобальт із переходом (найсвітліша зупинка #2563EB — 4,0:1 на #CBE1FA, великий текст) */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-light h2 span{background:linear-gradient(90deg,#1740B8 0%,#1D4ED8 50%,#2563EB 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 @media (forced-colors:active){:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light h2 span{background:none;-webkit-text-fill-color:currentColor}}
 /* поверхні: лід замість білого, ніч замість чорного */
@@ -1319,14 +1321,44 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li.home{background-image:none}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{background:#F8FBFF;border-color:rgba(29,78,216,.3)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .seg{background:#D3E3F7}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-color:#061230;background-image:radial-gradient(80% 60% at 100% 0%,rgba(59,143,245,.28),rgba(59,143,245,0) 70%),linear-gradient(rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(170deg,#0B2A66 0%,#061230 52%,#020716 100%);background-size:100% 100%,48px 48px,48px 48px,100% 100%}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background-color:#0A1B3D;background-image:linear-gradient(180deg,#0F2857 0%,#0A1B3D 55%,#071330 100%)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-color:#061230;background-image:var(--a-grain),radial-gradient(80% 60% at 100% 0%,rgba(59,143,245,.34),rgba(59,143,245,0) 70%),linear-gradient(rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(170deg,#0D3384 0%,#071A4A 48%,#020716 100%);background-size:180px 180px,100% 100%,48px 48px,48px 48px,100% 100%;box-shadow:inset 0 1px 0 rgba(124,200,255,.5)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background-color:#0A1B3D;background-image:linear-gradient(180deg,#12306C 0%,#0B1F4A 50%,#071330 100%);box-shadow:inset 0 0 0 1px rgba(124,200,255,.16),inset 0 1px 0 rgba(124,200,255,.4)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:hover{box-shadow:inset 0 0 0 1px rgba(124,200,255,.5),0 22px 48px -26px rgba(46,123,232,.7)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure{background:#0F2857}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .obl{fill:#BCD3F0;stroke:#EAF3FD}
 /* підвал: планета під обрієм */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{background-image:var(--a-limb-planet),linear-gradient(180deg,#020716 0%,#040D24 100%);background-size:100% var(--a-limb-h),100% 100%;background-position:center bottom,center;background-repeat:no-repeat;padding-bottom:calc(36px + var(--a-limb-h) * .8)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{background-image:var(--a-limb-planet),var(--a-grain),linear-gradient(180deg,#020716 0%,#051236 100%);background-size:100% var(--a-limb-h),180px 180px,100% 100%;background-position:center bottom,center,center;background-repeat:no-repeat,repeat,no-repeat;padding-bottom:calc(36px + var(--a-limb-h) * .8)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .menu{background-image:radial-gradient(90% 40% at 100% 0%,rgba(37,99,235,.3),rgba(37,99,235,0) 70%),linear-gradient(180deg,#071A40 0%,#040D24 55%,#020716 100%)}
 @media (max-width:699px) and (orientation:portrait) and (min-height:600px){:is(:root[data-theme="sky"],:root:not([data-theme])) .dock,:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle:not([aria-pressed=true]){background:#040D24}}
+/* другий прохід синього: акценти, скло, глибина */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky2{display:block;background:linear-gradient(180deg,#0A2F8C,#1447C8);mix-blend-mode:color;opacity:.36}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero .btn--ghost{background:rgba(6,22,62,.58);box-shadow:inset 0 0 0 1.5px rgba(205,235,255,.82)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats,:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li + li{border-color:rgba(124,200,255,.34)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats span{color:#BFD6F2}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .sec-head::after{-webkit-text-stroke-color:#7CC8FF;opacity:.17}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light .sec-head::after{-webkit-text-stroke-color:#1D4ED8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .chip{box-shadow:inset 0 0 0 1px rgba(124,200,255,.3)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .chip:not([aria-pressed=true]):hover{background:rgba(59,143,245,.2);box-shadow:inset 0 0 0 1px rgba(124,200,255,.7)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .fact{background:linear-gradient(180deg,rgba(59,143,245,.16),rgba(59,143,245,.03));box-shadow:inset 0 0 0 1px rgba(124,200,255,.18),inset 0 1px 0 rgba(124,200,255,.6)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .channels a,:is(:root[data-theme="sky"],:root:not([data-theme])) .channels div{background:linear-gradient(90deg,rgba(59,143,245,.2),rgba(59,143,245,.05));box-shadow:inset 0 0 0 1px rgba(124,200,255,.24)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .channels a:hover{background:linear-gradient(90deg,rgba(59,143,245,.34),rgba(59,143,245,.12))}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .request-steps,:is(:root[data-theme="sky"],:root:not([data-theme])) .request-faq,:is(:root[data-theme="sky"],:root:not([data-theme])) .request-faq details{border-color:rgba(124,200,255,.2)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .request-steps .num{color:#9AD4FF}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit__specs div{border-bottom-color:rgba(124,200,255,.14)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile{box-shadow:0 0 0 1px rgba(29,78,216,.16),inset 0 1px 0 #FFFFFF,0 22px 44px -30px rgba(29,78,216,.5)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job:hover,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:0 0 0 1px #1D4ED8,inset 0 1px 0 #FFFFFF,0 26px 52px -28px rgba(29,78,216,.7)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc,:is(:root[data-theme="sky"],:root:not([data-theme])) .form{box-shadow:0 0 0 1px rgba(29,78,216,.24),0 30px 60px -34px rgba(29,78,216,.6)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]{background:linear-gradient(90deg,#FDC501 0 var(--p,30%),#B5CFF0 var(--p,30%) 100%)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served{fill:#173F9E}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served:hover{fill:#1D4ED8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{color:#B9CCE6}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .foot h4{color:#8FB6E8}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{color:#8FB6E8}
+:is(:root[data-theme="sky"],:root:not([data-theme])){scrollbar-color:#1D4ED8 #040D24}
+@supports (background:linear-gradient(in oklab,red,blue)){
+  :is(:root[data-theme="sky"],:root:not([data-theme])){--a-sky:linear-gradient(in oklab 180deg,#CBE1FA 0,#CBE1FA var(--a-limb-h),#E1EEFC 24%,#F2F8FE 50%,#E6F1FD 74%,#D2E5FA 100%);
+    --a-night:linear-gradient(in oklab 180deg,rgb(11,40,112) 0%,rgb(8,29,82) 18%,rgb(5,17,50) 52%,rgb(2,7,22) 100%)}
+}
 @media print{:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light,:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep,:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{background-image:none}}
 
 /* нативний скрол-моушн: контурний номер секції пливе повільніше за текст і «набирає чорнило» біля центру екрана (без JS) */
