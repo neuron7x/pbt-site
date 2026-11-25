@@ -1,7 +1,6 @@
-"""Budget-omitted clips stay poster-only in a self-contained export.
+"""Card and hero video eligibility, pause policy and proof poster loading.
 
-These exercise the real card/hero functions with DOM/media stubs, not browser
-playback. Live and multi-file paths and the existing pause policy stay intact.
+The focused browser cases complement the DOM/media stub checks for bundled clips.
 """
 import base64
 import json
@@ -14,12 +13,19 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 
-@pytest.mark.parametrize("mode", ["standalone-present", "standalone-omitted", "live", "multifile"])
-def test_card_sources_respect_bundle_availability_and_pause(mode):
+@pytest.mark.parametrize("mode,poster", [
+    ("standalone-present", "data:image/webp;base64,AAAA"),
+    ("standalone-omitted", "data:image/webp;base64,AAAA"),
+    ("live", "media/video/proof-amph.webp"),
+    ("live", "//example.invalid/poster.webp"),
+    ("multifile", "media/video/proof-amph.webp"),
+])
+def test_card_sources_respect_bundle_availability_and_pause(mode, poster):
     node = shutil.which("node")
     assert node, "Node.js is required to verify card-media availability"
     script = r"""
 const fs = require('node:fs'), vm = require('node:vm');
+const {attrOk} = require('./web/js/dom.js');
 const source = fs.readFileSync('web/js/site.js', 'utf8');
 const functions = ['attachVideo', 'syncCardVideo'].map(name => {
   const found = source.match(new RegExp('  function ' + name + '\\([^\\n]*\\) \\{[\\s\\S]*?\\n  \\}'));
@@ -33,15 +39,15 @@ const D = mode.startsWith('standalone') ? {videoData: {}} : {};
 if (mode === 'standalone-present') D.videoData['proof-amph.mp4'] = embedded;
 if (mode === 'multifile') D.mp4Only = true;
 const media = {
-  dataset: {video: 'proof-amph'}, poster: 'poster.webp', src: '', preload: 'none',
+  dataset: {video: 'proof-amph', poster: process.argv[2]}, poster: '', src: '', preload: 'none',
   sources: [], playCalls: 0, pauseCalls: 0,
   setAttribute() {}, append(...nodes) {this.sources.push(...nodes);},
   play() {this.playCalls++; return Promise.resolve();}, pause() {this.pauseCalls++;}
 };
 const classes = new Set(), card = {classList: {add: v => classes.add(v), remove: v => classes.delete(v)}};
-const playing = new Set(), visibleCards = new Set([card]);
+const playing = new Set(), visibleCards = new Set();
 let allowed = true;
-const context = {D, V_BASE: 'media/video/', card, playing, visibleCards,
+const context = {D, V_BASE: 'media/video/', card, playing, visibleCards, attrOk,
   videoAllowed: () => allowed, $: () => media,
   document: {createElement: tag => tag === 'video' ? {canPlayType: () => 'probably'} : {}}
 };
@@ -50,17 +56,20 @@ const sync = () => vm.runInNewContext('syncCardVideo(card);', context);
 const state = () => ({src: media.src, sources: media.sources, ready: !!media.dataset.ready,
   preload: media.preload, poster: media.poster, playCalls: media.playCalls, pauseCalls: media.pauseCalls,
   isPlaying: classes.has('is-playing'), tracked: playing.has(media)});
-sync(); const initial = state();
+sync(); const beforeView = state();
+visibleCards.add(card); sync(); const initial = state();
 allowed = false; sync(); const paused = state();
 allowed = true; visibleCards.delete(card); sync(); const offscreen = state();
-process.stdout.write(JSON.stringify({initial, paused, offscreen}));
+process.stdout.write(JSON.stringify({beforeView, initial, paused, offscreen}));
 """
-    run = subprocess.run([node, "-e", script, mode], cwd=ROOT,
+    run = subprocess.run([node, "-e", script, mode, poster], cwd=ROOT,
                          capture_output=True, text=True, check=True, timeout=10)
     states = json.loads(run.stdout)
     first = states["initial"]
     available = mode != "standalone-omitted"
-    assert first["poster"] == "poster.webp"
+    assert states["beforeView"]["poster"] == ""
+    assert states["beforeView"]["playCalls"] == 0
+    assert first["poster"] == (poster if available and not poster.startswith("//") else "")
     assert first["playCalls"] == int(available)
     assert first["ready"] is available
     assert first["isPlaying"] is available and first["tracked"] is available
@@ -80,6 +89,41 @@ process.stdout.write(JSON.stringify({initial, paused, offscreen}));
         assert stopped["pauseCalls"] == first["pauseCalls"] + offset, name
         assert not stopped["isPlaying"] and not stopped["tracked"], name
         assert stopped["poster"] == first["poster"], name
+
+
+@pytest.mark.parametrize("mode", ["full", "reduced", "no-observer"])
+def test_proof_poster_loads_at_viewport_and_keeps_image_fallback(browser, server, mode):
+    context = browser.new_context(viewport={"width": 390, "height": 844},
+                                  device_scale_factor=2, is_mobile=True, has_touch=True,
+                                  reduced_motion="reduce" if mode == "reduced" else "no-preference")
+    try:
+        context.add_init_script("""
+          Object.defineProperty(navigator, 'hardwareConcurrency', {value: 8});
+        """ + ("delete window.IntersectionObserver;" if mode == "no-observer" else ""))
+        page = context.new_page()
+        page.goto(server["base"], wait_until="load")
+        assert page.locator("#reel video[data-poster]").count() == 6
+        assert page.locator("#reel video[poster]").count() == 0
+        assert page.evaluate(r"""() => !performance.getEntriesByType('resource')
+            .some(e => /\/media\/video\/proof-[^/]+\.webp$/.test(e.name))""")
+        card = page.locator("#reel .proof-card").first
+        card.evaluate("""e => e.scrollIntoView({behavior: 'instant', block: 'center'})""")
+        image = card.locator("img")
+        page.wait_for_function("""() => document.querySelector("#reel .proof-card img").naturalWidth > 0""")
+        video = card.locator("video")
+        if mode == "full":
+            page.wait_for_function("""() => {
+              const video = document.querySelector("#reel .proof-card video");
+              return video.currentTime > 0 && !video.paused;
+            }""")
+            assert video.get_attribute("poster") == image.get_attribute("src")
+        else:
+            assert video.get_attribute("poster") is None
+            assert video.evaluate("video => video.paused && !video.currentSrc")
+            assert image.is_visible()
+            assert video.evaluate("video => getComputedStyle(video).opacity") == "0"
+    finally:
+        context.close()
 
 
 @pytest.mark.parametrize("mode,width,dpr,rendition", [
