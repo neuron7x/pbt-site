@@ -45,7 +45,7 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends ffmpeg
-          python -m playwright install --with-deps chromium webkit
+          python -m playwright install --with-deps chromium webkit firefox
       - name: Run unchanged main make gate at its immutable SHA
         run: make gate
       - name: Attach truthful baseline provenance

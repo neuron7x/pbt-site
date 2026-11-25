@@ -170,3 +170,26 @@ def test_look_lut_is_valid_and_wired(tmp_path):
     assert r.returncode == 0 and sha(out.read_bytes()) == sha(cube.encode('ascii')), 'LUT не відтворюється з формул'
     for tool in ('stock.py', 'media.py'):
         assert "lut3d=file={LUT}" in (ROOT / 'tools' / tool).read_text(encoding='utf-8'), tool
+
+
+def _cine_source(pg, cid):
+    pg.evaluate(f"document.getElementById('cine-{cid}').scrollIntoView({{block: 'center'}})")
+    pg.wait_for_function(f"() => {{ const v = document.querySelector('#masshtab .cine__v.is-on'); return v && v.dataset.codec && v.currentSrc.includes('/{cid}-') }}", timeout=8000)
+    return pg.evaluate("(() => { const v = document.querySelector('#masshtab .cine__v.is-on'); return {src: v.currentSrc, codec: v.dataset.codec} })()")
+
+
+def test_phone_without_power_efficient_vp9_444_gets_hardware_h264(page_factory):
+    """VP9 Profile 1 (4:4:4) декодується програмно (MediaCapabilities.powerEfficient=false у headless Chromium):
+    телефон бере апаратний H.264 того самого кадру, а не гріється на програмному 4:4:4."""
+    pg = page_factory(390, 844, mobile=True)
+    info = pg.evaluate("""navigator.mediaCapabilities.decodingInfo({type: 'file', video: {contentType: 'video/webm; codecs="vp09.01.41.08"',
+        width: 720, height: 1280, bitrate: 4e6, framerate: 30}}).then(i => i.powerEfficient)""")
+    got = _cine_source(pg, 'voda')
+    assert info is False, 'контроль: цей рушій мав би повідомити програмне декодування'
+    assert got['codec'] == 'h264' and got['src'].endswith('voda-m.mp4'), got
+
+
+def test_desktop_keeps_full_chroma_webm_when_smooth(page_factory):
+    pg = page_factory(1440, 900)
+    got = _cine_source(pg, 'voda')
+    assert got['codec'] == 'vp9-444' and got['src'].endswith('voda-w.webm'), got
