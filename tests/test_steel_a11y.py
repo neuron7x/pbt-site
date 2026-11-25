@@ -220,3 +220,35 @@ def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced)
     pg.locator('#gauge.is-splat').wait_for(state='attached', timeout=5000)
     assert 'has-load' not in pg.evaluate(cls) and 'is-mush' in pg.evaluate(cls)
     assert not pg.errors, pg.errors
+
+
+def test_crane_works_on_a_phone_without_covering_the_dock_or_stealing_taps(page_factory):
+    """Телефон 390×844: кран видно, він у межах екрана, вантаж стоїть над нижньою панеллю, кран не ловить дотиків, вантаж — ловить."""
+    pg = page_factory(390, 844, mobile=True, reduced=True)
+    assert pg.evaluate("document.documentElement.dataset.theme") == 'sky'
+    box = """() => { const r = e => { const b = e.getBoundingClientRect(); return {l: b.left, t: b.top, r: b.right, b: b.bottom}; };
+      const g = document.getElementById('gauge'), f = document.querySelector('.gauge__float');
+      return {gauge: r(g), hook: r(f), dock: r(document.getElementById('dock')), track: r(document.getElementById('track')), vw: innerWidth,
+              scroll: document.documentElement.scrollWidth, display: getComputedStyle(g).display, taps: getComputedStyle(g).pointerEvents,
+              hookTaps: getComputedStyle(f).pointerEvents, cls: g.className}; }"""
+    pg.evaluate("window.scrollTo({top: (document.documentElement.scrollHeight - innerHeight) * 0.4, behavior: 'instant'})")
+    pg.wait_for_timeout(500)
+    mid = pg.evaluate(box)
+    assert mid['display'] == 'block' and 'is-on' in mid['cls'], mid
+    assert mid['scroll'] == mid['vw'], mid                                  # горизонтальної прокрутки немає
+    assert mid['hook']['r'] <= mid['vw'] and mid['hook']['l'] >= mid['vw'] - 40, mid   # гак — вузька смуга при правому краї
+    assert abs(mid['gauge']['t'] - 7 * 0.62 - mid['track']['b']) <= 1.5, mid            # канат виходить із гусениці
+    assert mid['taps'] == 'none' and mid['hookTaps'] == 'none', mid         # порожній кран не перехоплює дотики до карток
+    pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
+    pg.locator('#gauge.has-load').wait_for(state='attached', timeout=5000)
+    end = pg.evaluate(box)
+    load_bottom = end['hook']['t'] + (63 + 44) * 0.62
+    assert load_bottom <= end['dock']['t'], (load_bottom, end['dock'])      # вантаж над нижньою панеллю, не під нею
+    assert end['hookTaps'] == 'auto', end                                   # вантаж на гаку можна торкнути
+    assert not pg.errors, pg.errors
+
+
+def test_crane_stays_hidden_on_a_phone_in_graphite(page_factory):
+    pg = page_factory(390, 844, mobile=True, reduced=True)
+    pg.locator('[data-theme-choice="precision"]').click()
+    assert pg.evaluate("getComputedStyle(document.getElementById('gauge')).display") == 'none'

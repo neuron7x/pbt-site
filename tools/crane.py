@@ -41,6 +41,7 @@ MUSH = ["......yYYy......", ".....RRRRRR.....", "....RRrRRPRR....", "...RRRRRRRr
 MUSH_B = MUSH[:7] + ["." + r[:-1] for r in MUSH[7:]]
 DROP, BIT = ["R", "R", "r"], ["Rr", "rR"]
 assert all(len(r) == FW for r in IDLE + WAVE + MUSH + MUSH_B + list(SPLAT.values())) and len(IDLE) == len(WAVE) == BODY
+MOBILE_SCALE = .62                                         # масштаб крана на екранах вужчих за 1024 px
 FRAMES = {'wave': 0, 'idle': 8, 'splat': 9, 'drip': 10, 'mush': 18, 'count': 19}
 
 
@@ -135,6 +136,7 @@ def css_block():
     travel = 'min(560px,calc(100vh - var(--nav-h,64px) - 290px))'
     move = '.28s cubic-bezier(.2,.7,.2,1)'
     sw, sh = FRAMES['count'] * FW * CELL, FH * CELL
+    mobile = MOBILE_SCALE
     fw, body_h = FW * CELL, BODY * CELL
     drops = burst('#C81E1E', [(-26, -10), (-18, -22), (-9, -30), (4, -34), (15, -27), (24, -16), (30, -6), (-32, -3), (10, -14), (-14, -9)])
     rules = f'''{BEGIN}
@@ -142,12 +144,12 @@ def css_block():
    унизу сторінки підчіплює 8-бітний вантаж і підіймає його, коли гортаєш назад (махає, губить монети). Клік по вантажу — він
    зривається, падає туди, де стояв, і лишається плямою; гак, повернувшись, бере її грудкою. Стан — класи на #gauge
    (web/js/site.js): has-load, is-lifting, is-falling, is-splat, is-mush. Рух вимикається reduced-motion, static і паузою. */
-P .gauge{{top:calc(var(--nav-h,64px) + 21px);transform:none;height:{travel};transition:opacity .6s,top .45s var(--ease);clip-path:inset(-8px -420px -190px -420px)}}
+P .gauge{{--crane-h:{travel};top:calc(var(--nav-h,64px) + 21px);transform:none;height:var(--crane-h);transition:opacity .6s,top .45s var(--ease);clip-path:inset(-8px -420px -190px -420px)}}
 P .track.is-up ~ .gauge{{top:21px}}
 P .gauge__scale{{opacity:1;z-index:2;width:11px;height:7px;top:-7px;bottom:auto;left:50%;margin-left:-5.5px;background:linear-gradient(90deg,#11161C,#56606C 16%,#C9D1DA 40%,#F4F6F8 50%,#8D98A4 66%,#343C46 90%,#11161C);clip-path:polygon(0 0,100% 0,78% 100%,22% 100%)}}
 P .gauge__scale i,P .gauge__stops,P .s-cine.is-pinned .cine__rail{{display:none}}
 P .gauge__float{{z-index:1;width:44px;height:82.5px;margin:0 0 0 -22px;border-radius:0;background:{uri(HOOK)} center/44px 82.5px no-repeat;box-shadow:none;filter:drop-shadow(0 5px 6px rgba(2,7,22,.6));transition:transform {move}}}
-P .gauge__float::before{{content:"";position:absolute;left:50%;bottom:calc(100% - 5px);width:5px;margin-left:-2.5px;height:calc({travel} + 12px);background:{uri(ROPE)} center bottom/5px 7.5px repeat-y}}
+P .gauge__float::before{{content:"";position:absolute;left:50%;bottom:calc(100% - 5px);width:5px;margin-left:-2.5px;height:calc(var(--crane-h) + 12px);background:{uri(ROPE)} center bottom/5px 7.5px repeat-y}}
 P .gauge::after,P .gauge.has-load .gauge__float::after{{content:"";position:absolute;left:50%;width:{fw}px;margin-left:-19px;background:{uri(sheet())} {px(FRAMES['idle'])} 0/{sw}px {sh}px no-repeat}}
 P .gauge::after{{top:calc(100% + 63px);height:{body_h}px;filter:drop-shadow(0 3px 4px rgba(2,7,22,.5))}}
 P .gauge.has-load::after{{display:none}}
@@ -179,6 +181,15 @@ P .gauge.is-splat .gauge__m::after{{animation:impact-burst .6s cubic-bezier(.16,
 @keyframes impact-burst{{0%{{opacity:1;transform:scale(.15)}}70%{{opacity:1}}100%{{opacity:0;transform:translateY(6px) scale(1)}}}}
 [data-quality=static]P .gauge.has-load .gauge__float::after,[data-quality=static]P .gauge.is-splat,[data-quality=static]P .gauge.is-splat .gauge__m::before,[data-quality=static]P .gauge.is-splat .gauge__m::after{{animation:none}}
 @media (max-height:640px){{P .gauge::after,P .gauge.has-load .gauge__float::after,P .gauge__m{{display:none}}}}
+/* телефон і планшет: той самий кран у масштабі {mobile}, впритул до правого краю. Хід рахується так, щоб вантаж стояв над нижньою
+   панеллю; сам кран не ловить дотиків (кнопки карток під ним працюють), ловить лише вантаж на гаку. Поштовх при ударі вимкнено,
+   бо він анімує transform, яким тут задано масштаб. */
+@media (max-width:1023px){{
+  P .gauge{{display:block;right:3px;top:calc(var(--nav-h,64px) + {14 + 7 * mobile:.2f}px);--crane-h:calc((100svh - var(--nav-h,64px) - 172px) / {mobile});transform:scale({mobile});transform-origin:top right;pointer-events:none}}
+  P .track.is-up ~ .gauge{{top:{14 + 7 * mobile:.2f}px}}
+  P .gauge.has-load .gauge__float{{pointer-events:auto}}
+  P .gauge.is-splat{{animation:none}}
+}}
 {END}'''
     return rules.replace('P ', P + ' ').replace(']P', ']' + P)
 
