@@ -310,6 +310,7 @@ def test_security_receipts_cannot_choose_their_own_lock_bytes(state):
     'historic_pr8_v1_schema','unsupported_event','pr_number_on_main_target','required_test_removed',
     'required_test_skipped','mobile_lcp_over_budget_coherent_summary','mobile_cls_over_budget_coherent_summary',
     'mobile_legacy_observer_schema','mobile_cls_observer_missing','mobile_cls_observer_failed',
+    'mobile_invalid_artifact_shape','mobile_invalid_sample_shape',
     'mobile_forged_budget_flag','mobile_late_switch_shift','mobile_wrong_execution_sha','mobile_event_sha_as_execution',
     'wrong_source_revision_all_artifacts','junit_utf16_doctype','soak_coherent_over_latency_budget',
     'mutant_survived_but_status_pass','mutation_catalog_diluted','mutation_other_revision','sast_open_finding','sast_scanned_nothing',
@@ -418,6 +419,8 @@ def test_forged_success_is_rejected(state,mutant):
         contents['release']['artifacts/full-junit.xml']=raw.encode();rewrite('release')
     elif mutant.startswith('mobile_'):
         d=json.loads(contents['mobile']['dual-theme-mobile.json']);m=d['themes']['sky']
+        if mutant=='mobile_invalid_artifact_shape':d=[]
+        if mutant=='mobile_invalid_sample_shape':m['raw'][0]=[]
         if mutant=='mobile_legacy_observer_schema':d['schema_version']=2
         if mutant=='mobile_cls_observer_missing':del m['raw'][0]['observers']
         if mutant=='mobile_cls_observer_failed':

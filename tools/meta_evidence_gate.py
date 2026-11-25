@@ -242,7 +242,7 @@ def verify_png(raw, capture):
 
 def verify_mobile(mobile, expected_head, budgets):
     """Budgets are recomputed from raw samples: a producer's own verdict field is never read."""
-    require(mobile.get('schema_version') == 3, 'mobile_observer_schema')
+    require(isinstance(mobile, dict) and mobile.get('schema_version') == 3, 'mobile_observer_schema')
     require(mobile['execution_sha']==expected_head and mobile['branch_head_sha'] in (expected_head,None), 'mobile_execution_sha')
     require(mobile['field_vitals_verified'] is False and mobile['inp_ms'] is None
             and mobile['kind']=='synthetic_chromium_lab_not_field_data', 'synthetic_mobile_boundary')
@@ -251,6 +251,7 @@ def verify_mobile(mobile, expected_head, budgets):
         metric=mobile['themes'][theme];raw=metric['raw']
         require(len(raw)>=budgets['min_runs'],'mobile_sample_count')
         for sample in raw:
+            require(isinstance(sample, dict), 'mobile_sample_shape')
             observers = sample.get('observers')
             require(isinstance(observers, dict)
                     and observers.get('largest-contentful-paint') == 'registered'
