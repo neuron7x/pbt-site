@@ -64,9 +64,9 @@
   --t-decor: block;
   --t-menu-bg: #040A16;
   --t-hero-bg: #040A16;
-  --t-hero-grade: saturate(.82) contrast(1.14) brightness(.8);
+  --t-hero-grade: saturate(.9) contrast(1.2) brightness(.78);
   --t-hero-video-pos: 50% 45%;
-  --t-hero-overlay: linear-gradient(180deg,rgba(5,8,13,.86),rgba(5,8,13,.42) 34%,rgba(5,8,13,.5) 66%,rgba(5,8,13,.96));
+  --t-hero-overlay: radial-gradient(125% 95% at 50% 46%,rgba(0,0,0,0) 52%,rgba(0,0,0,.55) 100%),linear-gradient(180deg,rgba(5,8,13,.86),rgba(5,8,13,.42) 34%,rgba(5,8,13,.5) 66%,rgba(5,8,13,.96));
   --t-hero-blend: normal;
   --t-hero-center-right: var(--gut);
   --t-hero-center-width: auto;
@@ -1283,13 +1283,16 @@ html:has(#passport[open]){overflow:hidden}
   /* зерно проти смуг на довгих темних градієнтах: SVG-шум у data-URI, без запиту в мережу */
   --a-grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .75 0 0 0 0 .87 0 0 0 0 1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.11'/%3E%3C/svg%3E");
   --a-ice:linear-gradient(165deg,#F6FAFF 0%,#E2EEFC 100%);
-  --a-night:linear-gradient(180deg,rgb(11,40,112) 0%,rgb(8,29,82) 18%,rgb(5,17,50) 52%,rgb(2,7,22) 100%);
-  --a-aurora:radial-gradient(70% 34% at 86% 0%,rgba(46,123,232,.36),rgba(37,99,235,0) 70%),radial-gradient(46% 26% at 4% 46%,rgba(29,78,216,.18),rgba(29,78,216,0) 70%);
+  --a-electric:#2E6BFF;
+  --a-night:linear-gradient(180deg,rgb(8,30,92) 0%,rgb(5,18,56) 16%,rgb(3,10,32) 48%,rgb(2,7,22) 100%);
+  --a-vignette:linear-gradient(90deg,rgba(2,7,22,.6),rgba(2,7,22,0) 20%,rgba(2,7,22,0) 80%,rgba(2,7,22,.6));
+  --a-royal:linear-gradient(180deg,rgb(18,66,214) 0%,rgb(14,54,186) 40%,rgb(9,36,128) 78%,rgb(2,7,22) 100%);
+  --a-aurora:radial-gradient(58% 30% at 84% 0%,rgba(46,107,255,.5),rgba(46,107,255,.14) 46%,rgba(46,107,255,0) 72%),radial-gradient(40% 22% at 2% 44%,rgba(46,107,255,.2),rgba(46,107,255,0) 70%);
   /* лімб: усередині дуги прозоро (видно небо секції), зовні — непрозорий космос попередньої секції */
-  --a-limb-cap:radial-gradient(90% 150% at 50% 190%,rgba(244,250,255,0) 0,rgba(244,250,255,0) 94%,rgba(244,250,255,.92) 99%,#CDEBFF 100%,#5EB2FF 101.2%,#17409A 103.6%,#08173F 109%,#020716 119%);
+  --a-limb-cap:radial-gradient(90% 150% at 50% 190%,rgba(244,250,255,0) 0,rgba(244,250,255,0) 95%,rgba(244,250,255,.9) 99.4%,#FFFFFF 100%,#8FD0FF 100.6%,#2E6BFF 102.2%,#123A9C 105.5%,#08173F 112%,#020716 124%);
   /* лімб поверх кадру: усередині небо, зовні світіння сходить у прозоре */
-  --a-limb-rise:radial-gradient(90% 150% at 50% 190%,#CBE1FA 0,#CBE1FA 94%,#F4FAFF 99%,#CDEBFF 100%,rgba(94,178,255,.95) 101.2%,rgba(37,99,235,.62) 103.6%,rgba(23,64,170,.28) 109%,rgba(11,42,102,0) 119%);
-  --a-limb-planet:radial-gradient(90% 150% at 50% 190%,#0C2F86 0,#0E3BA8 70%,#1D5FE0 93%,#5EB2FF 98.6%,#CDEBFF 100%,rgba(94,178,255,.9) 101.2%,rgba(37,99,235,.55) 103.6%,rgba(23,64,170,.25) 109%,rgba(11,42,102,0) 119%);
+  --a-limb-rise:radial-gradient(90% 150% at 50% 190%,#CBE1FA 0,#CBE1FA 95%,#F4FAFF 99.4%,#FFFFFF 100%,rgba(143,208,255,.96) 100.6%,rgba(46,107,255,.72) 102.2%,rgba(18,58,156,.4) 105.5%,rgba(11,42,102,.16) 112%,rgba(11,42,102,0) 124%);
+  --a-limb-planet:radial-gradient(90% 150% at 50% 190%,#0C2F86 0,#0E3BA8 70%,#2E6BFF 94%,#8FD0FF 99%,#FFFFFF 100%,rgba(143,208,255,.94) 100.6%,rgba(46,107,255,.66) 102.2%,rgba(18,58,156,.36) 105.5%,rgba(11,42,102,.14) 112%,rgba(11,42,102,0) 124%);
 }
 /* денне небо */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-light{--_cap:none;--_dusk:var(--a-dusk);
@@ -1306,12 +1309,14 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__water::before{content:"";position:absolute;left:0;right:0;top:calc(14vh - var(--a-limb-h));height:var(--a-limb-h);background:var(--a-limb-rise)}
 /* космос над планетою */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep{
-  background-image:var(--a-grain),linear-gradient(90deg,rgba(124,200,255,0),rgba(124,200,255,.85) 22%,rgba(205,235,255,.95) 50%,rgba(124,200,255,.85) 78%,rgba(124,200,255,0)),linear-gradient(180deg,rgba(59,143,245,.3),rgba(59,143,245,0)),var(--a-aurora),var(--a-grid-d),var(--a-night);
-  background-size:180px 180px,100% 1px,100% clamp(70px,9vw,130px),100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;
+  background-image:var(--a-grain),linear-gradient(90deg,rgba(124,200,255,0),rgba(124,200,255,.85) 22%,rgba(205,235,255,.95) 50%,rgba(124,200,255,.85) 78%,rgba(124,200,255,0)),linear-gradient(180deg,rgba(46,107,255,.38),rgba(46,107,255,0)),var(--a-vignette),var(--a-aurora),var(--a-grid-d),var(--a-night);
+  background-size:180px 180px,100% 1px,100% clamp(70px,9vw,130px),100% 100%,100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;
   background-position:center top;
-  background-repeat:repeat,no-repeat,no-repeat,no-repeat,no-repeat,repeat,repeat,no-repeat}
+  background-repeat:repeat,no-repeat,no-repeat,no-repeat,no-repeat,no-repeat,repeat,repeat,no-repeat}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep.sec{border-top-color:transparent}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:var(--a-grain),var(--a-aurora),var(--a-grid-d),var(--a-night);background-size:180px 180px,100% 100%,100% 100%,96px 96px,96px 96px,100% 100%;background-repeat:repeat,no-repeat,no-repeat,repeat,repeat,no-repeat}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act{background-image:var(--a-grain),radial-gradient(50% 26% at 88% 0%,rgba(143,208,255,.22),rgba(143,208,255,0) 70%),var(--a-grid-d),var(--a-royal);background-size:180px 180px,100% 100%,96px 96px,96px 96px,100% 100%;background-repeat:repeat,no-repeat,repeat,repeat,no-repeat}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .lead,:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .request-steps p,:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .request-faq details p{color:#E6EEFB}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .request-steps .num{color:#FFFFFF}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .s-cine{box-shadow:inset 0 1px 0 rgba(124,200,255,.55)}
 /* другий рядок заголовка на небі: кобальт із переходом (найсвітліша зупинка #2563EB — 4,0:1 на #CBE1FA, великий текст) */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-light h2 span{background:linear-gradient(90deg,#1740B8 0%,#1D4ED8 50%,#2563EB 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -1322,8 +1327,8 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{background:#F8FBFF;border-color:rgba(29,78,216,.3)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .seg{background:#D3E3F7}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-color:#061230;background-image:var(--a-grain),radial-gradient(80% 60% at 100% 0%,rgba(59,143,245,.34),rgba(59,143,245,0) 70%),linear-gradient(rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(170deg,#0D3384 0%,#071A4A 48%,#020716 100%);background-size:180px 180px,100% 100%,48px 48px,48px 48px,100% 100%;box-shadow:inset 0 1px 0 rgba(124,200,255,.5)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background-color:#0A1B3D;background-image:linear-gradient(180deg,#12306C 0%,#0B1F4A 50%,#071330 100%);box-shadow:inset 0 0 0 1px rgba(124,200,255,.16),inset 0 1px 0 rgba(124,200,255,.4)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:hover{box-shadow:inset 0 0 0 1px rgba(124,200,255,.5),0 22px 48px -26px rgba(46,123,232,.7)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background-color:#081A42;background-image:linear-gradient(112deg,rgba(160,210,255,0) 42%,rgba(160,210,255,.16) 50%,rgba(160,210,255,0) 58%),radial-gradient(120% 55% at 50% 0%,rgba(46,107,255,.3),rgba(46,107,255,0) 62%),linear-gradient(180deg,#102C6E 0%,#081A42 52%,#050F2A 100%);background-size:260% 100%,100% 100%,100% 100%;background-position:130% 0,center,center;background-repeat:no-repeat;box-shadow:inset 0 0 0 1px rgba(124,200,255,.16),inset 0 1px 0 rgba(160,210,255,.55),inset 0 -1px 0 rgba(2,7,22,.9),0 30px 60px -40px rgba(46,107,255,.6);transition:box-shadow .5s cubic-bezier(.16,1,.3,1),background-position 1.1s cubic-bezier(.16,1,.3,1)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:hover,:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:focus-within{background-position:-40% 0,center,center;box-shadow:inset 0 0 0 1px rgba(143,208,255,.65),inset 0 1px 0 #FFFFFF,inset 0 -1px 0 rgba(2,7,22,.9),0 34px 70px -34px rgba(46,107,255,.95)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit figure{background:#0F2857}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .obl{fill:#BCD3F0;stroke:#EAF3FD}
 /* підвал: планета під обрієм */
@@ -1356,8 +1361,62 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])){scrollbar-color:#1D4ED8 #040D24}
 @supports (background:linear-gradient(in oklab,red,blue)){
   :is(:root[data-theme="sky"],:root:not([data-theme])){--a-sky:linear-gradient(in oklab 180deg,#CBE1FA 0,#CBE1FA var(--a-limb-h),#E1EEFC 24%,#F2F8FE 50%,#E6F1FD 74%,#D2E5FA 100%);
-    --a-night:linear-gradient(in oklab 180deg,rgb(11,40,112) 0%,rgb(8,29,82) 18%,rgb(5,17,50) 52%,rgb(2,7,22) 100%)}
+    --a-night:linear-gradient(in oklab 180deg,rgb(8,30,92) 0%,rgb(5,18,56) 16%,rgb(3,10,32) 48%,rgb(2,7,22) 100%)}
 }
+/* ═══ «ДОМІНАНТА» (25.11.2026, третій прохід): синій як світло, скло, одна секція-домінанта; подача відео й появ ═══
+   Колір кадрів не змінюється: відео, фото й ролики мають власний відтінок. Усе нижче — світло, край і рух інтерфейсу.
+   Кожен рух вимикається prefers-reduced-motion (загальне правило), data-quality=static і паузою руху. */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .sec-head::after{-webkit-text-stroke-width:1.5px;background:linear-gradient(180deg,rgba(29,78,216,.95),rgba(29,78,216,.05) 82%);-webkit-background-clip:text;background-clip:text}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .sec-head::after{background-image:linear-gradient(180deg,rgba(160,210,255,.95),rgba(46,107,255,.05) 82%)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .fact{background:radial-gradient(120% 70% at 50% 0%,rgba(46,107,255,.3),rgba(46,107,255,0) 64%),linear-gradient(180deg,rgba(16,44,110,.7),rgba(5,15,42,.7));box-shadow:inset 0 0 0 1px rgba(124,200,255,.2),inset 0 1px 0 rgba(160,210,255,.7),inset 0 -1px 0 rgba(2,7,22,.9),0 30px 60px -40px rgba(46,107,255,.6)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .channels a,:is(:root[data-theme="sky"],:root:not([data-theme])) .channels div{background:linear-gradient(90deg,rgba(255,255,255,.2),rgba(255,255,255,.06));box-shadow:inset 0 0 0 1px rgba(205,235,255,.34),inset 0 1px 0 rgba(255,255,255,.5)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .channels a:hover{background:linear-gradient(90deg,rgba(255,255,255,.34),rgba(255,255,255,.14))}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .request-steps,:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .request-faq,:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .request-faq details{border-color:rgba(205,235,255,.3)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .form,:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .done,:is(:root[data-theme="sky"],:root:not([data-theme])) .s-act .fallback{box-shadow:0 0 0 1px rgba(205,235,255,.5),0 40px 80px -36px rgba(2,7,22,.85)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .btn--ghost{background:linear-gradient(180deg,rgba(46,107,255,.3),rgba(46,107,255,.1));box-shadow:inset 0 0 0 1.5px rgba(160,210,255,.75)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .btn:not(.btn--ghost):not(.btn--sm):hover{box-shadow:0 16px 38px -14px rgba(253,197,1,.6)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .chip:not([aria-pressed=true]):hover{background:rgba(46,107,255,.28);box-shadow:inset 0 0 0 1px #8FD0FF}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#2E6BFF}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{box-shadow:inset 0 1px 0 rgba(160,210,255,.6),inset 0 -1px 0 rgba(2,7,22,.9)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile{transition:box-shadow .5s cubic-bezier(.16,1,.3,1)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .job:hover,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:0 0 0 1px #2E6BFF,inset 0 1px 0 #FFFFFF,0 34px 64px -30px rgba(46,107,255,.75)}
+/* ── відео й поява: кінематографічна подача без зміни відтінку ── */
+:is(:root[data-theme="sky"],:root:not([data-theme])){--a-film:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 1'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23f)'/%3E%3C/svg%3E")}
+/* плівкове зерно поверх кадру героя: нейтральне (overlay із середньо-сірим не зсуває ні яскравість, ні відтінок); лише повна якість */
+:is(:root[data-theme="sky"],:root:not([data-theme]))[data-quality=full] .hero__beams{display:block;inset:-12%;z-index:1;opacity:.24;background:var(--a-film);background-size:240px 240px;mix-blend-mode:overlay;animation:film .7s steps(1) infinite}
+@keyframes film{0%{transform:translate(0,0)}20%{transform:translate(-4%,3%)}40%{transform:translate(3%,-5%)}60%{transform:translate(-6%,-2%)}80%{transform:translate(5%,4%)}}
+/* заголовок героя: слова виходять з-під маски рядка, другий рядок — із затримкою; без opacity (LC:is(:root[data-theme="sky"],:root:not([data-theme])) бачить текст із першого кадру) */
+.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .line{clip-path:inset(-30% -6% -14% -6%)}
+.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w{transform:translateY(.95em) skewY(5deg);transform-origin:0 100%;transition:transform 1.05s cubic-bezier(.16,1,.3,1)}
+.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero.is-lit h1 .w{transform:none}
+.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .line:nth-child(2) .w{transition-delay:.14s}
+.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w:nth-child(2){transition-delay:.07s}.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .line:nth-child(2) .w:nth-child(2){transition-delay:.21s}
+.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w:nth-child(3){transition-delay:.14s}.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .line:nth-child(2) .w:nth-child(3){transition-delay:.28s}
+/* золоті кутові мітки кадру розкриваються від центру — один раз */
+.js :is(:root[data-theme="sky"],:root:not([data-theme])):not([data-quality=static]) .hero.is-lit .hero__sky::after{animation:frame-in 1.5s cubic-bezier(.16,1,.3,1) .25s both}
+@keyframes frame-in{from{clip-path:inset(34% 34% 34% 34%);opacity:0}to{clip-path:inset(0);opacity:1}}
+/* поява блоків: довший хід, експоненційне гальмування; кадр у картці «наїжджає» з 1,1 до 1 */
+.js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv{transform:translateY(30px);transition:opacity .7s cubic-bezier(.16,1,.3,1) min(var(--d),160ms),transform 1.15s cubic-bezier(.16,1,.3,1) min(var(--d),160ms)}
+.js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv--scale{transform:translateY(30px) scale(.955)}
+.js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv.is-in,.js.reveal-ready[data-quality=static]:is(:root[data-theme="sky"],:root:not([data-theme])) .rv{transform:none}
+.js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])):not([data-quality=static]):not([data-motion=paused]) .rv:not(.is-in) figure img{transform:scale(1.1)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .unit img,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile img,:is(:root[data-theme="sky"],:root:not([data-theme])) .reel img{transition:transform 1.5s cubic-bezier(.16,1,.3,1)}
+@media (pointer:fine){
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .job figure img,:is(:root[data-theme="sky"],:root:not([data-theme])) .job figure video{transition:transform 1.4s cubic-bezier(.16,1,.3,1),opacity .6s var(--ease)}
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .job:hover figure img,:is(:root[data-theme="sky"],:root:not([data-theme])) .job:hover figure video,:is(:root[data-theme="sky"],:root:not([data-theme])) .reel a.proof-card:hover img,:is(:root[data-theme="sky"],:root:not([data-theme])) .reel a.proof-card:hover video{transform:scale(1.06)}
+  :is(:root[data-theme="sky"],:root:not([data-theme])) .reel a.proof-card:hover i{box-shadow:0 0 0 6px rgba(253,197,1,.28),0 0 0 14px rgba(253,197,1,.1)}
+}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .reel i{transition:box-shadow .5s cubic-bezier(.16,1,.3,1)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .reel video{transition:opacity .8s cubic-bezier(.16,1,.3,1),transform 1.5s cubic-bezier(.16,1,.3,1)}
+/* кіносцена: слово розділу збирається — розрядка стискається, масштаб сідає */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-cine.is-pinned .cine__ch > *{transform:translateY(40px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform 1.2s cubic-bezier(.16,1,.3,1),letter-spacing 1.4s cubic-bezier(.16,1,.3,1)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-cine.is-pinned .cine__ch .cine__w{letter-spacing:.12em;transform:translateY(40px) scale(1.07)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-cine.is-pinned .cine__ch.is-cur > *{transform:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .s-cine.is-pinned .cine__ch.is-cur .cine__w{letter-spacing:var(--t-cine-tracking)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .cine__v{transition:opacity 1.4s cubic-bezier(.16,1,.3,1),transform 9s linear}
+@media (prefers-reduced-motion:reduce){.js :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w{transform:none}:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__beams{display:none!important}}
+[data-quality=static]:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w,[data-motion=paused]:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__center h1 .w{transform:none!important}
+
 @media print{:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light,:is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep,:is(:root[data-theme="sky"],:root:not([data-theme])) .foot{background-image:none}}
 
 /* нативний скрол-моушн: контурний номер секції пливе повільніше за текст і «набирає чорнило» біля центру екрана (без JS) */
