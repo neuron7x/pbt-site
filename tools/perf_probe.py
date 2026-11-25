@@ -56,29 +56,49 @@ INSTRUMENT = r"""
       ? '.' + Array.from(node.classList).slice(0, 2).join('.') : '';
     return raw.toLowerCase() + id + classes;
   };
-  window.__pbtVitals = {lcp: null, shifts: [], longTasks: 0, nodeLabel};
-  try {
-    new PerformanceObserver(list => {
-      for (const e of list.getEntries()) window.__pbtVitals.lcp = e.startTime;
-    }).observe({type: 'largest-contentful-paint', buffered: true});
-  } catch (_) {}
-  try {
-    new PerformanceObserver(list => {
-      for (const e of list.getEntries()) window.__pbtVitals.shifts.push({
-        start: e.startTime, value: e.value, hadRecentInput: e.hadRecentInput,
-        sources: (e.sources || []).slice(0, 6).map(s => {
-          return {element: nodeLabel(s.node),
-            beforeY: s.previousRect?.y ?? null,
-            afterY: s.currentRect?.y ?? null};
-        })
-      });
-    }).observe({type: 'layout-shift', buffered: true});
-  } catch (_) {}
-  try {
-    new PerformanceObserver(list => {
-      window.__pbtVitals.longTasks += list.getEntries().length;
-    }).observe({type: 'longtask', buffered: true});
-  } catch (_) {}
+  const lcpElement = element => {
+    if (!(element instanceof Element)) return 'unavailable';
+    if (element.closest('#heroVideo')) return 'hero-video';
+    if (element.closest('.logo-hero')) return 'hero-logo';
+    if (element.closest('#heroTitle')) return 'hero-title';
+    if (element.closest('#hero')) return 'hero-other';
+    return 'other';
+  };
+  const vitals = window.__pbtVitals = {
+    observers: {}, lcp: null, lcpElement: null, shifts: [], longTasks: 0, nodeLabel
+  };
+  const observe = (type, callback) => {
+    if (typeof PerformanceObserver !== 'function' ||
+        !PerformanceObserver.supportedEntryTypes?.includes(type)) {
+      vitals.observers[type] = 'unsupported';
+      return;
+    }
+    try {
+      new PerformanceObserver(callback).observe({type, buffered: true});
+      vitals.observers[type] = 'registered';
+    } catch (_) {
+      vitals.observers[type] = 'registration_failed';
+    }
+  };
+  observe('largest-contentful-paint', list => {
+    for (const e of list.getEntries()) {
+      vitals.lcp = e.startTime;
+      vitals.lcpElement = lcpElement(e.element);
+    }
+  });
+  observe('layout-shift', list => {
+    for (const e of list.getEntries()) vitals.shifts.push({
+      start: e.startTime, value: e.value, hadRecentInput: e.hadRecentInput,
+      sources: (e.sources || []).slice(0, 6).map(s => {
+        return {element: nodeLabel(s.node),
+          beforeY: s.previousRect?.y ?? null,
+          afterY: s.currentRect?.y ?? null};
+      })
+    });
+  });
+  observe('longtask', list => {
+    vitals.longTasks += list.getEntries().length;
+  });
 })();
 """
 
@@ -135,15 +155,23 @@ def sample(browser, url: str, theme: str) -> dict:
         first = page.evaluate("""() => ({
           theme: document.documentElement.dataset.theme,
           lcp: window.__pbtVitals?.lcp ?? null,
-          shifts: window.__pbtVitals?.shifts ?? [],
+          lcpElement: window.__pbtVitals?.lcpElement ?? null,
+          observers: window.__pbtVitals?.observers ?? {},
+          shifts: window.__pbtVitals?.shifts ?? null,
           longTasks: window.__pbtVitals?.longTasks ?? null,
           bytes: performance.getEntriesByType('resource')
             .reduce((total, e) => total + (e.transferSize || 0), 0)
         })""")
         if not response or response.status != 200:
             raise RuntimeError("probe did not receive HTTP 200")
-        if first["theme"] != theme or first["lcp"] is None:
-            raise RuntimeError("prepaint theme or LCP observer missing for " + theme)
+        for entry_type in ("largest-contentful-paint", "layout-shift"):
+            status = first["observers"].get(entry_type, "missing")
+            if status != "registered":
+                raise RuntimeError(f"{entry_type} observer for {theme}: {status}")
+        if first["theme"] != theme:
+            raise RuntimeError("prepaint theme missing for " + theme)
+        if first["lcp"] is None or first["shifts"] is None:
+            raise RuntimeError("required performance observations missing for " + theme)
         if errors:
             raise RuntimeError("JavaScript exception: " + errors[0])
         stamp = page.evaluate("performance.now()")
@@ -158,8 +186,12 @@ def sample(browser, url: str, theme: str) -> dict:
             raise RuntimeError("JavaScript exception during switch: " + errors[0])
         return {
             "theme": theme, "lcp_ms": round(float(first["lcp"]), 2),
+            "lcp_element": first["lcpElement"],
             "cls": round(cls_max_session(first["shifts"]), 5),
-            "long_tasks": first["longTasks"],
+            "observers": first["observers"],
+            "long_tasks": (first["longTasks"]
+                           if first["observers"].get("longtask") == "registered"
+                           else None),
             "resource_transfer_bytes": first["bytes"],
             "switch_all_shift_sum": round(sum(e["value"] for e in induced), 5),
             "switch_unprompted_shift_sum": round(
@@ -178,6 +210,7 @@ def run(url: str, repetitions: int) -> dict:
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
+            chromium_version = browser.version
             samples = {
                 theme: [sample(browser, url, theme) for _ in range(repetitions)]
                 for theme in THEMES
@@ -197,9 +230,9 @@ def run(url: str, repetitions: int) -> dict:
             "raw": raw,
         }
     return {
-        "schema_version": 2, **identity,
+        "schema_version": 3, **identity,
         "kind": "synthetic_chromium_lab_not_field_data",
-        "profile": {"width": 390, "height": 844, "dpr": 2,
+        "profile": {"chromium_version": chromium_version, "width": 390, "height": 844, "dpr": 2,
                     "cpu_throttle": 4, "logical_cores_override": 8,
                     "latency_ms": 150, "down_bytes_per_sec": 200000,
                     "runs_per_theme": repetitions},
@@ -223,7 +256,7 @@ def main() -> int:
     except Exception as exc:
         # Preserve failed-run evidence; still fail CI and retain the traceback.
         failure = {
-            "schema_version": 2,
+            "schema_version": 3,
             "kind": "synthetic_chromium_lab_not_field_data",
             "release_status": "MEASUREMENT_FAILED",
             "execution_sha": None,
