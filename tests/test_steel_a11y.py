@@ -120,19 +120,21 @@ def test_hook_load_is_hidden_on_short_viewports_and_in_graphite(page_factory):
 
 
 @pytest.mark.parametrize('fraction', [0.0, 0.23, 0.5, 0.77, 1.0])
-def test_winch_gear_angle_equals_chain_travel_over_radius(page_factory, fraction):
-    """Лебідка й ланцюг — один механізм: кут шестерні (рад) = хід гака (px) / радіус 13 px, у кожній точці прокрутки."""
+def test_rope_leaves_the_track_and_reaches_the_hook_at_every_scroll_position(page_factory, fraction):
+    """Канат і гусениця — одна система: верх каната впритул до нижнього краю гусениці, низ — у підвісці гака; розриву немає."""
     pg = page_factory(1440, 900, reduced=True)
     pg.locator('[data-theme-choice="sky"]').click()
     pg.evaluate(f"window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * {fraction})")
     pg.wait_for_timeout(400)
-    m = pg.evaluate("""() => { const g = document.getElementById('gauge'), f = document.querySelector('.gauge__float'), w = document.querySelector('.gauge__scale');
-      const hook = new DOMMatrix(getComputedStyle(f).transform), gear = new DOMMatrix(getComputedStyle(w).transform);
-      return {travel: hook.m42, declared: parseFloat(g.style.getPropertyValue('--gr')), sin: gear.m12, cos: gear.m11, h: g.clientHeight}; }""")
-    assert abs(m['travel'] - fraction * m['h']) <= 1.0, m
-    assert abs(m['declared'] - m['travel'] / 13) <= 0.01, m                       # JS: кут = хід / радіус
-    import math
-    assert abs(m['sin'] - math.sin(m['declared'])) <= 0.01 and abs(m['cos'] - math.cos(m['declared'])) <= 0.01, m   # CSS справді повернув шестерню на цей кут
+    m = pg.evaluate("""() => { const r = e => e.getBoundingClientRect(), g = document.getElementById('gauge'), f = document.querySelector('.gauge__float');
+      const rope = getComputedStyle(f, '::before'), cs = getComputedStyle(g);
+      return {track: r(document.getElementById('track')).bottom, anchorTop: r(document.querySelector('.gauge__scale')).top, gaugeTop: r(g).top, hookTop: r(f).top,
+              travel: new DOMMatrix(getComputedStyle(f).transform).m42, h: g.clientHeight, ropeH: parseFloat(rope.height), winch: g.style.getPropertyValue('--gr'),
+              anchorRot: getComputedStyle(document.querySelector('.gauge__scale')).transform}; }""")
+    assert abs(m['anchorTop'] - m['track']) <= 1.0, m                 # втулка каната сидить на гусениці
+    assert abs(m['travel'] - fraction * m['h']) <= 1.0, m             # хід гака = частка прокрутки
+    assert m['ropeH'] >= m['travel'] + 8, m                           # каната вистачає від гака до гусениці в найнижчій точці
+    assert m['winch'] == '' and m['anchorRot'] == 'none', m           # окремої шестерні-лебідки більше немає
 
 
 def test_load_waves_and_drops_coins_only_while_being_lifted(page_factory):

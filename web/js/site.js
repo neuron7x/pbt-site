@@ -352,15 +352,12 @@
       li.style.left = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; li.append(a); return li;
     }));
   }
-  const WINCH_R = 13;   // px: радіус ділильного кола шестерні лебідки (CSS: шестерня 30 px, вісь на 13 px лівіше ланцюга)
   let gaugeP = 0, liftTimer = 0;
   function gaugeRender(y) {
     const p = clamp(y / docMax, 0, 1);
     nav.style.setProperty('--sp', p.toFixed(4));
     trackRender(p);
-    const travel = p * gauge.clientHeight;
-    gFloat.style.transform = `translate3d(0,${travel.toFixed(1)}px,0)`;
-    gauge.style.setProperty('--gr', (travel / WINCH_R).toFixed(3) + 'rad');   // лебідка: кут = хід ланцюга / радіус
+    gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
     if (p >= .985) gauge.classList.add('has-load');   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
