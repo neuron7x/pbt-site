@@ -3,6 +3,146 @@
  "note": "Each fault is a stated unsafe behavior; the oracle must fail on it. A survivor blocks acceptance.",
  "mutants": [
   {
+   "id": "M-ACCEPT-external-file",
+   "task": "OPS-08.T",
+   "edits": [
+    {
+     "file": "tools/external_receipts.py",
+     "find": "    _verify_signature(path, signers, policy)\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class"
+   ]
+  },
+  {
+   "id": "M-ACCEPT-normative",
+   "task": "EVD-08",
+   "edits": [
+    {
+     "file": "tools/assurance_check.py",
+     "find": "        require(hashlib.sha256((root / rel).read_bytes()).hexdigest() == digest, f'normative_specification_changed_{rel}')\n",
+     "replace": "        pass\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_changed_normative_specification_is_rejected"
+   ]
+  },
+  {
+   "id": "M-ACCEPT-status-as-evidence",
+   "task": "EVD-08",
+   "edits": [
+    {
+     "file": "tools/assurance_check.py",
+     "find": "    require(committed == recomputed, 'committed_receipts_differ_from_artifact_bytes')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected"
+   ]
+  },
+  {
+   "id": "M-ACCEPT-test-never-ran",
+   "task": "EVD-08",
+   "edits": [
+    {
+     "file": "tools/evidence_reconcile.py",
+     "find": "    if not rows:\n        raise Unbound(f'test_never_executed_{reference}')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_acceptance_adversarial.py::test_test_that_exists_but_never_ran_is_rejected"
+   ]
+  },
+  {
+   "id": "M-ADV-01-unmodelled-endpoint",
+   "task": "ADV-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        if self.path.split('?')[0] == '/api/health':\n",
+     "replace": "        if self.path.split('?')[0] == '/api/debug':\n            return self.send_json(200, {})\n        if self.path.split('?')[0] == '/api/health':\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_assurance_case.py::test_threat_model_covers_every_endpoint_and_links_real_tests"
+   ]
+  },
+  {
+   "id": "M-ADV-04-p99-limit",
+   "task": "ADV-04",
+   "edits": [
+    {
+     "file": "tools/verify_soak_evidence.py",
+     "find": " or p99 > limits['maximum_p99_lead_ms']:",
+     "replace": ":"
+    }
+   ],
+   "oracle": [
+    "tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget"
+   ]
+  },
+  {
+   "id": "M-ADV-05-browser-date",
+   "task": "ADV-05",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "return v >= kyivToday() ? v : null;",
+     "replace": "return d >= new Date(new Date().setHours(0,0,0,0)) ? v : null;"
+    }
+   ],
+   "oracle": [
+    "tests/test_date_policy.py::test_browser_validator_uses_the_same_civil_date"
+   ]
+  },
+  {
+   "id": "M-ADV-05-host-date",
+   "task": "ADV-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": ".astimezone(KYIV).date()",
+     "replace": ".astimezone().date()"
+    }
+   ],
+   "oracle": [
+    "tests/test_date_policy.py::test_server_civil_date_is_independent_of_host_timezone"
+   ]
+  },
+  {
+   "id": "M-ADV-06-unpinned-action",
+   "task": "ADV-06",
+   "edits": [
+    {
+     "file": "tools/supply_chain.py",
+     "find": "            if not FULL_SHA.fullmatch(use):\n                raise Rejected(f'unpinned_action_{path.name}_{use}')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_supply_chain.py::test_unpinned_action_is_rejected"
+   ]
+  },
+  {
+   "id": "M-BACKUP-no-lock",
+   "task": "DB-06",
+   "edits": [
+    {
+     "file": "ops/backup.py",
+     "find": "            fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)\n",
+     "replace": "            pass\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
+   ]
+  },
+  {
    "id": "M-DB-01-fk-pragma",
    "task": "DB-01",
    "edits": [
@@ -92,20 +232,6 @@
    ]
   },
   {
-   "id": "M-DB-04-reply-before-commit",
-   "task": "DB-04",
-   "edits": [
-    {
-     "file": "server/app.py",
-     "find": "                            c.commit()\n                            # Charge only",
-     "replace": "                            self.send_json(201, {'ok': True, 'ref': f'PBT-{lead_id:06d}'}); self.wfile.flush()\n                            c.commit()\n                            # Charge only"
-    }
-   ],
-   "oracle": [
-    "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint"
-   ]
-  },
-  {
    "id": "M-DB-04-lead-without-outbox-atomicity",
    "task": "DB-04",
    "edits": [
@@ -113,6 +239,20 @@
      "file": "server/app.py",
      "find": "                            lead_id = cur.lastrowid\n",
      "replace": "                            lead_id = cur.lastrowid; c.commit()\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_integrity.py::test_process_death_at_each_acceptance_cutpoint"
+   ]
+  },
+  {
+   "id": "M-DB-04-reply-before-commit",
+   "task": "DB-04",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "                            c.commit()\n                            # Charge only",
+     "replace": "                            self.send_json(201, {'ok': True, 'ref': f'PBT-{lead_id:06d}'}); self.wfile.flush()\n                            c.commit()\n                            # Charge only"
     }
    ],
    "oracle": [
@@ -134,6 +274,20 @@
    ]
   },
   {
+   "id": "M-DB-05-ignore-expiry",
+   "task": "DB-05",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": " && r.x > Date.now() ? r : null;",
+     "replace": " ? r : null;"
+    }
+   ],
+   "oracle": [
+    "tests/test_lead_reload_idempotency.py::test_expired_record_is_not_reused"
+   ]
+  },
+  {
    "id": "M-DB-05-store-payload",
    "task": "DB-05",
    "edits": [
@@ -148,17 +302,23 @@
    ]
   },
   {
-   "id": "M-DB-05-ignore-expiry",
-   "task": "DB-05",
+   "id": "M-DB-06-dir-fsync",
+   "task": "DB-06",
+   "expected": "UNTESTABLE",
+   "reason": "Removing a directory fsync is only observable on power loss; SIGKILL keeps the page cache. Would need a block-layer fault injector (dm-flakey) with root."
+  },
+  {
+   "id": "M-DB-06-fk-check",
+   "task": "DB-02",
    "edits": [
     {
-     "file": "web/js/site.js",
-     "find": " && r.x > Date.now() ? r : null;",
-     "replace": " ? r : null;"
+     "file": "ops/restore.py",
+     "find": "            if orphans and not a.allow_fk_violations:\n",
+     "replace": "            if False:\n"
     }
    ],
    "oracle": [
-    "tests/test_lead_reload_idempotency.py::test_expired_record_is_not_reused"
+    "tests/test_restore_cutpoints.py::test_restore_refuses_snapshot_with_foreign_key_violations"
    ]
   },
   {
@@ -176,20 +336,6 @@
    ]
   },
   {
-   "id": "M-DB-06-stale-sidecar",
-   "task": "DB-06",
-   "edits": [
-    {
-     "file": "ops/restore.py",
-     "find": "            f.unlink()\n            removed = True\n",
-     "replace": "            removed = True\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_restore_cutpoints.py::test_orphaned_journal_without_its_database_never_reaches_the_new_generation"
-   ]
-  },
-  {
    "id": "M-DB-06-no-settle",
    "task": "DB-06",
    "edits": [
@@ -201,20 +347,6 @@
    ],
    "oracle": [
     "tests/test_restore_cutpoints.py::test_every_filesystem_cutpoint_preserves_old_or_new_generation"
-   ]
-  },
-  {
-   "id": "M-DB-06-fk-check",
-   "task": "DB-02",
-   "edits": [
-    {
-     "file": "ops/restore.py",
-     "find": "            if orphans and not a.allow_fk_violations:\n",
-     "replace": "            if False:\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_restore_cutpoints.py::test_restore_refuses_snapshot_with_foreign_key_violations"
    ]
   },
   {
@@ -232,10 +364,312 @@
    ]
   },
   {
-   "id": "M-DB-06-dir-fsync",
+   "id": "M-DB-06-stale-sidecar",
    "task": "DB-06",
-   "expected": "UNTESTABLE",
-   "reason": "Removing a directory fsync is only observable on power loss; SIGKILL keeps the page cache. Would need a block-layer fault injector (dm-flakey) with root."
+   "edits": [
+    {
+     "file": "ops/restore.py",
+     "find": "            f.unlink()\n            removed = True\n",
+     "replace": "            removed = True\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_restore_cutpoints.py::test_orphaned_journal_without_its_database_never_reaches_the_new_generation"
+   ]
+  },
+  {
+   "id": "M-EVD-01-drift",
+   "task": "EVD-01",
+   "edits": [
+    {
+     "file": "tools/supply_chain.py",
+     "find": "    if identity['head_sha'] != expected_head:\n        raise Rejected('checkout_differs_from_expected_head')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs"
+   ]
+  },
+  {
+   "id": "M-EVD-02-event-binding",
+   "task": "EVD-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(run['event'] in rules['run_events'], 'receipt_from_other_target_event')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_pull_request_receipts_never_certify_main"
+   ]
+  },
+  {
+   "id": "M-EVD-02-historic-pr8",
+   "task": "EVD-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(meta['schema'] == 'pbt-exact-head-evidence-matrix-v2', 'manifest_schema')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-03-catalog-coverage",
+   "task": "ADV-02",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(len(ids)==len(set(ids)) and set(ids)==set(catalog), 'mutation_catalog_coverage')\n    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed='UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED'\n",
+     "replace": "    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed=verdict if row['id'] not in catalog else ('UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED')\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-03-identity",
+   "task": "EVD-03",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(seen.get(rule['id'], 0) >= max(rule['min_cases'], 1), 'required_test_missing_' + rule['id'])\n",
+     "replace": "        pass\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-04-cls-budget",
+   "task": "EVD-04",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(p75_cls<=budgets['cls'], 'mobile_cls_budget')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-04-deferred-shift",
+   "task": "EVD-04",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(shift<=budgets['max_deferred_switch_shift'], 'mobile_deferred_shift_budget')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-04-lcp-budget",
+   "task": "EVD-04",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(p75_lcp<=budgets['lcp_ms'], 'mobile_lcp_budget')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-05-execution-sha",
+   "task": "EVD-05",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(mobile['execution_sha']==expected_head and mobile['branch_head_sha'] in (expected_head,None), 'mobile_execution_sha')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-06-png-crc",
+   "task": "EVD-06",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "        require(zlib.crc32(typ+data)&0xffffffff == recorded, 'png_chunk_crc')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-06-provider-digest",
+   "task": "EVD-06",
+   "edits": [
+    {
+     "file": "tools/evidence_collect.py",
+     "find": "        if hashlib.sha256(raw).hexdigest() != expected:\n            raise CollectError(f'provider_digest_mismatch_{role}')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-06-zip-digest",
+   "task": "EVD-06",
+   "edits": [
+    {
+     "file": "tools/meta_evidence_gate.py",
+     "find": "    require(hashlib.sha256(path.read_bytes()).hexdigest() == expected_sha, 'zip_sha256')\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
+   ]
+  },
+  {
+   "id": "M-EVD-07-tz-in-bundle",
+   "task": "EVD-07",
+   "edits": [
+    {
+     "file": "tools/inline.py",
+     "find": "html = (WEB / 'index.html').read_text(encoding='utf-8')\n",
+     "replace": "html = (WEB / 'index.html').read_text(encoding='utf-8') + '<!-- ' + __import__('time').strftime('%Z') + ' -->'\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed"
+   ]
+  },
+  {
+   "id": "M-MEDIA-cine-ignores-power",
+   "task": "MEDIA-444",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": ".then(i => !!(i.supported && i.smooth && (finePointer || i.powerEfficient)), () => finePointer));",
+     "replace": ".then(i => !!(i.supported && i.smooth), () => finePointer));"
+    }
+   ],
+   "oracle": [
+    "tests/test_cine.py::test_phone_without_power_efficient_vp9_444_gets_hardware_h264"
+   ],
+   "note": "Вибір джерела ігнорує powerEfficient: телефон знову декодує VP9 4:4:4 програмно."
+  },
+  {
+   "id": "M-MOTION-belt-ignores-texstep",
+   "task": "MOTION-47",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "    const { step, smear } = texStep((beltPos - prev) * PHYS.beltRatio);",
+     "replace": "    const step = (beltPos - prev) * PHYS.beltRatio, smear = 0;"
+    }
+   ],
+   "oracle": [
+    "tests/test_crawler_track.py::test_fling_never_strobes_the_chain"
+   ],
+   "note": "Сторінка не користується texStep: чиста функція правильна, а ланцюг на екрані строботить (аудит п.47)."
+  },
+  {
+   "id": "M-MOTION-belt-per-frame",
+   "task": "MOTION-46",
+   "edits": [
+    {
+     "file": "web/js/physics.js",
+     "find": "  const approach = (pos, target, dt, tau) => target + (pos - target) * Math.exp(-Math.min(dt, PHYS.dtMax) / tau);",
+     "replace": "  const approach = (pos, target, dt, tau) => pos + (target - pos) * .14;"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Згладжування ланцюга покадрово: τ залежить від частоти кадрів (аудит п.46)."
+  },
+  {
+   "id": "M-MOTION-gravity-per-frame",
+   "task": "MOTION-46",
+   "edits": [
+    {
+     "file": "web/js/physics.js",
+     "find": "      const v1 = Math.min(d.vy + PHYS.gravity * dt, PHYS.vMax);",
+     "replace": "      const v1 = Math.min(d.vy + .16 / 16.7, PHYS.vMax);"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Гравітація масла покадрово: на 120 Гц падіння вдвічі швидше (аудит п.46)."
+  },
+  {
+   "id": "M-MOTION-no-smear",
+   "task": "MOTION-47",
+   "edits": [
+    {
+     "file": "web/js/physics.js",
+     "find": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: PHYS.smearMax * x * x * (3 - 2 * x) };",
+     "replace": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: 0 };"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Змазаний шар не підмішується: різкий візерунок на швидкості вище порогу аліасингу (аудит п.47)."
+  },
+  {
+   "id": "M-MOTION-texture-unsaturated",
+   "task": "MOTION-47",
+   "edits": [
+    {
+     "file": "web/js/physics.js",
+     "find": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: PHYS.smearMax * x * x * (3 - 2 * x) };",
+     "replace": "    return { step: raw, smear: PHYS.smearMax * x * x * (3 - 2 * x) };"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Стелю кроку текстури знято: на кидку траки стоять або їдуть назад (аудит п.47, «колесо диліжанса»)."
+  },
+  {
+   "id": "M-NET-01-deadline",
+   "task": "NET-01",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "            if remaining <= 0:\n                if header_deadline is not None:\n                    h._hdr_expired = True\n                raise TimeoutError('absolute request read deadline')\n            h.connection.settimeout(min(h.timeout, remaining))\n",
+     "replace": "            h.connection.settimeout(h.timeout)\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_slow_clients_hold_slots_for_bounded_wall_clock_only"
+   ]
   },
   {
    "id": "M-NET-01-substring-media-type",
@@ -263,20 +697,6 @@
    ],
    "oracle": [
     "tests/test_http_protocol.py::test_transfer_encoding_is_never_accepted_alongside_content_length"
-   ]
-  },
-  {
-   "id": "M-NET-01-deadline",
-   "task": "NET-01",
-   "edits": [
-    {
-     "file": "server/app.py",
-     "find": "            if remaining <= 0:\n                if header_deadline is not None:\n                    h._hdr_expired = True\n                raise TimeoutError('absolute request read deadline')\n            h.connection.settimeout(min(h.timeout, remaining))\n",
-     "replace": "            h.connection.settimeout(h.timeout)\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_http_protocol.py::test_slow_clients_hold_slots_for_bounded_wall_clock_only"
    ]
   },
   {
@@ -322,20 +742,6 @@
    ]
   },
   {
-   "id": "M-NET-04-retry-class",
-   "task": "NET-04.T",
-   "edits": [
-    {
-     "file": "server/delivery_transport.py",
-     "find": "return 10 if 400 <= exc.code < 500 and exc.code not in (408, 429) else 11",
-     "replace": "return 10 if 400 <= exc.code < 500 else 11"
-    }
-   ],
-   "oracle": [
-    "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement"
-   ]
-  },
-  {
    "id": "M-NET-04-hmac-forged",
    "task": "NET-04.T",
    "edits": [
@@ -343,6 +749,20 @@
      "file": "server/app.py",
      "find": "signature = hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), body, hashlib.sha256).hexdigest()",
      "replace": "signature = '0' * 64"
+    }
+   ],
+   "oracle": [
+    "tests/test_outbox_state_machine.py::test_transient_status_is_retried_to_acknowledgement"
+   ]
+  },
+  {
+   "id": "M-NET-04-retry-class",
+   "task": "NET-04.T",
+   "edits": [
+    {
+     "file": "server/delivery_transport.py",
+     "find": "return 10 if 400 <= exc.code < 500 and exc.code not in (408, 429) else 11",
+     "replace": "return 10 if 400 <= exc.code < 500 else 11"
     }
    ],
    "oracle": [
@@ -378,6 +798,36 @@
    ]
   },
   {
+   "id": "M-NET-05-ipv6-per-address",
+   "task": "NET-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "return str(ipaddress.ip_network(f'{addr}/64', strict=False))",
+     "replace": "return str(addr)"
+    }
+   ],
+   "oracle": [
+    "tests/test_rate_resource_bound.py",
+    "tests/test_hardening.py",
+    "tests/test_leads.py"
+   ]
+  },
+  {
+   "id": "M-NET-05-migrate-before-guard",
+   "task": "NET-05",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "if _guard_state == 'held':\n    for _i in range",
+     "replace": "if True:\n    for _i in range"
+    }
+   ],
+   "oracle": [
+    "tests/test_http_protocol.py::test_refused_second_server_writes_nothing_while_restore_or_a_peer_holds_the_guard"
+   ]
+  },
+  {
    "id": "M-NET-05-no-guard",
    "task": "NET-05",
    "edits": [
@@ -406,20 +856,58 @@
    ]
   },
   {
-   "id": "M-NET-05-ipv6-per-address",
-   "task": "NET-05",
+   "id": "M-NET-06-any-scheme",
+   "task": "NET-06",
    "edits": [
     {
-     "file": "server/app.py",
-     "find": "return str(ipaddress.ip_network(f'{addr}/64', strict=False))",
-     "replace": "return str(addr)"
+     "file": "web/js/site.js",
+     "find": "return u.protocol === 'https:' && !/[\"'<>\\s]/.test(String(value)) ? u.href : null;",
+     "replace": "return u.href;"
+    },
+    {
+     "file": "web/js/dom.js",
+     "find": "    return !rule || rule.test(String(v));",
+     "replace": "    return true;"
     }
    ],
    "oracle": [
-    "tests/test_rate_resource_bound.py",
-    "tests/test_hardening.py",
-    "tests/test_leads.py"
-   ]
+    "tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink"
+   ],
+   "note": "25.11.2026: два незалежні шари — httpsUrl() і вартовий атрибутів у el(). Зняття лише httpsUrl еквівалентне (CI 22:06: SURVIVED), бо вартовий окремо відсікає javascript:/data:; кожен шар окремо має свого мутанта (M-NET-06-attr-schemes). Цей мутант знімає обидва — оракул мусить почервоніти."
+  },
+  {
+   "id": "M-NET-06-attr-handlers",
+   "task": "NET-06",
+   "edits": [
+    {
+     "file": "web/js/dom.js",
+     "find": "    if (!ATTR_NAMES.has(name) && !/^(?:data|aria)-[a-z][a-z0-9-]*$/.test(name)) return false;\n",
+     "replace": "    if (/^on/i.test(name)) return false;\n"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/dom_factory.test.cjs"
+   ],
+   "note": "Білий список імен замінено чорним (лише on*): srcdoc/formaction/xlink:href проходять — той самий клас, що public_config з одним викресленим ключем."
+  },
+  {
+   "id": "M-NET-06-attr-schemes",
+   "task": "NET-06",
+   "edits": [
+    {
+     "file": "web/js/dom.js",
+     "find": "    return !rule || rule.test(String(v));",
+     "replace": "    return !rule || rule.test(String(v)) || /^[a-z]+:/i.test(String(v));"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/dom_factory.test.cjs"
+   ],
+   "note": "Вартовий пропускає будь-яку схему URL (javascript:, data:text/html)."
   },
   {
    "id": "M-NET-06-unescaped-channel",
@@ -442,24 +930,32 @@
    "note": "24.11.2026: розмітка будується лише вузлами DOM (el/append), escaping більше не потрібен — ін'єкцію виключає конструкція. Мутант повертає розбір HTML для тексту у фабриці й знімає кодування telegram: обидва шари втрачені — оракул мусить почервоніти."
   },
   {
-   "id": "M-NET-06-any-scheme",
-   "task": "NET-06",
+   "id": "M-NET-07-scanner-crash-is-pass",
+   "task": "NET-07",
    "edits": [
     {
-     "file": "web/js/site.js",
-     "find": "return u.protocol === 'https:' && !/[\"'<>\\s]/.test(String(value)) ? u.href : null;",
-     "replace": "return u.href;"
-    },
-    {
-     "file": "web/js/dom.js",
-     "find": "    return !rule || rule.test(String(v));",
-     "replace": "    return true;"
+     "file": "tools/sast_gate.py",
+     "find": "    if returncode not in (0, 1):\n        return {'status': 'FAIL', 'reason': f'scanner_exit_{returncode}'}\n",
+     "replace": "    if returncode not in (0, 1):\n        return {'status': 'PASS', 'reason': 'ok'}\n"
     }
    ],
    "oracle": [
-    "tests/test_dom_trust_boundary.py::test_hostile_public_config_is_inert_in_every_sink"
+    "tests/test_supply_chain.py::test_scanner_that_did_not_scan_cannot_pass"
+   ]
+  },
+  {
+   "id": "M-NET-08-probe-ignores-home",
+   "task": "NET-08.T",
+   "edits": [
+    {
+     "file": "ops/sandbox_probe.py",
+     "find": "'home_read_blocked': seen['home_canary_readable'] is False,",
+     "replace": "'home_read_blocked': True,"
+    }
    ],
-   "note": "25.11.2026: два незалежні шари — httpsUrl() і вартовий атрибутів у el(). Зняття лише httpsUrl еквівалентне (CI 22:06: SURVIVED), бо вартовий окремо відсікає javascript:/data:; кожен шар окремо має свого мутанта (M-NET-06-attr-schemes). Цей мутант знімає обидва — оракул мусить почервоніти."
+   "oracle": [
+    "tests/test_systemd_sandbox.py::test_probe_reports_the_measured_user_manager_failure"
+   ]
   },
   {
    "id": "M-OPS-01-heartbeat-is-healthy",
@@ -473,20 +969,6 @@
    ],
    "oracle": [
     "tests/test_readiness_truth_table.py::test_fresh_heartbeat_with_stale_backlog_is_not_ready"
-   ]
-  },
-  {
-   "id": "M-OPS-01-unknown-is-ready",
-   "task": "OPS-01",
-   "edits": [
-    {
-     "file": "ops/readiness.py",
-     "find": "ready = all(v == 'PASS' for v in signals.values())",
-     "replace": "ready = 'FAIL' not in signals.values()"
-    }
-   ],
-   "oracle": [
-    "tests/test_readiness_truth_table.py::test_clean_local_state_never_claims_receiver_or_business_truth"
    ]
   },
   {
@@ -504,6 +986,20 @@
    ]
   },
   {
+   "id": "M-OPS-01-unknown-is-ready",
+   "task": "OPS-01",
+   "edits": [
+    {
+     "file": "ops/readiness.py",
+     "find": "ready = all(v == 'PASS' for v in signals.values())",
+     "replace": "ready = 'FAIL' not in signals.values()"
+    }
+   ],
+   "oracle": [
+    "tests/test_readiness_truth_table.py::test_clean_local_state_never_claims_receiver_or_business_truth"
+   ]
+  },
+  {
    "id": "M-OPS-03-invent-outage",
    "task": "OPS-03",
    "edits": [
@@ -515,216 +1011,6 @@
    ],
    "oracle": [
     "tests/test_incident_correlation.py"
-   ]
-  },
-  {
-   "id": "M-ADV-05-host-date",
-   "task": "ADV-05",
-   "edits": [
-    {
-     "file": "server/app.py",
-     "find": ".astimezone(KYIV).date()",
-     "replace": ".astimezone().date()"
-    }
-   ],
-   "oracle": [
-    "tests/test_date_policy.py::test_server_civil_date_is_independent_of_host_timezone"
-   ]
-  },
-  {
-   "id": "M-ADV-05-browser-date",
-   "task": "ADV-05",
-   "edits": [
-    {
-     "file": "web/js/site.js",
-     "find": "return v >= kyivToday() ? v : null;",
-     "replace": "return d >= new Date(new Date().setHours(0,0,0,0)) ? v : null;"
-    }
-   ],
-   "oracle": [
-    "tests/test_date_policy.py::test_browser_validator_uses_the_same_civil_date"
-   ]
-  },
-  {
-   "id": "M-EVD-02-event-binding",
-   "task": "EVD-02",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "        require(run['event'] in rules['run_events'], 'receipt_from_other_target_event')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_pull_request_receipts_never_certify_main"
-   ]
-  },
-  {
-   "id": "M-EVD-02-historic-pr8",
-   "task": "EVD-02",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "    require(meta['schema'] == 'pbt-exact-head-evidence-matrix-v2', 'manifest_schema')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-03-identity",
-   "task": "EVD-03",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "        require(seen.get(rule['id'], 0) >= max(rule['min_cases'], 1), 'required_test_missing_' + rule['id'])\n",
-     "replace": "        pass\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-04-lcp-budget",
-   "task": "EVD-04",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "        require(p75_lcp<=budgets['lcp_ms'], 'mobile_lcp_budget')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-04-cls-budget",
-   "task": "EVD-04",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "        require(p75_cls<=budgets['cls'], 'mobile_cls_budget')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-04-deferred-shift",
-   "task": "EVD-04",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "        require(shift<=budgets['max_deferred_switch_shift'], 'mobile_deferred_shift_budget')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-05-execution-sha",
-   "task": "EVD-05",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "    require(mobile['execution_sha']==expected_head and mobile['branch_head_sha'] in (expected_head,None), 'mobile_execution_sha')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-06-provider-digest",
-   "task": "EVD-06",
-   "edits": [
-    {
-     "file": "tools/evidence_collect.py",
-     "find": "        if hashlib.sha256(raw).hexdigest() != expected:\n            raise CollectError(f'provider_digest_mismatch_{role}')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-06-zip-digest",
-   "task": "EVD-06",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "    require(hashlib.sha256(path.read_bytes()).hexdigest() == expected_sha, 'zip_sha256')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-EVD-06-png-crc",
-   "task": "EVD-06",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "        require(zlib.crc32(typ+data)&0xffffffff == recorded, 'png_chunk_crc')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-ADV-04-p99-limit",
-   "task": "ADV-04",
-   "edits": [
-    {
-     "file": "tools/verify_soak_evidence.py",
-     "find": " or p99 > limits['maximum_p99_lead_ms']:",
-     "replace": ":"
-    }
-   ],
-   "oracle": [
-    "tests/test_runtime_soak_evidence.py::test_verifier_rejects_coherent_report_over_the_latency_budget"
-   ]
-  },
-  {
-   "id": "M-ADV-06-unpinned-action",
-   "task": "ADV-06",
-   "edits": [
-    {
-     "file": "tools/supply_chain.py",
-     "find": "            if not FULL_SHA.fullmatch(use):\n                raise Rejected(f'unpinned_action_{path.name}_{use}')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_supply_chain.py::test_unpinned_action_is_rejected"
-   ]
-  },
-  {
-   "id": "M-NET-07-scanner-crash-is-pass",
-   "task": "NET-07",
-   "edits": [
-    {
-     "file": "tools/sast_gate.py",
-     "find": "    if returncode not in (0, 1):\n        return {'status': 'FAIL', 'reason': f'scanner_exit_{returncode}'}\n",
-     "replace": "    if returncode not in (0, 1):\n        return {'status': 'PASS', 'reason': 'ok'}\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_supply_chain.py::test_scanner_that_did_not_scan_cannot_pass"
    ]
   },
   {
@@ -744,27 +1030,13 @@
    ]
   },
   {
-   "id": "M-NET-05-migrate-before-guard",
-   "task": "NET-05",
-   "edits": [
-    {
-     "file": "server/app.py",
-     "find": "if _guard_state == 'held':\n    for _i in range",
-     "replace": "if True:\n    for _i in range"
-    }
-   ],
-   "oracle": [
-    "tests/test_http_protocol.py::test_refused_second_server_writes_nothing_while_restore_or_a_peer_holds_the_guard"
-   ]
-  },
-  {
-   "id": "M-EVD-03-catalog-coverage",
-   "task": "ADV-02",
+   "id": "M-RUNNER-job-not-completed",
+   "task": "EVD-02",
    "edits": [
     {
      "file": "tools/meta_evidence_gate.py",
-     "find": "    require(len(ids)==len(set(ids)) and set(ids)==set(catalog), 'mutation_catalog_coverage')\n    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed='UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED'\n",
-     "replace": "    counts={}\n    for row in results:\n        verdict=row['verdict']\n        counts[verdict]=counts.get(verdict,0)+1\n        allowed=verdict if row['id'] not in catalog else ('UNTESTABLE' if catalog[row['id']].get('expected')=='UNTESTABLE' else 'KILLED')\n"
+     "find": "            require(jobs[name]['status']=='completed' and jobs[name]['conclusion']=='success', 'required_job_not_successful_'+role)\n",
+     "replace": ""
     }
    ],
    "oracle": [
@@ -772,31 +1044,17 @@
    ]
   },
   {
-   "id": "M-EVD-01-drift",
-   "task": "EVD-01",
+   "id": "M-WEB-01-hide-focused",
+   "task": "WEB-01.T",
    "edits": [
     {
-     "file": "tools/supply_chain.py",
-     "find": "    if identity['head_sha'] != expected_head:\n        raise Rejected('checkout_differs_from_expected_head')\n",
-     "replace": ""
+     "file": "web/js/site.js",
+     "find": "  const kyivToday = () => {\n",
+     "replace": "  document.addEventListener('focusin', e => { e.target.style.visibility = 'hidden'; });\n  const kyivToday = () => {\n"
     }
    ],
    "oracle": [
-    "tests/test_supply_chain.py::test_checkout_drift_holds_before_anything_runs"
-   ]
-  },
-  {
-   "id": "M-EVD-07-tz-in-bundle",
-   "task": "EVD-07",
-   "edits": [
-    {
-     "file": "tools/inline.py",
-     "find": "html = (WEB / 'index.html').read_text(encoding='utf-8')\n",
-     "replace": "html = (WEB / 'index.html').read_text(encoding='utf-8') + '<!-- ' + __import__('time').strftime('%Z') + ' -->'\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_reproducibility.py::test_bundle_bytes_do_not_depend_on_locale_timezone_or_hash_seed"
+    "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey"
    ]
   },
   {
@@ -842,48 +1100,6 @@
    ]
   },
   {
-   "id": "M-ADV-01-unmodelled-endpoint",
-   "task": "ADV-01",
-   "edits": [
-    {
-     "file": "server/app.py",
-     "find": "        if self.path.split('?')[0] == '/api/health':\n",
-     "replace": "        if self.path.split('?')[0] == '/api/debug':\n            return self.send_json(200, {})\n        if self.path.split('?')[0] == '/api/health':\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_assurance_case.py::test_threat_model_covers_every_endpoint_and_links_real_tests"
-   ]
-  },
-  {
-   "id": "M-WEB-01-hide-focused",
-   "task": "WEB-01.T",
-   "edits": [
-    {
-     "file": "web/js/site.js",
-     "find": "  const kyivToday = () => {\n",
-     "replace": "  document.addEventListener('focusin', e => { e.target.style.visibility = 'hidden'; });\n  const kyivToday = () => {\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_web_assurance.py::test_keyboard_alone_completes_the_lead_journey"
-   ]
-  },
-  {
-   "id": "M-NET-08-probe-ignores-home",
-   "task": "NET-08.T",
-   "edits": [
-    {
-     "file": "ops/sandbox_probe.py",
-     "find": "'home_read_blocked': seen['home_canary_readable'] is False,",
-     "replace": "'home_read_blocked': True,"
-    }
-   ],
-   "oracle": [
-    "tests/test_systemd_sandbox.py::test_probe_reports_the_measured_user_manager_failure"
-   ]
-  },
-  {
    "id": "M-WEB-07-parity",
    "task": "WEB-07.T",
    "edits": [
@@ -896,222 +1112,6 @@
    "oracle": [
     "tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface"
    ]
-  },
-  {
-   "id": "M-BACKUP-no-lock",
-   "task": "DB-06",
-   "edits": [
-    {
-     "file": "ops/backup.py",
-     "find": "            fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)\n",
-     "replace": "            pass\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_backup_safety.py::test_concurrent_backup_never_destroys_a_running_backups_temporary_file"
-   ]
-  },
-  {
-   "id": "M-ACCEPT-status-as-evidence",
-   "task": "EVD-08",
-   "edits": [
-    {
-     "file": "tools/assurance_check.py",
-     "find": "    require(committed == recomputed, 'committed_receipts_differ_from_artifact_bytes')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_acceptance_adversarial.py::test_hand_edited_receipts_are_rejected"
-   ]
-  },
-  {
-   "id": "M-ACCEPT-test-never-ran",
-   "task": "EVD-08",
-   "edits": [
-    {
-     "file": "tools/evidence_reconcile.py",
-     "find": "    if not rows:\n        raise Unbound(f'test_never_executed_{reference}')\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_acceptance_adversarial.py::test_test_that_exists_but_never_ran_is_rejected"
-   ]
-  },
-  {
-   "id": "M-ACCEPT-normative",
-   "task": "EVD-08",
-   "edits": [
-    {
-     "file": "tools/assurance_check.py",
-     "find": "        require(hashlib.sha256((root / rel).read_bytes()).hexdigest() == digest, f'normative_specification_changed_{rel}')\n",
-     "replace": "        pass\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_acceptance_adversarial.py::test_changed_normative_specification_is_rejected"
-   ]
-  },
-  {
-   "id": "M-ACCEPT-external-file",
-   "task": "OPS-08.T",
-   "edits": [
-    {
-     "file": "tools/external_receipts.py",
-     "find": "    _verify_signature(path, signers, policy)\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_acceptance_adversarial.py::test_fabricated_external_receipt_never_closes_a_class"
-   ]
-  },
-  {
-   "id": "M-RUNNER-job-not-completed",
-   "task": "EVD-02",
-   "edits": [
-    {
-     "file": "tools/meta_evidence_gate.py",
-     "find": "            require(jobs[name]['status']=='completed' and jobs[name]['conclusion']=='success', 'required_job_not_successful_'+role)\n",
-     "replace": ""
-    }
-   ],
-   "oracle": [
-    "tests/test_meta_evidence_gate.py::test_forged_success_is_rejected"
-   ]
-  },
-  {
-   "id": "M-NET-06-attr-handlers",
-   "task": "NET-06",
-   "edits": [
-    {
-     "file": "web/js/dom.js",
-     "find": "    if (!ATTR_NAMES.has(name) && !/^(?:data|aria)-[a-z][a-z0-9-]*$/.test(name)) return false;\n",
-     "replace": "    if (/^on/i.test(name)) return false;\n"
-    }
-   ],
-   "oracle": [
-    "node",
-    "--test",
-    "tests/dom_factory.test.cjs"
-   ],
-   "note": "Білий список імен замінено чорним (лише on*): srcdoc/formaction/xlink:href проходять — той самий клас, що public_config з одним викресленим ключем."
-  },
-  {
-   "id": "M-NET-06-attr-schemes",
-   "task": "NET-06",
-   "edits": [
-    {
-     "file": "web/js/dom.js",
-     "find": "    return !rule || rule.test(String(v));",
-     "replace": "    return !rule || rule.test(String(v)) || /^[a-z]+:/i.test(String(v));"
-    }
-   ],
-   "oracle": [
-    "node",
-    "--test",
-    "tests/dom_factory.test.cjs"
-   ],
-   "note": "Вартовий пропускає будь-яку схему URL (javascript:, data:text/html)."
-  },
-  {
-   "id": "M-MOTION-belt-per-frame",
-   "task": "MOTION-46",
-   "edits": [
-    {
-     "file": "web/js/physics.js",
-     "find": "  const approach = (pos, target, dt, tau) => target + (pos - target) * Math.exp(-Math.min(dt, PHYS.dtMax) / tau);",
-     "replace": "  const approach = (pos, target, dt, tau) => pos + (target - pos) * .14;"
-    }
-   ],
-   "oracle": [
-    "node",
-    "--test",
-    "tests/motion_physics.test.cjs"
-   ],
-   "note": "Згладжування ланцюга покадрово: τ залежить від частоти кадрів (аудит п.46)."
-  },
-  {
-   "id": "M-MOTION-gravity-per-frame",
-   "task": "MOTION-46",
-   "edits": [
-    {
-     "file": "web/js/physics.js",
-     "find": "      const v1 = Math.min(d.vy + PHYS.gravity * dt, PHYS.vMax);",
-     "replace": "      const v1 = Math.min(d.vy + .16 / 16.7, PHYS.vMax);"
-    }
-   ],
-   "oracle": [
-    "node",
-    "--test",
-    "tests/motion_physics.test.cjs"
-   ],
-   "note": "Гравітація масла покадрово: на 120 Гц падіння вдвічі швидше (аудит п.46)."
-  },
-  {
-   "id": "M-MOTION-texture-unsaturated",
-   "task": "MOTION-47",
-   "edits": [
-    {
-     "file": "web/js/physics.js",
-     "find": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: PHYS.smearMax * x * x * (3 - 2 * x) };",
-     "replace": "    return { step: raw, smear: PHYS.smearMax * x * x * (3 - 2 * x) };"
-    }
-   ],
-   "oracle": [
-    "node",
-    "--test",
-    "tests/motion_physics.test.cjs"
-   ],
-   "note": "Стелю кроку текстури знято: на кидку траки стоять або їдуть назад (аудит п.47, «колесо диліжанса»)."
-  },
-  {
-   "id": "M-MOTION-no-smear",
-   "task": "MOTION-47",
-   "edits": [
-    {
-     "file": "web/js/physics.js",
-     "find": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: PHYS.smearMax * x * x * (3 - 2 * x) };",
-     "replace": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: 0 };"
-    }
-   ],
-   "oracle": [
-    "node",
-    "--test",
-    "tests/motion_physics.test.cjs"
-   ],
-   "note": "Змазаний шар не підмішується: різкий візерунок на швидкості вище порогу аліасингу (аудит п.47)."
-  },
-  {
-   "id": "M-MOTION-belt-ignores-texstep",
-   "task": "MOTION-47",
-   "edits": [
-    {
-     "file": "web/js/site.js",
-     "find": "    const { step, smear } = texStep((beltPos - prev) * PHYS.beltRatio);",
-     "replace": "    const step = (beltPos - prev) * PHYS.beltRatio, smear = 0;"
-    }
-   ],
-   "oracle": [
-    "tests/test_crawler_track.py::test_fling_never_strobes_the_chain"
-   ],
-   "note": "Сторінка не користується texStep: чиста функція правильна, а ланцюг на екрані строботить (аудит п.47)."
-  },
-  {
-   "id": "M-MEDIA-cine-ignores-power",
-   "task": "MEDIA-444",
-   "edits": [
-    {
-     "file": "web/js/site.js",
-     "find": ".then(i => !!(i.supported && i.smooth && (finePointer || i.powerEfficient)), () => finePointer));",
-     "replace": ".then(i => !!(i.supported && i.smooth), () => finePointer));"
-    }
-   ],
-   "oracle": [
-    "tests/test_cine.py::test_phone_without_power_efficient_vp9_444_gets_hardware_h264"
-   ],
-   "note": "Вибір джерела ігнорує powerEfficient: телефон знову декодує VP9 4:4:4 програмно."
   }
  ]
 }
