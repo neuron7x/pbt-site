@@ -17,7 +17,9 @@ ENVIRONMENTS = [{'TZ': 'UTC', 'LC_ALL': 'C'}, {'TZ': 'Pacific/Auckland', 'LC_ALL
 
 def _build(tree, env):
     shutil.rmtree(tree / 'dist', ignore_errors=True)
-    proc = subprocess.run([sys.executable, 'tools/inline.py'], cwd=tree, env={**os.environ, **env},
+    # -s: без користувацького site-packages. Його .pth-файли — не вхід збірки; під LC_ALL=C Python 3.12 читає їх як ASCII
+    # і падає ще до tools/inline.py, якщо шлях у .pth не латиницею (стенд розробника; у CI каталогу немає).
+    proc = subprocess.run([sys.executable, '-s', 'tools/inline.py'], cwd=tree, env={**os.environ, **env},
                           check=False, capture_output=True, text=True, timeout=180)
     if proc.returncode != 0:
         # A size-guarded package can fail *deterministically* while remaining

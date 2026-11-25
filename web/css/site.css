@@ -1358,7 +1358,13 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .foot{color:#B9CCE6}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .foot h4{color:#8FB6E8}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{color:#8FB6E8}
-:is(:root[data-theme="sky"],:root:not([data-theme])){scrollbar-color:#1D4ED8 #040D24}
+/* глибиномір: сталевий ланцюг із гаком (слово власника 25.11.2026) — гак опускається разом із прокруткою, ланцюг їде за ним */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{clip-path:inset(-18px -420px -140px -420px)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__scale{opacity:1;width:34px;height:12px;top:-14px;bottom:auto;margin-left:-17px;background:linear-gradient(180deg,#E4EAF0,#9AA5B1 45%,#4E5864);box-shadow:0 0 0 1px #040A16,0 3px 6px rgba(2,7,22,.5)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__scale i{display:none}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__float{width:44px;height:68px;margin:0 0 0 -22px;border-radius:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='52' viewBox='0 0 34 52'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%234E5864'/%3E%3Cstop offset='.34' stop-color='%23F2F5F8'/%3E%3Cstop offset='.62' stop-color='%239AA5B1'/%3E%3Cstop offset='1' stop-color='%23343C46'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 20 V30 a10 10 0 1 1 -10 10' stroke='%23040A16' stroke-width='8.6'/%3E%3Cpath d='M17 20 V30 a10 10 0 1 1 -10 10' stroke='url%28%23g%29' stroke-width='6.2'/%3E%3C/g%3E%3Crect x='7' y='2' width='20' height='19' fill='url%28%23g%29' stroke='%23040A16' stroke-width='1.2'/%3E%3Ccircle cx='17' cy='11.5' r='3.6' fill='%23040A16'/%3E%3Ccircle cx='17' cy='11.5' r='1.6' fill='%239AA5B1'/%3E%3C/svg%3E") center/44px 68px no-repeat;box-shadow:none;filter:drop-shadow(0 5px 6px rgba(2,7,22,.6))}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__float::before{content:"";position:absolute;left:50%;bottom:calc(100% - 4px);width:22px;margin-left:-11px;height:min(56vh,480px);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='36' viewBox='0 0 16 36'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%234E5864'/%3E%3Cstop offset='.34' stop-color='%23F2F5F8'/%3E%3Cstop offset='.62' stop-color='%239AA5B1'/%3E%3Cstop offset='1' stop-color='%23343C46'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='8' cy='11' rx='5.3' ry='9.4' fill='none' stroke='%23040A16' stroke-width='5.2'/%3E%3Cellipse cx='8' cy='11' rx='5.3' ry='9.4' fill='none' stroke='url%28%23g%29' stroke-width='3.4'/%3E%3Cg fill='url%28%23g%29' stroke='%23040A16' stroke-width='1'%3E%3Crect x='5.4' y='15.5' width='5.2' height='27' rx='2.6'/%3E%3Crect x='5.4' y='-20.5' width='5.2' height='27' rx='2.6'/%3E%3C/g%3E%3C/svg%3E") center bottom/22px 49.5px repeat-y}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .gauge__m{margin-top:84px}
 @supports (background:linear-gradient(in oklab,red,blue)){
   :is(:root[data-theme="sky"],:root:not([data-theme])){--a-sky:linear-gradient(in oklab 180deg,#CBE1FA 0,#CBE1FA var(--a-limb-h),#E1EEFC 24%,#F2F8FE 50%,#E6F1FD 74%,#D2E5FA 100%);
     --a-night:linear-gradient(in oklab 180deg,rgb(8,30,92) 0%,rgb(5,18,56) 16%,rgb(3,10,32) 48%,rgb(2,7,22) 100%)}
@@ -1395,8 +1401,8 @@ html:has(#passport[open]){overflow:hidden}
 /* золоті кутові мітки кадру розкриваються від центру — один раз */
 .js :is(:root[data-theme="sky"],:root:not([data-theme])):not([data-quality=static]) .hero.is-lit .hero__sky::after{animation:frame-in 1.5s cubic-bezier(.16,1,.3,1) .25s both}
 @keyframes frame-in{from{clip-path:inset(34% 34% 34% 34%);opacity:0}to{clip-path:inset(0);opacity:1}}
-/* поява блоків: довший хід, експоненційне гальмування; кадр у картці «наїжджає» з 1,1 до 1 */
-.js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv{transform:translateY(30px);transition:opacity .7s cubic-bezier(.16,1,.3,1) min(var(--d),160ms),transform 1.15s cubic-bezier(.16,1,.3,1) min(var(--d),160ms)}
+/* поява блоків: більший хід за ті самі 0,8 с (контракт: картка стабільна через 0,9 с), експоненційне гальмування; кадр у картці «наїжджає» з 1,1 до 1 */
+.js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv{transform:translateY(30px);transition:opacity .6s cubic-bezier(.16,1,.3,1) min(var(--d),160ms),transform .8s cubic-bezier(.16,1,.3,1) min(var(--d),160ms)}
 .js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv--scale{transform:translateY(30px) scale(.955)}
 .js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])) .rv.is-in,.js.reveal-ready[data-quality=static]:is(:root[data-theme="sky"],:root:not([data-theme])) .rv{transform:none}
 .js.reveal-ready:is(:root[data-theme="sky"],:root:not([data-theme])):not([data-quality=static]):not([data-motion=paused]) .rv:not(.is-in) figure img{transform:scale(1.1)}
