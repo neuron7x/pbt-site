@@ -1050,6 +1050,55 @@
    "note": "Гравітація масла покадрово: на 120 Гц падіння вдвічі швидше (аудит п.46)."
   },
   {
+   "id": "M-MOTION-texture-unsaturated",
+   "task": "MOTION-47",
+   "edits": [
+    {
+     "file": "web/js/physics.js",
+     "find": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: PHYS.smearMax * x * x * (3 - 2 * x) };",
+     "replace": "    return { step: raw, smear: PHYS.smearMax * x * x * (3 - 2 * x) };"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Стелю кроку текстури знято: на кидку траки стоять або їдуть назад (аудит п.47, «колесо диліжанса»)."
+  },
+  {
+   "id": "M-MOTION-no-smear",
+   "task": "MOTION-47",
+   "edits": [
+    {
+     "file": "web/js/physics.js",
+     "find": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: PHYS.smearMax * x * x * (3 - 2 * x) };",
+     "replace": "    return { step: rho * u / Math.pow(1 + u * u * u * u, .25), smear: 0 };"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/motion_physics.test.cjs"
+   ],
+   "note": "Змазаний шар не підмішується: різкий візерунок на швидкості вище порогу аліасингу (аудит п.47)."
+  },
+  {
+   "id": "M-MOTION-belt-ignores-texstep",
+   "task": "MOTION-47",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "    const { step, smear } = texStep((beltPos - prev) * PHYS.beltRatio);",
+     "replace": "    const step = (beltPos - prev) * PHYS.beltRatio, smear = 0;"
+    }
+   ],
+   "oracle": [
+    "tests/test_crawler_track.py::test_fling_never_strobes_the_chain"
+   ],
+   "note": "Сторінка не користується texStep: чиста функція правильна, а ланцюг на екрані строботить (аудит п.47)."
+  },
+  {
    "id": "M-MEDIA-cine-ignores-power",
    "task": "MEDIA-444",
    "edits": [

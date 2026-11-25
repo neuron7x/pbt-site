@@ -256,16 +256,23 @@
   }
   /* ───── ГУСЕНИЦЯ: прогрес сторінки як гусеничний ланцюг; траки й зірочка котяться за скролом з інерцією ───── */
   const track = $('#track'), trackStops = $('#trackStops');
-  const { PHYS, approach, oilAdvance } = window.PBTPhysics;   // web/js/physics.js
-  let beltPos = 0, beltRaf = 0, beltTx = 0, beltV = 0, beltT = 0;
+  const { PHYS, approach, texStep, oilAdvance } = window.PBTPhysics;   // web/js/physics.js
+  /* beltPos — «маса» ланцюга, що наздоганяє сторінку; beltTx — фаза видимої текстури: росте насиченим кроком (п.47),
+     тож траки й зуби зірочки (9 зубів × 16 px = 144 px/оберт) завжди котяться вперед, а на кидку змазуються */
+  let beltPos = 0, beltRaf = 0, beltTx = 0, beltV = 0, beltT = 0, beltSmear = 0;
   function beltStep(now) {
     const target = scrollY, dt = beltT ? now - beltT : 16.7; beltT = now;
-    beltPos = !motion() || Math.abs(target - beltPos) < .5 ? target : approach(beltPos, target, dt, PHYS.beltTau);   // «маса»
-    const tx = beltPos * PHYS.beltRatio;
-    beltV = dt > 0 ? (tx - beltTx) / Math.min(dt, PHYS.dtMax) : 0; beltTx = tx;
-    track.style.setProperty('--tx', `${(-tx % 16).toFixed(2)}px`);
-    track.style.setProperty('--rot', `${(tx / 144 * 360 % 360).toFixed(1)}deg`);   // зуби входять у проміжки траків
-    beltRaf = beltPos !== target ? requestAnimationFrame(beltStep) : (beltV = 0, beltT = 0, 0);   // ланцюг став — краплі більше не їдуть
+    const prev = beltPos;
+    beltPos = !motion() || Math.abs(target - beltPos) < .5 ? target : approach(beltPos, target, dt, PHYS.beltTau);
+    const { step, smear } = texStep((beltPos - prev) * PHYS.beltRatio);
+    let sm = motion() ? smear : 0;
+    beltTx = (beltTx + step) % 144;                                     // 144 = НСК кроку траків і оберту зірочки
+    beltV = dt > 0 ? step / Math.min(dt, PHYS.dtMax) : 0;               // краплі їдуть з видимим ланцюгом, не зі справжнім
+    track.style.setProperty('--tx', `${(-(beltTx % PHYS.pitch)).toFixed(2)}px`);
+    track.style.setProperty('--rot', `${(beltTx / 144 * 360 % 360).toFixed(1)}deg`);   // зуби входять у проміжки траків
+    if (beltPos === target) { beltRaf = 0; beltV = 0; beltT = 0; sm = 0; }   // ланцюг став — краплі більше не їдуть, змаз зник
+    else beltRaf = requestAnimationFrame(beltStep);
+    if (sm !== beltSmear && (sm === 0 || Math.abs(sm - beltSmear) > .005)) { beltSmear = sm; track.style.setProperty('--smear', sm.toFixed(3)); }
   }
   function trackRender(p) {
     if (!track) return;
