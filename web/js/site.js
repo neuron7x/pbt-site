@@ -352,14 +352,24 @@
       li.style.left = (clamp(s.top / docMax, 0, 1) * 100).toFixed(2) + '%'; li.append(a); return li;
     }));
   }
+  const WINCH_R = 13;   // px: радіус ділильного кола шестерні лебідки (CSS: шестерня 30 px, вісь на 13 px лівіше ланцюга)
+  let gaugeP = 0, liftTimer = 0;
   function gaugeRender(y) {
     const p = clamp(y / docMax, 0, 1);
     nav.style.setProperty('--sp', p.toFixed(4));
     trackRender(p);
-    gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
+    const travel = p * gauge.clientHeight;
+    gFloat.style.transform = `translate3d(0,${travel.toFixed(1)}px,0)`;
+    gauge.style.setProperty('--gr', (travel / WINCH_R).toFixed(3) + 'rad');   // лебідка: кут = хід ланцюга / радіус
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
     if (p >= .985) gauge.classList.add('has-load');   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
+    if (motion() && p < gaugeP - .0004 && gauge.classList.contains('has-load')) {   // підйом: вантаж махає й губить монети, поки гак іде вгору
+      gauge.classList.add('is-lifting');
+      clearTimeout(liftTimer);
+      liftTimer = setTimeout(() => gauge.classList.remove('is-lifting'), 650);
+    }
+    gaugeP = p;
     let active = secTops[0] ? secTops[0].id : '';
     for (const s of secTops) if (s.top <= y + innerHeight * .42) active = s.id;
     gStops.forEach(a => a.classList.toggle('is-on', a.getAttribute('href').slice(1) === active));

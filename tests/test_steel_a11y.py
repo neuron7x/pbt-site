@@ -117,3 +117,45 @@ def test_hook_load_is_hidden_on_short_viewports_and_in_graphite(page_factory):
     assert pg.evaluate("getComputedStyle(document.getElementById('gauge'), '::after').display") == 'none'
     pg.locator('[data-theme-choice="precision"]').click()
     assert pg.evaluate("getComputedStyle(document.getElementById('gauge')).display") == 'none'
+
+
+@pytest.mark.parametrize('fraction', [0.0, 0.23, 0.5, 0.77, 1.0])
+def test_winch_gear_angle_equals_chain_travel_over_radius(page_factory, fraction):
+    """Лебідка й ланцюг — один механізм: кут шестерні (рад) = хід гака (px) / радіус 13 px, у кожній точці прокрутки."""
+    pg = page_factory(1440, 900, reduced=True)
+    pg.locator('[data-theme-choice="sky"]').click()
+    pg.evaluate(f"window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * {fraction})")
+    pg.wait_for_timeout(400)
+    m = pg.evaluate("""() => { const g = document.getElementById('gauge'), f = document.querySelector('.gauge__float'), w = document.querySelector('.gauge__scale');
+      const hook = new DOMMatrix(getComputedStyle(f).transform), gear = new DOMMatrix(getComputedStyle(w).transform);
+      return {travel: hook.m42, declared: parseFloat(g.style.getPropertyValue('--gr')), sin: gear.m12, cos: gear.m11, h: g.clientHeight}; }""")
+    assert abs(m['travel'] - fraction * m['h']) <= 1.0, m
+    assert abs(m['declared'] - m['travel'] / 13) <= 0.01, m                       # JS: кут = хід / радіус
+    import math
+    assert abs(m['sin'] - math.sin(m['declared'])) <= 0.01 and abs(m['cos'] - math.cos(m['declared'])) <= 0.01, m   # CSS справді повернув шестерню на цей кут
+
+
+def test_load_waves_and_drops_coins_only_while_being_lifted(page_factory):
+    """Махання й монети — лише поки гак іде вгору з вантажем; у спокої й при обмеженні руху кадр статичний."""
+    pg = page_factory(1440, 900)
+    pg.locator('[data-theme-choice="sky"]').click()
+    anim = "getComputedStyle(document.querySelector('.gauge__float'), '::after').animationName"
+    lifting = "document.getElementById('gauge').classList.contains('is-lifting')"
+    pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")   # плавна прокрутка 18 000 px не встигає за 0,9 с
+    pg.locator('#gauge.has-load').wait_for(state='attached', timeout=5000)   # wait_for_function тут не годиться: CSP сайту забороняє eval
+    pg.wait_for_timeout(300)
+    assert pg.evaluate(lifting) is False and 'load-wave' not in pg.evaluate(anim)
+    pg.mouse.move(700, 450)
+    pg.mouse.wheel(0, -600)
+    pg.wait_for_timeout(250)
+    assert pg.evaluate(lifting) is True and 'load-wave' in pg.evaluate(anim)
+    pg.wait_for_timeout(1100)                                                     # гак зупинився — вантаж заспокоюється
+    assert pg.evaluate(lifting) is False and 'load-wave' not in pg.evaluate(anim)
+    calm = page_factory(1440, 900, reduced=True)
+    calm.locator('[data-theme-choice="sky"]').click()
+    calm.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    calm.wait_for_timeout(300)
+    calm.evaluate("window.scrollTo(0, 400)")
+    calm.wait_for_timeout(300)
+    assert calm.evaluate(lifting) is False
+    assert calm.evaluate(anim) == 'none'
