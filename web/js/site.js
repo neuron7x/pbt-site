@@ -375,7 +375,10 @@
     gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
-    if (p >= .985 && !gauge.classList.contains('is-splat') && !gauge.classList.contains('is-falling')) gauge.classList.add('has-load');   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
+    if (p >= .985 && !gauge.classList.contains('is-falling')) {   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
+      if (gauge.classList.contains('is-splat')) { gauge.classList.remove('is-splat'); gauge.classList.add('is-mush'); }   // після падіння гак бере вже грудку
+      gauge.classList.add('has-load');
+    }
     if (motion() && p < gaugeP - .0004 && gauge.classList.contains('has-load')) {   // підйом: вантаж махає й губить монети, поки гак іде вгору
       gauge.classList.add('is-lifting');
       clearTimeout(liftTimer);
