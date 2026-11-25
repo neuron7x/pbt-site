@@ -426,7 +426,7 @@
    "task": "NET-06",
    "edits": [
     {
-     "file": "web/js/site.js",
+     "file": "web/js/dom.js",
      "find": "      else n.append(typeof k === 'string' || typeof k === 'number' ? String(k) : k);",
      "replace": "      else if (typeof k === 'string' || typeof k === 'number') n.insertAdjacentHTML('beforeend', String(k)); else n.append(k);"
     },
@@ -451,7 +451,7 @@
      "replace": "return u.href;"
     },
     {
-     "file": "web/js/site.js",
+     "file": "web/js/dom.js",
      "find": "    return !rule || rule.test(String(v));",
      "replace": "    return true;"
     }
@@ -986,7 +986,7 @@
    "task": "NET-06",
    "edits": [
     {
-     "file": "web/js/site.js",
+     "file": "web/js/dom.js",
      "find": "    if (!ATTR_NAMES.has(name) && !/^(?:data|aria)-[a-z][a-z0-9-]*$/.test(name)) return false;\n",
      "replace": "    if (/^on/i.test(name)) return false;\n"
     }
@@ -1003,7 +1003,7 @@
    "task": "NET-06",
    "edits": [
     {
-     "file": "web/js/site.js",
+     "file": "web/js/dom.js",
      "find": "    return !rule || rule.test(String(v));",
      "replace": "    return !rule || rule.test(String(v)) || /^[a-z]+:/i.test(String(v));"
     }
@@ -1020,7 +1020,7 @@
    "task": "MOTION-46",
    "edits": [
     {
-     "file": "web/js/site.js",
+     "file": "web/js/physics.js",
      "find": "  const approach = (pos, target, dt, tau) => target + (pos - target) * Math.exp(-Math.min(dt, PHYS.dtMax) / tau);",
      "replace": "  const approach = (pos, target, dt, tau) => pos + (target - pos) * .14;"
     }
@@ -1037,7 +1037,7 @@
    "task": "MOTION-46",
    "edits": [
     {
-     "file": "web/js/site.js",
+     "file": "web/js/physics.js",
      "find": "      const v1 = Math.min(d.vy + PHYS.gravity * dt, PHYS.vMax);",
      "replace": "      const v1 = Math.min(d.vy + .16 / 16.7, PHYS.vMax);"
     }

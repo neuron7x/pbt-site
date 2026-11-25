@@ -5,6 +5,8 @@ interface Window {
   PBT_BUNDLE?: boolean;
   PBTQuote?: any;
   PBTBlueprint?: any;
+  PBTDom: any;
+  PBTPhysics: any;
   PBTcalc?: any;
   PBTv?: any;
 }

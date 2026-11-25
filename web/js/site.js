@@ -55,46 +55,7 @@
   }, true);
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
-  /* Розмітку будуємо лише вузлами DOM: текст → Text, атрибути → setAttribute. Жодного HTML-рядка, отже жодного
-     синку розбору (OWASP DOM-based XSS Prevention, правило «безпечні синки»; W3C Trusted Types: require-trusted-types-for 'script'). */
-  function el(tag, attrs, ...kids) {
-    const n = document.createElement(tag);
-    for (const k in attrs || {}) {
-      const v = attrs[k];
-      if (v == null || v === false) continue;
-      if (k === 'class') n.className = v;
-      else if (k === 'style') for (const p in v) n.style.setProperty(p, v[p]);
-      else if (attrOk(k, v)) n.setAttribute(k, v === true ? '' : String(v));
-    }
-    append(n, kids);
-    return n;
-  }
-  /* Вартовий атрибутів фабрики (fail-closed): обробники подій не ставляться ніколи; адреси — лише з дозволених схем.
-     href: https:, mailto:, tel:, viber://chat, якір або відносний шлях того ж походження; src/poster/srcset: відносний шлях або
-     data:image|video (однофайлова збірка). Усе інше — атрибут не ставиться (javascript:, data:text/html, //чужий-хост). */
-  const URL_ATTR = { href: /^(?:https:\/\/|mailto:|tel:|viber:\/\/chat\?number=|#|(?![a-z][a-z0-9+.-]*:|\/\/)[\w./?=&%-]*$)/i,
-    src: /^(?:data:(?:image|video)\/[\w.+-]+;base64,|(?![a-z][a-z0-9+.-]*:|\/\/)[\w./-]+$)/i };
-  URL_ATTR.poster = URL_ATTR.src;
-  URL_ATTR.srcset = /^(?:(?![a-z][a-z0-9+.-]*:|\/\/)[\w./-]+ \dx(?:, (?![a-z][a-z0-9+.-]*:|\/\/)[\w./@-]+ \dx)*)$/i;
-  /* Білий список імен (fail-closed): лише атрибути, які сайт реально вживає, плюс data-* і aria-* (не виконуються).
-     Невідоме ім'я не ставиться (вбудований документ, formaction, action, xlink:href, ping, data) — так само, як on*. */
-  const ATTR_NAMES = new Set(['alt', 'decoding', 'height', 'href', 'id', 'loading', 'poster', 'rel', 'scope', 'src', 'srcset',
-    'tabindex', 'target', 'type', 'value', 'width']);
-  function attrOk(k, v) {
-    const name = k.toLowerCase();
-    if (!ATTR_NAMES.has(name) && !/^(?:data|aria)-[a-z][a-z0-9-]*$/.test(name)) return false;
-    const rule = URL_ATTR[name];
-    return !rule || rule.test(String(v));
-  }
-  function append(n, kids) {
-    for (const k of kids) {
-      if (k == null || k === false) continue;
-      if (Array.isArray(k)) append(n, k);
-      else n.append(typeof k === 'string' || typeof k === 'number' ? String(k) : k);
-    }
-    return n;
-  }
-  const fill = (n, ...kids) => { n.replaceChildren(); return append(n, kids); };
+  const { el, fill } = window.PBTDom;                  // web/js/dom.js
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const seg = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
   const ease = t => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -295,34 +256,7 @@
   }
   /* ───── ГУСЕНИЦЯ: прогрес сторінки як гусеничний ланцюг; траки й зірочка котяться за скролом з інерцією ───── */
   const track = $('#track'), trackStops = $('#trackStops');
-  /* фізика:початок — чисті функції руху; інтегруються за часом dt (мс), не за кадрами: однаково на 30, 60, 120 і 144 Гц.
-     Сталі відкалібровано так, щоб на 60 Гц рух збігся з попередньою покадровою версією; dt обрізано до 50 мс (згорнута вкладка). */
-  const PHYS = Object.freeze({ beltTau: 110, beltRatio: .55, gravity: 5.76e-4, vMax: .33, driftTau: 408, life: 4000,
-    neckMs: 167, neckV0: .033, neckA: 1.8e-4, fallV0: .054, remRate: .006, dtMax: 50 });
-  /** Експоненційне наближення до цілі: k = 1 − e^(−dt/τ) — інваріантне до частоти кадрів. */
-  const approach = (pos, target, dt, tau) => target + (pos - target) * Math.exp(-Math.min(dt, PHYS.dtMax) / tau);
-  /** Один крок краплі масла; beltV — швидкість ланцюга, px/мс. Повертає false, коли крапля прожила своє. */
-  function oilAdvance(d, dtRaw, beltV, carried) {
-    let dt = Math.min(dtRaw, PHYS.dtMax);
-    if (!carried) d.life += dt;
-    if (d.phase === 0) {                                                 // набрякає й їде з ланцюгом (¼ його ходу)
-      const over = Math.max(0, d.t + dt - d.bead); dt -= over; d.t += dt;
-      d.x -= beltV * dt * .25; d.r = d.rMax * (1 - Math.pow(1 - Math.min(1, d.t / d.bead), 3)); d.y = d.r * .9;
-      if (d.t >= d.bead) { d.phase = 1; d.t = 0; if (over > 0) oilAdvance(d, over, beltV, true); }   // залишок кроку — у наступну фазу
-    } else if (d.phase === 1) {                                          // в'язка шийка: рівноприскорено
-      const over = Math.max(0, d.t + dt - PHYS.neckMs); dt -= over; d.t += dt;
-      d.x -= beltV * dt * .15; d.y += (PHYS.neckV0 + PHYS.neckA * (d.t - dt / 2)) * dt;
-      if (d.t >= PHYS.neckMs) { d.phase = 2; d.t = 0; d.vy = PHYS.fallV0; d.vx = -beltV * .12; if (over > 0) oilAdvance(d, over, beltV, true); }
-    } else {
-      d.t += dt;                                                             // вільне падіння зі стелею швидкості (в'язкий опір)
-      const v1 = Math.min(d.vy + PHYS.gravity * dt, PHYS.vMax);
-      d.y += (d.vy + v1) / 2 * dt; d.vy = v1;
-      d.x += d.vx * PHYS.driftTau * (1 - Math.exp(-dt / PHYS.driftTau)); d.vx *= Math.exp(-dt / PHYS.driftTau);
-      d.rem = Math.max(0, d.rem - PHYS.remRate * dt);
-    }
-    return d.life <= PHYS.life;
-  }
-  /* фізика:кінець */
+  const { PHYS, approach, oilAdvance } = window.PBTPhysics;   // web/js/physics.js
   let beltPos = 0, beltRaf = 0, beltTx = 0, beltV = 0, beltT = 0;
   function beltStep(now) {
     const target = scrollY, dt = beltT ? now - beltT : 16.7; beltT = now;
