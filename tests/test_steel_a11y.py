@@ -192,7 +192,7 @@ def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced)
     pg.locator('#gauge.is-splat').wait_for(state='attached', timeout=5000)
     end = pg.evaluate(cls)
     assert 'is-falling' not in end and 'has-load' not in end, end
-    assert pg.evaluate(ground + ".backgroundPositionX") == '-216px'      # кадр плями
+    assert pg.evaluate(ground + ".backgroundPositionX") == '-288px'      # кадр плями
     fx = "getComputedStyle(document.querySelector('.gauge__m'), '%s').animationName"
     expected = ('none', 'none', 'none') if reduced else ('crane-jolt', 'impact-ring', 'impact-burst')   # удар: поштовх, кільце пилу, бризки
     assert (pg.evaluate("getComputedStyle(document.getElementById('gauge')).animationName"), pg.evaluate(fx % '::before'), pg.evaluate(fx % '::after')) == expected
@@ -204,7 +204,7 @@ def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced)
     pg.locator('#gauge.has-load.is-mush').wait_for(state='attached', timeout=5000)
     again = pg.evaluate(cls)
     assert 'is-splat' not in again, again
-    assert pg.evaluate(carried + ".backgroundPositionX") == '-432px'      # кадр грудки у спокої
+    assert pg.evaluate(carried + ".backgroundPositionX") == '-576px'      # кадр грудки у спокої
     assert pg.evaluate(ground + ".display") == 'none'                      # на землі нічого не лишилось
     if not reduced:
         pg.wait_for_timeout(300)
