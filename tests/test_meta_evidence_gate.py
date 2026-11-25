@@ -119,9 +119,11 @@ def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mu
                                 'screenshot_count':32,'evidence':{
                                 'shots_manifest':{'bytes':len(manifest),'sha256':sha(manifest)},
                                 'media_report':{'bytes':len(media),'sha256':sha(media)}}}).encode()
-    mobile={'execution_sha':HEAD,'branch_head_sha':HEAD,'event_sha':'e'*40,'field_vitals_verified':False,'inp_ms':None,
+    mobile={'schema_version':3,'execution_sha':HEAD,'branch_head_sha':HEAD,'event_sha':'e'*40,'field_vitals_verified':False,'inp_ms':None,
             'kind':'synthetic_chromium_lab_not_field_data',
-            'themes':{theme:{'raw':[{'lcp_ms':1200,'cls':0.01,'switch_unprompted_shift_sum':0.0}]*3,
+            'themes':{theme:{'raw':[{'lcp_ms':1200,'cls':0.01,'switch_unprompted_shift_sum':0.0,
+                                      'observers':{'largest-contentful-paint':'registered',
+                                                   'layout-shift':'registered'}}]*3,
                               'p75_lcp_ms':1200,'p75_cls':0.01,'synthetic_budget_met':True} for theme in ('sky','precision')}}
     def audit_receipt(lock_name):
         source = SOURCE_LOCKS[lock_name]
@@ -307,6 +309,7 @@ def test_security_receipts_cannot_choose_their_own_lock_bytes(state):
     'field_inp_forged','visual_crc_corruption','osv_outcome',
     'historic_pr8_v1_schema','unsupported_event','pr_number_on_main_target','required_test_removed',
     'required_test_skipped','mobile_lcp_over_budget_coherent_summary','mobile_cls_over_budget_coherent_summary',
+    'mobile_legacy_observer_schema','mobile_cls_observer_missing','mobile_cls_observer_failed',
     'mobile_forged_budget_flag','mobile_late_switch_shift','mobile_wrong_execution_sha','mobile_event_sha_as_execution',
     'wrong_source_revision_all_artifacts','junit_utf16_doctype','soak_coherent_over_latency_budget',
     'mutant_survived_but_status_pass','mutation_catalog_diluted','mutation_other_revision','sast_open_finding','sast_scanned_nothing',
@@ -415,6 +418,10 @@ def test_forged_success_is_rejected(state,mutant):
         contents['release']['artifacts/full-junit.xml']=raw.encode();rewrite('release')
     elif mutant.startswith('mobile_'):
         d=json.loads(contents['mobile']['dual-theme-mobile.json']);m=d['themes']['sky']
+        if mutant=='mobile_legacy_observer_schema':d['schema_version']=2
+        if mutant=='mobile_cls_observer_missing':del m['raw'][0]['observers']
+        if mutant=='mobile_cls_observer_failed':
+            m['raw'][0]['observers']['layout-shift']='registration_failed'
         if mutant=='mobile_lcp_over_budget_coherent_summary':
             m['raw']=[{**x,'lcp_ms':2700} for x in m['raw']];m['p75_lcp_ms']=2700
         if mutant=='mobile_cls_over_budget_coherent_summary':

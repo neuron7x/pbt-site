@@ -1,6 +1,7 @@
 """Unit proof for the numerical methodology of the synthetic mobile probe."""
 import pytest
 
+from tools import perf_probe
 from tools.perf_probe import INSTRUMENT, cls_max_session, p75
 
 
@@ -62,6 +63,69 @@ def test_shift_source_label_handles_document_text_and_svg_nodes(browser):
         assert labels == ["#document", "#text", "div#target.one.two", "svg", "unknown"]
     finally:
         page.close()
+
+
+@pytest.fixture
+def observer_probe(browser, monkeypatch):
+    """Measure a static in-memory page through the production sample path."""
+    from json import dumps
+    from types import SimpleNamespace
+
+    url = "http://127.0.0.1:8000/"
+    html = """<!doctype html><meta name="viewport" content="width=device-width">
+      <script>document.documentElement.dataset.theme = localStorage.getItem('pbt-theme')</script>
+      <h1 id="heroTitle">Контрольний заголовок</h1>
+      <button data-theme-choice="precision"
+        onclick="document.documentElement.dataset.theme = 'precision'">Графіт</button>"""
+
+    def new_context(**options):
+        context = browser.new_context(**options)
+        context.route(url, lambda route: route.fulfill(content_type="text/html", body=html))
+        return context
+
+    def run(disabled_type, operation):
+        monkeypatch.setattr(perf_probe, "INSTRUMENT", f"""
+            (() => {{
+              const NativeObserver = window.PerformanceObserver;
+              const type = {dumps(disabled_type)};
+              const operation = {dumps(operation)};
+              window.PerformanceObserver = class extends NativeObserver {{
+                static get supportedEntryTypes() {{
+                  return NativeObserver.supportedEntryTypes.filter(
+                    entry => operation !== 'unsupported' || entry !== type);
+                }}
+                observe(options) {{
+                  if (operation === 'throws' && options.type === type)
+                    throw new DOMException('injected observer failure');
+                  super.observe(options);
+                }}
+              }};
+            }})();
+            """ + INSTRUMENT)
+        return perf_probe.sample(SimpleNamespace(new_context=new_context), url, "sky")
+
+    return run
+
+
+@pytest.mark.parametrize("entry_type,operation", [
+    ("layout-shift", "unsupported"), ("layout-shift", "throws"),
+    ("largest-contentful-paint", "unsupported"),
+])
+def test_sample_rejects_required_observer_failure(observer_probe, entry_type, operation):
+    with pytest.raises(RuntimeError, match=entry_type):
+        observer_probe(entry_type, operation)
+
+
+def test_sample_reports_zero_cls_from_a_registered_observer(observer_probe):
+    result = observer_probe("longtask", "throws")
+    assert result["observers"] == {
+        "largest-contentful-paint": "registered",
+        "layout-shift": "registered",
+        "longtask": "registration_failed",
+    }
+    assert result["cls"] == 0.0
+    assert result["long_tasks"] is None
+    assert result["lcp_element"] == "hero-title"
 
 
 def test_source_identity_records_checked_out_head_not_event_merge_sha(monkeypatch):
