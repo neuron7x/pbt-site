@@ -72,26 +72,48 @@ def test_dock_focus_ring_contrasts_with_its_own_fill(page_factory, theme, sel):
     assert _ratio(_rgb(s['ring']), _rgb(s['bg'])) >= 3, s
 
 
-@pytest.mark.parametrize('section', ['roboty', 'tekhnika', 'cina', 'materialy', 'zapyt'])
-def test_gauge_depth_label_readable_over_every_section(page_factory, section):
-    """Підпис глибиноміра фіксований і пливе над темними й світлими секціями. Вимога — читабельність за будь-якого фону:
-    зараз її дає власна непрозора плашка, тому тест червоніє, якщо плашку прибрати (bf9a335: 3 світлі секції 2,5–2,8:1).
-    Вимір пікселями: текст сховано, 90-й перцентиль і 10-й перцентиль яскравості фону під ним проти кольору тексту.
-    Лише «Сталь»: у «Графіті» підпис змішується (mix-blend), обчислений колір ≠ відмальований."""
-    from PIL import Image
+def test_gauge_depth_label_is_removed_in_steel_theme(page_factory):
+    """Слово власника 25.11.2026: підпис глибини під гаком прибрано. До того тут перевірялась читабельність підпису над
+    кожною секцією (bf9a335: 3 світлі секції 2,5–2,8:1); об'єкта перевірки більше немає, тож вимога — що його справді
+    не видно ні над світлою, ні над темною секцією, а сам глибиномір лишається."""
     pg = page_factory(1366, 768, reduced=True)
     pg.locator('[data-theme-choice="sky"]').click()
-    assert pg.evaluate(f"!!document.getElementById('{section}')"), section
-    pg.evaluate(f"document.getElementById('{section}').scrollIntoView({{behavior:'instant', block:'center'}})")
-    pg.wait_for_timeout(700)
-    label = pg.locator('.gauge__m')
-    assert label.is_visible()
-    fg = _rgb(pg.evaluate("getComputedStyle(document.querySelector('.gauge__m')).color"))
-    pg.add_style_tag(content='.gauge__m{color:transparent!important;text-shadow:none!important}')
-    pg.wait_for_timeout(100)
-    im = Image.open(io.BytesIO(pg.screenshot(clip=label.bounding_box()))).convert('RGB')
-    ls = sorted(_lum(px) for px in im.getdata())
-    fl = _lum(fg)
-    for bg in (ls[int(len(ls) * .1)], ls[int(len(ls) * .9)]):
-        r = (max(fl, bg) + .05) / (min(fl, bg) + .05)
-        assert r >= 4.5, (section, fg, round(r, 2))
+    for section in ('roboty', 'tekhnika', 'zapyt'):
+        pg.evaluate(f"document.getElementById('{section}').scrollIntoView({{behavior:'instant', block:'center'}})")
+        pg.wait_for_timeout(300)
+        assert not pg.locator('.gauge__m').is_visible(), section
+        assert pg.locator('#gauge').is_visible(), section
+
+
+def test_hook_picks_up_the_load_at_page_bottom_and_carries_it_back_up(page_factory):
+    """Гак опускається з прокруткою; унизу сторінки підчіплює вантаж і далі несе його. Стан не скидається дорогою вгору."""
+    pg = page_factory(1440, 900, reduced=True)
+    pg.locator('[data-theme-choice="sky"]').click()
+    state = "({load: document.getElementById('gauge').classList.contains('has-load')," \
+            " ground: getComputedStyle(document.getElementById('gauge'), '::after').display," \
+            " carried: getComputedStyle(document.querySelector('.gauge__float'), '::after').content," \
+            " y: new DOMMatrix(getComputedStyle(document.querySelector('.gauge__float')).transform).m42," \
+            " h: document.getElementById('gauge').clientHeight})"
+    pg.evaluate("window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.5)")
+    pg.wait_for_timeout(400)
+    mid = pg.evaluate(state)
+    assert mid['load'] is False and mid['ground'] == 'block' and mid['carried'] == 'none', mid   # вантаж стоїть унизу, гак порожній
+    assert 0.4 * mid['h'] < mid['y'] < 0.6 * mid['h'], mid
+    pg.evaluate("window.scrollTo(0, document.documentElement.scrollHeight)")
+    pg.wait_for_timeout(400)
+    bottom = pg.evaluate(state)
+    assert bottom['load'] is True and bottom['ground'] == 'none' and bottom['carried'] != 'none', bottom
+    assert bottom['y'] > 0.97 * bottom['h'], bottom
+    pg.evaluate("window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * 0.1)")
+    pg.wait_for_timeout(400)
+    up = pg.evaluate(state)
+    assert up['load'] is True and up['ground'] == 'none' and up['carried'] != 'none', up            # вантаж їде вгору разом із гаком
+    assert up['y'] < 0.2 * up['h'], up
+
+
+def test_hook_load_is_hidden_on_short_viewports_and_in_graphite(page_factory):
+    pg = page_factory(1366, 600, reduced=True)
+    pg.locator('[data-theme-choice="sky"]').click()
+    assert pg.evaluate("getComputedStyle(document.getElementById('gauge'), '::after').display") == 'none'
+    pg.locator('[data-theme-choice="precision"]').click()
+    assert pg.evaluate("getComputedStyle(document.getElementById('gauge')).display") == 'none'

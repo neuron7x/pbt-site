@@ -359,6 +359,7 @@
     gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
+    if (p >= .985) gauge.classList.add('has-load');   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
     let active = secTops[0] ? secTops[0].id : '';
     for (const s of secTops) if (s.top <= y + innerHeight * .42) active = s.id;
     gStops.forEach(a => a.classList.toggle('is-on', a.getAttribute('href').slice(1) === active));
