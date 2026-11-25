@@ -353,6 +353,21 @@
     }));
   }
   let gaugeP = 0, liftTimer = 0;
+  /* клік по вантажу: відчіпляється й падає туди, де стояв. Гак — декоративний <i>, тому слухаємо саме нижню частину (вантаж нижче 58 px). */
+  gFloat.addEventListener('click', e => {
+    if (!gauge.classList.contains('has-load') || e.offsetY < 58) return;
+    gauge.classList.remove('has-load', 'is-lifting');
+    const fall = (1 - gaugeP) * gauge.clientHeight;
+    if (!motion() || fall < 4) { gauge.classList.add('is-splat'); return; }
+    gauge.style.setProperty('--drop', (-fall).toFixed(1) + 'px');
+    gauge.style.setProperty('--drop-t', (.25 + Math.sqrt(fall) / 40).toFixed(2) + 's');   // t ∝ √h, як у вільному падінні
+    gauge.classList.add('is-falling');
+  });
+  gauge.addEventListener('animationend', e => {
+    if (e.animationName !== 'load-drop') return;
+    gauge.classList.remove('is-falling');
+    gauge.classList.add('is-splat');
+  });
   function gaugeRender(y) {
     const p = clamp(y / docMax, 0, 1);
     nav.style.setProperty('--sp', p.toFixed(4));
@@ -360,7 +375,7 @@
     gFloat.style.transform = `translate3d(0,${(p * gauge.clientHeight).toFixed(1)}px,0)`;
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
-    if (p >= .985) gauge.classList.add('has-load');   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
+    if (p >= .985 && !gauge.classList.contains('is-splat') && !gauge.classList.contains('is-falling')) gauge.classList.add('has-load');   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
     if (motion() && p < gaugeP - .0004 && gauge.classList.contains('has-load')) {   // підйом: вантаж махає й губить монети, поки гак іде вгору
       gauge.classList.add('is-lifting');
       clearTimeout(liftTimer);

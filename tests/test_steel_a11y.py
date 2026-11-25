@@ -161,3 +161,41 @@ def test_load_waves_and_drops_coins_only_while_being_lifted(page_factory):
     calm.wait_for_timeout(300)
     assert calm.evaluate(lifting) is False
     assert calm.evaluate(anim) == 'none'
+
+
+def _hook_load_point(pg):
+    box = pg.locator('.gauge__float').bounding_box()
+    return box['x'] + box['width'] / 2 - 3, box['y'] + 78          # вантаж висить під гаком: 63…95 px від верху підвіски
+
+
+@pytest.mark.parametrize('reduced', [False, True])
+def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced):
+    """Клік по вантажу: відчіпляється, падає туди, де стояв, лишається плямою; гак порожній і вдруге його не бере."""
+    pg = page_factory(1440, 900, reduced=reduced)
+    pg.locator('[data-theme-choice="sky"]').click()
+    cls = "document.getElementById('gauge').className"
+    ground = "getComputedStyle(document.getElementById('gauge'), '::after')"
+    pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
+    pg.locator('#gauge.has-load').wait_for(state='attached', timeout=5000)
+    pg.evaluate("window.scrollTo({top: (document.documentElement.scrollHeight - innerHeight) * 0.3, behavior: 'instant'})")
+    pg.wait_for_timeout(900)
+    box = pg.locator('.gauge__float').bounding_box()
+    pg.mouse.click(box['x'] + box['width'] / 2, box['y'] + 20)        # клік по самому гаку нічого не робить
+    pg.wait_for_timeout(150)
+    assert 'has-load' in pg.evaluate(cls)
+    pg.mouse.click(*_hook_load_point(pg))
+    if not reduced:
+        pg.wait_for_timeout(120)
+        mid = pg.evaluate(cls)
+        assert 'is-falling' in mid and 'has-load' not in mid, mid
+        assert pg.evaluate(ground + ".animationName") == 'load-drop'
+    pg.locator('#gauge.is-splat').wait_for(state='attached', timeout=5000)
+    end = pg.evaluate(cls)
+    assert 'is-falling' not in end and 'has-load' not in end, end
+    assert pg.evaluate(ground + ".backgroundPositionX") == '-216px'      # кадр плями
+    assert pg.evaluate(ground + ".display") == 'block'
+    assert pg.evaluate("getComputedStyle(document.querySelector('.gauge__float'), '::after').content") == 'none'   # гак порожній
+    pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
+    pg.wait_for_timeout(500)
+    assert 'has-load' not in pg.evaluate(cls)                          # пляму гак не підчіплює
+    assert not pg.errors, pg.errors
