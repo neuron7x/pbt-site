@@ -4,7 +4,7 @@
 Вся графіка — власна, намальована тут: SVG у data-URI всередині web/css/site.css (CSP: img-src data:), без файлів і запитів.
 Піксельний вантаж — оригінальний персонаж у палітрі бренду; чужих спрайтів і торгових марок немає (docs/PROVENANCE.md).
 
-Аркуш кадрів 12×38 клітинок, клітинка 2 px:
+Аркуш кадрів 16×44 клітинки, клітинка 2 px (постать 32×44 px):
   0–7   вантаж махає руками, падають монети (під час підйому)
   8     вантаж у спокої (стоїть унизу або висить на гаку)
   9     пляма після падіння
@@ -22,18 +22,25 @@ ROOT = Path(__file__).resolve().parent.parent
 CSS = ROOT / 'web' / 'css' / 'site.css'
 BEGIN, END = '/* crane:begin — згенеровано tools/crane.py, руками не правити */', '/* crane:end */'
 P = ':is(:root[data-theme="sky"],:root:not([data-theme]))'
-CELL, FW, FH = 2, 12, 38                                   # px на клітинку; кадр у клітинках
-PAL = {'Y': '#FDC501', 'y': '#C99700', 'S': '#F2B88A', 'K': '#11161C', 'O': '#F97316', 'W': '#F2F5F8', 'B': '#1238A8', 'G': '#9AA5B1',
-       'H': '#FFF3B0', 'R': '#C81E1E', 'r': '#8E1212', 'P': '#E86A6A'}
-IDLE = ["...YYYYYY...", "..YYYYYYYY..", ".yYYYYYYYYy.", "..SSSSSSSS..", "..SKSSSSKS..", "..SSSSSSSS..", "...SSKKSS...", ".OOOOOOOOOO.",
-        "SOOWWWWWWOOS", "SOOOOOOOOOOS", "GOOWWWWWWOOG", "..BBBBBBBB..", "..BBBBBBBB..", "..BBB..BBB..", "..BBB..BBB..", ".KKKK..KKKK."]
-WAVE = ["...YYYYYY...", "..YYYYYYYY..", ".yYYYYYYYYy.", "G.SSSSSSSS..", "S.SKSSSSKS..", "S.SSSSSSSS..", "O..SSKKSS...", "OOOOOOOOOOO.",
-        ".OOWWWWWWOOO", ".OOOOOOOOOOS", ".OOWWWWWWOOG", "..BBBBBBBB..", "..BBBBBBBB..", ".BBB...BBB..", ".BBB....BBB.", "KKKK....KKKK"]
+CELL, FW, BODY, FH = 2, 16, 22, 44                       # px на клітинку; кадр 16×44 клітинки: 22 — постать, 22 — простір падіння частинок
+PAL = {'Y': '#FDC501', 'y': '#C99700', 'H': '#FFE98A', 'S': '#F2B88A', 's': '#D9925F', 'K': '#11161C', 'M': '#4A2A12', 'O': '#F97316',
+       'o': '#C2540C', 'W': '#F2F5F8', 'B': '#1238A8', 'b': '#0C2878', 'G': '#9AA5B1', 'T': '#3A2414', 'R': '#C81E1E', 'r': '#8E1212', 'P': '#E86A6A'}
+# вусатий будівельник у касці й сигнальному жилеті — власний персонаж; три тони на матеріал, як у спрайтах 8-бітних приставок
+IDLE = ["....YYYYYYYY....", "...YHHYYYYYYY...", "..YHYYYYYYYYYY..", ".yyyyyyyyyyyyyy.", "...SSSSSSSSSS...", "..SSKSSSSSSKSS..",
+        "..SSSSSssSSSSS..", "..sMMMMMMMMMMs..", "...SMMSSSSMMS...", "....SSSSSSSS....", "..OOOOOOOOOOOO..", ".OOOWWWWWWWWOOO.",
+        "SOOOOOOooOOOOOOS", "SSOOWWWWWWWWOOSS", "GGOOOOOooOOOOOGG", "..BBBBBBBBBBBB..", "..BBBBBbbBBBBB..", "..BBBBB..BBBBB..",
+        "..BBBB....BBBB..", "..bBBB....BBBb..", ".TTTTT....TTTTT.", ".TTTTT....TTTTT."]
+WAVE = ["....YYYYYYYY....", "...YHHYYYYYYY...", "..YHYYYYYYYYYY..", "Gyyyyyyyyyyyyyy.", "S..SSSSSSSSSS...", "S.SSKSSSSSSKSS..",
+        "O.SSSSSssSSSSS..", "O.sMMMMMMMMMMs..", "OO.SMMSSSSMMS...", ".OO.SSSSSSSS....", ".OOOOOOOOOOOOO..", "..OOWWWWWWWWOOO.",
+        "..OOOOOooOOOOOOS", "..OOWWWWWWWWOOSS", "..OOOOOooOOOOOGG", "..BBBBBBBBBBBB..", "..BBBBBbbBBBBB..", ".BBBBB....BBBBB.",
+        ".BBBB......BBBB.", "bBBB........BBBb", "TTTT........TTTT", "TTTT........TTTT"]
 COIN = [".YY.", "YHYy", "YYYy", ".yy."]
-SPLAT = {12: "R..........r", 13: "...yYYYYy...", 14: ".rRRRRRRRRr.", 15: "RRRRrRRRRrRR"}
-MUSH = ["....yYYy....", "...RRRRRR...", "..RRrRRPRR..", ".RRRRRRrRRR.", ".RrRRPRRRRR.", ".RRRRrRRRRR.", "..RRRRRRrR..", "..rRRPRRRR..", "...RRrRRR...", "....RRRR....", ".....RR....."]
-MUSH_B = MUSH[:6] + ["...RRRRRRrR.", "...rRRPRRRR.", "....RRrRRR..", ".....RRRR...", "......RR...."]
+SPLAT = {18: "R..............r", 19: "....yYYYYYYy....", 20: ".rRRRRRRRRRRRRr.", 21: "RRRRrRRRRRRrRRRR"}
+MUSH = ["......yYYy......", ".....RRRRRR.....", "....RRrRRPRR....", "...RRRRRRRrRR...", "..RRrRRPRRRRRR..", "..RRRRRrRRRPRR..",
+        "..RrRRRRRRRRRR..", "...RRRPRRrRRR...", "...rRRRRRRRRR...", "....RRRrRRRR....", ".....RRPRRR.....", "......RRRR......", ".......RR......."]
+MUSH_B = MUSH[:7] + ["." + r[:-1] for r in MUSH[7:]]
 DROP, BIT = ["R", "R", "r"], ["Rr", "rR"]
+assert all(len(r) == FW for r in IDLE + WAVE + MUSH + MUSH_B + list(SPLAT.values())) and len(IDLE) == len(WAVE) == BODY
 FRAMES = {'wave': 0, 'idle': 8, 'splat': 9, 'drip': 10, 'mush': 18, 'count': 19}
 
 
@@ -73,12 +80,12 @@ def sheet():
     body = ''
     for f in range(8):
         body += use('w', f * FW, mirror=(f // 2) % 2 == 1)
-        body += falling((('c', 4, 1, 0), ('c', 4, 7, 4)), f, f, 17)
+        body += falling((('c', 4, 2, 0), ('c', 4, 10, 4)), f, f, BODY + 1)
     body += use('i', FRAMES['idle'] * FW) + use('s', FRAMES['splat'] * FW)
     for f in range(8):
         g = FRAMES['drip'] + f
         body += use('m' if (f // 2) % 2 == 0 else 'n', g * FW)
-        body += falling((('d', 3, 3, 0), ('b', 2, 7, 3), ('d', 3, 9, 5)), g, f, 12)
+        body += falling((('d', 3, 4, 0), ('b', 2, 9, 3), ('d', 3, 12, 5)), g, f, len(MUSH) + 1)
     body += use('m', FRAMES['mush'] * FW)
     w = FRAMES['count'] * FW
     return (f"<svg xmlns='http://www.w3.org/2000/svg' width='{w * 3}' height='{FH * 3}' viewBox='0 0 {w} {FH}' shape-rendering='crispEdges'>"
@@ -128,20 +135,20 @@ def css_block():
     travel = 'min(560px,calc(100vh - var(--nav-h,64px) - 290px))'
     move = '.28s cubic-bezier(.2,.7,.2,1)'
     sw, sh = FRAMES['count'] * FW * CELL, FH * CELL
-    fw, body_h = FW * CELL, 16 * CELL
+    fw, body_h = FW * CELL, BODY * CELL
     drops = burst('#C81E1E', [(-26, -10), (-18, -22), (-9, -30), (4, -34), (15, -27), (24, -16), (30, -6), (-32, -3), (10, -14), (-14, -9)])
     rules = f'''{BEGIN}
 /* кран-глибиномір: сталевий канат виходить просто з гусениці прогресу, на ньому гакова підвіска. Гак опускається з прокруткою;
    унизу сторінки підчіплює 8-бітний вантаж і підіймає його, коли гортаєш назад (махає, губить монети). Клік по вантажу — він
    зривається, падає туди, де стояв, і лишається плямою; гак, повернувшись, бере її грудкою. Стан — класи на #gauge
    (web/js/site.js): has-load, is-lifting, is-falling, is-splat, is-mush. Рух вимикається reduced-motion, static і паузою. */
-P .gauge{{top:calc(var(--nav-h,64px) + 21px);transform:none;height:{travel};transition:opacity .6s,top .45s var(--ease);clip-path:inset(-8px -420px -170px -420px)}}
+P .gauge{{top:calc(var(--nav-h,64px) + 21px);transform:none;height:{travel};transition:opacity .6s,top .45s var(--ease);clip-path:inset(-8px -420px -190px -420px)}}
 P .track.is-up ~ .gauge{{top:21px}}
 P .gauge__scale{{opacity:1;z-index:2;width:11px;height:7px;top:-7px;bottom:auto;left:50%;margin-left:-5.5px;background:linear-gradient(90deg,#11161C,#56606C 16%,#C9D1DA 40%,#F4F6F8 50%,#8D98A4 66%,#343C46 90%,#11161C);clip-path:polygon(0 0,100% 0,78% 100%,22% 100%)}}
 P .gauge__scale i,P .gauge__stops,P .s-cine.is-pinned .cine__rail{{display:none}}
 P .gauge__float{{z-index:1;width:44px;height:82.5px;margin:0 0 0 -22px;border-radius:0;background:{uri(HOOK)} center/44px 82.5px no-repeat;box-shadow:none;filter:drop-shadow(0 5px 6px rgba(2,7,22,.6));transition:transform {move}}}
 P .gauge__float::before{{content:"";position:absolute;left:50%;bottom:calc(100% - 5px);width:5px;margin-left:-2.5px;height:calc({travel} + 12px);background:{uri(ROPE)} center bottom/5px 7.5px repeat-y}}
-P .gauge::after,P .gauge.has-load .gauge__float::after{{content:"";position:absolute;left:50%;width:{fw}px;margin-left:-15px;background:{uri(sheet())} {px(FRAMES['idle'])} 0/{sw}px {sh}px no-repeat}}
+P .gauge::after,P .gauge.has-load .gauge__float::after{{content:"";position:absolute;left:50%;width:{fw}px;margin-left:-19px;background:{uri(sheet())} {px(FRAMES['idle'])} 0/{sw}px {sh}px no-repeat}}
 P .gauge::after{{top:calc(100% + 63px);height:{body_h}px;filter:drop-shadow(0 3px 4px rgba(2,7,22,.5))}}
 P .gauge.has-load::after{{display:none}}
 P .gauge.has-load .gauge__float{{cursor:pointer}}
