@@ -1,0 +1,25 @@
+# Оновлення залежностей — PR від Dependabot, ніколи не прямий запис у main (AGENTS.md §2). Кожен PR проходить
+# той самий make gate; npm ci --ignore-scripts + npm audit signatures лишаються в Makefile (tools/js).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /tools/js
+    schedule: {interval: weekly, day: monday, time: "06:00", timezone: Europe/Kyiv}
+    open-pull-requests-limit: 3
+    groups:
+      js-static-analysis: {patterns: ["*"]}
+    commit-message: {prefix: "deps(js)"}
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "06:00", timezone: Europe/Kyiv}
+    open-pull-requests-limit: 3
+    groups:
+      actions: {patterns: ["*"]}
+    commit-message: {prefix: "deps(ci)"}
+  - package-ecosystem: pip
+    directory: /
+    schedule: {interval: weekly, day: monday, time: "06:00", timezone: Europe/Kyiv}
+    open-pull-requests-limit: 3
+    groups:
+      python-test-tooling: {patterns: ["*"]}
+    commit-message: {prefix: "deps(py)"}
