@@ -66,7 +66,7 @@
   --t-hero-bg: #040A16;
   --t-hero-grade: saturate(.82) contrast(1.14) brightness(.8);
   --t-hero-video-pos: 50% 45%;
-  --t-hero-overlay: radial-gradient(120% 46% at 50% 106%,rgba(59,143,245,.3),rgba(29,78,216,.14) 46%,rgba(29,78,216,0) 72%),linear-gradient(180deg,rgba(2,7,22,.88),rgba(5,20,60,.46) 34%,rgba(8,30,86,.5) 66%,rgba(2,7,22,.97));
+  --t-hero-overlay: linear-gradient(180deg,rgba(5,8,13,.86),rgba(5,8,13,.42) 34%,rgba(5,8,13,.5) 66%,rgba(5,8,13,.96));
   --t-hero-blend: normal;
   --t-hero-center-right: var(--gut);
   --t-hero-center-width: auto;
@@ -82,7 +82,7 @@
   --t-logo-margin: 6px auto 0;
   --t-hero-lead-color: #E3ECF8;
   --t-hero-lead-glow: none;
-  --t-hero-lead-scrim: radial-gradient(closest-side,rgba(3,10,28,.88),rgba(3,10,28,.72) 60%,rgba(3,10,28,0));
+  --t-hero-lead-scrim: radial-gradient(closest-side,rgba(5,8,13,.88),rgba(5,8,13,.72) 60%,rgba(5,8,13,0));
   --t-hero-stats-justify: center;
   --t-hero-stats-gap: 0px;
   --t-hero-stats-color: #FFFFFF;
@@ -1029,9 +1029,9 @@ html:has(#passport[open]){overflow:hidden}
   background:repeating-linear-gradient(90deg,rgba(0,0,0,0) 0 12px,#040A16 12px 12.6px,var(--pin) 12.6px 14.2px,#040A16 14.2px 16px),
     linear-gradient(180deg,rgba(255,255,255,0) 44%,rgba(255,255,255,.22) 50%,rgba(255,255,255,0) 56%),
     linear-gradient(180deg,var(--s1) 0,var(--s2) 38%,var(--s3) 62%,var(--s4) 100%)}
-.track__shoes{--s1:#5C7194;--s2:#263856;--s3:#111C30;--s4:#2E4266;--pin:#4A5F84}
+.track__shoes{--s1:#59626C;--s2:#2C343D;--s3:#161C23;--s4:#323A44;--pin:#4C5560}
 .track__shoes::before,.track__gold::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 3.5px 30%,var(--bolt) 0 .8px,rgba(0,0,0,0) 1.1px),radial-gradient(circle at 8.5px 70%,var(--bolt) 0 .8px,rgba(0,0,0,0) 1.1px);background-size:16px 100%}
-.track__shoes{--bolt:#7F93B4}.track__gold{--bolt:#FFFFFF}
+.track__shoes{--bolt:#78838E}.track__gold{--bolt:#FFFFFF}
 /* змаз на кидку (аудит п.47): усереднений за період 16 px візерунок — 12/16 сталь, 2,4/16 темний проміжок, 1,6/16 палець,
    болти → дві тонкі смуги на 30 % і 70 %; непрозорість = var(--smear) із texStep, у спокої 0 */
 .track__shoes::after,.track__gold::after{content:"";position:absolute;inset:0;opacity:var(--smear,0);
@@ -1331,7 +1331,6 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .menu{background-image:radial-gradient(90% 40% at 100% 0%,rgba(37,99,235,.3),rgba(37,99,235,0) 70%),linear-gradient(180deg,#071A40 0%,#040D24 55%,#020716 100%)}
 @media (max-width:699px) and (orientation:portrait) and (min-height:600px){:is(:root[data-theme="sky"],:root:not([data-theme])) .dock,:is(:root[data-theme="sky"],:root:not([data-theme])) .motion-toggle:not([aria-pressed=true]){background:#040D24}}
 /* другий прохід синього: акценти, скло, глибина */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__sky2{display:block;background:linear-gradient(180deg,#0A2F8C,#1447C8);mix-blend-mode:color;opacity:.36}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero .btn--ghost{background:rgba(6,22,62,.58);box-shadow:inset 0 0 0 1.5px rgba(205,235,255,.82)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats,:is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats li + li{border-color:rgba(124,200,255,.34)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .hero__stats span{color:#BFD6F2}
