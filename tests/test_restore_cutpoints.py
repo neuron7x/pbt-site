@@ -172,3 +172,28 @@ def test_orphaned_journal_without_its_database_never_reaches_the_new_generation(
     assert not Path(f"{tmp_path / 'leads.db'}-journal").exists(), 'stale journal left beside the new generation'
     assert list(tmp_path.glob('leads.db.pre-restore-*-journal')), 'journal evidence not preserved'
     assert _server_view(tmp_path / 'leads.db') == (1, 2)
+
+
+def test_restore_refuses_to_remove_a_wal_pinned_by_a_snapshot(tmp_path):
+    _setup(tmp_path, False)
+    live = tmp_path / 'leads.db'
+    writer = sqlite3.connect(live)
+    reader = sqlite3.connect(live, isolation_level=None)
+    try:
+        assert writer.execute('PRAGMA journal_mode=WAL').fetchone() == ('wal',)
+        writer.execute('PRAGMA wal_autocheckpoint=0')
+        writer.execute("UPDATE leads SET payload='first commit' WHERE id=3")
+        writer.commit()
+        reader.execute('BEGIN')
+        assert reader.execute('SELECT payload FROM leads WHERE id=3').fetchone() == ('first commit',)
+        writer.execute("UPDATE leads SET payload='later commit' WHERE id=3")
+        writer.commit()
+
+        result, _ = _run(tmp_path, 'none', -1, '--allow-rpo-gap')
+        assert result.returncode == 1 and 'old WAL checkpoint incomplete' in result.stderr
+        assert Path(f'{live}-wal').is_file()
+        assert writer.execute('SELECT payload FROM leads WHERE id=3').fetchone() == ('later commit',)
+        assert reader.execute('SELECT payload FROM leads WHERE id=3').fetchone() == ('first commit',)
+    finally:
+        reader.close()
+        writer.close()
