@@ -444,6 +444,7 @@
   const unitPurpose = u => /мульчер/i.test(u.name) ? 'Мульчування порослі.' :
     /дробарк/i.test(u.name) ? 'Дроблення бетону й каменю.' :
       (D.cats.find(c => c.id === u.cat) || {}).lead || 'Підберемо комплектацію під ваше завдання.';
+  const hasHourlyRate = u => u.price && u.unit === 'год';
   function renderPark() {
     const grid = $('#park'), chips = $('#chips');
     const counts = {};
@@ -460,8 +461,12 @@
         u.specs.length ? el('dl', { class: 'unit__specs' }, u.specs.map(sp => el('div', null, el('dt', null, sp.k), el('dd', null, sp.v))))
           : el('p', { class: 'unit__purpose' }, unitPurpose(u))),
       el('div', { class: 'unit__foot' },
-        el('p', { class: u.price ? 'unit__price' : 'unit__price is-neg' }, u.price ? [`${fmt(u.price)} `, el('small', null, `грн/${u.unit}`)] : 'договірна'),
-        el('button', { class: 'btn btn--sm', type: 'button', 'data-req': u.cat === 'trans' ? 'transport' : 'rent', 'data-subject': u.name }, 'У заявку')))));
+        el('div', null,
+          el('p', { class: u.price ? 'unit__price' : 'unit__price is-neg' }, u.price ? [`${fmt(u.price)} `, el('small', null, `грн/${u.unit}`)] : 'договірна'),
+          hasHourlyRate(u) ? el('a', { class: 'unit__estimate', href: '#cina', 'data-estimate-machine': u.id,
+            'aria-label': `Розрахувати зміну: ${u.name}` }, 'Розрахувати') : null),
+        el('button', { class: 'btn btn--sm', type: 'button', 'data-req': u.cat === 'trans' ? 'transport' : 'rent', 'data-subject': u.name }, 'У заявку')),
+      el('p', { class: 'unit__status', role: 'status' }))));
     const reveal1 = b => { if (chips.scrollWidth > chips.clientWidth + 1) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: motion() ? 'smooth' : 'auto' }); };
     chips.addEventListener('focusin', e => { const b = e.target.closest('.chip'); if (b) reveal1(b); });   // Tab не лишає фокус за краєм (аудит a5951a5: 107 px поза контейнером на 390)
     chips.addEventListener('click', e => {
@@ -509,7 +514,15 @@
       }, () => {});
     });
     grid.addEventListener('focusin', e => { if (e.target.closest('[data-pass]')) loadBP().catch(() => {}); });   // клавіатура: модуль їде, поки фокус на кнопці
-    grid.addEventListener('click', e => { const b = e.target.closest('[data-pass]'); if (b) loadBP().then(BP => openPassport(BP, b.dataset.pass), () => { const r = b.closest('.unit').querySelector('[data-req]'); if (r) r.click(); }); });
+    grid.addEventListener('click', e => {
+      const b = e.target.closest('[data-pass]');
+      if (!b) return;
+      const status = $('.unit__status', b.closest('.unit'));
+      status.textContent = '';
+      loadBP().then(BP => openPassport(BP, b.dataset.pass), () => {
+        status.textContent = 'Паспорт тимчасово недоступний. Спробуйте ще раз.';
+      });
+    });
   }
   const pass = $('#passport');
   function openPassport(BP, id) {
@@ -570,13 +583,24 @@
     const sel = $('#cMachine'), hr = $('#cHours'), hrN = $('#cHoursN'), km = $('#cKm'), kmN = $('#cKmN');
     // Hashed CSP forbids inline handlers; keyboard Enter must not submit this form.
     $('#calcForm').addEventListener('submit', event => event.preventDefault());
-    const priced = D.fleet.filter(u => u.price && u.unit === 'год');
+    const priced = D.fleet.filter(hasHourlyRate);
     fill(sel, priced.map(u => el('option', { value: u.id }, `${u.name} — ${fmt(u.price)} грн/год`)));
     sel.disabled = !priced.length;
     const paintRange = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min) * 100).toFixed(1)}%`);
     const sync = (a, b) => a.addEventListener('input', () => { b.value = a.value; paintRange(hr); paintRange(km); calc(); });
     sync(hr, hrN); sync(hrN, hr); sync(km, kmN); sync(kmN, km);
     sel.addEventListener('change', calc);
+    $('#park').addEventListener('click', event => {
+      const link = event.target.closest('[data-estimate-machine]');
+      if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const id = link.dataset.estimateMachine;
+      if (!priced.some(unit => unit.id === id)) return;
+      event.preventDefault();
+      sel.value = id;
+      calc();
+      $('#cina').scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'start' });
+      sel.focus({ preventScroll: true });
+    });
     function calc() {
       const u = priced.find(x => x.id === sel.value) || priced[0];
       $('#cMachineSummary').textContent = sel.selectedOptions[0]?.textContent || '';

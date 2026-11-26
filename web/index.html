@@ -66,10 +66,10 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <div class="track" id="track" aria-hidden="true"><div class="track__belt"><i class="track__shoes"></i><i class="track__gold"></i></div><ol class="track__stops" id="trackStops"></ol><canvas class="track__oil" id="trackOil"></canvas><svg class="track__sprocket" viewBox="0 0 24 24"><defs><linearGradient id="trkSteel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C9D1D9"/><stop offset=".45" stop-color="#6B7682"/><stop offset=".55" stop-color="#3A434D"/><stop offset="1" stop-color="#8A949E"/></linearGradient></defs><path d="M19.88,10.65 L22.96,11.01 L22.96,12.99 L19.88,13.35 L18.91,16.03 L21.03,18.28 L19.76,19.80 L17.17,18.10 L14.70,19.53 L14.88,22.62 L12.93,22.96 L12.04,20.00 L9.23,19.51 L7.38,21.98 L5.67,20.99 L6.89,18.15 L5.05,15.97 L2.04,16.68 L1.37,14.82 L4.13,13.42 L4.13,10.58 L1.37,9.18 L2.04,7.32 L5.05,8.03 L6.89,5.85 L5.67,3.01 L7.38,2.02 L9.23,4.49 L12.04,4.00 L12.93,1.04 L14.88,1.38 L14.70,4.47 L17.17,5.90 L19.76,4.20 L21.03,5.72 L18.91,7.97 Z"/><circle cx="12" cy="12" r="3.4"/></svg></div>
 <div class="menu" id="menu" role="dialog" aria-modal="true" aria-label="Мобільна навігація" hidden>
   <button class="menu__close" id="menuClose" type="button" aria-label="Закрити меню"><span aria-hidden="true">×</span></button>
-  <p class="menu__heading" aria-hidden="true">PLAINBUD <span data-brand>ПЛЕЙНБУД</span></p>
+  <p class="menu__heading" aria-hidden="true" data-brand>ПЛЕЙНБУД</p>
   <nav aria-label="Мобільне меню">
-    <a href="#roboty"><span>01</span>Роботи</a><a href="#tekhnika"><span>02</span>Техніка</a><a href="#cina"><span>03</span>Ціна</a>
-    <a href="#materialy"><span>04</span>Матеріали</a><a href="#dokaz"><span>05</span>Кадри</a><a href="#geo"><span>06</span>Де працюємо</a><a href="#zapyt" data-req="rent"><span>07</span>Заявка</a>
+    <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Ціна</a>
+    <a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a><a href="#zapyt" data-req="rent">Заявка</a>
   </nav>
   <div class="menu__foot"><a href="tel:+380675550317" data-phone>067 555 03 17</a><span data-phone2 hidden></span><a href="mailto:plainbud@gmail.com" data-email>plainbud@gmail.com</a><span data-address>36022, м. Полтава, вул. Небесної сотні, буд. 69 Б</span></div>
 </div>
@@ -120,7 +120,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <section class="sec on-light s-jobs" id="roboty">
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Роботи</p><h2>Що саме<span>зробимо</span></h2>
+      <p class="eyebrow">Роботи</p><h2>Що саме <span>зробимо</span></h2>
       <p class="lead">П’ять напрямів робіт. Техніку, спосіб подачі та умови підбираємо для кожного об’єкта.</p>
     </div>
     <div class="jobs" id="jobs">
@@ -141,8 +141,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div class="cine__veil"></div>
   </div>
   <div class="cine__head">
-    <p class="eyebrow">Масштаб робіт</p>
-    <h2 id="cineTitle">Робота різна.<span>Підхід один.</span></h2>
+    <h2 id="cineTitle">Техніка <span>в роботі</span></h2>
     <p class="cine__note">Ілюстративна зйомка, не техніка ПЛЕЙНБУД. Кадри техніки — у розділі «Кадри з об’єктів».</p>
   </div>
   <ol class="cine__chs" id="cine"></ol>
@@ -154,7 +153,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#0A57C2" d="M0,60 C240,100 480,10 720,40 C960,70 1200,90 1440,30 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Техніка</p><h2>32 позиції<span>у 8 категоріях</span></h2>
+      <p class="eyebrow">Техніка</p><h2>32 позиції <span>у 8 категоріях</span></h2>
       <p class="lead">Оберіть техніку під своє завдання. Ставки з каталогу від 03.10.2026 наведено для орієнтиру. Наявність техніки й актуальну ціну підтверджуємо за запитом.</p>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Категорії техніки"></div>
@@ -168,7 +167,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#FFFFFF" d="M0,40 C240,0 480,90 720,60 C960,30 1200,10 1440,60 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Ціна</p><h2>Скільки коштує<span>зміна</span></h2>
+      <p class="eyebrow">Ціна</p><h2>Скільки коштує <span>зміна</span></h2>
       <p class="lead">Оберіть машину, години роботи й відстань подачі. Калькулятор використовує історичні ставки, а трал добирає за масою машини.</p>
     </div>
     <div class="calc rv rv--scale">
@@ -194,7 +193,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#EAF7FF" d="M0,50 C240,90 480,20 720,50 C960,80 1200,40 1440,70 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Матеріали</p><h2>Сипучі матеріали<span>для об’єкта</span></h2>
+      <p class="eyebrow">Матеріали</p><h2>Сипучі матеріали <span>для об’єкта</span></h2>
       <p class="lead">Пісок, гранітний щебінь, відсів, ЩПС і бут. Ціни наведено за каталогом від 03.10.2026. Наявність, доставку й документи партії уточнюємо за запитом.</p>
     </div>
     <div class="mats" id="mats"><p class="content-fallback">Каталог матеріалів тимчасово недоступний. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p></div>
@@ -207,7 +206,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#0A57C2" d="M0,30 C240,90 480,60 720,30 C960,0 1200,60 1440,50 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Кадри з об’єктів</p><h2>Не слайди —<span>жива техніка</span></h2>
+      <h2>Кадри <span>з об’єктів</span></h2>
       <p class="lead">Водойми, земляні роботи й перевезення техніки в архівній добірці кадрів.</p>
     </div>
     <div class="facts rv">
@@ -227,7 +226,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#EAF7FF" d="M0,60 C240,20 480,90 720,50 C960,10 1200,70 1440,40 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Де працюємо</p><h2>Полтава<span>і ще 8 областей</span></h2>
+      <p class="eyebrow">Де працюємо</p><h2>Полтава <span>і ще 8 областей</span></h2>
       <p class="lead">Вкажіть місце робіт і умови під’їзду. Маршрут, можливість виїзду й вартість подачі перевіряємо для кожного запиту.</p>
     </div>
     <div class="geo">
@@ -247,7 +246,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#0A57C2" d="M0,50 C240,10 480,80 720,60 C960,40 1200,0 1440,50 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Заявка</p><h2>Викликати<span>техніку</span></h2>
+      <p class="eyebrow">Заявка</p><h2>Викликати <span>техніку</span></h2>
       <p class="lead" id="requestLeadDescription">Зазначте завдання, місце й бажану дату. Наявність техніки й ціну уточнюємо за запитом. Зв’язатися можна також телефоном або поштою.</p>
     </div>
     <ol class="request-steps" aria-label="Як замовити техніку">
