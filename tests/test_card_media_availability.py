@@ -181,7 +181,7 @@ const sync = () => vm.runInNewContext('go();', context);
 const state = () => ({src: media.src, sources: media.sources.map(node => ({...node})), ready: !!media.dataset.ready,
   preload: media.preload, poster: media.poster, playCalls: media.playCalls, pauseCalls: media.pauseCalls});
 (async () => {
-  sync(); await Promise.resolve(); const initial = state();
+  sync(); await new Promise(setImmediate); const initial = state();
   const attached = vm.runInNewContext("attachVideo(hVideo, 'hero-wide', {tall: true});", context);
   context.scrollY = context.innerHeight + 10; sync(); const sticky = state();
   allowed = false; sync(); const paused = state();

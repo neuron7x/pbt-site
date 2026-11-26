@@ -33,7 +33,7 @@ ARTIFACT_TO_WORKFLOW = {
 }
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from tools import security_receipt, supply_chain  # noqa: E402
+from tools import media_budget, security_receipt, supply_chain  # noqa: E402
 
 SHA = re.compile(r'[0-9a-f]{40}\Z')
 DIGEST = re.compile(r'[0-9a-f]{64}\Z')
@@ -431,7 +431,9 @@ def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base, ev
         for key,raw in (('media_report',media_raw),('shots_manifest',m_raw)):
             require(ev['evidence'][key]['bytes']==len(raw),'visual_report_size')
             digest_match(raw,ev['evidence'][key]['sha256'])
-        require(media['failures']==[] and media['media_files']>=160 and len(media['files'])==media['media_files'], 'media_report')
+        visual_policy = media_budget.parse_budget((ROOT / 'config/visual-budgets.json').read_text(encoding='utf-8'))
+        exact_media = media_budget.audit_media(ROOT / 'web' / 'media', visual_policy)
+        require(exact_media['failures'] == [] and media == exact_media, 'media_report')
         shot_count=0;names=set()
         for capture in manifest['captures']:
             filename=capture['filename']
