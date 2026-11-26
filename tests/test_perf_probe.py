@@ -158,3 +158,128 @@ def test_source_identity_rejects_checkout_head_mismatch_and_fake_sha(monkeypatch
                         CompletedProcess(a, 0, stdout="not-a-sha\n"))
     with pytest.raises(RuntimeError, match="invalid checked-out commit SHA"):
         perf_probe.source_identity()
+
+
+
+def test_network_checkpoint_keeps_url_and_time_boundaries():
+    assert hasattr(perf_probe, "network_checkpoint")
+    chunks = [
+        (79.9, "/media/previous.mp4", 500),
+        (80.03, "/media/hero-tall.webm", 11),
+        (80.1, "/media/hero-tall.webm", 20),
+        (80.2, "/media/hero-tall.webm", 30),
+        (84.0, "/media/other.mp4", 100),
+        (85.0, "/media/hero-tall.webm", 40),
+        (85.001, "/media/other.mp4", 25),
+        (86.2, "/media/other.mp4", 90),
+    ]
+    before = perf_probe.network_checkpoint(chunks, 80.0, 100, strict=True)
+    five = perf_probe.network_checkpoint(chunks, 80.0, 5000)
+    after = perf_probe.network_checkpoint(chunks, 80.0, 6100)
+    assert before["encoded_bytes_by_path"] == {"/media/hero-tall.webm": 11}
+    assert five["encoded_bytes_by_path"] == {"/media/hero-tall.webm": 101, "/media/other.mp4": 100}
+    assert after["encoded_bytes_by_path"] == {"/media/hero-tall.webm": 101, "/media/other.mp4": 125}
+
+
+def test_unavailable_checkpoints_never_become_zero_byte_samples():
+    assert hasattr(perf_probe, "network_checkpoint")
+    missing_frame = perf_probe.network_checkpoint([], 80.0, None)
+    missing_clock = perf_probe.network_checkpoint([], None, 5000)
+    no_chunks = perf_probe.network_checkpoint([], 80.0, 5000)
+    assert missing_frame["status"] == "checkpoint_unavailable"
+    assert missing_clock["status"] == "clock_unavailable"
+    assert missing_frame["encoded_bytes_by_path"] is None
+    assert missing_clock["encoded_bytes_by_path"] is None
+    assert no_chunks["encoded_bytes_by_path"] == {}
+
+
+def test_clock_mismatch_invalidates_byte_cutoffs():
+    assert hasattr(perf_probe, "navigation_start")
+    metrics = [{"name": "NavigationStart", "value": 80.0},
+               {"name": "Timestamp", "value": 85.005}]
+    assert perf_probe.navigation_start(metrics, 5004, 5006) == 80.0
+    assert perf_probe.navigation_start(metrics, 1004, 1006) is None
+    assert perf_probe.navigation_start(metrics[1:], 5004, 5006) is None
+
+
+def test_network_clock_matches_real_chromium_navigation(browser):
+    assert hasattr(perf_probe, "navigation_start")
+    page = browser.new_page()
+    try:
+        cdp = page.context.new_cdp_session(page)
+        cdp.send("Performance.enable", {"timeDomain": "timeTicks"})
+        page.goto("data:text/html,<title>Мережева проба</title>")
+        before = page.evaluate("performance.now()")
+        metrics = cdp.send("Performance.getMetrics")["metrics"]
+        after = page.evaluate("performance.now()")
+        assert perf_probe.navigation_start(metrics, before, after) is not None
+    finally:
+        page.close()
+
+
+
+def test_hero_frame_probe_records_chromium_composition_time(browser):
+    assert hasattr(perf_probe, "MEDIA_FRAME_PROBE")
+    page = browser.new_page()
+    try:
+        page.goto("data:text/html,<title>Мережева проба</title>")
+        page.evaluate(perf_probe.MEDIA_FRAME_PROBE)
+        page.evaluate("""(() => {
+          const video = document.createElement('video');
+          video.id = 'heroVideo';
+          video.muted = true;
+          document.body.append(video);
+          const canvas = document.createElement('canvas');
+          canvas.width = canvas.height = 20;
+          const context = canvas.getContext('2d');
+          const stream = canvas.captureStream(0);
+          const [track] = stream.getVideoTracks();
+          video.srcObject = stream;
+          video.play().catch(error => { window.__pbtFrameTestError = String(error); });
+          let red = false;
+          const draw = () => {
+            context.fillStyle = red ? 'red' : 'blue';
+            context.fillRect(0, 0, 20, 20);
+            track.requestFrame();
+            red = !red;
+          };
+          draw();
+          setInterval(draw, 40);
+        })()""")
+        page.wait_for_function(
+            "() => window.__pbtFrameTestError || "
+            "['observed','first_frame_missed'].includes(window.__pbtHeroFrame.status)",
+            timeout=5000,
+        )
+        assert page.evaluate("window.__pbtFrameTestError") is None
+        frame = page.evaluate("window.__pbtHeroFrame")
+        assert frame["status"] == "observed"
+        assert frame["presented_frames"] == 1
+        assert 0 <= frame["presentation_ms"] <= frame["expected_display_ms"]
+    finally:
+        page.close()
+
+
+def test_media_network_checkpoints_preserve_strict_csp(browser):
+    from types import SimpleNamespace
+
+    assert hasattr(perf_probe, "sample_media_network")
+    base = "http://127.0.0.1:8000/"
+    html = ("<!doctype html><script src='/boot.js'></script><main>"
+            + "<p>Перевірка прокрутки</p>" * 100 + "</main>")
+
+    def new_context(**options):
+        ctx = browser.new_context(**options)
+        ctx.route(base, lambda route: route.fulfill(
+            content_type="text/html", body=html,
+            headers={"Content-Security-Policy": "script-src 'self'"}))
+        ctx.route(base + "boot.js", lambda route: route.fulfill(
+            content_type="application/javascript",
+            body="document.documentElement.dataset.theme = localStorage.getItem('pbt-theme')"))
+        return ctx
+
+    result = perf_probe.sample_media_network(SimpleNamespace(new_context=new_context), base, "sky")
+    assert result["hero_frame"]["status"] == "hero_video_missing"
+    assert result["scroll"]["applied"]
+    assert result["through_5_seconds"]["at_ms"] == 5000
+    assert result["through_1_second_after_scroll"]["at_ms"] >= 6000

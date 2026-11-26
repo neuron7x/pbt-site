@@ -88,7 +88,8 @@
   },
   "required_jobs_pull_request_only": {
     "full": [
-      "Independent exact-main make gate (no main mutation)"
+      "Independent exact-main make gate (no main mutation)",
+      "Negative control on base for selected PR tests"
     ]
   }
 }

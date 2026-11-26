@@ -13,6 +13,7 @@ import math
 import os
 import subprocess
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
 
@@ -130,29 +131,42 @@ def cls_max_session(entries: list[dict]) -> float:
     return maximum
 
 
-def sample(browser, url: str, theme: str) -> dict:
-    ctx = browser.new_context(
+def mobile_context(browser):
+    return browser.new_context(
         viewport={"width": 390, "height": 844}, device_scale_factor=2,
         is_mobile=True, has_touch=True, reduced_motion="no-preference",
         locale="uk-UA",
     )
+
+
+def theme_script(theme):
+    return (
+        "localStorage.setItem('pbt-theme', " + json.dumps(theme) + ");"
+        "Object.defineProperty(navigator, 'hardwareConcurrency',"
+        "{configurable:true,value:8});\n"
+    )
+
+
+def mobile_cdp(ctx, page):
+    cdp = ctx.new_cdp_session(page)
+    cdp.send("Network.enable")
+    cdp.send("Network.emulateNetworkConditions", {
+        "offline": False, "latency": 150,
+        "downloadThroughput": 200000, "uploadThroughput": 93750,
+        "connectionType": "cellular4g",
+    })
+    cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+    return cdp
+
+
+def sample(browser, url: str, theme: str) -> dict:
+    ctx = mobile_context(browser)
     try:
-        ctx.add_init_script(
-            "localStorage.setItem('pbt-theme', " + json.dumps(theme) + ");"
-            "Object.defineProperty(navigator, 'hardwareConcurrency',"
-            "{configurable:true,value:8});\n" + INSTRUMENT
-        )
+        ctx.add_init_script(theme_script(theme) + INSTRUMENT)
         page = ctx.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
-        cdp = ctx.new_cdp_session(page)
-        cdp.send("Network.enable")
-        cdp.send("Network.emulateNetworkConditions", {
-            "offline": False, "latency": 150,
-            "downloadThroughput": 200000, "uploadThroughput": 93750,
-            "connectionType": "cellular4g",
-        })
-        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 4})
+        mobile_cdp(ctx, page)
         response = page.goto(url, wait_until="load", timeout=45000)
         page.wait_for_timeout(3500)
         first = page.evaluate("""() => ({
@@ -208,7 +222,141 @@ def sample(browser, url: str, theme: str) -> dict:
         ctx.close()
 
 
-def run(url: str, repetitions: int) -> dict:
+# Окрема навігація: прокрутка та збір мережевих подій не впливають на LCP/CLS.
+MEDIA_FRAME_PROBE = r"""
+(() => {
+  const frame = window.__pbtHeroFrame = {status: 'hero_video_missing'};
+  const observer = new MutationObserver(watch);
+  function watch() {
+    const video = document.getElementById('heroVideo');
+    if (!(video instanceof HTMLVideoElement)) return;
+    observer.disconnect();
+    if (typeof video.requestVideoFrameCallback !== 'function') {
+      frame.status = 'frame_callback_unsupported';
+      return;
+    }
+    frame.status = 'frame_not_observed';
+    video.requestVideoFrameCallback((now, metadata) => {
+      frame.status = metadata.presentedFrames === 1 ? 'observed' : 'first_frame_missed';
+      frame.presentation_ms = metadata.presentationTime;
+      frame.expected_display_ms = metadata.expectedDisplayTime;
+      frame.presented_frames = metadata.presentedFrames;
+      frame.source = video.currentSrc;
+    });
+  }
+  observer.observe(document, {childList: true, subtree: true});
+  watch();
+})();
+"""
+
+
+def media_path(value, page_url):
+    asset, page = urlsplit(value), urlsplit(page_url)
+    if ((asset.scheme, asset.netloc) == (page.scheme, page.netloc)
+            and not asset.query and asset.path.endswith((".mp4", ".webm"))):
+        return asset.path
+    return None
+
+
+def navigation_start(metrics, before_ms, after_ms):
+    """Звірити, що Chrome TimeTicks і DOMHighResTimeStamp описують ту саму навігацію."""
+    values = {item["name"]: item["value"] for item in metrics}
+    start, current = values.get("NavigationStart"), values.get("Timestamp")
+    if start is not None and current is not None and math.isfinite(start) and start > 0:
+        elapsed = (current - start) * 1000
+        if before_ms - 1 <= elapsed <= after_ms + 1:
+            return start
+    return None
+
+
+def network_checkpoint(chunks, start, cutoff_ms, *, strict=False):
+    if cutoff_ms is None:
+        return {"status": "checkpoint_unavailable", "at_ms": None, "encoded_bytes_by_path": None}
+    if start is None:
+        return {"status": "clock_unavailable", "at_ms": cutoff_ms, "encoded_bytes_by_path": None}
+    cutoff = start + cutoff_ms / 1000
+    totals = {}
+    for timestamp, path, encoded_bytes in chunks:
+        if start <= timestamp and (timestamp < cutoff if strict else timestamp <= cutoff):
+            totals[path] = totals.get(path, 0) + encoded_bytes
+    return {"status": "observed", "at_ms": cutoff_ms, "encoded_bytes_by_path": totals}
+
+
+def wait_for_page_time(page, target_ms, limit_ms):
+    """Wait on the Playwright side so the page keeps its production CSP."""
+    left = target_ms - page.evaluate("performance.now()")
+    if not math.isfinite(left) or left > limit_ms:
+        raise RuntimeError("Мережева проба не може дочекатися часової межі")
+    if left > 0:
+        page.wait_for_timeout(math.ceil(left))
+    if page.evaluate("performance.now()") < target_ms:
+        raise RuntimeError("Мережева проба зупинилась до часової межі")
+
+
+def sample_media_network(browser, url, theme):
+    ctx = mobile_context(browser)
+    try:
+        ctx.add_init_script(theme_script(theme) + MEDIA_FRAME_PROBE)
+        page = ctx.new_page()
+        media_paths, chunks = {}, []
+        cdp = mobile_cdp(ctx, page)
+
+        def request(event):
+            request_id = event["requestId"]
+            path = media_path(event["request"]["url"], url)
+            if path is None:
+                media_paths.pop(request_id, None)
+            else:
+                media_paths[request_id] = path
+
+        def received(event):
+            path = media_paths.get(event["requestId"])
+            if path is not None:
+                chunks.append((event["timestamp"], path, event["encodedDataLength"]))
+
+        cdp.on("Network.requestWillBeSent", request)
+        cdp.on("Network.dataReceived", received)
+        cdp.send("Performance.enable", {"timeDomain": "timeTicks"})
+        response = page.goto(url, wait_until="load", timeout=45000)
+        if not response or response.status != 200:
+            raise RuntimeError("Мережева проба не отримала HTTP 200")
+        if page.evaluate("document.documentElement.dataset.theme") != theme:
+            raise RuntimeError("Мережева проба отримала іншу тему")
+
+        before = page.evaluate("performance.now()")
+        metrics = cdp.send("Performance.getMetrics")["metrics"]
+        after = page.evaluate("performance.now()")
+        start = navigation_start(metrics, before, after)
+
+        wait_for_page_time(page, 5000, 6000)
+        scroll = page.evaluate("""(() => {
+          const from_y = scrollY;
+          const at_ms = performance.now();
+          window.scrollTo({top: from_y + innerHeight, behavior: 'instant'});
+          return {from_y, to_y: scrollY, requested_delta_px: innerHeight, at_ms};
+        })()""")
+        applied = scroll["to_y"] > scroll["from_y"]
+        observed_after_scroll = scroll["at_ms"] + 1000 if applied else None
+        if applied:
+            wait_for_page_time(page, observed_after_scroll, 3000)
+
+        frame = page.evaluate("window.__pbtHeroFrame")
+        frame["source_path"] = media_path(frame.pop("source", ""), url)
+        first_cutoff = frame.get("presentation_ms") if frame["status"] == "observed" else None
+        return {
+            "metric": "cdp_data_received_encoded_bytes_for_same_origin_queryless_video",
+            "network_clock": "chromium_navigation_start" if start is not None else "unavailable",
+            "hero_frame": frame,
+            "scroll": {**scroll, "applied": applied},
+            "before_first_composited_frame": network_checkpoint(chunks, start, first_cutoff, strict=True),
+            "through_5_seconds": network_checkpoint(chunks, start, 5000),
+            "through_1_second_after_scroll": network_checkpoint(chunks, start, observed_after_scroll),
+        }
+    finally:
+        ctx.close()
+
+
+def run(url: str, repetitions: int, *, media_network: bool = False) -> dict:
     if repetitions < 3:
         raise ValueError("at least three runs per theme required")
     identity = source_identity()
@@ -220,6 +368,8 @@ def run(url: str, repetitions: int) -> dict:
                 theme: [sample(browser, url, theme) for _ in range(repetitions)]
                 for theme in THEMES
             }
+            network = ({theme: sample_media_network(browser, url, theme) for theme in THEMES}
+                       if media_network else None)
         finally:
             browser.close()
     summaries = {}
@@ -245,6 +395,7 @@ def run(url: str, repetitions: int) -> dict:
         "inp_ms": None, "field_vitals_verified": False,
         "release_status": "UNVERIFIED_FIELD_INP_AND_VISUAL_ACCEPTANCE",
         "themes": summaries,
+        **({"media_network_diagnostics": network} if network is not None else {}),
     }
 
 
@@ -253,11 +404,13 @@ def main() -> int:
     ap.add_argument("--url", default="http://127.0.0.1:4180/")
     ap.add_argument("--out", default="artifacts/perf/dual-theme-mobile.json")
     ap.add_argument("--runs", type=int, default=3)
+    ap.add_argument("--media-network", action="store_true",
+                    help="Окрема навігація на тему для таймлайна мережевих байтів відео")
     args = ap.parse_args()
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
     try:
-        result = run(args.url, args.runs)
+        result = run(args.url, args.runs, media_network=args.media_network)
     except Exception as exc:
         # Preserve failed-run evidence; still fail CI and retain the traceback.
         failure = {

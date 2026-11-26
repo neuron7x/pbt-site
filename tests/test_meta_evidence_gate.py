@@ -465,6 +465,41 @@ def test_main_target_uses_push_receipts_and_needs_no_baseline(state):
     assert verify(meta,directory,policy)['status']=='PASS'
 
 
+@pytest.mark.parametrize('state_on_provider', ['missing', 'in_progress', 'skipped', 'failure'])
+def test_pull_request_requires_successful_negative_control_job(state, state_on_provider):
+    meta, policy, directory, _ = state
+    meta = copy.deepcopy(meta)
+    job_name = 'Negative control on base for selected PR tests'
+    jobs = meta['runs']['full']['jobs']
+    assert job_name in jobs
+    if state_on_provider == 'missing':
+        del jobs[job_name]
+        reason = 'required_job_missing_full'
+    else:
+        jobs[job_name].update(
+            status='in_progress' if state_on_provider == 'in_progress' else 'completed',
+            conclusion=None if state_on_provider == 'in_progress' else state_on_provider,
+        )
+        reason = 'required_job_not_successful_full'
+    with pytest.raises(gate.Rejected, match=reason):
+        verify(meta, directory, policy)
+
+
+def test_main_target_does_not_require_the_negative_control_job(state):
+    meta, policy, directory, _ = state
+    meta = copy.deepcopy(meta)
+    required_in_pr = EVIDENCE_POLICY['required_jobs_pull_request_only']['full']
+    assert 'Negative control on base for selected PR tests' in required_in_pr
+    meta['target'] = {'kind': 'push', 'pr_number': None, 'ref': 'refs/heads/main'}
+    del meta['artifacts']['baseline']
+    for run in meta['runs'].values():
+        run['event'] = 'push'
+        for name in required_in_pr:
+            run['jobs'].pop(name, None)
+    meta['runs']['soak']['event'] = 'workflow_dispatch'
+    assert verify(meta, directory, policy)['status'] == 'PASS'
+
+
 def test_pull_request_receipts_never_certify_main(state):
     meta,policy,directory,_=state
     meta=copy.deepcopy(meta)
