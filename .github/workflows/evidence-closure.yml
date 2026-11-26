@@ -142,7 +142,58 @@ jobs:
           assert d['C0']=='UNKNOWN' and d['claims']['C10']=='UNKNOWN',d
           print('ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY; PRODUCTION_HOLD')
           PY
-      - name: Verify main did not drift and preserve proof receipts only
+      - name: Package and restore the exact reconciled Git commit
+        run: |
+          umask 022
+          TARGET_SHA="$(cat "$REPORT_DIR/proof-local-commit-sha.txt")"
+          test "$(git rev-list --parents -n 1 "$TARGET_SHA")" = "$TARGET_SHA $SOURCE_SHA"
+          proof_ref=refs/pbt-proof/reconciled
+          restore_ref="$proof_ref:$proof_ref"
+          scratch="$(mktemp -d "$RUNNER_TEMP/pbt-proof-restore.XXXXXX")"
+          trap 'rm -rf "$scratch"' EXIT
+          git update-ref "$proof_ref" "$TARGET_SHA" ""
+          trap 'git update-ref -d "$proof_ref" "$TARGET_SHA"; rm -rf "$scratch"' EXIT
+          bundle="$scratch/proof.git.bundle"
+          git bundle create "$bundle" "$proof_ref" "^$SOURCE_SHA"
+          test "$(git bundle list-heads "$bundle")" = "$TARGET_SHA $proof_ref"
+
+          recipient="$scratch/recipient.git"
+          git init --bare --quiet "$recipient"
+          if git -C "$recipient" bundle verify "$bundle"; then
+            printf '%s\n' 'PROOF_WITHOUT_SOURCE_ACCEPTED' >&2
+            exit 1
+          fi
+          # Seed this isolated store over local Git transport with only the exact source and its tree.
+          timeout 120s git -C "$recipient" fetch --no-tags --depth=1 "$GITHUB_WORKSPACE" \
+            "$SOURCE_SHA:refs/pbt-proof/source"
+          test "$(git -C "$recipient" rev-parse refs/pbt-proof/source)" = "$SOURCE_SHA"
+          git -C "$recipient" bundle verify "$bundle"
+
+          if git -C "$recipient" fetch --no-tags "$scratch/missing.bundle" "$restore_ref"; then
+            printf '%s\n' 'MISSING_PROOF_PACK_ACCEPTED' >&2
+            exit 1
+          fi
+          damaged="$scratch/truncated.bundle"
+          cp "$bundle" "$damaged"
+          truncate -s -1 "$damaged"
+          if git -C "$recipient" fetch --no-tags "$damaged" "$restore_ref"; then
+            printf '%s\n' 'TRUNCATED_PROOF_PACK_ACCEPTED' >&2
+            exit 1
+          fi
+          if git -C "$recipient" cat-file -e "$TARGET_SHA^{commit}" 2>/dev/null; then
+            printf '%s\n' 'PROOF_OBJECT_ALREADY_PRESENT' >&2
+            exit 1
+          fi
+
+          git -C "$recipient" fetch --no-tags "$bundle" "$restore_ref"
+          test "$(git -C "$recipient" rev-parse "$proof_ref")" = "$TARGET_SHA"
+          test "$(git -C "$recipient" rev-list --parents -n 1 "$proof_ref")" = "$TARGET_SHA $SOURCE_SHA"
+          test "$(git -C "$recipient" rev-parse "$proof_ref^{tree}")" = "$(git rev-parse "$TARGET_SHA^{tree}")"
+          git -C "$recipient" fsck --connectivity-only --no-dangling "$proof_ref"
+          mv "$bundle" "$RUNNER_TEMP/pbt-validated-proof.bundle"
+          printf 'PROOF_RESTORED source=%s proof=%s missing_source=rejected missing_pack=rejected truncated_pack=rejected\n' \
+            "$SOURCE_SHA" "$TARGET_SHA"
+      - name: Verify main did not drift and preserve the validated proof
         run: |
           ACTUAL="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
           test "$ACTUAL" = "$SOURCE_SHA"
@@ -151,8 +202,9 @@ jobs:
           cp "$EVID_DIR/manifest.json" "$REPORT_DIR/provider-manifest.json"
           cp assurance/ledger.json "$REPORT_DIR/reconciled-ledger.json"
           cp assurance/case.json "$REPORT_DIR/reconciled-case.json"
+          cp "$RUNNER_TEMP/pbt-validated-proof.bundle" "$REPORT_DIR/proof.git.bundle"
+          (cd "$REPORT_DIR" && sha256sum *.json source-sha.txt proof-local-commit-sha.txt proof.git.bundle > SHA256SUMS)
           printf '%s\n' 'ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY / PRODUCTION_HOLD' > "$REPORT_DIR/status.txt"
-          (cd "$REPORT_DIR" && sha256sum *.json > SHA256SUMS)
       - name: Upload receipt/proof evidence even when validation fails
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

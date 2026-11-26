@@ -97,6 +97,45 @@ and produces a proof-only checkout. It binds both push manifest revisions to the
 python3 tools/evidence_collect.py --kind push --head "$MAIN" --base "$MAIN" --out evidence/
 ```
 
+### Restore the exact reconciled proof
+
+Use the successful closure run for the expected source SHA. Download its `pbt-evidence-closure-*` artifact
+and compare the downloaded ZIP's SHA-256 to the digest GitHub reports for that artifact ID. Keep the original
+provider ZIPs while they are available. The closure artifact contains a thin `proof.git.bundle`
+whose prerequisite is the exact source commit. It also records the proof SHA, the original provider manifest
+and the file digests. Check the source and proof SHAs against the named workflow run's `PROOF_RESTORED` line.
+Run the following in an isolated shell with `set -e`.
+
+```sh
+# PROOF_ARTIFACT_DIR is the absolute path to the extracted closure artifact.
+(cd "$PROOF_ARTIFACT_DIR" && sha256sum -c SHA256SUMS)
+grep -Fx "ENGINEERING_ACCEPTED_LOCAL_PROOF_ONLY / PRODUCTION_HOLD" "$PROOF_ARTIFACT_DIR/status.txt"
+SOURCE_SHA="$(cat "$PROOF_ARTIFACT_DIR/source-sha.txt")"
+PROOF_SHA="$(cat "$PROOF_ARTIFACT_DIR/proof-local-commit-sha.txt")"
+PROOF_CHECKOUT="$(mktemp -d)"
+git init -q "$PROOF_CHECKOUT"
+git -C "$PROOF_CHECKOUT" fetch --no-tags https://github.com/neuron7x/pbt-site.git "$SOURCE_SHA"
+test "$(git -C "$PROOF_CHECKOUT" rev-parse FETCH_HEAD)" = "$SOURCE_SHA"
+git -C "$PROOF_CHECKOUT" bundle verify "$PROOF_ARTIFACT_DIR/proof.git.bundle"
+git -C "$PROOF_CHECKOUT" fetch --no-tags "$PROOF_ARTIFACT_DIR/proof.git.bundle" \
+  refs/pbt-proof/reconciled:refs/pbt-proof/reconciled
+test "$(git -C "$PROOF_CHECKOUT" rev-parse refs/pbt-proof/reconciled)" = "$PROOF_SHA"
+test "$(git -C "$PROOF_CHECKOUT" rev-list --parents -n 1 "$PROOF_SHA")" = "$PROOF_SHA $SOURCE_SHA"
+git -C "$PROOF_CHECKOUT" checkout --detach "$PROOF_SHA"
+```
+
+With the locked verifier dependencies installed, use the original `EVIDENCE_DIR` with the named provider ZIPs and the archived `provider-manifest.json` as `manifest.json`.
+If recollecting, require an exact manifest match before verification. Expired or changed provider bytes leave
+the exact proof unevaluable. Verify from the restored proof checkout:
+
+```sh
+(cd "$PROOF_CHECKOUT" && python3 tools/assurance_check.py --require engineering \
+  --target-sha "$PROOF_SHA" --evidence-dir "$EVIDENCE_DIR")
+```
+
+The runner verifies the restored commit and parent and rejects a missing prerequisite, a missing bundle and a
+truncated pack before reporting acceptance. Production eligibility still requires the separate operator evidence.
+
 ## Backup and restore failure model
 
 | Failure | Covered | How |
