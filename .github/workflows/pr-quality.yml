@@ -18,7 +18,8 @@ jobs:
     name: Independent exact-main make gate (no main mutation)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    # Two hosted attempts spent 13–14 minutes provisioning before the unchanged gate.
+    timeout-minutes: 45
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
