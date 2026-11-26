@@ -1,6 +1,7 @@
 """Розмір і походження байтів: budget фальсифікується файлом, не словами."""
 
 import json
+from collections import Counter
 from pathlib import Path
 
 from tools.media_budget import audit_media
@@ -48,7 +49,11 @@ def test_media_budget_rejects_escape_globs_and_missing_required_categories(tmp_p
 
 def test_repository_media_pack_within_explicit_baseline_regression_caps():
     result = audit_media(ROOT / "web" / "media", BUDGET)
-    assert result["media_files"] >= 160
+    paths = [item["path"] for item in result["files"]]
+    required = {"cine": 36, "logo": 13, "map": 3, "mat": 16, "park": 32, "svc": 6, "video": 42}
+    counts = Counter(path.split("/", 1)[0] for path in paths)
+    assert all(counts[group] >= minimum for group, minimum in required.items()), counts
+    assert not any(path.startswith("logo/partners-") for path in paths)
     assert not result["failures"], result["failures"]
     # Ліміти на файлові активи НЕ дорівнюють мережевому завантаженню користувача.
     assert result["measurement_type"] == "repository file sizes, not network transfer"
