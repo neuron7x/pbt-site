@@ -137,8 +137,7 @@ def test_generic_request_restores_subject_for_its_own_type(page_factory, mobile)
     page.evaluate('window.scrollTo({top:0,behavior:"instant"})')
     page.wait_for_function('() => scrollY === 0 && !document.querySelector("#nav").classList.contains("is-hidden")')
     if mobile:
-        page.locator('.burger').click()
-        page.locator('#menu a[href="#zapyt"]').click()
+        page.locator('#heroCenter [data-req="rent"]').click()
     else:
         page.locator('.nav__cta[data-req="rent"]').click()
     expect(page.locator('input[name="type"][value="rent"]')).to_be_checked()
