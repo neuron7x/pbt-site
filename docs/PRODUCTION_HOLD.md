@@ -2,15 +2,23 @@
 
 **State: PRODUCTION HOLD.** The engineering release candidate cannot leave this state by more tests.
 Each row needs a fact from outside this repository. Nothing here may be filled in by an agent.
-A fact closes with a signed receipt: fields, authority and expiry per class in `config/external-evidence-policy.json`;
-`assurance/evidence/external/<CLASS>.json` plus `ssh-keygen -Y sign -n pbt-external-receipt`; the owner's public key added to
-`config/owner-allowed-signers`. Check: `python3 tools/external_receipts.py --target-sha <SHA>`.
+The receipt fields, signing authority and expiry for each class are defined in `config/external-evidence-policy.json`.
+Register the owner signing key in `config/owner-allowed-signers` before freezing the candidate. Keep
+`<CLASS>.json` and its detached signature `<CLASS>.json.sig` outside the repository. Sign with
+`ssh-keygen -Y sign -n pbt-external-receipt`. Use an independently provisioned signer file whose bytes match the
+candidate's registered keys. D1 names the frozen revision. From the reconciled proof checkout, verify:
+
+```sh
+python3 tools/assurance_check.py --require production --target-sha "$PROOF_SHA" \
+  --evidence-dir "$EVIDENCE_DIR" --external-attestations-dir "$ATTESTATIONS_DIR" \
+  --owner-trust-file "$OWNER_TRUST_FILE"
+```
 
 | ID | Missing fact | Who | Blocks | Closes when |
 |---|---|---|---|---|
 | B1 | Approved, effective-dated tariffs (site prices date from 03.10.2026; 1C differs) | Owner | OPS-06, WEB-07 | Signed snapshot with date; validator run against it |
 | B2 | VAT, minimum shift, idle, crane and dispatch policy | Owner | OPS-06, WEB-07 | Written decision |
-| B3 | Live delivery channel and credentials; authorized live test | Owner | NET-04, DB-08 | Receiver receipt naming real lead ids; `ops/readiness.py --receiver-receipt` PASS |
+| B3 | Live delivery channel and credentials; authorized live test | Owner | NET-04, DB-08 | Signed receiver receipt naming real lead IDs. In `ops/readiness.py --receiver-receipt`, require `transport_ack=PASS` and `receiver_persistence=PASS`. The aggregate remains false while business processing is unobserved |
 | B4 | Domain, DNS, TLS, proxy chain | Owner | NET-02, OPS-07, WEB-06 | Independent DNS and TLS check; canonical and OG URLs set then, not before |
 | B5/B6 | Rights to TikTok footage, authorship and origin of frames | Owner | WEB-08 | Per-asset rights record |
 | B7 | Privacy notice, purpose, retention, lawful basis (Law of Ukraine 2297-VI) | Owner + lawyer | OPS-04, OPS-05 | Dated decision. No automatic deletion exists until then |

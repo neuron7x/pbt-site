@@ -87,13 +87,14 @@ and a code PR simply reopens the ledger: stage `pre_integration`, technical leav
 External facts close only with a detached SSH signature from a key in `config/owner-allowed-signers`, which is deliberately
 empty: `tools/external_receipts.py`. A signature proves who stated a fact, not that it is true.
 
-**Governance limit.** `main` is not protected: branch protection and rulesets return HTTP 403 on this plan for a private
-repository (`gh api repos/neuron7x/pbt-site/rulesets`). CI cannot block a direct push. Admission is discipline: PR, exact-head
-receipts, `--match-head-commit`. It is enforceable only by a plan upgrade, which is the owner's decision.
+**Governance.** On 26.11.2026, GitHub reported `main` as unprotected and returned no repository rulesets.
+`AGENTS.md` requires PR admission, a green `make gate` and exact-revision evidence.
+
+The [evidence closure workflow](../.github/workflows/evidence-closure.yml) verifies the exact `main` revision
+and produces a proof-only checkout. It binds both push manifest revisions to the measured SHA:
 
 ```sh
-python3 tools/evidence_collect.py --kind push --head "$MAIN" --base "$PARENT" --out evidence/
-python3 tools/assurance_check.py --require engineering --evidence-dir evidence/
+python3 tools/evidence_collect.py --kind push --head "$MAIN" --base "$MAIN" --out evidence/
 ```
 
 ## Backup and restore failure model
@@ -111,8 +112,8 @@ python3 tools/assurance_check.py --require engineering --evidence-dir evidence/
 ## When the claims expire
 
 Evidence is valid for its revision. After any executable change, collect new exact-main receipts:
-`gh workflow run` for the four dispatch workflows; the soak runs on push when its paths change, otherwise by dispatch. Then
-`tools/evidence_reconcile.py --close`.
+use [the source-bound evidence closure workflow](../.github/workflows/evidence-closure.yml) to collect and reconcile the
+push receipts for that revision.
 
 ## Install, test, build
 
