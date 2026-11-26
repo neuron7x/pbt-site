@@ -90,6 +90,7 @@ jobs:
       - name: Verify exact PR source and availability of the base
         run: |
           test "$(git rev-parse HEAD)" = "$PBT_HEAD_SHA"
+          git diff --check "$PBT_BASE_SHA...$PBT_HEAD_SHA"
           git cat-file -e "$PBT_BASE_SHA^{commit}"
       - name: Install hash-locked test dependencies
         run: python -m pip install --disable-pip-version-check --require-hashes -r requirements.txt

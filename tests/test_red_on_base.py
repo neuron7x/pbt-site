@@ -151,4 +151,3 @@ def test_node_file_load_failure_does_not_replace_selected_assertion(repo):
     commit(r, {'new.cjs': 'exports.f = () => 2;\n', 'tests/m.test.cjs': suite}, 'feat')
     code, out = run(r, base)
     assert code == 1 and 'm.test.cjs::two: not-run' in out, out
-
