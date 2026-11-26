@@ -637,7 +637,7 @@
     fill($('#mats'), el('div', { class: 'tiles' }, D.materials.map((m, i) => el('article', { class: 'tile rv', style: { '--d': `${(i % 4) * 80}ms` } },
       el('figure', null, el('img', { src: m.img, srcset: x2(m.img), alt: m.name, width: 639, height: 396, loading: 'lazy', decoding: 'async' }), el('span', { class: 'tile__group' }, m.group)),
       el('div', { class: 'tile__body' }, el('h3', null, m.name), el('p', { class: 'tile__price' }, `${fmt(m.price)}\u00a0`, el('small', null, `грн/${m.unit}`)),
-        el('p', { class: 'tile__doc' }, m.doc), el('button', { class: 'btn btn--sm tile__order', type: 'button', 'data-req': 'material', 'data-subject': m.name }, 'У заявку'))))));
+        el('p', { class: 'tile__doc' }, `У каталозі: ${m.doc}`), el('button', { class: 'btn btn--sm tile__order', type: 'button', 'data-req': 'material', 'data-subject': m.name }, 'У заявку'))))));
   }
   function renderProof() {
     const standalone = window.PBT_BUNDLE && !D.mp4Only;
@@ -666,11 +666,11 @@
     const R = (D.routes && D.routes.to) || {};
     fill(list, D.regions.map((r, i) => el('li', { class: r === home ? 'rv home' : 'rv', style: { '--d': `${i * 50}ms` } },
       el('button', { class: 'geo__pick', type: 'button', 'data-ua': r, 'aria-pressed': 'false', 'aria-controls': 'geoInfo' },
-        el('b', null, `${r} область`), el('span', null, r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'виїзд')))));
+        el('b', null, `${r} область`), el('span', null, r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'за запитом')))));
     if (!svg) return;
     $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
-    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${OBL_UA[p.dataset.name] || 'Регіон'} — за запитом`; });
+    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'виїзд за погодженням'}` : `${OBL_UA[p.dataset.name] || 'Регіон'} — за запитом`; });
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
     initRoutes(svg, list, home);
     /* Контури — дані (media/map/oblasts.json, tools/geo_map.py), не 30 КБ gzip у критичному HTML. Вантажаться, коли секція
@@ -728,7 +728,7 @@
       const kids = [];
       if (isHome) {
         kids.push(el('p', { class: 'geo__leg' }, 'Полтава · база'), el('p', { class: 'geo__km' }, 'від 0 км'),
-          el('p', { class: 'geo__cost' }, 'Подача по області — за фактичним кілометражем від бази.'));
+          el('p', { class: 'geo__cost' }, 'Можливість і ціну подачі по області уточнюємо за запитом.'));
       } else if (r) {
         const t = (D.trailers || []).filter(x => Number.isSafeInteger(x.rate) && x.rate > 0).sort((a, b) => a.maxT - b.maxT);
         kids.push(el('p', { class: 'geo__leg' }, `${D.routes.from} → ${r.city}`),
@@ -736,7 +736,7 @@
           el('dl', { class: 'geo__cost' }, t.map(x => el('div', null, [el('dt', null, `${x.name}, ${fmt(x.rate)} грн/км`), el('dd', null, `≈ ${fmt(x.rate * r.km)} грн`)]))),
           el('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-km': String(r.km) }, `Підставити ${r.km} км у калькулятор`));
       }
-      kids.push(el('p', { class: 'geo__src' }, `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Ставки тралу — станом на ${D.priceDate.split('-').reverse().join('.')}.`));
+      kids.push(el('p', { class: 'geo__src' }, `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Архівні ставки трала від ${D.priceDate.split('-').reverse().join('.')}. Актуальні умови уточнюються.`));
       info.replaceChildren(...kids);
       info.hidden = false;
     }
