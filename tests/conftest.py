@@ -54,7 +54,7 @@ def browser(pw):
 def page_factory(browser, server):
     ctxs = []
 
-    def make(w=1440, h=900, mobile=False, reduced=False, path='/', bypass_csp=False, dpr=None, cores=8):
+    def make(w=1440, h=900, mobile=False, reduced=False, path='/', bypass_csp=False, dpr=None, cores=8, init_script=None):
         c = browser.new_context(viewport={'width': w, 'height': h}, is_mobile=mobile, has_touch=mobile, bypass_csp=bypass_csp,
                                 device_scale_factor=dpr or (2 if mobile else 1), reduced_motion='reduce' if reduced else 'no-preference')
         # CI runners commonly expose 2 vCPUs; video E2E requires an explicit
@@ -64,6 +64,8 @@ def page_factory(browser, server):
             "Object.defineProperty(navigator, 'hardwareConcurrency', "
             "{configurable: true, value: %d});" % cores
         )
+        if init_script is not None:
+            c.add_init_script(init_script)
         ctxs.append(c)
         pg = c.new_page()
         pg.errors = []

@@ -1,4 +1,5 @@
 """OPS-01: every signal claims exactly what it observed; unobserved evidence is UNKNOWN, never ready."""
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -96,3 +97,46 @@ def test_external_receipt_requires_matching_ids_not_a_self_written_flag(tmp_path
     receipt.write_text(json.dumps({'ok': True}))
     _, out = _run(db, '--receiver-receipt', str(receipt))
     assert out['signals']['receiver_persistence'] == 'UNKNOWN'
+
+
+def test_receiver_receipt_tracks_the_same_snapshot_as_delivery_counts(tmp_path, monkeypatch):
+    from ops import readiness
+
+    db = tmp_path / 'l.db'
+    _db(db, pending=1, delivered=1)
+    receipt = tmp_path / 'r.json'
+    connect = sqlite3.connect
+    with closing(connect(db)) as writer:
+        assert writer.execute('PRAGMA journal_mode=WAL').fetchone()[0] == 'wal'
+        delivered_id, = writer.execute("SELECT lead_id FROM outbox WHERE status='delivered'").fetchone()
+        receipt.write_text(json.dumps({'schema': 'pbt-receiver-receipt-v1', 'receipt_id': 'R-1',
+                                       'receiver': 'crm', 'persisted_lead_ids': [delivered_id]}),
+                           encoding='utf-8')
+
+        reads = 0
+
+        def interleave_delivery(sql):
+            nonlocal reads
+            if sql.lstrip().upper().startswith('SELECT'):
+                reads += 1
+                if reads == 2:
+                    # Перший SELECT вже відкрив SQLite-знімок. WAL дозволяє commit під час читання.
+                    writer.execute("UPDATE outbox SET status='delivered' WHERE status='pending'")
+                    writer.commit()
+
+        def traced_connect(*args, **kwargs):
+            reader = connect(*args, **kwargs)
+            reader.set_trace_callback(interleave_delivery)
+            return reader
+
+        monkeypatch.setattr(sqlite3, 'connect', traced_connect)
+        signals, counts, _ = readiness.evaluate(db, time.time(), 60, 0, 60, receipt)
+        assert writer.execute("SELECT count(*) FROM outbox WHERE status='delivered'").fetchone()[0] == 2
+        assert counts['delivered'] == 1
+        assert signals['transport_ack'] == 'PASS'
+        assert signals['receiver_persistence'] == 'PASS'
+        assert signals['business_processing'] == 'UNKNOWN'
+
+        signals, counts, _ = readiness.evaluate(db, time.time(), 60, 0, 60, receipt)
+        assert counts['delivered'] == 2
+        assert signals['receiver_persistence'] == 'FAIL'

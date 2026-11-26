@@ -65,7 +65,7 @@ INSTRUMENT = r"""
     return 'other';
   };
   const vitals = window.__pbtVitals = {
-    observers: {}, lcp: null, lcpElement: null, shifts: [], longTasks: 0, nodeLabel
+    observers: {}, lcp: null, lcpElement: null, lcpCandidates: [], shifts: [], longTasks: 0, nodeLabel
   };
   const observe = (type, callback) => {
     if (typeof PerformanceObserver !== 'function' ||
@@ -84,6 +84,9 @@ INSTRUMENT = r"""
     for (const e of list.getEntries()) {
       vitals.lcp = e.startTime;
       vitals.lcpElement = lcpElement(e.element);
+      vitals.lcpCandidates.push({
+        element: vitals.lcpElement, start_ms: e.startTime, render_ms: e.renderTime || null
+      });
     }
   });
   observe('layout-shift', list => {
@@ -156,6 +159,7 @@ def sample(browser, url: str, theme: str) -> dict:
           theme: document.documentElement.dataset.theme,
           lcp: window.__pbtVitals?.lcp ?? null,
           lcpElement: window.__pbtVitals?.lcpElement ?? null,
+          lcpCandidates: window.__pbtVitals?.lcpCandidates ?? [],
           observers: window.__pbtVitals?.observers ?? {},
           shifts: window.__pbtVitals?.shifts ?? null,
           longTasks: window.__pbtVitals?.longTasks ?? null,
@@ -187,6 +191,7 @@ def sample(browser, url: str, theme: str) -> dict:
         return {
             "theme": theme, "lcp_ms": round(float(first["lcp"]), 2),
             "lcp_element": first["lcpElement"],
+            "lcp_candidates": first["lcpCandidates"],
             "cls": round(cls_max_session(first["shifts"]), 5),
             "observers": first["observers"],
             "long_tasks": (first["longTasks"]

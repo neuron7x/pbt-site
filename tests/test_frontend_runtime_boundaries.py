@@ -27,8 +27,11 @@ const fs = require('node:fs'), vm = require('node:vm');
 const source = fs.readFileSync('web/js/site.js', 'utf8');
 const submit = source.match(/  form\.addEventListener\('submit', async e => \{[\s\S]*?\n  \}\);/);
 const human = source.match(/  function humanText\([^\n]*\) \{[\s\S]*?\n  \}/);
-const labels = source.split('\n').find(line => line.trimStart().startsWith('const typeLabel ='));
-if (!submit || !human || !labels) throw new Error('Actual form recovery source missing');
+const lines = source.split('\n');
+const labels = lines.find(line => line.trimStart().startsWith('const typeLabel ='));
+const mode = lines.find(line => line.trimStart().startsWith('const offlineLead ='));
+const showFallback = source.match(/  function showLeadFallback\([^\n]*\) \{[\s\S]*?\n  \}/);
+if (!submit || !human || !labels || !mode || !showFallback) throw new Error('Actual form recovery source missing');
 const classList = () => ({values: new Set(), add(v) {this.values.add(v);}, remove(v) {this.values.delete(v);}});
 const button = {disabled: false, textContent: ''};
 const done = {classList: classList(), focus() {this.focused = true;}};
@@ -40,11 +43,11 @@ let handler, clearCount = 0, fetchCount = 0, timers = 0;
 const form = {hidden: false, querySelector() {return null;}, addEventListener(_, f) {handler = f;}};
 const payload = {type:'rent', subject:'Synthetic receipt control', contact:'+380670000000', method:'phone'};
 const context = {form, done, fallback, msg, $: s => elements[s], payload: () => payload,
-  validate: () => ({}), setErr() {}, AbortController, window: {PBT_BUNDLE: false},
+  validate: () => ({}), setErr() {}, AbortController, window: {PBT_BUNDLE: false}, location: {protocol: 'http:'},
   idemKey: 'synthetic-receipt-key-000001', bindIdempotencyKey: async () => {},
   pendingClear() {clearCount++;}, setTimeout() {timers++; return 1;}, clearTimeout() {timers--;},
   fetch: async () => {fetchCount++; return {status:Number(process.argv[2]), json:async () => JSON.parse(process.argv[1])};}};
-vm.runInNewContext(labels + '\n' + human[0] + '\n' + submit[0], context);
+vm.runInNewContext([mode, labels, human[0], showFallback[0], submit[0]].join('\n'), context);
 (async () => {
   await handler({preventDefault() {}});
   process.stdout.write(JSON.stringify({clearCount, fetchCount, disabled:button.disabled,

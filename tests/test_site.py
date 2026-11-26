@@ -355,9 +355,15 @@ def test_hero_autoplays_in_webkit(pw, server):
 
 def test_brand_logo_animates_once_then_rests(page_factory):
     """Логотип власника (tools/logo.py): статичний кадр одразу (LCP), VP9-анімація з альфою грає раз і віддає місце статичному."""
-    pg = page_factory()
+    pg = page_factory(init_script="""
+      new MutationObserver(records => {
+        if (records.some(record => record.target.matches('.logo-hero.is-anim'))) {
+          window.pbtLogoWasAnimated = true;
+        }
+      }).observe(document, {subtree: true, attributes: true, attributeFilter: ['class']});
+    """)
     assert pg.evaluate('document.querySelector(".logo-hero__img").complete && document.querySelector(".logo-hero__img").naturalWidth') == 960
-    pg.wait_for_function('() => document.querySelector(".logo-hero").classList.contains("is-anim")', timeout=8000)
+    pg.wait_for_function('() => window.pbtLogoWasAnimated === true', timeout=8000)
     pg.wait_for_function('() => document.getElementById("logoAnim").ended && !document.querySelector(".logo-hero").classList.contains("is-anim")', timeout=12000)
     assert pg.evaluate('document.querySelectorAll(".brand__logo").length') == 2           # шапка й підвал
 

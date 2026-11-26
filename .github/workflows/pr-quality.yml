@@ -18,7 +18,8 @@ jobs:
     name: Independent exact-main make gate (no main mutation)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    # Two hosted attempts spent 13–14 minutes provisioning before the unchanged gate.
+    timeout-minutes: 45
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
@@ -66,7 +67,8 @@ jobs:
   release-gate:
     name: Native contracts → full gate → offline bundles / lab metrics
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # 23abcfe: 29m35s with a cold runner. Leave headroom for full proof and uploads.
+    timeout-minutes: 40
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'

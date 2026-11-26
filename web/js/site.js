@@ -241,6 +241,12 @@
     }
   }
 
+  /* ───── СПОКІЙ ПЕРИФЕРІЇ (аудит п.50): декоративний цикл поза в'юпортом — на паузі (CSS [data-off]) ───── */
+  if ('IntersectionObserver' in window) {
+    const loopIO = new IntersectionObserver(es => es.forEach(e => e.target.toggleAttribute('data-off', !e.isIntersecting)));
+    $$('.hero, .marquee, .wave, #geoMap').forEach(n => loopIO.observe(n));
+  }
+
   /* ───── ГЛИБИНОМІР, АКТИВНА СЕКЦІЯ, ПРОГРЕС ───── */
   const gauge = $('#gauge'), gFloat = $('.gauge__float'), gOut = $('.gauge__m'), gStops = $$('.gauge__stops a'), navLinks = $$('.nav__links a');
   const sections = $$('main section[id]');
@@ -631,7 +637,7 @@
     fill($('#mats'), el('div', { class: 'tiles' }, D.materials.map((m, i) => el('article', { class: 'tile rv', style: { '--d': `${(i % 4) * 80}ms` } },
       el('figure', null, el('img', { src: m.img, srcset: x2(m.img), alt: m.name, width: 639, height: 396, loading: 'lazy', decoding: 'async' }), el('span', { class: 'tile__group' }, m.group)),
       el('div', { class: 'tile__body' }, el('h3', null, m.name), el('p', { class: 'tile__price' }, `${fmt(m.price)}\u00a0`, el('small', null, `грн/${m.unit}`)),
-        el('p', { class: 'tile__doc' }, m.doc), el('button', { class: 'btn btn--sm tile__order', type: 'button', 'data-req': 'material', 'data-subject': m.name }, 'У заявку'))))));
+        el('p', { class: 'tile__doc' }, `У каталозі: ${m.doc}`), el('button', { class: 'btn btn--sm tile__order', type: 'button', 'data-req': 'material', 'data-subject': m.name }, 'У заявку'))))));
   }
   function renderProof() {
     const standalone = window.PBT_BUNDLE && !D.mp4Only;
@@ -660,11 +666,11 @@
     const R = (D.routes && D.routes.to) || {};
     fill(list, D.regions.map((r, i) => el('li', { class: r === home ? 'rv home' : 'rv', style: { '--d': `${i * 50}ms` } },
       el('button', { class: 'geo__pick', type: 'button', 'data-ua': r, 'aria-pressed': 'false', 'aria-controls': 'geoInfo' },
-        el('b', null, `${r} область`), el('span', null, r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'виїзд')))));
+        el('b', null, `${r} область`), el('span', null, r === home ? 'база · Полтава' : R[r] ? `${fmt(R[r].km)} км` : 'за запитом')))));
     if (!svg) return;
     $('#geoMap').classList.add('rv');
     const hov = $('#geoHover');
-    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'працюємо'}` : `${OBL_UA[p.dataset.name] || 'Регіон'} — за запитом`; });
+    svg.addEventListener('pointerover', e => { const p = e.target.closest('.obl'); if (!p) return; hov.textContent = p.dataset.ua ? `${p.dataset.ua} область — ${p.dataset.ua === home ? 'база' : 'виїзд за погодженням'}` : `${OBL_UA[p.dataset.name] || 'Регіон'} — за запитом`; });
     svg.addEventListener('pointerout', () => { hov.textContent = ''; });
     initRoutes(svg, list, home);
     /* Контури — дані (media/map/oblasts.json, tools/geo_map.py), не 30 КБ gzip у критичному HTML. Вантажаться, коли секція
@@ -722,7 +728,7 @@
       const kids = [];
       if (isHome) {
         kids.push(el('p', { class: 'geo__leg' }, 'Полтава · база'), el('p', { class: 'geo__km' }, 'від 0 км'),
-          el('p', { class: 'geo__cost' }, 'Подача по області — за фактичним кілометражем від бази.'));
+          el('p', { class: 'geo__cost' }, 'Можливість і ціну подачі по області уточнюємо за запитом.'));
       } else if (r) {
         const t = (D.trailers || []).filter(x => Number.isSafeInteger(x.rate) && x.rate > 0).sort((a, b) => a.maxT - b.maxT);
         kids.push(el('p', { class: 'geo__leg' }, `${D.routes.from} → ${r.city}`),
@@ -730,7 +736,7 @@
           el('dl', { class: 'geo__cost' }, t.map(x => el('div', null, [el('dt', null, `${x.name}, ${fmt(x.rate)} грн/км`), el('dd', null, `≈ ${fmt(x.rate * r.km)} грн`)]))),
           el('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-km': String(r.km) }, `Підставити ${r.km} км у калькулятор`));
       }
-      kids.push(el('p', { class: 'geo__src' }, `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Ставки тралу — станом на ${D.priceDate.split('-').reverse().join('.')}.`));
+      kids.push(el('p', { class: 'geo__src' }, `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Архівні ставки трала від ${D.priceDate.split('-').reverse().join('.')}. Актуальні умови уточнюються.`));
       info.replaceChildren(...kids);
       info.hidden = false;
     }
@@ -761,7 +767,13 @@
   function applyBusiness(b) {
     const c = b.contacts || {};
     const tel = p => p ? `tel:${String(p).replace(/[^+\d]/g, '')}` : '#zapyt';
-    $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = tel(c.phone); });
+    const phoneHref = tel(c.phone);
+    $$('[data-phone]').forEach(a => { a.textContent = phoneHuman(c.phone) || 'Телефон уточнюється'; if (a.tagName === 'A') a.href = phoneHref; });
+    $$('[data-phone-action]').forEach(a => {
+      a.hidden = !c.phone;
+      if (c.phone) a.href = phoneHref;
+      else a.removeAttribute('href');
+    });
     /* другий телефон не наданий — у розмітці <span>-заготовка: <a> без href псувало crawlable-anchors */
     $$('[data-phone2]').forEach(node => {
       const present = !!c.phone2, row = node.closest('[data-phone2-row]') || node;
@@ -788,7 +800,7 @@
     const h = b.hours || {};
     $$('[data-hours]').forEach(e => e.textContent = h['mo-fr'] ? `Пн–Пт ${h['mo-fr']} · Сб ${h.sa || '—'} · Нд ${h.su || '—'}` : 'Графік роботи уточнюється');
     const ch = [];
-    if (c.phone) ch.push({ k: 'Телефон', v: phoneHuman(c.phone), href: tel(c.phone) });
+    if (c.phone) ch.push({ k: 'Телефон', v: phoneHuman(c.phone), href: phoneHref });
     if (c.phone2) ch.push({ k: 'Телефон', v: phoneHuman(c.phone2), href: tel(c.phone2) });
     if (c.viber) ch.push({ k: 'Viber', v: phoneHuman(c.viber), href: `viber://chat?number=${encodeURIComponent(c.viber)}` });
     if (c.telegram) ch.push({ k: 'Telegram', v: c.telegram, href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}` });
@@ -854,6 +866,7 @@
     hours: 'Ціле число від 1 до 5000.', km: 'Ціле число від 0 до 3000.', date: 'Дата — не раніше за сьогоднішню.', contact: 'Перевірте контакт: 0XX XXX XX XX або @нік у Telegram.', comment: 'Опишіть завдання кількома словами.' };
   const form = $('#lead'), done = $('#done'), fallback = $('#fallback'), msg = $('#formMsg');
   const method = $('#method'), contact = $('#contact');
+  const offlineLead = !!window.PBT_BUNDLE || location.protocol === 'file:';
   // Значення калькулятора належать лише вибраній зміні. Ручний ввід має пріоритет.
   const calcValues = new Map();
   const hoursByType = new Map();
@@ -961,6 +974,12 @@
     return [`Заявка · ${typeLabel[p.type] || p.type}`, p.subject && `Що: ${p.subject}`, p.hours && `Обсяг: ${p.hours}`, p.km && `Подача: ${p.km} км`, p.place && `Об’єкт: ${p.place}`,
       p.date && `Дата: ${p.date}`, p.name && `Ім’я: ${p.name}`, `Зв’язок: ${p.method} ${p.contact}`, p.comment && `Коментар: ${p.comment}`].filter(Boolean).join('\n');
   }
+  function showLeadFallback(p) {
+    form.hidden = true;
+    fallback.classList.add('is-on');
+    $('#fbText').textContent = humanText(p);
+    fallback.focus();
+  }
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if ($('#send').disabled) return;
@@ -968,13 +987,16 @@
     ['subject', 'hours', 'km', 'date', 'contact', 'comment'].forEach(k => setErr(k, err[k]));
     msg.classList.remove('is-on');
     if (Object.keys(err).length) { const first = form.querySelector('.is-err input, .is-err textarea'); if (first) first.focus(); return; }
+    if (offlineLead) {
+      showLeadFallback(p);
+      return;
+    }
     const h = JSON.stringify(p);
     const btn = $('#send'); btn.disabled = true; btn.textContent = 'Надсилаю…';
     const controller = new AbortController();
     const deadline = setTimeout(() => controller.abort(), 15000);
     try {
       await bindIdempotencyKey(h);
-      if (window.PBT_BUNDLE) throw new Error('bundle');
       const r = await fetch('/api/lead', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey }, body: h, signal: controller.signal });
       const j = await r.json().catch(error => { if (controller.signal.aborted) throw error; return {}; });
       if (r.status === 201) {
@@ -991,10 +1013,17 @@
       } else if (r.status === 429) { msg.textContent = j.message || 'Забагато запитів. Спробуйте через 10 хвилин або зателефонуйте.'; msg.classList.add('is-on'); }
       else { msg.textContent = 'Сервер не прийняв заявку. Спробуйте ще раз або зателефонуйте — номери поруч.'; msg.classList.add('is-on'); }
     } catch {
-      form.hidden = true; fallback.classList.add('is-on'); $('#fbText').textContent = humanText(p);
-      fallback.focus();
+      showLeadFallback(p);
     } finally { clearTimeout(deadline); btn.disabled = false; btn.textContent = 'Надіслати заявку'; }
   });
+  if (offlineLead) {
+    $('#requestLeadDescription').textContent = 'Підготуйте текст заявки та повідомте деталі диспетчеру.';
+    $('#requestDeliveryNote').textContent = 'Автономна версія готує текст заявки на вашому пристрої.';
+    $('#send').textContent = 'Підготувати заявку';
+    $('#fallbackStatus').textContent = 'Заявку не надіслано';
+    $('#fallbackTitle').textContent = 'Текст заявки готовий';
+    $('#fallbackDetail').textContent = 'Скопіюйте текст або зателефонуйте диспетчеру.';
+  }
   $('#send').disabled = false;
   $('#formUnavailable').hidden = true;
   $('#fbCopy').addEventListener('click', async () => {
@@ -1005,8 +1034,11 @@
   $('#again').addEventListener('click', () => { done.classList.remove('is-on'); form.hidden = false; form.reset(); idemHash = ''; pendingClear(); $('#subject').focus(); });
   $('#fbRetry')?.addEventListener('click', () => {
     fallback.classList.remove('is-on'); form.hidden = false;
-    msg.textContent = 'Підтвердження не отримано. Можна повторити надсилання: незмінена заявка не дублюється.';
-    msg.classList.add('is-on'); $('#send').focus();
+    if (!offlineLead) {
+      msg.textContent = 'Підтвердження не отримано. Можна повторити надсилання: незмінена заявка не дублюється.';
+      msg.classList.add('is-on');
+    }
+    $('#send').focus();
   });
 
   document.addEventListener('click', e => {
