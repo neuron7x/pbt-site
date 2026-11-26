@@ -792,8 +792,8 @@
     if (c.phone2) ch.push({ k: 'Телефон', v: phoneHuman(c.phone2), href: tel(c.phone2) });
     if (c.viber) ch.push({ k: 'Viber', v: phoneHuman(c.viber), href: `viber://chat?number=${encodeURIComponent(c.viber)}` });
     if (c.telegram) ch.push({ k: 'Telegram', v: c.telegram, href: `https://t.me/${encodeURIComponent(String(c.telegram).replace('@', ''))}` });
-    if (email) ch.push({ k: 'Email', v: email, href: `mailto:${email}` });
-    fill($('#channels'), ch.length ? ch.map(x => el('a', { href: x.href }, el('b', null, x.v), el('span', null, x.k)))
+    if (email) ch.push({ k: 'Електронна пошта', v: email, href: `mailto:${email}` });
+    fill($('#channels'), ch.length ? ch.map(x => el('a', { href: x.href }, el('span', null, x.k), el('b', null, x.v)))
       : el('div', null, el('b', null, 'Канали зв’язку'), el('span', null, 'уточнюються')));
     const soc = [['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['facebook', 'Facebook'], ['youtube', 'YouTube']].filter(([k]) => httpsUrl(c[k]));
     $$('[data-social]').forEach(ul => { ul.hidden = !soc.length; fill(ul, soc.map(([k, n]) => el('li', null, el('a', { href: httpsUrl(c[k]), target: '_blank', rel: 'noopener' }, n)))); });
