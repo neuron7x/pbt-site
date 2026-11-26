@@ -9,6 +9,7 @@ import subprocess
 import sys
 import zipfile
 import zlib
+from unittest.mock import patch
 
 import pytest
 
@@ -58,8 +59,9 @@ CATALOG = json.loads(CATALOG_RAW)['mutants']
 
 
 def verify(meta, directory, policy, head=HEAD, base=BASE, evidence_policy=None):
-    return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY,
-                                REQUIRED_TESTS, CATALOG_RAW, source_locks=SOURCE_LOCKS)
+    with patch.object(gate, 'media_report_at', return_value=MEDIA_REPORT, create=True):
+        return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY,
+                                    REQUIRED_TESTS, CATALOG_RAW, source_locks=SOURCE_LOCKS)
 
 
 def png():
@@ -79,7 +81,7 @@ def _jobs(role):
     return {name: {'id': 1000 + i, 'status': 'completed', 'conclusion': 'success'} for i, name in enumerate(names)}
 
 
-def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mutation_verdicts=None, catalog_raw=None, event='pull_request', pr=14):
+def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mutation_verdicts=None, catalog_raw=None, event='pull_request', pr=14, media_report=None):
     # A synthetic fixture does not claim to be an actual GitHub workflow run.
     CATALOG_RAW_ = catalog_raw or CATALOG_RAW
     CATALOG_ = json.loads(CATALOG_RAW_)['mutants']
@@ -116,7 +118,7 @@ def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mu
         captures.append({'filename':name,'bytes':len(raw_png),'sha256':sha(raw_png),
                          'height':1,'width':1})
     manifest=json.dumps({'revision':HEAD,'failures':[],'captures':captures}).encode()
-    media=json.dumps(MEDIA_REPORT).encode()
+    media=json.dumps(MEDIA_REPORT if media_report is None else media_report).encode()
     visual_receipt=json.dumps({'expected_head_sha':HEAD,'ok':True,'failures':[],
                                 'screenshot_count':32,'evidence':{
                                 'shots_manifest':{'bytes':len(manifest),'sha256':sha(manifest)},

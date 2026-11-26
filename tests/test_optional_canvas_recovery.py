@@ -13,7 +13,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 
-@pytest.mark.parametrize("mode", ["unavailable", "hidden", "desktop", "mobile"])
+@pytest.mark.parametrize("mode", ["unavailable", "hidden", "desktop", "mobile", "offscreen"])
 def test_optional_spark_context_failure_is_inert_and_available_animation_is_preserved(mode):
     node = shutil.which("node")
     assert node, "Node.js is required to verify optional canvas recovery"
@@ -37,6 +37,7 @@ const spark = {clientWidth: 400, clientHeight: 200, width: 0, height: 0,
 const context = {spark, ctx: null, dots: [{stale: true}], cW: 0, cH: 0, cLast: 0, sparkOn: mode === 'unavailable',
   getComputedStyle: () => ({display: mode === 'hidden' ? 'none' : 'block'}), devicePixelRatio: 2,
   mobileLayout: () => mode === 'mobile', motion: () => true, quality: () => 'full', heroP: 0,
+  heroInView: () => mode !== 'offscreen',
   document: {hidden: false}, requestAnimationFrame: () => {frames++;}};
 vm.runInNewContext(functions.join('\n') + '\n' + wake, context);
 let error = null;
@@ -55,6 +56,9 @@ process.stdout.write(JSON.stringify({error, contextCalls, frames, clears, partic
         assert actual["frames"] == actual["particles"] == actual["clears"] == 0
         assert actual["transforms"] == [] and not actual["running"]
         assert actual["contextCalls"] == (0 if mode == "hidden" else 1)
+    elif mode == "offscreen":
+        assert actual["hasContext"] and not actual["running"]
+        assert actual["frames"] == actual["particles"] == actual["clears"] == 0
     else:
         count = 28 if mode == "mobile" else 60
         assert actual["hasContext"] and actual["running"]

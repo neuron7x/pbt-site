@@ -12,6 +12,7 @@ production availability, field CWV, or correctness of the test oracles.
 """
 import argparse
 import hashlib
+import io
 import json
 import math
 from pathlib import Path
@@ -20,6 +21,8 @@ import stat
 import struct
 import subprocess
 import sys
+import tarfile
+import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 import zlib
@@ -337,12 +340,38 @@ def verify_sast(z, expected_head, source_locks):
     return {'files_scanned':report['files_scanned'],'components':len(bom['components'])}
 
 
+def media_report_at(root, head):
+    require(SHA.fullmatch(head), 'expected_sha_format')
+    archive = subprocess.run(
+        ['git', 'archive', '--format=tar', head, 'config/visual-budgets.json', 'web/media'],
+        cwd=root, capture_output=True, timeout=45,
+    )
+    require(archive.returncode == 0, 'source_media_unavailable')
+    with tempfile.TemporaryDirectory(prefix='pbt-source-media-') as directory:
+        snapshot = Path(directory)
+        with tarfile.open(fileobj=io.BytesIO(archive.stdout), mode='r:') as entries:
+            for entry in entries:
+                relative = Path(entry.name)
+                require(not relative.is_absolute() and '..' not in relative.parts
+                        and (entry.isdir() or entry.isfile()), 'source_media_path')
+                target = snapshot / relative
+                if entry.isdir():
+                    target.mkdir(parents=True, exist_ok=True)
+                else:
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    with entries.extractfile(entry) as source, target.open('wb') as destination:
+                        while block := source.read(1024 * 1024):
+                            destination.write(block)
+        policy = media_budget.parse_budget((snapshot / 'config/visual-budgets.json').read_text(encoding='utf-8'))
+        return media_budget.audit_media(snapshot / 'web' / 'media', policy)
+
+
 def policy_digest(*documents):
     return hashlib.sha256(json.dumps(documents,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 
 
 def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base, evidence_policy, required_tests,
-                    mutation_catalog, expected_repo='neuron7x/pbt-site', *, source_locks=None):
+                    mutation_catalog, expected_repo='neuron7x/pbt-site', *, source_locks=None, source_root=None):
     require(SHA.fullmatch(expected_head) and SHA.fullmatch(expected_base), 'expected_sha_format')
     require(meta['schema'] == 'pbt-exact-head-evidence-matrix-v2', 'manifest_schema')
     require(meta['head_sha'] == expected_head and meta['base_sha'] == expected_base, 'manifest_sha_mismatch')
@@ -431,8 +460,7 @@ def verify_manifest(meta, evidence_dir, policy, expected_head, expected_base, ev
         for key,raw in (('media_report',media_raw),('shots_manifest',m_raw)):
             require(ev['evidence'][key]['bytes']==len(raw),'visual_report_size')
             digest_match(raw,ev['evidence'][key]['sha256'])
-        visual_policy = media_budget.parse_budget((ROOT / 'config/visual-budgets.json').read_text(encoding='utf-8'))
-        exact_media = media_budget.audit_media(ROOT / 'web' / 'media', visual_policy)
+        exact_media = media_report_at(source_root or ROOT, expected_head)
         require(exact_media['failures'] == [] and media == exact_media, 'media_report')
         shot_count=0;names=set()
         for capture in manifest['captures']:
@@ -472,7 +500,7 @@ def main(argv=None):
                                json_bytes(args.policy.read_bytes()),args.expected_head,args.expected_base,
                                json_bytes(args.evidence_policy.read_bytes()),json_bytes(args.required_tests.read_bytes()),
                                args.mutation_catalog.read_bytes(),args.expected_repo)
-    except (Rejected,KeyError,TypeError,ValueError,OSError,ET.ParseError,zipfile.BadZipFile,UnicodeError,OverflowError,IndexError) as e:
+    except (Rejected,KeyError,TypeError,ValueError,OSError,ET.ParseError,zipfile.BadZipFile,tarfile.TarError,subprocess.TimeoutExpired,UnicodeError,OverflowError,IndexError) as e:
         print(json.dumps({'status':'FAIL','reason':str(e)[:150],'error_type':type(e).__name__},sort_keys=True))
         return 1
     print(json.dumps(result,sort_keys=True,separators=(',',':')))

@@ -202,7 +202,10 @@
   let heroTop = 0, heroBottom = 0, heroTravel = 0;
   let syncHeroVideo = () => {}, syncHeroLogo = () => {};
   let heroWasVisible = false;
-  const heroInView = () => scrollY < heroBottom && scrollY + innerHeight > heroTop;
+  const heroInView = () => {
+    const visibleEnd = heroTravel > 0 ? heroTop + heroTravel : heroBottom;
+    return scrollY < visibleEnd && scrollY + innerHeight > heroTop;
+  };
   function heroRender(y) {
     if (motion() && heroTravel > 0) {
       const p = clamp((y - heroTop) / heroTravel, 0, 1);
