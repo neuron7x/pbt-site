@@ -1150,6 +1150,11 @@
     const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), railDots = $$('a', rail);
     let cur = -1, front = 0, inView = false, nextTimer = 0, fadeTimer = 0;
     const dissolveMs = 1400;
+    const cineInViewport = () => {
+      if (!inView) return false;
+      const bounds = sec.getBoundingClientRect();
+      return bounds.bottom > 0 && bounds.top < innerHeight;
+    };
     const prof = () => (mobileLayout() && innerHeight > innerWidth ? 'm' : 'w');
     /* Кліпи «Масштабу» у WebM — VP9 Profile 1 (4:4:4): майже ніде не декодується апаратно. W3C Media Capabilities:
        на дотику WebM лише якщо декодування енергоефективне, інакше апаратний H.264 того самого кадру; на ПК — як і досі,
@@ -1165,13 +1170,14 @@
           .then(i => !!(i.supported && i.smooth && (finePointer || i.powerEfficient)), () => finePointer));
     }
     function load(v, id) {
+      if (!cineInViewport() || !videoAllowed()) return;
       const p = prof(), n = id + '-' + p;
       if (v.dataset.clip === n) return;
       v.dataset.clip = n; v.removeAttribute('src'); v.replaceChildren();
       v.poster = C_BASE + n + '.webp';
       webmFor(p).then(webm => {
         if (v.dataset.clip !== n) return;                                  // кадр уже змінився, поки браузер відповідав
-        if (!inView || !videoAllowed()) { delete v.dataset.clip; return; }
+        if (!cineInViewport() || !videoAllowed()) { delete v.dataset.clip; return; }
         v.replaceChildren();
         if (webm) { const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = CINE_WEBM; v.append(a); }
         const b = document.createElement('source'); b.src = C_BASE + n + '.mp4'; b.type = 'video/mp4'; v.append(b);
@@ -1185,9 +1191,9 @@
       clearTimeout(nextTimer);
       const chapter = cur;
       const after = chs[chapter + 1];
-      if (!after || !inView || !videoAllowed()) return;
+      if (!after || !cineInViewport() || !videoAllowed()) return;
       nextTimer = setTimeout(() => {
-        if (cur !== chapter || !inView || !videoAllowed()) return;
+        if (cur !== chapter || !cineInViewport() || !videoAllowed()) return;
         const spare = layers[1 - front];
         load(spare, after.id);
         spare.preload = 'auto';
@@ -1200,13 +1206,13 @@
       railDots.forEach((node, k) => node.classList.toggle('is-on', k === i));
       const next = layers[1 - front], prev = layers[front];
       next.poster = C_BASE + chs[i].id + '-' + prof() + '.webp';
-      if (inView && videoAllowed()) load(next, chs[i].id);
+      if (cineInViewport() && videoAllowed()) load(next, chs[i].id);
       else {
         // Новий розділ у паузі показує власний постер, а не кадр попереднього кліпу.
         next.removeAttribute('src'); next.replaceChildren(); delete next.dataset.clip; next.load();
       }
       next.classList.add('is-on'); prev.classList.remove('is-on');
-      if (inView && videoAllowed()) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      if (cineInViewport() && videoAllowed()) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
       clearTimeout(fadeTimer);
       fadeTimer = setTimeout(() => prev.pause(), dissolveMs);
       front = 1 - front;
@@ -1214,7 +1220,7 @@
       sec.dataset.cur = chs[i].id;
     }
     function syncCine() {
-      if (inView && videoAllowed()) {
+      if (cineInViewport() && videoAllowed()) {
         if (cur < 0) { show(0); return; }
         const v = layers[front]; load(v, chs[cur].id);
         const pr = v.play(); if (pr && pr.catch) pr.catch(() => {});
