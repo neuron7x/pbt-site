@@ -258,3 +258,28 @@ def test_hero_frame_probe_records_chromium_composition_time(browser):
         assert 0 <= frame["presentation_ms"] <= frame["expected_display_ms"]
     finally:
         page.close()
+
+
+def test_media_network_checkpoints_preserve_strict_csp(browser):
+    from types import SimpleNamespace
+
+    assert hasattr(perf_probe, "sample_media_network")
+    base = "http://127.0.0.1:8000/"
+    html = ("<!doctype html><script src='/boot.js'></script><main>"
+            + "<p>Перевірка прокрутки</p>" * 100 + "</main>")
+
+    def new_context(**options):
+        ctx = browser.new_context(**options)
+        ctx.route(base, lambda route: route.fulfill(
+            content_type="text/html", body=html,
+            headers={"Content-Security-Policy": "script-src 'self'"}))
+        ctx.route(base + "boot.js", lambda route: route.fulfill(
+            content_type="application/javascript",
+            body="document.documentElement.dataset.theme = localStorage.getItem('pbt-theme')"))
+        return ctx
+
+    result = perf_probe.sample_media_network(SimpleNamespace(new_context=new_context), base, "sky")
+    assert result["hero_frame"]["status"] == "hero_video_missing"
+    assert result["scroll"]["applied"]
+    assert result["through_5_seconds"]["at_ms"] == 5000
+    assert result["through_1_second_after_scroll"]["at_ms"] >= 6000

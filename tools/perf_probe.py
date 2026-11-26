@@ -282,6 +282,17 @@ def network_checkpoint(chunks, start, cutoff_ms, *, strict=False):
     return {"status": "observed", "at_ms": cutoff_ms, "encoded_bytes_by_path": totals}
 
 
+def wait_for_page_time(page, target_ms, limit_ms):
+    """Wait on the Playwright side so the page keeps its production CSP."""
+    left = target_ms - page.evaluate("performance.now()")
+    if not math.isfinite(left) or left > limit_ms:
+        raise RuntimeError("Мережева проба не може дочекатися часової межі")
+    if left > 0:
+        page.wait_for_timeout(math.ceil(left))
+    if page.evaluate("performance.now()") < target_ms:
+        raise RuntimeError("Мережева проба зупинилась до часової межі")
+
+
 def sample_media_network(browser, url, theme):
     ctx = mobile_context(browser)
     try:
@@ -317,7 +328,7 @@ def sample_media_network(browser, url, theme):
         after = page.evaluate("performance.now()")
         start = navigation_start(metrics, before, after)
 
-        page.wait_for_function("performance.now() >= 5000", timeout=6000)
+        wait_for_page_time(page, 5000, 6000)
         scroll = page.evaluate("""(() => {
           const from_y = scrollY;
           const at_ms = performance.now();
@@ -327,8 +338,7 @@ def sample_media_network(browser, url, theme):
         applied = scroll["to_y"] > scroll["from_y"]
         observed_after_scroll = scroll["at_ms"] + 1000 if applied else None
         if applied:
-            page.wait_for_function("at => performance.now() >= at", arg=observed_after_scroll,
-                                   timeout=3000)
+            wait_for_page_time(page, observed_after_scroll, 3000)
 
         frame = page.evaluate("window.__pbtHeroFrame")
         frame["source_path"] = media_path(frame.pop("source", ""), url)
