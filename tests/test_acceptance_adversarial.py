@@ -14,8 +14,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from test_meta_evidence_gate import build_state, junit  # noqa: E402
-from tools import assurance_check as ac, evidence_reconcile as er, external_receipts as ex, meta_evidence_gate as gate  # noqa: E402
+from test_meta_evidence_gate import build_state, junit, sha  # noqa: E402
+from tools import assurance_check as ac, evidence_reconcile as er, external_receipts as ex, media_budget, meta_evidence_gate as gate  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -57,6 +57,16 @@ class World:
         for name in gate.supply_chain.LOCKS:
             shutil.copyfile(ROOT / name, self.repo / name)
         (self.repo / 'assurance/evidence').mkdir()
+        media_root = self.repo / 'web/media'
+        (media_root / 'video').mkdir(parents=True)
+        for index in range(160):
+            (media_root / 'video' / f'fixture-{index}.webm').write_bytes(b'fixture')
+        media_policy = {
+            'schema_version': 1, 'max_total_bytes': 2000, 'max_single_asset_bytes': 32,
+            'rules': [{'glob': 'video/*.webm', 'min_count': 160, 'max_bytes': 32}],
+        }
+        (self.repo / 'config/visual-budgets.json').write_text(json.dumps(media_policy))
+        fixture_media = media_budget.audit_media(media_root, media_policy)
         if signers_text is not None:
             (self.repo / 'config/owner-allowed-signers').write_text(signers_text)
         _git(self.repo, 'init', '-q')
@@ -70,7 +80,7 @@ class World:
         self.head = _commit(self.repo, 'measured')
         meta, policy, _, self.contents = build_state(self.evidence, self.head, self.base,
                                                      extra_release_cases=_cases_for(ledger, catalog, drop),
-                                                     extra_mutation_verdicts=verdicts, catalog_raw=catalog_raw)
+                                                     extra_mutation_verdicts=verdicts, catalog_raw=catalog_raw, media_report=fixture_media)
         meta['target'] = {'kind': 'push', 'pr_number': None, 'ref': 'refs/heads/main'}
         del meta['artifacts']['baseline']
         for run in meta['runs'].values():
@@ -125,6 +135,7 @@ def test_authentic_evidence_is_accepted(world):
 def test_meta_cli_reads_measured_locks_after_a_later_closure_commit(world, monkeypatch, capsys):
     monkeypatch.setattr(gate, 'ROOT', world.repo)
     assert _git(world.repo, 'rev-parse', 'HEAD') != world.head
+    (world.repo / 'web/media/video/fixture-0.webm').write_bytes(b'later closure worktree')
     result = gate.main([
         '--manifest', str(world.evidence / 'manifest.json'),
         '--evidence-dir', str(world.evidence),
@@ -135,6 +146,22 @@ def test_meta_cli_reads_measured_locks_after_a_later_closure_commit(world, monke
     assert result == 0 and decision['status'] == 'PASS'
     assert decision['head_sha'] == world.head
     assert set(decision['osv_dependencies_by_lock']) == set(gate.supply_chain.LOCKS)
+
+    policy = json.loads((world.repo / 'config/visual-budgets.json').read_text())
+    changed = json.dumps(media_budget.audit_media(world.repo / 'web/media', policy)).encode()
+    visual = world.contents['visual']
+    visual['media-budget.json'] = changed
+    receipt = json.loads(visual['evidence-verification.json'])
+    receipt['evidence']['media_report'] = {'bytes': len(changed), 'sha256': sha(changed)}
+    visual['evidence-verification.json'] = json.dumps(receipt).encode()
+    _rewrite(world, 'visual')
+    result = gate.main([
+        '--manifest', str(world.evidence / 'manifest.json'),
+        '--evidence-dir', str(world.evidence),
+        '--policy', str(world.repo / 'config/runtime-soak-budgets.json'),
+        '--expected-head', world.head, '--expected-base', world.base,
+    ])
+    assert result == 1 and json.loads(capsys.readouterr().out)['reason'] == 'media_report'
 
 
 def test_forged_all_pass_ledger_is_not_accepted(tmp_path):

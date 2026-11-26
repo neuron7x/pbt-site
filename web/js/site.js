@@ -96,22 +96,31 @@
     video.dataset.ready = '1';
     return true;
   }
-  const playing = new Set(), visibleCards = new Set();
+  const visibleCards = new Set();
+  const cardVideoVisibleRatio = .45;
   function syncCardVideo(card) {
     const v = $('video', card); if (!v) return;
     if (visibleCards.has(card) && videoAllowed() && attachVideo(v, v.dataset.video)) {
       if (!v.poster && v.dataset.poster && attrOk('poster', v.dataset.poster)) v.poster = v.dataset.poster;
       v.preload = 'auto';
       const p = v.play(); if (p && p.catch) p.catch(() => {});
-      card.classList.add('is-playing'); playing.add(v);
-    } else { v.pause(); card.classList.remove('is-playing'); playing.delete(v); }
+    } else { v.pause(); card.classList.remove('is-playing'); }
   }
   mediaSync.add(() => visibleCards.forEach(syncCardVideo));
   const vio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
-    if (e.isIntersecting) visibleCards.add(e.target); else visibleCards.delete(e.target);
+    if (e.intersectionRatio >= cardVideoVisibleRatio) visibleCards.add(e.target); else visibleCards.delete(e.target);
     syncCardVideo(e.target);
-  }), { threshold: .45 }) : null;
-  const watchVideo = node => { if (vio) vio.observe(node); };
+  }), { threshold: cardVideoVisibleRatio }) : null;
+  function watchVideo(card) {
+    if (!vio) return;
+    const video = $('video', card); if (!video) return;
+    video.addEventListener('playing', () => {
+      if (visibleCards.has(card) && videoAllowed() && !video.paused) card.classList.add('is-playing');
+    });
+    video.addEventListener('pause', () => { if (video.paused) card.classList.remove('is-playing'); });
+    video.addEventListener('error', () => card.classList.remove('is-playing'));
+    vio.observe(card);
+  }
 
   /* ───── НАВІГАЦІЯ, МЕНЮ ───── */
   const nav = $('#nav'), burger = $('.burger'), menu = $('#menu'), menuClose = $('#menuClose');
@@ -190,24 +199,27 @@
   /* ───── ГЕРОЙ ───── */
   const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
   /* слова заголовка розмічено в HTML: перезапис DOM після JS створював новий кандидат LCP (simulate: render delay 4,7 с) */
-  let heroTop = 0, heroTotal = 1, heroP = 0;
+  let heroTop = 0, heroBottom = 0, heroTravel = 0;
+  let syncHeroVideo = () => {}, syncHeroLogo = () => {};
+  let heroWasVisible = false;
+  const heroInView = () => {
+    const visibleEnd = heroTravel > 0 ? heroTop + heroTravel : heroBottom;
+    return scrollY < visibleEnd && scrollY + innerHeight > heroTop;
+  };
   function heroRender(y) {
-    const p = clamp((y - heroTop) / heroTotal, 0, 1);
-    if (motion()) {
+    if (motion() && heroTravel > 0) {
+      const p = clamp((y - heroTop) / heroTravel, 0, 1);
       if (hVideo) hVideo.style.transform = `scale(${(1 + .14 * p).toFixed(4)}) translate3d(0,${(p * 6).toFixed(2)}%,0)`;
       const cp = seg(p, .35, .8);
       hCenter.style.opacity = (1 - cp).toFixed(3);
       hCenter.style.transform = `translate3d(0,calc(-50% - ${(cp * 90).toFixed(1)}px),0) scale(${(1 - .06 * cp).toFixed(4)})`;
       water.style.setProperty('--wl', (seg(p, .45, .985) * 1.04).toFixed(4));
-      if (p >= 1 && hVideo && !hVideo.paused) hVideo.pause();
-      else if (p < 1 && hVideo && hVideo.paused && hVideo.dataset.ready && videoAllowed()) { const pr = hVideo.play(); if (pr && pr.catch) pr.catch(() => {}); }
     } else {
       // Пауза посеред прокручування не залишає заголовок прозорим при поверненні нагору.
       hCenter.style.removeProperty('opacity'); hCenter.style.removeProperty('transform');
       if (hVideo) hVideo.style.removeProperty('transform');
       water.style.removeProperty('--wl');
     }
-    return p;
   }
   /* блиски на воді — canvas, лише повна якість і лише поки герой у кадрі */
   let ctx = null, cW = 0, cH = 0, cLast = 0, dots = [];
@@ -224,9 +236,9 @@
   /* цикл іскор засинає, коли герой поза кадром або вкладка прихована (раніше rAF крутився вічно: Lighthouse devtools 09.10
      — сторінка не ставала «тихою»); прокидає його sparkWake() зі скролу й visibilitychange */
   let sparkOn = false;
-  const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroP < 1 && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
+  const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroInView() && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
   function sparkLoop(t) {
-    if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || !motion() || heroP >= 1 || document.hidden) { sparkOn = false; return; }
+    if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || !motion() || !heroInView() || document.hidden) { sparkOn = false; return; }
     requestAnimationFrame(sparkLoop);
     if (t - cLast < 33) return;
     cLast = t;
@@ -252,7 +264,10 @@
   const sections = $$('main section[id]');
   let docMax = 1, secTops = [];
   function measure() {
-    heroTop = sHero.offsetTop; heroTotal = Math.max(1, sHero.offsetHeight - innerHeight);
+    heroTop = sHero.offsetTop;
+    const heroHeight = sHero.offsetHeight;
+    heroBottom = heroTop + heroHeight;
+    heroTravel = getComputedStyle(hero).position === 'sticky' ? Math.max(0, heroHeight - innerHeight) : 0;
     docMax = Math.max(1, doc.scrollHeight - innerHeight);
     secTops = sections.map(s => ({ id: s.id, top: s.offsetTop }));
     /* зупинки глибиноміра — за id секції, не за індексом: секцій 9 (з «Масштабом»), зупинок 8 (аудит п.14) */
@@ -270,9 +285,9 @@
   function beltStep(now) {
     const target = scrollY, dt = beltT ? now - beltT : 16.7; beltT = now;
     const prev = beltPos;
-    beltPos = !motion() || Math.abs(target - beltPos) < .5 ? target : approach(beltPos, target, dt, PHYS.beltTau);
+    beltPos = Math.abs(target - beltPos) < .5 ? target : approach(beltPos, target, dt, PHYS.beltTau);
     const { step, smear } = texStep((beltPos - prev) * PHYS.beltRatio);
-    let sm = motion() ? smear : 0;
+    let sm = smear;
     beltTx = (beltTx + step) % 144;                                     // 144 = НСК кроку траків і оберту зірочки
     beltV = dt > 0 ? step / Math.min(dt, PHYS.dtMax) : 0;               // краплі їдуть з видимим ланцюгом, не зі справжнім
     track.style.setProperty('--tx', `${(-(beltTx % PHYS.pitch)).toFixed(2)}px`);
@@ -284,7 +299,13 @@
   function trackRender(p) {
     if (!track) return;
     track.style.setProperty('--tp', p.toFixed(4));
-    if (!beltRaf) beltRaf = requestAnimationFrame(beltStep);
+    if (!motion()) {
+      cancelAnimationFrame(beltRaf);
+      beltRaf = 0; beltT = 0; beltV = 0; beltPos = scrollY;
+      if (beltSmear) { beltSmear = 0; track.style.setProperty('--smear', '0'); }
+    } else if (!beltRaf && beltPos !== scrollY) {
+      beltRaf = requestAnimationFrame(beltStep);
+    }
     oilFeed(p);
   }
   /* масло: крапля набрякає під ланцюгом і їде разом із ним, тягне в'язку шийку, відривається й падає;
@@ -403,7 +424,12 @@
   function render() {
     ticking = false;
     const y = scrollY;
-    heroP = heroRender(y); sparkWake();
+    const heroVisible = heroInView();
+    if (heroVisible !== heroWasVisible) {
+      heroWasVisible = heroVisible;
+      syncHeroLogo();
+    }
+    heroRender(y); syncHeroVideo(); sparkWake();
     gaugeRender(y);
     nav.classList.toggle('is-solid', y > 40);
     const dy = y - lastY;
@@ -1131,7 +1157,13 @@
     sec.classList.add('is-pinned');
     fill(rail, chs.map(c => el('a', { href: `#cine-${c.id}` }, el('span', null, c.word))));
     const layers = $$('.cine__v', sec), items = $$('.cine__ch', list), railDots = $$('a', rail);
-    let cur = -1, front = 0, inView = false;
+    let cur = -1, front = 0, inView = false, nextTimer = 0, fadeTimer = 0;
+    const dissolveMs = 1400;
+    const cineInViewport = () => {
+      if (!inView) return false;
+      const bounds = sec.getBoundingClientRect();
+      return bounds.bottom > 0 && bounds.top < innerHeight;
+    };
     const prof = () => (mobileLayout() && innerHeight > innerWidth ? 'm' : 'w');
     /* Кліпи «Масштабу» у WebM — VP9 Profile 1 (4:4:4): майже ніде не декодується апаратно. W3C Media Capabilities:
        на дотику WebM лише якщо декодування енергоефективне, інакше апаратний H.264 того самого кадру; на ПК — як і досі,
@@ -1147,12 +1179,14 @@
           .then(i => !!(i.supported && i.smooth && (finePointer || i.powerEfficient)), () => finePointer));
     }
     function load(v, id) {
+      if (!cineInViewport() || !videoAllowed()) return;
       const p = prof(), n = id + '-' + p;
       if (v.dataset.clip === n) return;
       v.dataset.clip = n; v.removeAttribute('src'); v.replaceChildren();
       v.poster = C_BASE + n + '.webp';
       webmFor(p).then(webm => {
         if (v.dataset.clip !== n) return;                                  // кадр уже змінився, поки браузер відповідав
+        if (!cineInViewport() || !videoAllowed()) { delete v.dataset.clip; return; }
         v.replaceChildren();
         if (webm) { const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = CINE_WEBM; v.append(a); }
         const b = document.createElement('source'); b.src = C_BASE + n + '.mp4'; b.type = 'video/mp4'; v.append(b);
@@ -1162,6 +1196,18 @@
         if (v.classList.contains('is-on') && inView && videoAllowed()) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
       });
     }
+    function scheduleNext() {
+      clearTimeout(nextTimer);
+      const chapter = cur;
+      const after = chs[chapter + 1];
+      if (!after || !cineInViewport() || !videoAllowed()) return;
+      nextTimer = setTimeout(() => {
+        if (cur !== chapter || !cineInViewport() || !videoAllowed()) return;
+        const spare = layers[1 - front];
+        load(spare, after.id);
+        spare.preload = 'auto';
+      }, dissolveMs + 100);
+    }
     function show(i) {
       if (i === cur) return;
       cur = i;
@@ -1169,25 +1215,30 @@
       railDots.forEach((node, k) => node.classList.toggle('is-on', k === i));
       const next = layers[1 - front], prev = layers[front];
       next.poster = C_BASE + chs[i].id + '-' + prof() + '.webp';
-      if (videoAllowed()) load(next, chs[i].id);
+      if (cineInViewport() && videoAllowed()) load(next, chs[i].id);
       else {
         // Новий розділ у паузі показує власний постер, а не кадр попереднього кліпу.
         next.removeAttribute('src'); next.replaceChildren(); delete next.dataset.clip; next.load();
       }
       next.classList.add('is-on'); prev.classList.remove('is-on');
-      if (inView && videoAllowed()) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
-      setTimeout(() => { if (!prev.classList.contains('is-on')) prev.pause(); }, 1200);
+      if (cineInViewport() && videoAllowed()) { const pr = next.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      clearTimeout(fadeTimer);
+      fadeTimer = setTimeout(() => prev.pause(), dissolveMs);
       front = 1 - front;
-      const after = chs[i + 1]; if (after) setTimeout(() => { const spare = layers[1 - front]; if (videoAllowed() && !spare.classList.contains('is-on')) { load(spare, after.id); spare.preload = 'auto'; } }, 1400);
+      scheduleNext();
       sec.dataset.cur = chs[i].id;
     }
     function syncCine() {
-      if (inView && videoAllowed()) {
-        if (cur < 0) show(0);
+      if (cineInViewport() && videoAllowed()) {
+        if (cur < 0) { show(0); return; }
         const v = layers[front]; load(v, chs[cur].id);
         const pr = v.play(); if (pr && pr.catch) pr.catch(() => {});
-        playing.add(v);
-      } else layers.forEach(v => { v.pause(); playing.delete(v); });
+        scheduleNext();
+      } else {
+        clearTimeout(nextTimer);
+        clearTimeout(fadeTimer);
+        layers.forEach(v => v.pause());
+      }
     }
     mediaSync.add(syncCine);
     const cio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) show(Number(/** @type {HTMLElement} */ (e.target).dataset.i)); }), { rootMargin: '-45% 0px -45% 0px' });
@@ -1216,27 +1267,36 @@
       lv.addEventListener('playing', () => logo.classList.add('is-anim'), { once: true });
       lv.addEventListener('ended', () => logo.classList.remove('is-anim'), { once: true });   // останній кадр = статичний
       const syncLogo = () => {
-        if (!videoAllowed() || heroP >= 1) { lv.pause(); return; }
-        if (lv.ended) return;
+        if (!videoAllowed() || !heroInView()) { if (!lv.paused) lv.pause(); return; }
+        if (lv.ended || !lv.paused) return;
         if (!lv.getAttribute('src')) lv.src = 'media/logo/plainbud-logo.webm';
         const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
       };
+      syncHeroLogo = syncLogo;
       mediaSync.add(syncLogo); syncLogo();
     });
     if (videoCapable() && hVideo) afterLoad(() => {
       /* WebKit (Safari) відхиляє ранні play() з NotAllowedError навіть для muted-відео (виміряно 08.10: відмови до ~1.46 с,
          play() о 1.5 с проходить). Точну умову не встановлено ⇒ повтор із наростаючою паузою, до 8 спроб, лише поки герой у кадрі. */
-      let tries = 0;
+      let tries = 0, retry = 0, pending = false;
       const go = () => {
-        if (!videoAllowed() || scrollY >= innerHeight) { hVideo.pause(); return; }
-        if (!hVideo.paused) return;
+        if (!videoAllowed() || !heroInView()) {
+          clearTimeout(retry); retry = 0; tries = 0;
+          if (pending || !hVideo.paused) hVideo.pause();
+          return;
+        }
+        if (pending || retry || tries >= 8 || !hVideo.paused) return;
         if (!attachVideo(hVideo, 'hero-wide', { tall: true })) return;
         hVideo.preload = 'auto';
-        const pr = hVideo.play();
-        if (pr && pr.catch) pr.catch(() => { if (++tries < 8) setTimeout(go, 200 * tries); });
+        pending = true;
+        Promise.resolve(hVideo.play()).then(() => { pending = false; tries = 0; }, () => {
+          pending = false;
+          if (!videoAllowed() || !heroInView()) return;
+          if (++tries < 8) retry = setTimeout(() => { retry = 0; go(); }, 200 * tries);
+        });
       };
+      syncHeroVideo = go;
       mediaSync.add(go); go();
-      hVideo.addEventListener('canplay', go, { once: true });
     });
     requestAnimationFrame(() => hero.classList.add('is-lit'));
     sparkWake();

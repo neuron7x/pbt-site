@@ -331,7 +331,7 @@ def accept_engineering(root, target_sha, evidence_dir, *, external_attestations_
     decision = gate.verify_manifest(manifest, evidence_dir, gate.json_bytes(read('config/runtime-soak-budgets.json')), evidence_sha,
                                     manifest['base_sha'], gate.json_bytes(read('config/evidence-policy.json')),
                                     gate.json_bytes(read('config/required-tests.json')), read('config/mutation-catalog.json'),
-                                    source_locks=gate.lock_sources_at(root, evidence_sha))
+                                    source_locks=gate.lock_sources_at(root, evidence_sha), source_root=root)
     recomputed = evidence_reconcile.reconcile(manifest, evidence_dir, ledger_file, json.loads(read('config/mutation-catalog.json')))
     committed = _load(root, f'assurance/evidence/{evidence_sha}/receipts.json')
     require(committed == recomputed, 'committed_receipts_differ_from_artifact_bytes')

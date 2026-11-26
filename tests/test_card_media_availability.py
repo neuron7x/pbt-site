@@ -55,7 +55,7 @@ vm.runInNewContext(vsrc + '\n' + functions.join('\n'), context);
 const sync = () => vm.runInNewContext('syncCardVideo(card);', context);
 const state = () => ({src: media.src, sources: media.sources, ready: !!media.dataset.ready,
   preload: media.preload, poster: media.poster, playCalls: media.playCalls, pauseCalls: media.pauseCalls,
-  isPlaying: classes.has('is-playing'), tracked: playing.has(media)});
+  isPlaying: classes.has('is-playing')});
 sync(); const beforeView = state();
 visibleCards.add(card); sync(); const initial = state();
 allowed = false; sync(); const paused = state();
@@ -72,7 +72,7 @@ process.stdout.write(JSON.stringify({beforeView, initial, paused, offscreen}));
     assert first["poster"] == (poster if available and not poster.startswith("//") else "")
     assert first["playCalls"] == int(available)
     assert first["ready"] is available
-    assert first["isPlaying"] is available and first["tracked"] is available
+    assert not first["isPlaying"], "a requested clip has not painted a frame yet"
     if mode == "standalone-omitted":
         assert first["src"] == "" and first["sources"] == []
         assert first["preload"] == "none"
@@ -87,7 +87,7 @@ process.stdout.write(JSON.stringify({beforeView, initial, paused, offscreen}));
         stopped = states[name]
         assert stopped["playCalls"] == first["playCalls"], name
         assert stopped["pauseCalls"] == first["pauseCalls"] + offset, name
-        assert not stopped["isPlaying"] and not stopped["tracked"], name
+        assert not stopped["isPlaying"], name
         assert stopped["poster"] == first["poster"], name
 
 
@@ -169,22 +169,26 @@ const media = {
   play() {this.playCalls++; this.paused = false; return Promise.resolve();},
   pause() {this.pauseCalls++; this.paused = true;}
 };
-let allowed = true;
+let allowed = true, inView = true;
 const context = {D, V_BASE: 'media/video/', hVideo: media, innerWidth: width, innerHeight: 844,
   devicePixelRatio: dpr, scrollY: 0, navigator: {connection: {}}, videoAllowed: () => allowed,
+  heroInView: () => inView, clearTimeout: () => {},
   document: {createElement: tag => tag === 'video' ? {canPlayType: () => 'probably'} : {}},
   setTimeout: () => {throw new Error('Unexpected retry for the resolved media stub');}
 };
-vm.runInNewContext(helpers.join('\n') + '\n' + functions.join('\n') + '\nlet tries = 0;\n' + go[0], context);
+vm.runInNewContext(helpers.join('\n') + '\n' + functions.join('\n') + '\nlet tries = 0, retry = 0, pending = false;\n' + go[0], context);
 const sync = () => vm.runInNewContext('go();', context);
 const state = () => ({src: media.src, sources: media.sources.map(node => ({...node})), ready: !!media.dataset.ready,
   preload: media.preload, poster: media.poster, playCalls: media.playCalls, pauseCalls: media.pauseCalls});
-sync(); const initial = state();
-const attached = vm.runInNewContext("attachVideo(hVideo, 'hero-wide', {tall: true});", context);
-allowed = false; sync(); const paused = state();
-allowed = true; context.scrollY = context.innerHeight; sync(); const offscreen = state();
-context.scrollY = 0; sync(); const resumed = state();
-process.stdout.write(JSON.stringify({initial, attached, paused, offscreen, resumed}));
+(async () => {
+  sync(); await new Promise(setImmediate); const initial = state();
+  const attached = vm.runInNewContext("attachVideo(hVideo, 'hero-wide', {tall: true});", context);
+  context.scrollY = context.innerHeight + 10; sync(); const sticky = state();
+  allowed = false; sync(); const paused = state();
+  allowed = true; inView = false; sync(); const offscreen = state();
+  inView = true; context.scrollY = 0; sync(); const resumed = state();
+  process.stdout.write(JSON.stringify({initial, attached, sticky, paused, offscreen, resumed}));
+})().catch(error => { console.error(error); process.exitCode = 1; });
 """
     run = subprocess.run([node, "-e", script, mode, str(width), str(dpr)], cwd=ROOT,
                          capture_output=True, text=True, check=True, timeout=10)
@@ -207,9 +211,10 @@ process.stdout.write(JSON.stringify({initial, attached, paused, offscreen, resum
     else:
         assert [s["src"] for s in first["sources"]] == [
             f"media/video/{rendition}.webm", f"media/video/{rendition}.mp4"]
-    for offset, name in enumerate(("paused", "offscreen"), 1):
+    assert states["sticky"]["pauseCalls"] == first["pauseCalls"]
+    for name in ("paused", "offscreen"):
         assert states[name]["playCalls"] == first["playCalls"], name
-        assert states[name]["pauseCalls"] == first["pauseCalls"] + offset, name
+        assert states[name]["pauseCalls"] == int(available), name
     assert states["resumed"]["playCalls"] == int(available) * 2
     for name in ("paused", "offscreen", "resumed"):
         assert states[name]["src"] == first["src"], name

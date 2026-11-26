@@ -9,10 +9,12 @@ import subprocess
 import sys
 import zipfile
 import zlib
+from unittest.mock import patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tools import media_budget
 from tools import meta_evidence_gate as gate
 
 HEAD = 'a' * 40
@@ -36,6 +38,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_LOCKS = {name: (ROOT / name).read_bytes() for name in gate.supply_chain.LOCKS}
 EVIDENCE_POLICY = json.loads((ROOT / 'config/evidence-policy.json').read_text())
 REQUIRED_TESTS = json.loads((ROOT / 'config/required-tests.json').read_text())
+VISUAL_POLICY = media_budget.parse_budget((ROOT / 'config/visual-budgets.json').read_text(encoding='utf-8'))
+MEDIA_REPORT = media_budget.audit_media(ROOT / 'web' / 'media', VISUAL_POLICY)
 
 
 def junit(n, role=None, drop=None, extra=()):
@@ -55,8 +59,9 @@ CATALOG = json.loads(CATALOG_RAW)['mutants']
 
 
 def verify(meta, directory, policy, head=HEAD, base=BASE, evidence_policy=None):
-    return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY,
-                                REQUIRED_TESTS, CATALOG_RAW, source_locks=SOURCE_LOCKS)
+    with patch.object(gate, 'media_report_at', return_value=MEDIA_REPORT, create=True):
+        return gate.verify_manifest(meta, directory, policy, head, base, evidence_policy or EVIDENCE_POLICY,
+                                    REQUIRED_TESTS, CATALOG_RAW, source_locks=SOURCE_LOCKS)
 
 
 def png():
@@ -76,7 +81,7 @@ def _jobs(role):
     return {name: {'id': 1000 + i, 'status': 'completed', 'conclusion': 'success'} for i, name in enumerate(names)}
 
 
-def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mutation_verdicts=None, catalog_raw=None, event='pull_request', pr=14):
+def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mutation_verdicts=None, catalog_raw=None, event='pull_request', pr=14, media_report=None):
     # A synthetic fixture does not claim to be an actual GitHub workflow run.
     CATALOG_RAW_ = catalog_raw or CATALOG_RAW
     CATALOG_ = json.loads(CATALOG_RAW_)['mutants']
@@ -113,8 +118,7 @@ def build_state(tmp_path, HEAD=HEAD, BASE=BASE, extra_release_cases=(), extra_mu
         captures.append({'filename':name,'bytes':len(raw_png),'sha256':sha(raw_png),
                          'height':1,'width':1})
     manifest=json.dumps({'revision':HEAD,'failures':[],'captures':captures}).encode()
-    media=json.dumps({'failures':[],'media_files':160,
-                      'files':[{'path':f'file{i}'} for i in range(160)]}).encode()
+    media=json.dumps(MEDIA_REPORT if media_report is None else media_report).encode()
     visual_receipt=json.dumps({'expected_head_sha':HEAD,'ok':True,'failures':[],
                                 'screenshot_count':32,'evidence':{
                                 'shots_manifest':{'bytes':len(manifest),'sha256':sha(manifest)},
@@ -190,6 +194,29 @@ def test_complete_matrix_accepts_consistent_evidence(state):
     assert result['mutation']['KILLED']==len(CATALOG)-1 and result['mutation']['UNTESTABLE']==1
     assert result['sast']['components'] == sum(expected.values())
     assert result['osv_dependencies_by_lock'] == expected
+
+
+def test_media_receipt_accepts_source_inventory_and_rejects_wrong_file_digest(state):
+    meta, policy, directory, contents = state
+    try:
+        accepted = verify(meta, directory, policy)
+    except gate.Rejected as exc:
+        pytest.fail(f"Budget-valid source media should pass: {exc}")
+    assert accepted['status'] == 'PASS'
+
+    visual = contents['visual']
+    media_report = json.loads(visual['media-budget.json'])
+    media_report['files'][0]['sha256'] = '0' * 64
+    changed = json.dumps(media_report).encode()
+    visual['media-budget.json'] = changed
+    receipt = json.loads(visual['evidence-verification.json'])
+    receipt['evidence']['media_report'] = {'bytes': len(changed), 'sha256': sha(changed)}
+    visual['evidence-verification.json'] = json.dumps(receipt).encode()
+    archive = pack(visual)
+    (directory / 'visual.zip').write_bytes(archive)
+    meta['artifacts']['visual']['sha256'] = sha(archive)
+    with pytest.raises(gate.Rejected, match='media_report'):
+        verify(meta, directory, policy)
 
 
 @pytest.mark.parametrize('mutation', [
