@@ -46,7 +46,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <a class="skip" href="#main">Перейти до змісту</a>
 <div class="glow" id="glow" aria-hidden="true"></div>
 <button class="motion-toggle" id="motionToggle" type="button" aria-pressed="false" hidden>Призупинити анімації</button>
-<nav class="dock" id="dock" aria-label="Швидкий зв’язок"><a class="dock__call" href="tel:+380675550317">Подзвонити</a><a class="dock__go" href="#zapyt">Заявка</a></nav>
+<nav class="dock" id="dock" aria-label="Швидкий зв’язок"><a class="dock__call" href="tel:+380675550317" data-phone-action>Подзвонити</a><a class="dock__go" href="#zapyt">Заявка</a></nav>
 
 <!-- ═══ НАВІГАЦІЯ ═══ -->
 <header class="nav" id="nav">
@@ -158,7 +158,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <p class="lead">Оберіть техніку під своє завдання. Для оренди вказано погодинну ставку, для перевезень — ціну за кілометр. Договірну вартість уточнюємо за умовами об’єкта.</p>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Категорії техніки"></div>
-    <div class="park" id="park" aria-live="polite"><p class="content-fallback">Каталог тимчасово недоступний. <a href="tel:+380675550317">Зателефонуйте диспетчеру</a>.</p></div>
+    <div class="park" id="park" aria-live="polite"><p class="content-fallback">Каталог тимчасово недоступний. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p></div>
     <p class="park__note">Ставки з вихідного каталогу станом на 03.10.2026. Актуальну вартість і умови підтверджуємо після уточнення об’єкта, обсягу й строків.</p>
   </div>
 </section>
@@ -182,7 +182,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
         <p class="total" id="cTotal">—</p>
         <div class="lines" id="cLines"></div>
         <p class="calc__note">Орієнтовно, за вихідним прайсом від 03.10.2026. Мінімальна зміна, простій, нічна робота та ПДВ — уточнюємо під час підтвердження заявки.</p>
-        <p class="content-fallback" id="calcUnavailable">Розрахунок тимчасово недоступний. <a href="tel:+380675550317">Зателефонуйте диспетчеру</a>.</p>
+        <p class="content-fallback" id="calcUnavailable">Розрахунок тимчасово недоступний. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p>
         <p class="calc__cta"><button class="btn" type="button" id="cOrder" data-req="rent" disabled>Замовити цю зміну</button></p>
       </div>
     </div>
@@ -197,7 +197,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <p class="eyebrow">Матеріали</p><h2>Сипучі матеріали<span>з паспортом якості</span></h2>
       <p class="lead">Пісок, гранітний щебінь усіх фракцій, відсів, ЩПС і бут. Доставка самоскидами на об’єкт. На кожну фракцію — паспорт якості й радіаційний сертифікат.</p>
     </div>
-    <div class="mats" id="mats"><p class="content-fallback">Каталог матеріалів тимчасово недоступний. <a href="tel:+380675550317">Зателефонуйте диспетчеру</a>.</p></div>
+    <div class="mats" id="mats"><p class="content-fallback">Каталог матеріалів тимчасово недоступний. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p></div>
     <div class="mats__note rv"><b>Документи йдуть із партією</b><span>Паспорт якості фракції, сертифікат відповідності ЩПС, протоколи випробувань піску, радіаційний сертифікат — надсилаємо до відвантаження, щоб технагляд не зупиняв роботу.</span></div>
   </div>
 </section>
@@ -248,7 +248,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <div class="wrap">
     <div class="sec-head rv">
       <p class="eyebrow">Заявка</p><h2>Викликати<span>техніку</span></h2>
-      <p class="lead">Заповніть форму — ми передзвонимо в робочий час і підтвердимо машину, дату й ціну. Або зателефонуйте: диспетчер відповість швидше.</p>
+      <p class="lead" id="requestLeadDescription">Заповніть форму — ми передзвонимо в робочий час і підтвердимо машину, дату й ціну. Або зателефонуйте: диспетчер відповість швидше.</p>
     </div>
     <ol class="request-steps" aria-label="Як замовити техніку">
       <li><span class="num">01</span><h3>Розкажіть про об’єкт</h3><p>Завдання, адреса, бажана дата. Можна обрати машину в каталозі або описати потрібну роботу.</p></li>
@@ -261,7 +261,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
           <a href="tel:+380675550317"><span>Телефон</span><b>067 555 03 17</b></a>
           <a href="mailto:plainbud@gmail.com"><span>Електронна пошта</span><b>plainbud@gmail.com</b></a>
         </div>
-        <p class="act__note">Якщо зв’язок обірветься під час надсилання, повторне натискання не створить дубліката заявки.</p>
+        <p class="act__note" id="requestDeliveryNote">Якщо зв’язок обірветься під час надсилання, повторне натискання не створить дубліката заявки.</p>
         <div class="request-faq">
           <details><summary>Не знаю, яка техніка потрібна</summary><p>Опишіть завдання у формі: що потрібно зробити, де розташований об’єкт і чи є під’їзд. Техніку доберемо під час розмови.</p></details>
           <details><summary>Що враховано в калькуляторі?</summary><p>Погодинну оренду й розрахункову подачу тралом. Мінімальну зміну, простій, нічну роботу, ПДВ та подачу автокрана уточнюємо окремо. Це орієнтир для планування.</p></details>
@@ -295,11 +295,11 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
           <div class="field" data-field="comment"><label for="comment">Коментар</label><textarea id="comment" name="comment" maxlength="1000" placeholder="Опишіть об’єкт: тип ґрунту, чи є під’їзд для трала"></textarea><p class="err" aria-live="polite"></p></div>
           <div class="hp" aria-hidden="true"><label for="website">Сайт</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
           <p class="form__msg" id="formMsg" role="alert"></p>
-          <p class="content-fallback" id="formUnavailable">Надсилання форми тимчасово недоступне. <a href="tel:+380675550317">Зателефонуйте диспетчеру</a>.</p>
+          <p class="content-fallback" id="formUnavailable">Надсилання форми тимчасово недоступне. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p>
           <div class="form__foot"><button class="btn" type="submit" id="send" disabled>Надіслати заявку</button><small>Контакт потрібен для зв’язку щодо вашої заявки.</small></div>
         </form>
         <div class="done" id="done" tabindex="-1" role="status"><svg class="check" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="33"/><path d="M22 37 L32 47 L51 27"/></svg><p class="eyebrow">Прийнято</p><h3>Заявку записано</h3><p class="ref" id="ref">№ 000000</p><p>Передзвонимо після опрацювання заявки. Якщо терміново — зателефонуйте диспетчеру за номерами в розділі зв’язку.</p><p><button class="btn btn--sm" type="button" id="again">Ще одна заявка</button></p></div>
-        <div class="fallback" id="fallback" tabindex="-1" role="status"><p class="eyebrow">Підтвердження не отримано</p><h3>Повторіть заявку або зателефонуйте</h3><p>Зв’язок міг обірватися після запису заявки. Повторне надсилання тих самих даних не створить дубліката.</p><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbRetry">Повернутися до заявки</button><button class="btn btn--ghost btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="tel:+380675550317" data-phone>067 555 03 17</a></p></div>
+        <div class="fallback" id="fallback" tabindex="-1" role="status"><p class="eyebrow" id="fallbackStatus">Підтвердження не отримано</p><h3 id="fallbackTitle">Повторіть заявку або зателефонуйте</h3><p id="fallbackDetail">Зв’язок міг обірватися після запису заявки. Повторне надсилання тих самих даних не створить дубліката.</p><pre id="fbText"></pre><p class="row"><button class="btn btn--sm" type="button" id="fbRetry">Повернутися до заявки</button><button class="btn btn--ghost btn--sm" type="button" id="fbCopy">Скопіювати текст</button><a class="btn btn--ghost btn--sm on-light" href="tel:+380675550317" data-phone>067 555 03 17</a></p></div>
       </div>
     </div>
   </div>

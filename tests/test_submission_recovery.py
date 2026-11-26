@@ -23,7 +23,8 @@ const source = fs.readFileSync('web/js/site.js', 'utf8'), outcome = process.argv
 const submit = source.match(/  form\.addEventListener\('submit', async e => \{[\s\S]*?\n  \}\);/);
 const humanText = source.match(/  function humanText\([^\n]*\) \{[\s\S]*?\n  \}/);
 const labels = source.split('\n').find(line => line.trimStart().startsWith('const typeLabel = '));
-if (!submit || !humanText || !labels) throw new Error('Missing actual submit handler or fallback text');
+const showFallback = source.match(/  function showLeadFallback\([^\n]*\) \{[\s\S]*?\n  \}/);
+if (!submit || !humanText || !labels || !showFallback) throw new Error('Missing actual submit handler or fallback text');
 const classList = () => ({values: new Set(), add(x) {this.values.add(x);}, remove(x) {this.values.delete(x);}});
 const button = {disabled: false, textContent: 'Надіслати заявку'};
 const fallback = {classList: classList(), focus() {this.focused = true;}};
@@ -41,7 +42,7 @@ const elements = {'#send': button, '#fbText': copied, '#ref': reference};
 const context = {
   form, done, fallback, msg: message, $: selector => elements[selector], payload: () => payload,
   validate: () => outcome === 'invalid' ? {contact: 'Invalid test contact'} : {}, setErr() {},
-  idemKey: null, AbortController, window: {PBT_BUNDLE: false},
+  idemKey: null, AbortController, offlineLead: false,
   bindIdempotencyKey: async () => {
     keyCalls++;
     if (outcome === 'prepare-failure') throw new Error('Key preparation failed');
@@ -58,7 +59,7 @@ const context = {
     return {status: 201, json: async () => ({ok: true, ref: 'PBT-123456'})};
   }
 };
-vm.runInNewContext(labels + '\n' + humanText[0] + '\n' + submit[0], context);
+vm.runInNewContext(labels + '\n' + humanText[0] + '\n' + showFallback[0] + '\n' + submit[0], context);
 (async () => {
   let rejection = null;
   try {await handler({preventDefault() {prevented++;}});} catch (error) {rejection = error.message;}
