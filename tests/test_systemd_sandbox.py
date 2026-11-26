@@ -44,8 +44,11 @@ def test_candidate_unit_declares_identity_isolation_and_limits():
 
 
 def test_installer_does_not_silently_deploy_the_candidate():
-    assert 'ops/systemd/system' not in (ROOT / 'ops/install.sh').read_text(encoding='utf-8')
-    assert 'ops/systemd/*.service' in (ROOT / 'ops/install.sh').read_text(encoding='utf-8')
+    source = (ROOT / 'ops/install.sh').read_text(encoding='utf-8')
+    assert 'ops/systemd/system' not in source
+    assert 'ops/systemd/*.service' not in source
+    assert 'ops/systemd/*.timer' not in source
+    assert '"ops/systemd/$unit"' in source
 
 
 def test_user_unit_states_its_measured_limit():
