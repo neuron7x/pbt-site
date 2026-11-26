@@ -809,25 +809,6 @@ window.PBT = {
    "url": "media/video/proof-winter.mp4"
   }
  ],
- "partners": [
-  "media/logo/partners-1.webp",
-  "media/logo/partners-2.webp",
-  "media/logo/partners-3.webp",
-  "media/logo/partners-4.webp",
-  "media/logo/partners-5.webp",
-  "media/logo/partners-6.webp",
-  "media/logo/partners-7.webp",
-  "media/logo/partners-8.webp",
-  "media/logo/partners-9.webp",
-  "media/logo/partners-10.webp",
-  "media/logo/partners-11.webp",
-  "media/logo/partners-12.webp",
-  "media/logo/partners-13.webp",
-  "media/logo/partners-16.webp",
-  "media/logo/partners-17.webp",
-  "media/logo/partners-18.webp",
-  "media/logo/partners-19.webp"
- ],
  "regions": [
   "Полтавська",
   "Черкаська",

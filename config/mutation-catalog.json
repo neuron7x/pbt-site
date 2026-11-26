@@ -627,17 +627,17 @@
    "edits": [
     {
      "file": "web/css/site.css",
-     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::after{animation-play-state:paused!important}",
-     "replace": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::after{}"
+     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.wave,#geoMap) *::after{animation-play-state:paused!important}",
+     "replace": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.wave,#geoMap) *::after{}"
     },
     {
      "file": "web/css/site.css",
-     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *,\n",
+     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.wave,#geoMap) *,\n",
      "replace": ".never-matches-a,\n"
     },
     {
      "file": "web/css/site.css",
-     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::before,\n",
+     "find": ":root:has(form :is(input,select,textarea):focus) :is(.hero,.wave,#geoMap) *::before,\n",
      "replace": ".never-matches-b,\n"
     }
    ],

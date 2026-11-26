@@ -46,7 +46,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <a class="skip" href="#main">Перейти до змісту</a>
 <div class="glow" id="glow" aria-hidden="true"></div>
 <button class="motion-toggle" id="motionToggle" type="button" aria-pressed="false" hidden>Призупинити анімації</button>
-<nav class="dock" id="dock" aria-label="Швидкий зв’язок"><a class="dock__call" href="tel:+380675550317" data-phone-action>Подзвонити</a><a class="dock__go" href="#zapyt">Заявка</a></nav>
+<nav class="dock" id="dock" aria-label="Швидкий зв’язок"><a class="dock__call" href="tel:+380675550317" data-phone-action>Подзвонити</a><a class="dock__go" href="#zapyt" data-request-nav>Заявка</a></nav>
 
 <!-- ═══ НАВІГАЦІЯ ═══ -->
 <header class="nav" id="nav">
@@ -69,7 +69,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <p class="menu__heading" aria-hidden="true" data-brand>ПЛЕЙНБУД</p>
   <nav aria-label="Мобільне меню">
     <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Ціна</a>
-    <a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a><a href="#zapyt" data-req="rent">Заявка</a>
+    <a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a><a href="#zapyt" data-request-nav>Заявка</a>
   </nav>
   <div class="menu__foot"><a href="tel:+380675550317" data-phone>067 555 03 17</a><span data-phone2 hidden></span><a href="mailto:plainbud@gmail.com" data-email>plainbud@gmail.com</a><span data-address>36022, м. Полтава, вул. Небесної сотні, буд. 69 Б</span></div>
 </div>
@@ -80,7 +80,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <i class="gauge__float" aria-hidden="true"></i>
   <ol class="gauge__stops">
     <li><a href="#top">Старт</a></li><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Ціна</a></li>
-    <li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Географія</a></li><li><a href="#zapyt">Заявка</a></li>
+    <li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Географія</a></li><li><a href="#zapyt" data-request-nav>Заявка</a></li>
   </ol>
   <output class="gauge__m" aria-live="off">0,0 м</output>
 </aside>
@@ -173,8 +173,10 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div class="calc rv rv--scale">
       <form class="calc__form" id="calcForm" aria-label="Калькулятор зміни">
         <div class="field"><label for="cMachine">Машина</label><select id="cMachine" name="machine" disabled></select><p class="calc__selection" id="cMachineSummary" aria-hidden="true"></p></div>
-        <div class="field"><label for="cHoursN">Годин роботи</label><div class="pair"><input type="range" id="cHours" min="1" max="240" step="1" value="8" aria-label="Годин роботи, повзунок"><input type="number" id="cHoursN" min="1" max="5000" step="1" value="8" inputmode="numeric"></div></div>
-        <div class="field"><label for="cKmN">Подача, км в один бік</label><div class="pair"><input type="range" id="cKm" min="0" max="500" step="5" value="30" aria-label="Подача, км, повзунок"><input type="number" id="cKmN" min="0" max="3000" step="1" value="30" inputmode="numeric"></div></div>
+        <div class="calc__quantities">
+          <div class="field"><label for="cHoursN">Годин роботи</label><input type="number" id="cHoursN" min="1" max="5000" step="1" value="8" inputmode="numeric" required></div>
+          <div class="field"><label for="cKmN">Подача в один бік, км</label><input type="number" id="cKmN" min="0" max="3000" step="1" value="30" inputmode="numeric" required></div>
+        </div>
       </form>
       <div class="calc__out" id="cOut" aria-live="polite">
         <p class="eyebrow">Орієнтовна вартість</p>
@@ -215,9 +217,6 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <div class="fact"><b data-count="70" data-suffix=" м">70 м</b><span>довжина стріли Liebherr LTM 1120 за каталогом</span></div>
     </div>
     <div class="reel" id="reel"></div>
-    <p class="eyebrow" style="margin-top:clamp(36px,5vw,56px)">Ілюстративна добірка логотипів</p>
-    <div class="marquee" role="group" aria-label="Ілюстративна добірка логотипів"><ul id="partners"></ul></div>
-    <p class="proof__src">Логотипи наведено як ілюстративну добірку; вони не засвідчують партнерство з ТОВ «ПЛЕЙНБУД».</p>
   </div>
 </section>
 
@@ -311,7 +310,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div><a class="brand" href="#top" aria-label="ПЛЕЙНБУД оренда спецтехніки — на початок сторінки"><img class="brand__logo" src="media/logo/plainbud-logo-nav.webp" width="153" height="31" alt="" aria-hidden="true"><span class="brand__name"><span>оренда спецтехніки</span></span></a><p style="margin-top:16px"><span data-legal>ТОВ «ПЛЕЙНБУД»</span><br><span class="num" data-edrpou>ЄДРПОУ 45318076</span><br><span data-address>36022, м. Полтава, вул. Небесної сотні, буд. 69 Б</span></p></div>
     <div><h4>Зв’язок</h4><ul><li><a class="num" href="tel:+380675550317" data-phone>067 555 03 17</a></li><li data-phone2-row hidden><span class="num" data-phone2></span></li><li><a href="mailto:plainbud@gmail.com" data-email>plainbud@gmail.com</a></li><li data-hours>Графік роботи уточнюється</li></ul><ul data-social hidden></ul></div>
     <div><h4>Реквізити</h4><ul class="foot__requisites"><li data-director-row>Директор<br><span data-director>Любашевський Дмитро Васильович</span></li><li data-bank-name-row><span data-bank-name>АТ «А-БАНК»</span></li><li data-bank-iban-row>IBAN<br><span class="num" data-bank-iban>UA393077700000026008411259048</span></li></ul></div>
-    <div><h4>Розділи</h4><ul><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Ціна зміни</a></li><li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Де працюємо</a></li><li><a href="#zapyt">Заявка</a></li></ul></div>
+    <div><h4>Розділи</h4><ul><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Ціна зміни</a></li><li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Де працюємо</a></li><li><a href="#zapyt" data-request-nav>Заявка</a></li></ul></div>
   </div>
   <div class="foot__credits" id="cineCredits"></div>
   <div class="foot__legal">

@@ -190,8 +190,7 @@ def test_route_panel_prices_delivery_like_the_calculator(page_factory):
     pg.wait_for_timeout(800)
     assert pg.locator('#cKmN').input_value() == str(D['routes']['to']['Київська']['km'])
     assert pg.evaluate('document.activeElement.id') == 'cKmN'
-    # повзунок (крок 5 км) стоїть на найближчій поділці до відстані, а не впирається в межу 300
-    assert abs(int(pg.locator('#cKm').input_value()) - int(pg.locator('#cKmN').input_value())) <= 2.5
+    assert pg.get_attribute('#cOrder', 'data-calc-km') == str(D['routes']['to']['Київська']['km'])
     # автокран: подача не тралом — фокус на вибір машини, а не «нічого не сталось»
     crane = pg.evaluate("[...document.querySelectorAll('#cMachine option')].findIndex(o => /Автокран/.test(o.textContent))")
     pg.select_option('#cMachine', index=crane)

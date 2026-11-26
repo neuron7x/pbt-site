@@ -62,7 +62,7 @@
 
 | Файл | Джерело | Ліцензія / права | Обробка |
 |---|---|---|---|
-| `web/media/park/*.webp` (32), `mat/mat-1…8.webp`, `logo/partners-*.webp`, `logo/pbt-mark.png` | pbt-spectehnika.com.ua (тема WordPress клієнта) | права клієнта (зображення його чинного сайту) | webp q80, без зміни розміру |
+| `web/media/park/*.webp` (32), `mat/mat-1…8.webp`, `logo/pbt-mark.png` | pbt-spectehnika.com.ua (тема WordPress клієнта) | права клієнта (зображення його чинного сайту) | webp q80, без зміни розміру |
 | `web/media/map/ukraine-oblasts.svg` (інлайн в `index.html`) | geoBoundaries gbOpen UKR ADM1 (2017), спрощена геометрія | **ODbL 1.0** — атрибуція в підвалі | проєкція рівнопроміжна з cos(49°), проріджено до ≤220 точок на контур |
 | Палітра й накреслення | `~/Downloads/логотип/Золотий логотип PBT CRM на блакитному тлі.png` (власник, 02.10.2026) | бренд клієнта | небо #1A87F5→#AAE4FC, золото #F8E901→#FDC501→#F97316; Tektur як найближчий Cyrillic-шрифт до зрізаних літер лого |
 

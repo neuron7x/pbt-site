@@ -166,7 +166,7 @@
   Array.from(menu.querySelectorAll('a')).forEach(a => a.addEventListener('click', () => {
     const hash = a.getAttribute('href');
     openMenu(false, false);
-    if (hash && hash.startsWith('#') && hash.length > 1 && !a.hasAttribute('data-req')) {
+    if (hash && hash.startsWith('#') && hash.length > 1 && !a.matches('[data-req], [data-request-nav]')) {
       const target = document.getElementById(hash.slice(1));
       if (target) requestAnimationFrame(() => {
         target.setAttribute('tabindex', '-1');
@@ -244,7 +244,7 @@
   /* ───── СПОКІЙ ПЕРИФЕРІЇ (аудит п.50): декоративний цикл поза в'юпортом — на паузі (CSS [data-off]) ───── */
   if ('IntersectionObserver' in window) {
     const loopIO = new IntersectionObserver(es => es.forEach(e => e.target.toggleAttribute('data-off', !e.isIntersecting)));
-    $$('.hero, .marquee, .wave, #geoMap').forEach(n => loopIO.observe(n));
+    $$('.hero, .wave, #geoMap').forEach(n => loopIO.observe(n));
   }
 
   /* ───── ГЛИБИНОМІР, АКТИВНА СЕКЦІЯ, ПРОГРЕС ───── */
@@ -581,15 +581,14 @@
     requestAnimationFrame(step);
   }
   function renderCalc() {
-    const sel = $('#cMachine'), hr = $('#cHours'), hrN = $('#cHoursN'), km = $('#cKm'), kmN = $('#cKmN');
+    const sel = $('#cMachine'), hoursInput = $('#cHoursN'), distanceInput = $('#cKmN');
     // Hashed CSP forbids inline handlers; keyboard Enter must not submit this form.
     $('#calcForm').addEventListener('submit', event => event.preventDefault());
     const priced = D.fleet.filter(hasHourlyRate);
     fill(sel, priced.map(u => el('option', { value: u.id }, `${u.name} — ${fmt(u.price)} грн/год`)));
     sel.disabled = !priced.length;
-    const paintRange = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min) * 100).toFixed(1)}%`);
-    const sync = (a, b) => a.addEventListener('input', () => { b.value = a.value; paintRange(hr); paintRange(km); calc(); });
-    sync(hr, hrN); sync(hrN, hr); sync(km, kmN); sync(kmN, km);
+    hoursInput.addEventListener('input', calc);
+    distanceInput.addEventListener('input', calc);
     sel.addEventListener('change', calc);
     $('#park').addEventListener('click', event => {
       const link = event.target.closest('[data-estimate-machine]');
@@ -606,10 +605,10 @@
       const u = priced.find(x => x.id === sel.value) || priced[0];
       $('#cMachineSummary').textContent = sel.selectedOptions[0]?.textContent || '';
       const crane = u?.cat === 'crane';
-      km.disabled = kmN.disabled = crane;
-      const hours = hrN.valueAsNumber, kmv = crane ? 0 : kmN.valueAsNumber;
-      const hoursValid = Number.isInteger(hours) && hours >= 1 && hours <= 5000;
-      const kmValid = Number.isInteger(kmv) && kmv >= 0 && kmv <= 3000;
+      distanceInput.disabled = crane;
+      const hours = hoursInput.valueAsNumber, kmv = crane ? 0 : distanceInput.valueAsNumber;
+      const hoursValid = hoursInput.validity.valid;
+      const kmValid = crane || distanceInput.validity.valid;
       if (!hoursValid || !kmValid) {
         totalAnim += 1; totalShown = 0;
         $('#cTotal').textContent = '—';
@@ -649,7 +648,7 @@
       $('#cOut').dataset.total = transportKnown ? String(total) : '';
       $('#cOut').dataset.estimate = transportKnown ? 'with-delivery' : 'rent-only';
     }
-    paintRange(hr); paintRange(km); calc(); $('#calcUnavailable').hidden = true;
+    calc(); $('#calcUnavailable').hidden = true;
     window.PBTcalc = (id, hours, kmv) => {
       const u = priced.find(x => x.id === id);
       return quoteModel.legacyTotal(u, D.trailers, hours, kmv);
@@ -675,9 +674,6 @@
       standalone ? null : el('i', { 'aria-hidden': 'true' }),
       el('figcaption', null, el('b', null, p.t), el('span', null, p.s))))));
     $$('#reel .proof-card').forEach(watchVideo);
-    const logos = duplicate => D.partners.map((p, i) => el('li', { 'aria-hidden': duplicate ? 'true' : null },
-      el('img', { src: p, alt: duplicate ? '' : `Логотип в ілюстративній добірці ${i + 1}`, width: 196, height: 196, loading: 'lazy', decoding: 'async' })));
-    fill($('#partners'), logos(false), logos(true));      /* декоративний повтор не дублює доступний список */
   }
   /* назви областей поза зоною виїзду — українською (у SVG-джерелі вони англійською, аудит п.41) */
   const OBL_UA = { 'Autonomous Republic of Crimea': 'Автономна Республіка Крим', 'Sevastopol': 'Севастополь', 'Chernivtsi Oblast': 'Чернівецька область',
@@ -1067,8 +1063,16 @@
   });
 
   document.addEventListener('click', e => {
-    const b = /** @type {HTMLElement} */ (e.target).closest('[data-req]'); if (!(b instanceof HTMLElement)) return;
+    const b = /** @type {HTMLElement} */ (e.target).closest('[data-req], [data-request-nav]'); if (!(b instanceof HTMLElement)) return;
+    if (b.tagName === 'A' && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) return;
     e.preventDefault();
+    if (b.getAttribute('href') === '#zapyt' && location.hash !== '#zapyt' && /^(https?:|file:)$/.test(location.protocol)) {
+      history.pushState(history.state, '', '#zapyt');
+    }
+    if (b.hasAttribute('data-request-nav')) {
+      focusRequest(form.hidden ? (done.classList.contains('is-on') ? done : fallback) : $('#subject'));
+      return;
+    }
     const t = b.dataset.req, s = b.dataset.subject;
     // Після підтвердженого успіху CTA означає новий намір; після обриву — безпечний повтор.
     if (done.classList.contains('is-on')) { idemHash = ''; idemKey = null; pendingClear(); }
@@ -1086,14 +1090,13 @@
       fillCalcValue('km', b.dataset.calcKm || '');
       setErr('hours', ''); setErr('km', '');
     }
-    if (b.tagName === 'A' && b.getAttribute('href') === '#zapyt' && location.hash !== '#zapyt' && /^(https?:|file:)$/.test(location.protocol)) {
-      history.pushState(history.state, '', '#zapyt');
-    }
-    const subject = $('#subject');
-    subject.focus({ preventScroll: true });
-    // На вузькому екрані контакти й пояснення перед формою можуть займати кілька екранів.
-    subject.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'center' });
+    focusRequest($('#subject'));
   });
+
+  function focusRequest(target) {
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'center' });
+  }
 
   /* ───── курсорне світло ───── */
   const glow = $('#glow');

@@ -108,7 +108,7 @@ def test_pause_below_hero_keeps_returned_heading_visible(page_factory):
     page.locator("#motionToggle").click()
     page.evaluate("window.scrollTo({top:0,behavior:'instant'})")
     page.wait_for_function("() => getComputedStyle(document.querySelector('#heroCenter')).opacity === '1'")
-    assert page.evaluate("getComputedStyle(document.querySelector('#partners')).animationPlayState") == "paused"
+    assert page.evaluate("document.getAnimations().every(a => a.effect.getTiming().iterations !== Infinity || a.playState !== 'running')")
     assert page.evaluate("[...document.querySelectorAll('video')].every(video => video.paused)")
 
 
@@ -194,7 +194,7 @@ def test_explicit_static_quality_is_not_reenabled_by_system_change(page_factory)
 @pytest.mark.parametrize("selector,open_menu,anchor", [
     ("#heroCenter a[data-req]", False, True),
     ("#mats .tile:first-child button[data-req]", False, False),
-    ("#menu a[data-req]", True, True),
+    ('#menu a[href="#zapyt"]', True, True),
 ])
 def test_mobile_request_cta_brings_focused_subject_below_navigation(page_factory, selector, open_menu, anchor):
     page = page_factory(390, 844, mobile=True, reduced=True)
