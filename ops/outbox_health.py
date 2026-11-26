@@ -38,7 +38,7 @@ def _display(report):
     return result
 
 
-def snapshot(path, now):
+def _snapshot(path, now, *, include_acknowledged):
     if not path.is_file():
         raise OSError('missing database')
     db = sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True, timeout=3)
@@ -76,14 +76,26 @@ def snapshot(path, now):
                 raise ValueError('pending timestamp has no timezone')
             current_age = _age(now, created.timestamp())
             age = current_age if age is None else max(age, current_age)
+        # Readiness звіряє ID з квитанцією лише з цього самого SQLite-знімка.
+        acknowledged = ({r[0] for r in db.execute("SELECT lead_id FROM outbox WHERE status='delivered'")}
+                        if include_acknowledged else set())
         db.execute('ROLLBACK')
         return {'pending': pending, 'due': due, 'failed': failed, 'delivered': delivered,
                 'unknown_status_rows': invalid_status, 'orphan_outbox_rows': orphan,
                 'oldest_pending_age_s': age,
                 'worker_heartbeat_age_s': _age(now, worker_at[0])
-                if worker_at else None}
+                if worker_at else None}, acknowledged
     finally:
         db.close()
+
+
+def snapshot(path, now):
+    report, _ = _snapshot(path, now, include_acknowledged=False)
+    return report
+
+
+def snapshot_with_acknowledgements(path, now):
+    return _snapshot(path, now, include_acknowledged=True)
 
 
 def main(argv=None):

@@ -53,9 +53,7 @@ def evaluate(db_path, now, max_pending_age_s, max_failed, max_worker_idle_s, rec
                              'business_processing'), 'UNKNOWN')
     aggregates, receipt_id = {}, None
     try:
-        report = outbox_health.snapshot(db_path, now)
-        with sqlite3.connect(db_path.resolve().as_uri() + '?mode=ro', uri=True, timeout=3) as db:
-            acknowledged = {r[0] for r in db.execute("SELECT lead_id FROM outbox WHERE status='delivered'")}
+        report, acknowledged = outbox_health.snapshot_with_acknowledgements(db_path, now)
     except (OSError, sqlite3.Error, ValueError, OverflowError) as exc:
         return signals, {'error_type': type(exc).__name__}, None
     aggregates = {k: report[k] for k in ('pending', 'due', 'failed', 'delivered', 'oldest_pending_age_s',
