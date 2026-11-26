@@ -126,6 +126,11 @@ def test_sample_reports_zero_cls_from_a_registered_observer(observer_probe):
     assert result["cls"] == 0.0
     assert result["long_tasks"] is None
     assert result["lcp_element"] == "hero-title"
+    candidates = result["lcp_candidates"]
+    assert candidates
+    assert candidates[-1]["element"] == result["lcp_element"]
+    assert candidates[-1]["start_ms"] == pytest.approx(result["lcp_ms"], abs=0.0051)
+    assert all(entry["render_ms"] is None or entry["render_ms"] > 0 for entry in candidates)
 
 
 def test_source_identity_records_checked_out_head_not_event_merge_sha(monkeypatch):
