@@ -36,9 +36,19 @@ def run_oracle(tree, oracle, timeout):
     return r.returncode, tail
 
 
+def mutation_target(tree, name):
+    relative = Path(name)
+    if not relative.parts or relative.is_absolute() or '..' in relative.parts or relative.as_posix() != name:
+        raise ValueError(f'invalid_mutation_path:{name}')
+    path = (tree / relative).resolve()
+    if not path.is_relative_to(tree.resolve()) or not path.is_file():
+        raise ValueError(f'invalid_mutation_path:{name}')
+    return path
+
+
 def apply_edits(tree, edits):
     for edit in edits:
-        path = tree / edit['file']
+        path = mutation_target(tree, edit['file'])
         text = path.read_text(encoding='utf-8')
         if text.count(edit['find']) != 1:
             return f"edit_does_not_apply_exactly:{edit['file']}:{text.count(edit['find'])}"
@@ -49,7 +59,11 @@ def apply_edits(tree, edits):
 def execute(mutant, tree, timeout):
     if mutant.get('expected') == 'UNTESTABLE':
         return {'id': mutant['id'], 'verdict': 'UNTESTABLE', 'reason': mutant['reason']}
-    saved = {e['file']: (tree / e['file']).read_bytes() for e in mutant['edits']}
+    try:
+        targets = {mutation_target(tree, edit['file']) for edit in mutant['edits']}
+        saved = {path: path.read_bytes() for path in targets}
+    except (OSError, ValueError) as exc:
+        return {'id': mutant['id'], 'verdict': 'INVALID', 'reason': str(exc)}
     started = time.monotonic()
     try:
         problem = apply_edits(tree, mutant['edits'])
@@ -57,8 +71,8 @@ def execute(mutant, tree, timeout):
             return {'id': mutant['id'], 'verdict': 'INVALID', 'reason': problem}
         code, tail = run_oracle(tree, mutant['oracle'], timeout)
     finally:
-        for name, raw in saved.items():
-            (tree / name).write_bytes(raw)
+        for path, raw in saved.items():
+            path.write_bytes(raw)
     # 1 = tests failed (a kill), 0 = survived. A hang is not a detection: it may be load, so it needs a look.
     # node --test also exits 1 on a missing file, so its oracles pass a positive control first (main).
     if code == 0:

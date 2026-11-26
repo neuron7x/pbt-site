@@ -70,3 +70,12 @@ def test_publish_does_not_treat_crlf_as_the_same_bytes(tmp_path):
     path.write_bytes(b'old\r\n')
     assert not mutant_new.publish(path, 'old\n', 'changed\n')
     assert path.read_bytes() == b'old\r\n'
+
+
+def test_mutation_targets_must_be_relative_to_the_tree(tmp_path):
+    source = tmp_path / 'sample.txt'
+    source.write_text('original', encoding='utf-8')
+    assert mutant_new.mutation_target(tmp_path, source.name) == source
+    with pytest.raises(ValueError, match='invalid_mutation_path'):
+        mutant_new.mutation_target(tmp_path, str(source))
+    assert source.read_text(encoding='utf-8') == 'original'

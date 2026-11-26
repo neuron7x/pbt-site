@@ -25,6 +25,8 @@ import subprocess
 import sys
 import tempfile
 
+from mutation_run import mutation_target
+
 ROOT = Path(__file__).resolve().parent.parent
 CAT = ROOT / 'config' / 'mutation-catalog.json'
 
@@ -49,11 +51,15 @@ def problems(d, root=ROOT):
         if not m.get('edits'):
             out.append(f"{m['id']}: без правок")
         for e in m.get('edits', []):
-            p = (root / e['file']).resolve()
-            if not p.is_relative_to(root.resolve()) or not e['find'] or e['find'] == e['replace']:
+            try:
+                p = mutation_target(root, e['file'])
+            except (OSError, ValueError) as exc:
+                out.append(f"{m['id']}: {exc}")
+                continue
+            if not e['find'] or e['find'] == e['replace']:
                 out.append(f"{m['id']}: неприпустима правка у {e['file']}")
                 continue
-            n = p.read_text(encoding='utf-8').count(e['find']) if p.is_file() else -1
+            n = p.read_text(encoding='utf-8').count(e['find'])
             if n != 1:
                 out.append(f"{m['id']}: find у {e['file']} трапляється {n} раз (має 1)")
     return out
