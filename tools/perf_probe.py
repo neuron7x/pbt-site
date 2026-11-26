@@ -287,19 +287,19 @@ def sample_media_network(browser, url, theme):
     try:
         ctx.add_init_script(theme_script(theme) + MEDIA_FRAME_PROBE)
         page = ctx.new_page()
-        requests, chunks = {}, []
+        media_paths, chunks = {}, []
         cdp = mobile_cdp(ctx, page)
 
         def request(event):
             request_id = event["requestId"]
             path = media_path(event["request"]["url"], url)
             if path is None:
-                requests.pop(request_id, None)
+                media_paths.pop(request_id, None)
             else:
-                requests[request_id] = path
+                media_paths[request_id] = path
 
         def received(event):
-            path = requests.get(event["requestId"])
+            path = media_paths.get(event["requestId"])
             if path is not None:
                 chunks.append((event["timestamp"], path, event["encodedDataLength"]))
 
