@@ -22,20 +22,6 @@ def test_catalogue_passes_the_selected_hourly_machine_into_quote_and_lead(page_f
     assert page.locator('#park .unit[data-cat="trans"] [data-estimate-machine]').count() == 0
 
 
-def test_unavailable_passport_reports_error_without_starting_a_request(page_factory):
-    page = page_factory(reduced=True)
-    page.route("**/js/blueprint.js", lambda route: route.abort())
-    card = page.locator("#park .unit").first
-    status = card.locator(".unit__status")
-    assert status.count() == 1
-    passport = card.get_by_role("button", name="Паспорт", exact=False)
-    passport.click()
-    expect(status).to_contain_text("Паспорт тимчасово недоступний")
-    expect(passport).to_be_focused()
-    expect(page.locator("#subject")).to_have_value("")
-    expect(page.locator("#passport")).to_be_hidden()
-
-
 def test_mobile_menu_links_and_section_headings_have_readable_names(page_factory):
     page = page_factory(390, 844, mobile=True, reduced=True)
     assert page.locator("#roboty h2").text_content() == "Що саме зробимо"

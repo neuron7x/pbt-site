@@ -497,8 +497,9 @@
   let bpLoad = null;
   const loadBP = () => window.PBTBlueprint ? Promise.resolve(window.PBTBlueprint) : (bpLoad = bpLoad || new Promise((ok, fail) => {
     const s = document.createElement('script'); s.src = /** @type {any} */ (ttPolicy ? ttPolicy.createScriptURL('js/blueprint.js') : 'js/blueprint.js');
-    s.onload = () => window.PBTBlueprint ? ok(window.PBTBlueprint) : fail(new Error('blueprint'));
-    s.onerror = () => { bpLoad = null; s.remove(); fail(new Error('blueprint')); };
+    const unavailable = () => { bpLoad = null; s.remove(); fail(new Error('blueprint')); };
+    s.onload = () => window.PBTBlueprint ? ok(window.PBTBlueprint) : unavailable();
+    s.onerror = unavailable;
     document.head.appendChild(s);
   }));
   const unitById = id => D.fleet.find(x => x.id === id);
