@@ -64,12 +64,12 @@ def publish(path, before, after):
     directory = os.open(path.parent, os.O_RDONLY)
     try:
         fcntl.flock(directory, fcntl.LOCK_EX)
-        if path.read_text(encoding='utf-8') != before:
+        if path.read_bytes() != before.encode('utf-8'):
             return False
-        with tempfile.NamedTemporaryFile(dir=path.parent, encoding='utf-8', mode='w', delete=False) as staged:
+        with tempfile.NamedTemporaryFile(dir=path.parent, mode='wb', delete=False) as staged:
             temporary = Path(staged.name)
             try:
-                staged.write(after)
+                staged.write(after.encode('utf-8'))
                 staged.close()
                 temporary.chmod(path.stat().st_mode & 0o777)
                 temporary.replace(path)
@@ -111,7 +111,7 @@ def main(argv=None):
     a.add_argument('--oracle', required=True, help='pytest node id або команда одним рядком (shlex)')
     a.add_argument('--note', required=True)
     args = ap.parse_args(argv)
-    raw = CAT.read_text(encoding='utf-8')
+    raw = CAT.read_bytes().decode('utf-8')
     d = json.loads(raw)
     if args.cmd == 'fmt':
         if publish(CAT, raw, canonical(d)):

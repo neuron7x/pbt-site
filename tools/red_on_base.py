@@ -77,7 +77,9 @@ PYTEST_PROBE = r'''
 import json
 from pathlib import Path
 import sys
+import traceback
 import pytest
+from _pytest.nodes import Collector
 
 
 class Probe:
@@ -105,9 +107,11 @@ class Probe:
         if getattr(report, "when", None) != "collect":
             return
         exc = call.excinfo.value
+        if isinstance(exc, Collector.CollectError) and type(exc.__cause__) is ModuleNotFoundError:
+            exc = exc.__cause__
         path = Path(node.path).resolve()
-        frames = [frame.lineno + 1 for frame in call.excinfo.traceback
-                  if Path(frame.path).resolve() == path]
+        frames = [frame.lineno for frame in traceback.extract_tb(exc.__traceback__)
+                  if Path(frame.filename).resolve() == path]
         self.collection.append({
             "file": str(path), "module": exc.name if type(exc) is ModuleNotFoundError else None,
             "lines": frames,

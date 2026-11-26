@@ -63,3 +63,10 @@ def test_runner_rejects_empty_or_unknown_selector(args):
                             cwd=ROOT, text=True, capture_output=True)
     assert result.returncode == 2, (result.stdout, result.stderr)
     assert 'error:' in result.stderr and 'PASS' not in result.stdout
+
+
+def test_publish_does_not_treat_crlf_as_the_same_bytes(tmp_path):
+    path = tmp_path / 'catalogue.json'
+    path.write_bytes(b'old\r\n')
+    assert not mutant_new.publish(path, 'old\n', 'changed\n')
+    assert path.read_bytes() == b'old\r\n'
