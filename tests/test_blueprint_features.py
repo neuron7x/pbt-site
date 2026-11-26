@@ -220,12 +220,25 @@ def test_passport_close_stays_reachable_and_page_does_not_scroll_under_it(page_f
     assert not pg.evaluate("document.getElementById('passport').open")
 
 
-def test_failed_drawing_load_falls_back_to_the_request_form(page_factory):
-    pg = page_factory(1440, 900)
-    pg.route('**/js/blueprint.js', lambda route: route.abort())
-    pg.locator('.unit[data-id="e-2"] .unit__pass').click()
-    pg.wait_for_timeout(800)
-    assert not pg.evaluate("document.getElementById('passport').open")
-    assert pg.locator('#subject').input_value() == next(u['name'] for u in _data(pg)['fleet'] if u['id'] == 'e-2')
-    assert pg.evaluate('document.querySelectorAll(\'script[src="js/blueprint.js"]\').length') == 0
-    pg.errors.clear()                                                   # навмисний обрив — не помилка сторінки
+def test_failed_drawing_load_keeps_the_request_untouched_and_can_retry(page_factory):
+    from playwright.sync_api import expect
+
+    pg = page_factory(1440, 900, reduced=True)
+    route = '**/js/blueprint.js'
+    pg.route(route, lambda blocked: blocked.abort())
+    card = pg.locator('.unit[data-id="e-2"]')
+    status = card.locator('.unit__status')
+    assert status.count() == 1
+    button = card.locator('.unit__pass')
+    button.click()
+    expect(status).to_contain_text('Паспорт тимчасово недоступний')
+    expect(button).to_be_focused()
+    expect(pg.locator('#subject')).to_have_value('')
+    expect(pg.locator('#passport')).to_be_hidden()
+    assert pg.locator('script[src="js/blueprint.js"]').count() == 0
+
+    pg.unroute(route)
+    button.click()
+    expect(pg.locator('#passport')).to_be_visible()
+    expect(status).to_be_empty()
+    pg.errors.clear()  # Навмисний обрив першої спроби.
