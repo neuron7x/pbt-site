@@ -200,7 +200,8 @@
   const sHero = $('.s-hero'), hero = $('#hero'), hVideo = $('#heroVideo'), hCenter = $('#heroCenter'), water = $('#heroWater'), spark = $('#spark');
   /* слова заголовка розмічено в HTML: перезапис DOM після JS створював новий кандидат LCP (simulate: render delay 4,7 с) */
   let heroTop = 0, heroBottom = 0, heroTravel = 0;
-  let syncHeroVideo = () => {};
+  let syncHeroVideo = () => {}, syncHeroLogo = () => {};
+  let heroWasVisible = false;
   const heroInView = () => scrollY < heroBottom && scrollY + innerHeight > heroTop;
   function heroRender(y) {
     if (motion() && heroTravel > 0) {
@@ -420,6 +421,11 @@
   function render() {
     ticking = false;
     const y = scrollY;
+    const heroVisible = heroInView();
+    if (heroVisible !== heroWasVisible) {
+      heroWasVisible = heroVisible;
+      syncHeroLogo();
+    }
     heroRender(y); syncHeroVideo(); sparkWake();
     gaugeRender(y);
     nav.classList.toggle('is-solid', y > 40);
@@ -1258,11 +1264,12 @@
       lv.addEventListener('playing', () => logo.classList.add('is-anim'), { once: true });
       lv.addEventListener('ended', () => logo.classList.remove('is-anim'), { once: true });   // останній кадр = статичний
       const syncLogo = () => {
-        if (!videoAllowed() || !heroInView()) { lv.pause(); return; }
-        if (lv.ended) return;
+        if (!videoAllowed() || !heroInView()) { if (!lv.paused) lv.pause(); return; }
+        if (lv.ended || !lv.paused) return;
         if (!lv.getAttribute('src')) lv.src = 'media/logo/plainbud-logo.webm';
         const pr = lv.play(); if (pr && pr.catch) pr.catch(() => {});
       };
+      syncHeroLogo = syncLogo;
       mediaSync.add(syncLogo); syncLogo();
     });
     if (videoCapable() && hVideo) afterLoad(() => {

@@ -33,10 +33,15 @@ def test_hero_initially_offscreen_attaches_on_return(page_factory):
     page.wait_for_timeout(1100)
     video = page.locator("#heroVideo")
     assert not video.evaluate("node => node.currentSrc")
+    logo = page.locator("#logoAnim")
+    assert logo.get_attribute("src") is None
 
     page.evaluate("scrollTo({top: 0, behavior: 'instant'})")
     expect(video).to_have_attribute("data-ready", "1")
+    expect(logo).to_have_attribute("src", "media/logo/plainbud-logo.webm")
     page.wait_for_function("() => document.querySelector('#heroVideo').currentTime > 0")
+    page.wait_for_function("() => document.querySelector('#logoAnim').ended")
+    expect(page.locator(".logo-hero")).not_to_have_class("logo-hero is-anim")
 
 
 def test_card_keeps_photo_until_clip_can_play(page_factory):
