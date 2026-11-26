@@ -15,8 +15,9 @@ from contextlib import closing
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DB = Path(os.environ.get('LEAD_DB') or ROOT / 'data' / 'leads.db')
-OUT = Path(os.environ.get('BACKUP_DIR') or ROOT / 'data' / 'backups')
+STATE = Path(os.environ.get('PBT_DATA_DIR') or ROOT / 'data')
+DB = Path(os.environ.get('LEAD_DB') or STATE / 'leads.db')
+OUT = Path(os.environ.get('BACKUP_DIR') or STATE / 'backups')
 KEEP = int(os.environ.get('BACKUP_KEEP') or 14)
 
 
@@ -83,10 +84,13 @@ def main():
         tmp.unlink()
         tmp = None
 
-        previous = sorted(OUT.glob('leads-*.db'))[:-KEEP]
-        for entry in previous:
+        previous = sorted(entry for entry in OUT.glob('leads-*.db') if entry != dst)
+        expired = previous[:max(0, len(previous) - (KEEP - 1))]
+        for entry in expired:
             entry.unlink()
-        print(f'backup OK: {dst.name} заявок={count} видалено старих={len(previous)}')
+        if expired:
+            _sync_backup_directory(OUT)
+        print(f'backup OK: {dst.name} заявок={count} видалено старих={len(expired)}')
         return 0
     except (OSError, sqlite3.DatabaseError, RuntimeError) as exc:
         # Never print customer data, raw database contents or private paths.

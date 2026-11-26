@@ -16,9 +16,12 @@ import tempfile
 import time
 
 HERE = Path(__file__).resolve().parent
+MAX_SQLITE_ID = 2**63 - 1
 
 
 def drill(snapshot, watermark, off_device_receipt=None):
+    if not 0 <= watermark <= MAX_SQLITE_ID:
+        return {'status': 'FAIL', 'reason': 'invalid_input'}
     with tempfile.TemporaryDirectory(prefix='pbt-restore-drill-') as scratch:
         target = Path(scratch) / 'leads.db'
         started = time.monotonic()
@@ -31,15 +34,17 @@ def drill(snapshot, watermark, off_device_receipt=None):
         with sqlite3.connect(target) as c:
             integrity = c.execute('PRAGMA integrity_check').fetchone()[0]
             orphans = len(c.execute('PRAGMA foreign_key_check').fetchall())
-            ids = {r[0] for r in c.execute('SELECT id FROM leads')}
+            restored, highest, in_watermark = c.execute(
+                'SELECT count(*), coalesce(max(id), 0), count(CASE WHEN id BETWEEN 1 AND ? THEN 1 END) FROM leads',
+                (watermark,),
+            ).fetchone()
             without_outbox = c.execute('SELECT count(*) FROM leads l WHERE NOT EXISTS (SELECT 1 FROM outbox o WHERE o.lead_id=l.id)').fetchone()[0]
             pending = c.execute("SELECT count(*) FROM outbox WHERE status='pending'").fetchone()[0]
             seq = c.execute("SELECT seq FROM sqlite_sequence WHERE name='leads'").fetchone()[0]
-    highest = max(ids, default=0)
-    missing = sorted(set(range(1, watermark + 1)) - ids)
     ok = integrity == 'ok' and not orphans and seq >= watermark
-    return {'status': 'PASS' if ok else 'FAIL', 'measured_rto_s': round(elapsed, 3), 'restored_leads': len(ids),
-            'highest_restored_id': highest, 'external_watermark': watermark, 'rpo_gap_ids': len(missing), 'pending_outbox': pending,
+    return {'status': 'PASS' if ok else 'FAIL', 'measured_rto_s': round(elapsed, 3), 'restored_leads': restored,
+            'highest_restored_id': highest, 'external_watermark': watermark, 'rpo_gap_ids': watermark - in_watermark,
+            'pending_outbox': pending,
             'leads_without_outbox_row': without_outbox, 'integrity': integrity, 'foreign_key_violations': orphans,
             'off_device': bool(off_device_receipt), 'off_device_receipt': off_device_receipt,
             'scope': 'procedure rehearsal' if not off_device_receipt else 'caller-supplied receipt, verify its provenance',
@@ -52,7 +57,7 @@ def main(argv=None):
     p.add_argument('--external-watermark', type=int, required=True, help='highest issued lead id, from outside this machine')
     p.add_argument('--off-device-receipt', default=None)
     a = p.parse_args(argv)
-    if a.external_watermark < 0 or not a.snapshot.is_file():
+    if not 0 <= a.external_watermark <= MAX_SQLITE_ID or not a.snapshot.is_file():
         print(json.dumps({'status': 'FAIL', 'reason': 'invalid_input'}))
         return 2
     result = drill(a.snapshot, a.external_watermark, a.off_device_receipt)

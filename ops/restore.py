@@ -86,13 +86,22 @@ def _durable_copy(src, dst):
 
 
 def _settle(path):
-    """Let SQLite roll back a hot journal / checkpoint a WAL, so the main file alone is consistent.
-    A corrupt old database is exactly why restores happen: its raw bytes are already preserved."""
+    """Place committed WAL data in the main file before unlinking sidecars."""
+    wal = Path(f'{path}-wal')
+    journal = Path(f'{path}-journal')
     try:
         with closing(sqlite3.connect(path, timeout=5)) as c:
             c.execute('SELECT count(*) FROM sqlite_master').fetchone()
-    except sqlite3.Error:
-        pass
+            if wal.exists() and wal.stat().st_size:
+                c.execute('PRAGMA synchronous=FULL')
+                busy, _, _ = c.execute('PRAGMA wal_checkpoint(TRUNCATE)').fetchone()
+                if busy or (wal.exists() and wal.stat().st_size):
+                    raise RuntimeError('old WAL checkpoint incomplete')
+    except sqlite3.Error as exc:
+        if wal.exists() or journal.exists():
+            raise RuntimeError('cannot settle old database with sidecars') from exc
+        # A corrupt main file with no sidecars can still be replaced. Its raw
+        # bytes are preserved by the caller.
 
 
 def _publish(tmp, dst):

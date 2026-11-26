@@ -265,3 +265,56 @@ def test_concurrent_backup_never_destroys_a_running_backups_temporary_file(tmp_p
             assert conn.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
     # The lock died with its holder: nothing stale remains for the next timer tick.
     assert subprocess.run([sys.executable, str(ROOT / 'ops/backup.py')], env=env, timeout=15).returncode == 0
+
+
+def test_backup_keeps_the_just_published_snapshot_after_clock_rollback(tmp_path):
+    db, out = tmp_path / 'leads.db', tmp_path / 'backups'
+    _seed(db)
+    backup = _module(db, out, 1)
+    dates = iter(('20261126-150000', '20261126-145900'))
+    backup.time = SimpleNamespace(strftime=lambda _: next(dates), time_ns=lambda: 100)
+    assert backup.main() == 0
+    with sqlite3.connect(db) as connection:
+        connection.execute("INSERT INTO leads(created,type,payload) VALUES('2026','rent','{}')")
+    assert backup.main() == 0
+    snapshots = list(out.glob('leads-*.db'))
+    assert [path.name for path in snapshots] == ['leads-20261126-145900-000000100.db']
+    with sqlite3.connect(snapshots[0]) as connection:
+        assert connection.execute('SELECT count(*) FROM leads').fetchone() == (2,)
+
+
+def test_restore_drill_counts_gaps_without_allocating_the_watermark_range(tmp_path, monkeypatch):
+    from ops import restore_drill
+
+    def no_materialization(*_):
+        raise AssertionError('restore drill must not enumerate accepted IDs')
+
+    monkeypatch.setattr(restore_drill, 'range', no_materialization, raising=False)
+    snapshot = tmp_path / 'snapshot.db'
+    _seed(snapshot)
+    with sqlite3.connect(snapshot) as connection:
+        connection.execute('CREATE TABLE outbox(lead_id INTEGER REFERENCES leads(id), status TEXT)')
+        connection.execute("INSERT INTO outbox(lead_id,status) VALUES (1,'pending')")
+    watermark = 10**12
+    report = restore_drill.drill(snapshot, watermark)
+    assert report['status'] == 'PASS'
+    assert report['restored_leads'] == 1 and report['highest_restored_id'] == 1
+    assert report['rpo_gap_ids'] == watermark - 1
+
+
+def test_backup_defaults_follow_the_configured_state_directory(tmp_path, monkeypatch):
+    import runpy
+
+    state = tmp_path / 'state'
+    monkeypatch.setenv('PBT_DATA_DIR', str(state))
+    monkeypatch.delenv('LEAD_DB', raising=False)
+    monkeypatch.delenv('BACKUP_DIR', raising=False)
+    backup = runpy.run_path(str(ROOT / 'ops/backup.py'))
+    assert backup['DB'] == state / 'leads.db'
+    assert backup['OUT'] == state / 'backups'
+
+    override = tmp_path / 'independent-store'
+    monkeypatch.setenv('BACKUP_DIR', str(override))
+    backup = runpy.run_path(str(ROOT / 'ops/backup.py'))
+    assert backup['DB'] == state / 'leads.db'
+    assert backup['OUT'] == override

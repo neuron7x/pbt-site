@@ -15,6 +15,7 @@ StateDirectory=pbt-site
 StateDirectoryMode=0700
 WorkingDirectory=/opt/pbt-site
 ExecStart=/usr/bin/python3 server/app.py
+Environment=PBT_DATA_DIR=%S/pbt-site
 Environment=LEAD_DB=%S/pbt-site/leads.db
 Environment=TRUST_PROXY=1
 EnvironmentFile=-/etc/pbt-site/env
