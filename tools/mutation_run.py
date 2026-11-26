@@ -77,10 +77,15 @@ def main(argv=None):
     p.add_argument('--out', type=Path, default=None)
     p.add_argument('--jobs', type=int, default=3)
     p.add_argument('--timeout', type=int, default=240)
-    p.add_argument('--only', nargs='*', default=None)
+    p.add_argument('--only', nargs='+', default=None)
     a = p.parse_args(argv)
     catalog = json.loads(a.catalog.read_text(encoding='utf-8'))
-    mutants = [m for m in catalog['mutants'] if not a.only or m['id'] in a.only]
+    if a.only:
+        known_ids = {m['id'] for m in catalog['mutants']}
+        unknown_ids = sorted(set(a.only) - known_ids)
+        if unknown_ids:
+            p.error('unknown mutation IDs: ' + ', '.join(unknown_ids))
+    mutants = [m for m in catalog['mutants'] if a.only is None or m['id'] in a.only]
     live = [m for m in mutants if m.get('expected') != 'UNTESTABLE']
     with tempfile.TemporaryDirectory(prefix='pbt-mutation-') as scratch:
         trees = []
