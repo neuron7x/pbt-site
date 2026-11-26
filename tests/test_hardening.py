@@ -1,6 +1,7 @@
 """Дискримінаційні тести меж сервера й збірки: кожен закриває мутанта, що виживав на попередньому наборі
 (незалежний аудит J, 213ccb0: M01–M23). Ідентифікатор мутанта — у назві/докстрінгу тесту."""
 import base64, hashlib, hmac, json, re, socket, sqlite3, time, threading, urllib.error, urllib.request
+from contextlib import closing
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import pytest
@@ -200,8 +201,16 @@ def test_outbox_51_rows_after_restart_drains_before_next_poll(srv):
         assert s.rows("SELECT count(*) FROM outbox WHERE status='pending'") == [(51,)]
         s.kill()
         restarted = srv(LEAD_WEBHOOK_URL=st.url + '/hook', LEAD_WEBHOOK_SECRET='sec', DELIVERY_POLL_S='30')
-        done = wait_for(lambda: restarted.rows("SELECT count(*) FROM outbox WHERE status='delivered'") == [(51,)],
-                        timeout=12)
+        def drained():
+            try:
+                with closing(sqlite3.connect(restarted.db, timeout=0)) as observer:
+                    return observer.execute("SELECT count(*) FROM outbox WHERE status='delivered'").fetchone() == (51,)
+            except sqlite3.OperationalError as exc:
+                if exc.sqlite_errorcode & 0xFF not in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+                    raise
+                return False
+
+        done = wait_for(drained, timeout=12)
         assert done, 'worker waited for the 30s poll interval with a due backlog'
         assert restarted.rows("SELECT count(*) FROM outbox WHERE status='pending'") == [(0,)]
         assert len(st.hits) == 51
