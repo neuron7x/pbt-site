@@ -188,7 +188,9 @@ function node(tag) {
 }
 const html = n => typeof n === 'string' ? escText(n)
   : '<' + n.tag + Object.entries(n.attrs).map(([k, v]) => ' ' + k + '="' + escText(v) + '"').join('') + '>' + n.kids.map(html).join('') + '</' + n.tag + '>';
-const elements = {'#reel': node('div'), '#partners': node('ul')};
+const elements = {'#reel': node('div')};
+// Дозволяємо прогнати той самий оракул на базі зі старою стрічкою.
+if (D.partners) elements['#partners'] = node('ul');
 const watched = [], selectors = [];
 const context = {
   D, URL, window: {PBT_BUNDLE: mode !== 'live'},
@@ -198,7 +200,7 @@ const context = {
   watchVideo: proof => watched.push(proof.video)
 };
 vm.runInNewContext(domSource + '\nconst { el, append, fill } = window.PBTDom;\n' + functions.join('\n') + '\nrenderProof();', context);
-process.stdout.write(JSON.stringify({html: elements['#reel'].kids.map(html).join(''), proof: D.proof, watched, selectors}));
+process.stdout.write(JSON.stringify({html: elements['#reel'].kids.map(html).join(''), proof: D.proof, watched, selectors, logoCards: elements['#partners']?.kids.length ?? 0}));
 """
     run = subprocess.run([node, "-e", script, mode], cwd=ROOT,
                          capture_output=True, text=True, timeout=10, check=True)
@@ -217,6 +219,7 @@ process.stdout.write(JSON.stringify({html: elements['#reel'].kids.map(html).join
     cards = [(tag, attrs) for tag, attrs in parsed.nodes
              if "proof-card" in attrs.get("class", "").split()]
     assert len(cards) == len(actual["proof"]) == 6
+    assert actual["logoCards"] == 0
     assert actual["selectors"] == ["#reel .proof-card"]
     assert actual["watched"] == [proof["video"] for proof in actual["proof"]]
     videos = [attrs for tag, attrs in parsed.nodes if tag == "video"]

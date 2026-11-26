@@ -140,7 +140,7 @@ def test_mobile_hero_takes_portrait_cut(page_factory):
 
 def test_sections_reveal_and_counters_finish(page_factory):
     pg = page_factory()
-    for sel in ('#roboty', '#jobs', '#dokaz', '#reel', '#partners', '#geo', '#geoList'):
+    for sel in ('#roboty', '#jobs', '#dokaz', '#reel', '#geo', '#geoList'):
         pg.evaluate(f'document.querySelector("{sel}").scrollIntoView({{behavior: "instant", block: "center"}})'); pg.wait_for_timeout(450)
     pg.wait_for_timeout(1700)
     assert pg.evaluate('[...document.querySelectorAll("#roboty .rv, #dokaz .rv")].every(e => e.classList.contains("is-in"))')
@@ -148,7 +148,8 @@ def test_sections_reveal_and_counters_finish(page_factory):
     nums = pg.evaluate('[...document.querySelectorAll("#dokaz [data-count]")].map(e => e.textContent)')
     assert nums == ['32', '9', '70 м'], nums
     assert pg.locator('#geoMap .route').count() == 8 and pg.locator('#geoMap .beacon').count() == 1   # 8 маршрутів з Полтави
-    assert pg.evaluate('document.getElementById("partners").children.length') == len(DATA['partners']) * 2  # стрічка подвоєна
+    assert pg.locator('#reel .proof-card').count() == len(DATA['proof'])
+    assert pg.locator('#dokaz img[src*="partners-"]').count() == 0
 
 
 def test_job_and_proof_videos_play_in_view(page_factory, server):

@@ -124,15 +124,12 @@
   --t-cine-tracking: .01em;
   --t-cine-bgtext: var(--grad-gold);
   --t-cine-fg: transparent;
-  --t-marquee-animation: marquee 40s linear infinite;
-  --t-marquee-dup: grid;
   --t-map-home-animation: home 2.6s var(--ease) 3;
   --t-map-ring-animation: ring 2.2s var(--ease) 3;
   --t-footer-bg: #020716;
   --t-tag-bg:#FDC501; --t-tag-fg:#06122B;
   --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:transparent;
   --t-cine-veil:radial-gradient(62% 34% at 50% 52%,rgba(4,31,69,.66),rgba(4,31,69,.46) 55%,transparent),linear-gradient(180deg,rgba(4,31,69,.82),rgba(4,31,69,.12) 30%,rgba(4,31,69,.12) 62%,rgba(4,31,69,.9));
-  --t-marquee-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
   --t-hero-stats-border:1px solid rgba(255,255,255,.2); --t-hero-stats-padding:20px; --t-footer-legal:#A9B9CF;
   --t-404-bg: #040A16;
   --t-404-color: #fff;
@@ -247,15 +244,13 @@
   --t-cine-tracking: -.075em;
   --t-cine-bgtext: none;
   --t-cine-fg: #FFFFFF;
-  --t-marquee-animation: none;
-  --t-marquee-dup: none;
   --t-map-home-animation: none;
   --t-map-ring-animation: none;
   --t-footer-bg: #0B1218;
   --t-tag-bg:rgba(16,24,32,.88); --t-tag-fg:#FFFFFF;
   --t-logo-width:96px; --t-logo-mobile:80px; --t-fact-bg:transparent;
   --t-cine-veil:radial-gradient(ellipse 65% 43% at 50% 52%,rgba(8,16,24,.79),rgba(8,16,24,.6) 55%,transparent 86%),linear-gradient(90deg,rgba(10,17,24,.48),rgba(10,17,24,.24)),linear-gradient(0deg,rgba(10,17,24,.8),transparent 35%,transparent 70%,rgba(10,17,24,.68));
-  --t-marquee-mask:none; --t-hero-stats-border:1px solid rgba(255,255,255,.32); --t-hero-stats-padding:17px; --t-footer-legal:#A6B4BF;
+  --t-hero-stats-border:1px solid rgba(255,255,255,.32); --t-hero-stats-padding:17px; --t-footer-legal:#A6B4BF;
   --t-404-bg: #101820;
   --t-404-color: #fff;
 }
@@ -265,7 +260,7 @@ html{background:var(--sky-900);-webkit-text-size-adjust:100%;overflow-x:clip;scr
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 body{margin:0;background:var(--sky-50);color:var(--ink);font:400 clamp(16px,1.05vw,18px)/var(--t-body-leading) var(--f-b);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:clip}
 img,video,canvas,svg{display:block;max-width:100%}
-.job img,.unit img,.tile img,.reel img,.marquee img{height:auto}
+.job img,.unit img,.tile img,.reel img{height:auto}
 a{color:inherit;text-decoration:none}
 h1,h2,h3,h4,p,ul,ol,dl,dd,figure,fieldset{margin:0;padding:0}
 ul,ol{list-style:none}
@@ -504,12 +499,8 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .field .err{display:none;font-size:13px;color:#B42318;font-weight:500}
 .field.is-err input,.field.is-err select,.field.is-err textarea{border-color:#D92D20;box-shadow:0 0 0 4px rgba(217,45,32,.12)}
 .field.is-err .err{display:block}
-.pair{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:14px;align-items:center}
-.pair input[type=range]{appearance:none;-webkit-appearance:none;height:6px;border-radius:3px;padding:0;border:0;background:linear-gradient(90deg,var(--gold) 0 var(--p,30%),var(--sky-100) var(--p,30%) 100%)}
-.pair input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--grad-gold);border:3px solid var(--white);box-shadow:0 4px 14px rgba(249,115,22,.5);cursor:pointer;transition:transform .25s var(--spring)}
-.pair input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15)}
-.pair input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--gold);border:3px solid var(--white);box-shadow:0 4px 14px rgba(249,115,22,.5);cursor:pointer}
-.pair input[type=number]{text-align:right;font-family:var(--f-m);font-weight:500}
+.calc__quantities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end}
+.calc__quantities input{font-variant-numeric:tabular-nums}
 .calc__out{padding:clamp(24px,3.4vw,48px);display:grid;gap:18px;align-content:start;background:var(--t-quote-bg);color:var(--white)}
 .calc__out .eyebrow{justify-content:flex-start;color:var(--white)}
 .calc__out .eyebrow::after{display:none}
@@ -560,15 +551,6 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .fact{background:var(--t-fact-bg,rgba(255,255,255,.1));box-shadow:inset 0 0 0 1px var(--line-w);border-radius:var(--t-card-radius);padding:22px 18px;display:grid;gap:8px;text-align:center;backdrop-filter:blur(8px)}
 .fact b{font:800 clamp(34px,3.4vw,54px)/1 var(--f-d);background:var(--grad-gold);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
 .fact span{font-size:13px;color:#F2F9FF;line-height:1.4}
-.marquee{overflow:hidden;mask-image:var(--t-marquee-mask);-webkit-mask-image:var(--t-marquee-mask);margin-top:22px}
-.marquee ul{display:flex;gap:14px;width:max-content;animation:var(--t-marquee-animation)}
-.marquee:hover ul{animation-play-state:paused}
-@keyframes marquee{to{transform:translateX(-50%)}}
-@media (prefers-reduced-motion:reduce){.marquee ul{animation:none;flex-wrap:wrap;width:auto;justify-content:center}}
-.marquee li:nth-child(n+18){display:var(--t-marquee-dup)}
-.marquee li{flex:none;width:112px;height:112px;background:var(--white);border-radius:var(--t-card-radius);padding:10px;display:grid;place-items:center}
-.marquee img{width:100%;height:100%;object-fit:contain}
-.proof__src{margin-top:18px;text-align:center;font-size:12.5px;color:var(--white)}
 
 /* ═══ S07 ГЕОГРАФІЯ ═══ */
 .geo{display:grid;gap:clamp(28px,4vw,56px);align-items:center;max-width:1180px;margin:0 auto}
@@ -657,9 +639,9 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
    (data-off ставить IntersectionObserver у site.js, тож маяк карти відпрацьовує, коли його видно, а не за 1,5 екрана);
    поки відвідувач у полі форми — жоден декоративний цикл не тягне погляд від ціни й заявки. */
 [data-off],[data-off] *,[data-off] *::before,[data-off] *::after,
-:root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *,
-:root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::before,
-:root:has(form :is(input,select,textarea):focus) :is(.hero,.marquee,.wave,#geoMap) *::after{animation-play-state:paused!important}
+:root:has(form :is(input,select,textarea):focus) :is(.hero,.wave,#geoMap) *,
+:root:has(form :is(input,select,textarea):focus) :is(.hero,.wave,#geoMap) *::before,
+:root:has(form :is(input,select,textarea):focus) :is(.hero,.wave,#geoMap) *::after{animation-play-state:paused!important}
 [data-motion=paused] *,[data-motion=paused] *::before,[data-motion=paused] *::after{animation-play-state:paused!important;transition:none!important;scroll-behavior:auto!important}
 [data-motion=paused] .rv,[data-motion=paused] .hero__center h1 .w{opacity:1!important;transform:none!important}
 [data-motion=paused] .glow,[data-motion=paused] .hero__spark,[data-motion=paused] .hero__beams{display:none}
@@ -727,7 +709,6 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
   .hero__center h1{font-size:clamp(24px,6.6vw,32px)}
   .hero__stats b{font-size:24px}
   .facts{grid-template-columns:1fr}
-  .pair{grid-template-columns:minmax(0,1fr) 92px}
   .btn{padding:15px 22px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -1177,9 +1158,6 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{border-radius:0;background:#F3F7FC;border:1.5px solid rgba(8,20,42,.2)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#08142A;box-shadow:0 0 0 3px rgba(253,197,1,.65)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field label,:is(:root[data-theme="sky"],:root:not([data-theme])) .field .lab{font:700 11.5px/1.25 var(--f-b);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]{height:4px;border-radius:0;background:linear-gradient(90deg,#FDC501 0 var(--p,30%),#CFDBEA var(--p,30%) 100%)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-webkit-slider-thumb{border-radius:0;width:20px;height:28px;background:#08142A;border:3px solid #FDC501;box-shadow:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]::-moz-range-thumb{border-radius:0;background:#08142A;border:3px solid #FDC501;box-shadow:none}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:48px 48px;border-left:4px solid #FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .total{filter:none}
 
@@ -1198,7 +1176,6 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .reel i{border-radius:0;background:#FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .fact{backdrop-filter:none;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);text-align:left;padding:26px 22px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .fact b{font-size:clamp(40px,4vw,64px)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .marquee li{border-radius:0}
 
 /* ГЕОГРАФІЯ */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .geo__map svg{filter:none}
@@ -1228,7 +1205,7 @@ html:has(#passport[open]){overflow:hidden}
 /* вирівнювання за лівою віссю заголовків; глибиномір без інверсії кольору */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .chips{justify-content:flex-start;margin:0 0 30px}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .facts{max-width:none;margin:0 0 clamp(36px,5vw,56px)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .park__note,:is(:root[data-theme="sky"],:root:not([data-theme])) .proof__src{text-align:left;margin-left:0}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .park__note{text-align:left;margin-left:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .gauge{mix-blend-mode:normal;color:#8C9DB5}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-deep .sec-head::after{-webkit-text-stroke-color:#FFFFFF;opacity:.13}
 @media (max-height:520px){
@@ -1344,7 +1321,6 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile{box-shadow:0 0 0 1px rgba(29,78,216,.16),inset 0 1px 0 #FFFFFF,0 22px 44px -30px rgba(29,78,216,.5)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job:hover,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:0 0 0 1px #1D4ED8,inset 0 1px 0 #FFFFFF,0 26px 52px -28px rgba(29,78,216,.7)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc,:is(:root[data-theme="sky"],:root:not([data-theme])) .form{box-shadow:0 0 0 1px rgba(29,78,216,.24),0 30px 60px -34px rgba(29,78,216,.6)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .pair input[type=range]{background:linear-gradient(90deg,#FDC501 0 var(--p,30%),#B5CFF0 var(--p,30%) 100%)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served{fill:#173F9E}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .obl.served:hover{fill:#1D4ED8}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .foot{color:#B9CCE6}
