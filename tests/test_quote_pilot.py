@@ -54,6 +54,8 @@ def test_quote_selects_early_slot_and_only_funded_discount():
     assert result["earliest"]["id"] == "early"
     assert result["flexible"]["id"] == "valid-saving"
     assert result["flexible_reason"] == "routing"
+    assert result["scope"] == SCOPE
+    assert result["earliest"]["bottleneck_minutes"] == result["flexible"]["bottleneck_minutes"] == 60
     assert result["flexible"]["price_net_kop"] == 130
     assert result["flexible"]["price_gross_kop"] == 156
     assert result["earliest"]["contribution_kop"] == result["flexible"]["contribution_kop"] == 50

@@ -17,10 +17,10 @@ def test_no_javascript_cannot_submit_contact_in_url(browser, server):
         assert page.locator('a[href="tel:+380675550317"]').count() > 0
         expect(page.locator('#cOrder')).to_be_disabled()
         expect(page.locator('#cMachine')).to_be_disabled()
+        expect(page.locator('#cOut')).to_contain_text('Вартість договірна')
         page.locator('#cTask').fill('Тестове завдання')
         page.locator('#cTask').press('Enter')
         assert '?' not in page.url
-        expect(page.locator('#cOut')).to_contain_text('Вартість договірна')
         expect(page.locator('#park .content-fallback')).to_be_visible()
         expect(page.locator('#mats .content-fallback')).to_be_visible()
         expect(page.locator('#calcUnavailable')).to_be_visible()

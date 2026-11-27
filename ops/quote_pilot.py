@@ -144,6 +144,7 @@ def _option(raw, path, seen, scope, window, as_of, margin_bps, vat_bps):
         "finish": finish,
         "confirmation_ref": confirmation_ref,
         "valid_until": valid_until,
+        "bottleneck_minutes": bottleneck,
         "price_net_kop": price,
         "price_gross_kop": price + _round_half_up(price * vat_bps, _BPS),
         "cost_total_kop": cost,
@@ -217,6 +218,7 @@ def quote(payload):
 
     return {
         "status": "review_required" if earliest else "no_eligible_options",
+        "scope": dict(zip(_SCOPE, scope)),
         "earliest": _quote_record(earliest),
         "flexible": _quote_record(flexible),
         "flexible_reason": flexible_reason,
