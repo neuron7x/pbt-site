@@ -114,7 +114,7 @@ def test_threat_model_covers_every_endpoint_and_links_real_tests():
     model = json.loads((ROOT / 'assurance/threat-model.json').read_text(encoding='utf-8'))
     source = (ROOT / 'server/app.py').read_text(encoding='utf-8')
     endpoints = set(re.findall(r"self\.path\.split\('\?'\)\[0\] (?:==|!=) '(/[a-z/]+)'", source))
-    assert endpoints == {'/api/config', '/api/health', '/api/lead'}, 'new endpoint: extend the threat model'
+    assert endpoints == {'/api/config', '/api/health', '/api/lead', '/api/support'}, 'new endpoint: extend the threat model'
     assert endpoints <= set(model['entry_points'])
     assert len(model['threats']) >= 8
     for threat in model['threats']:

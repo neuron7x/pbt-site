@@ -1,14 +1,16 @@
 {
  "schema": "pbt-threat-model-v1",
  "scope": "Public site only. Private CRM is out of scope; webhook receiver is treated as an untrusted peer that can fail.",
- "entry_points": ["/api/lead", "/api/health", "/api/config", "static files under web/"],
+ "entry_points": ["/api/lead", "/api/health", "/api/config", "/api/support", "static files under web/"],
  "assets": ["accepted lead (contact data)", "lead/outbox integrity", "webhook secret and Telegram token", "public availability", "truth of release evidence", "truth of published facts"],
  "trust_boundaries": [
   "internet -> TLS proxy -> loopback HTTP server (only a loopback peer with TRUST_PROXY=1 may state client identity)",
   "public config JSON -> DOM (values are data, never markup or scheme)",
   "server -> delivery child -> receiver (no database, no argv secrets, no redirects, absolute deadline)",
   "CI artifact bytes -> offline verifier (bytes bound to provider digest; producer verdicts ignored)",
-  "browser sessionStorage (opaque key and digest only)"
+  "browser sessionStorage (opaque key and digest only)",
+  "browser chat -> signed brief -> browser tab (replay window, no durable chat store)",
+  "public support endpoint -> configured model provider (per-turn opt-in)"
  ],
  "threats": [
   {"id": "T01", "goal": "lose or duplicate an accepted lead", "cwe": "CWE-362", "asset": "accepted lead", "precondition": "process death or concurrency at any step of acceptance", "control": "BEGIN IMMEDIATE, lead+outbox in one commit, unique idempotency index", "risk_owner": "engineering", "status": "TESTED",
@@ -31,6 +33,12 @@
    "tests": ["tests/test_meta_evidence_gate.py::test_forged_success_is_rejected", "tests/test_evidence_collect.py::test_bytes_differing_from_provider_digest_are_rejected"]},
   {"id": "T10", "goal": "site process reads secrets elsewhere in the home directory", "cwe": "CWE-250", "asset": "webhook secret and Telegram token", "precondition": "code execution inside the site process under the current systemd --user unit", "control": "NONE EFFECTIVE in user mode (measured); system-manager candidate blocks it (measured)", "risk_owner": "owner: deployment decision", "status": "OPEN_EXTERNAL", "tests": []},
   {"id": "T11", "goal": "publish a wrong price, right or legal claim", "cwe": "CWE-1059", "asset": "truth of published facts", "precondition": "unapproved value in catalog or media", "control": "parity validator detects disagreement only; approval is outside engineering", "risk_owner": "owner", "status": "OPEN_EXTERNAL", "tests": ["tests/test_business_parity.py::test_fleet_and_material_facts_agree_between_catalog_and_interface"]},
-  {"id": "T12", "goal": "accepted lead never reaches an operator", "cwe": "CWE-703", "asset": "accepted lead", "precondition": "receiver down, misconfigured, or acknowledging without persisting", "control": "durable outbox, bounded retry, terminal state, readiness never claims receiver truth", "risk_owner": "owner: live channel", "status": "OPEN_EXTERNAL", "tests": ["tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart", "tests/test_readiness_truth_table.py::test_clean_local_state_never_claims_receiver_or_business_truth"]}
+  {"id": "T12", "goal": "accepted lead never reaches an operator", "cwe": "CWE-703", "asset": "accepted lead", "precondition": "receiver down, misconfigured, or acknowledging without persisting", "control": "durable outbox, bounded retry, terminal state, readiness never claims receiver truth", "risk_owner": "owner: live channel", "status": "OPEN_EXTERNAL", "tests": ["tests/test_outbox_state_machine.py::test_death_after_remote_ack_redelivers_same_id_after_restart", "tests/test_readiness_truth_table.py::test_clean_local_state_never_claims_receiver_or_business_truth"]},
+  {"id": "T13", "goal": "turn a support conversation into a lead without user action", "cwe": "CWE-862", "asset": "lead/outbox integrity", "precondition": "visitor starts a quote or reviews a draft", "control": "support reply only returns a draft; sending requires submitting the separate lead form", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_support.py::test_http_conversation_has_no_durable_lead_or_transcript", "tests/test_support_ui.py::test_price_request_offers_quote_review_and_skips_unknown_without_sending_lead"]},
+  {"id": "T14", "goal": "inject a false commitment or change a signed brief", "cwe": "CWE-345", "asset": "truth of published facts", "precondition": "client tampers with state or provider feedback claims price, booking, or scheduling", "control": "signed expiring state, model prose discarded, contextual offer derives from caller intent and reconciled facts", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_support_trajectories.py::test_signed_memory_cannot_be_modified_and_expires", "tests/test_support_trajectories.py::test_model_prose_cannot_create_dispatch_or_safety_guarantee", "tests/test_support_trajectories.py::test_quote_and_skip_never_override_specialist_contact_or_conflict"]},
+  {"id": "T15", "goal": "trigger third-party processing through an ambiguous support request", "cwe": "CWE-352", "asset": "lead (contact data)", "precondition": "cross-site client, duplicate consent, or attachment without per-turn opt-in", "control": "same-origin POST, reject duplicate keys, explicit consent with provider enabled, redact contact patterns before forwarding text", "risk_owner": "engineering", "status": "TESTED",
+   "tests": ["tests/test_support.py::test_http_support_rejects_cross_origin_and_duplicate_consent", "tests/test_support.py::test_explicit_consent_and_photo_envelope_only_send_public_context", "tests/test_support.py::test_invalid_envelopes_never_reach_provider"]}
  ]
 }
