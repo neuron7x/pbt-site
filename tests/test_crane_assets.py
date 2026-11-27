@@ -31,6 +31,7 @@ def test_check_fails_when_css_drifts_from_the_generator(tmp_path):
 
 def test_every_embedded_svg_is_well_formed_and_self_contained():
     for name, svg in (('rope', crane.ROPE), ('hook', crane.HOOK), ('sheet', crane.sheet())):
+        assert '\n' not in crane.uri(svg) and '\r' not in crane.uri(svg), name
         root = ET.fromstring(svg)
         assert root.tag == NS + 'svg', name
         ids = {e.get('id') for e in root.iter() if e.get('id')}
@@ -43,7 +44,7 @@ def test_every_embedded_svg_is_well_formed_and_self_contained():
 def test_sheet_has_one_frame_per_declared_slot_and_nothing_spills_between_frames():
     root = ET.fromstring(crane.sheet())
     assert root.get('viewBox') == f"0 0 {crane.FRAMES['count'] * crane.FW} {crane.FH}"
-    defs = {g.get('id'): g for g in root.find(NS + 'defs')}
+    defs = {g.get('id'): g for g in root.find(NS + 'defs') if g.tag == NS + 'g'}
     width = {k: max(int(r.get('x')) + int(r.get('width')) for r in g) for k, g in defs.items()}
     occupied = set()
     for use in root.iter(NS + 'use'):
@@ -62,7 +63,7 @@ def test_css_addresses_only_existing_frames():
     block = crane.css_block()
     step = crane.FW * crane.CELL
     xs = {int(v) for v in re.findall(r'background-position-x:-?(\d+)px', block)} | {0}
-    assert xs == {0, 2 * step, 8 * step, 9 * step, 10 * step, 18 * step}, sorted(xs)
+    assert xs == {0, 2 * step, 8 * step, 9 * step, 10 * step, 18 * step, 19 * step}, sorted(xs)
     assert all(x % step == 0 and x // step <= crane.FRAMES['count'] - 1 for x in xs)
     assert f"{crane.FRAMES['count'] * step}px {crane.FH * crane.CELL}px" in block   # background-size = весь аркуш
 

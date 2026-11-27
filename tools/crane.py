@@ -2,14 +2,15 @@
 """Кран-глибиномір теми «Сталь»: канат, гакова підвіска, вантаж і його кадри — згенеровано, а не вставлено руками.
 
 Вся графіка — власна, намальована тут: SVG у data-URI всередині web/css/site.css (CSP: img-src data:), без файлів і запитів.
-Піксельний вантаж — оригінальний персонаж у палітрі бренду; чужих спрайтів і торгових марок немає (docs/PROVENANCE.md).
+Будівельник — оригінальний векторний персонаж у палітрі бренду; чужих спрайтів і торгових марок немає (docs/PROVENANCE.md).
 
-Аркуш кадрів 16×44 клітинки, клітинка 2 px (постать 32×44 px):
+Кадр 16×44 клітинки, клітинка 2 px (постать 32×44 px):
   0–7   вантаж махає руками, падають монети (під час підйому)
-  8     вантаж у спокої (стоїть унизу або висить на гаку)
+  8     будівельник стоїть унизу
   9     пляма після падіння
   10–17 грудка: тече й крапає (під час підйому)
   18    грудка у спокої
+  19    будівельник висить на гаку
 
   python3 tools/crane.py            — розміри й кількість кадрів
   python3 tools/crane.py --write    — вписати блок між маркерами у web/css/site.css
@@ -23,26 +24,76 @@ CSS = ROOT / 'web' / 'css' / 'site.css'
 BEGIN, END = '/* crane:begin — згенеровано tools/crane.py, руками не правити */', '/* crane:end */'
 P = ':is(:root[data-theme="sky"],:root:not([data-theme]))'
 CELL, FW, BODY, FH = 2, 16, 22, 44                       # px на клітинку; кадр 16×44 клітинки: 22 — постать, 22 — простір падіння частинок
-PAL = {'Y': '#FDC501', 'y': '#C99700', 'H': '#FFE98A', 'S': '#F2B88A', 's': '#D9925F', 'K': '#11161C', 'M': '#4A2A12', 'O': '#F97316',
-       'o': '#C2540C', 'W': '#F2F5F8', 'B': '#1238A8', 'b': '#0C2878', 'G': '#9AA5B1', 'T': '#3A2414', 'R': '#C81E1E', 'r': '#8E1212', 'P': '#E86A6A'}
-# вусатий будівельник у касці й сигнальному жилеті — власний персонаж; три тони на матеріал, як у спрайтах 8-бітних приставок
-IDLE = ["....YYYYYYYY....", "...YHHYYYYYYY...", "..YHYYYYYYYYYY..", ".yyyyyyyyyyyyyy.", "...SSSSSSSSSS...", "..SSKSSSSSSKSS..",
-        "..SSSSSssSSSSS..", "..sMMMMMMMMMMs..", "...SMMSSSSMMS...", "....SSSSSSSS....", "..OOOOOOOOOOOO..", ".OOOWWWWWWWWOOO.",
-        "SOOOOOOooOOOOOOS", "SSOOWWWWWWWWOOSS", "GGOOOOOooOOOOOGG", "..BBBBBBBBBBBB..", "..BBBBBbbBBBBB..", "..BBBBB..BBBBB..",
-        "..BBBB....BBBB..", "..bBBB....BBBb..", ".TTTTT....TTTTT.", ".TTTTT....TTTTT."]
-WAVE = ["....YYYYYYYY....", "...YHHYYYYYYY...", "..YHYYYYYYYYYY..", "Gyyyyyyyyyyyyyy.", "S..SSSSSSSSSS...", "S.SSKSSSSSSKSS..",
-        "O.SSSSSssSSSSS..", "O.sMMMMMMMMMMs..", "OO.SMMSSSSMMS...", ".OO.SSSSSSSS....", ".OOOOOOOOOOOOO..", "..OOWWWWWWWWOOO.",
-        "..OOOOOooOOOOOOS", "..OOWWWWWWWWOOSS", "..OOOOOooOOOOOGG", "..BBBBBBBBBBBB..", "..BBBBBbbBBBBB..", ".BBBBB....BBBBB.",
-        ".BBBB......BBBB.", "bBBB........BBBb", "TTTT........TTTT", "TTTT........TTTT"]
+PAL = {'Y': '#FDC501', 'y': '#C99700', 'H': '#FFE98A', 'B': '#1238A8', 'R': '#C81E1E', 'r': '#8E1212', 'P': '#E86A6A'}
+# Власний рисунок у координатах видимого кадру 32×44 px. Тіні на тканині,
+# металеві пряжки й світловідбивні смуги залишаються читабельними при масштабі 0,62.
+WORKER_PAINT = f"""
+<linearGradient id='helmet' x2='.85' y2='1'><stop stop-color='#FFF0A8'/><stop offset='.46' stop-color='{PAL['Y']}'/><stop offset='1' stop-color='#A9610A'/></linearGradient>
+<linearGradient id='face' x2='.82' y2='.85'><stop stop-color='#FAD3AB'/><stop offset='.57' stop-color='#CE936B'/><stop offset='1' stop-color='#754932'/></linearGradient>
+<linearGradient id='vest' x2='1' y2='.75'><stop stop-color='#FFB257'/><stop offset='.52' stop-color='#E87929'/><stop offset='1' stop-color='#9F4219'/></linearGradient>
+<linearGradient id='workwear' x2='1' y2='.15'><stop stop-color='#64768C'/><stop offset='.48' stop-color='{PAL['B']}'/><stop offset='1' stop-color='#142235'/></linearGradient>
+"""
+
+WORKER_UPPER = """
+<path d='M13.1 15.1h5.5l.5 3.5H12.6z' fill='url(#face)'/>
+<path d='M10.8 19l2.6-1.8 2.6 1.9 2.8-2 3.6 2 1.2 9.7-2 2.6-10.5-.1-2.2-2z' fill='url(#vest)' stroke='#5D3B29' stroke-width='.55'/>
+<path d='M14 17.7l2 1.4 2-1.4-.6 4.1-1.4 2-1.2-2z' fill='#304256'/>
+<path d='M11.5 19.2l1.2 9.3m8.2-9.2l-.8 9.2M10.4 27.4l12.4.1' fill='none' stroke='#E3E7E0' stroke-width='1.05'/>
+<path d='M16 23.3l.2 6.5m2.5-6.7h2.4m-10 2.7h2.4' fill='none' stroke='#7D411F' stroke-width='.5'/>
+<path d='M12 10.2l7.9-.2.1 2.4-.7 2.9-1.6 1.5-2.6.2-2.4-1.5-1-2.8z' fill='url(#face)' stroke='#6D472F' stroke-width='.45'/>
+<path d='M13.5 12.5h.7m3.6-.1h.8m-4.5 2.7l1.9-.6 1.9.5' fill='none' stroke='#432D26' stroke-width='.65' stroke-linecap='round'/>
+<path d='M11.2 10a5 5 0 0 1 9.9-.1l1.4.6-.1.8-12.8.1-.2-.7z' fill='url(#helmet)' stroke='#694717' stroke-width='.5'/>
+<path d='M12 9.3a4.5 4.5 0 0 1 3.2-2.8m1.2-.3 1 3.8' fill='none' stroke='#FFF1AB' stroke-width='.55' stroke-linecap='round'/>
+"""
+
+FEET_DOWN = """
+<path d='M10.8 30.2l10.6.1.7 5.1.2 5.4-3.7.2-1.8-6.6-.8-.1-1.9 6.9-3.7-.2.1-6.2z' fill='url(#workwear)' stroke='#192536' stroke-width='.65'/>
+<path d='M11 40.1h3.6l.1 2.4-.9.9-5.4-.1.1-1.2zm7.4.1 3.6-.2 2 1.8.1 1.4-5.6.1-.5-.8z' fill='#252B2F' stroke='#101820' stroke-width='.4'/>
+<path d='M11.5 35.1l-.3 3.7m9.6-3.4.5 3.5' stroke='#899AB2' stroke-opacity='.7' stroke-width='.6'/>
+"""
+
+FEET_HANG = """
+<path d='M10.8 30.2l10.6.1.8 5.2-1.2 5.4-3.5-.2.5-5.7-1.9-.8-1.6 2-.5 5.4-3.7-.2.3-6.2z' fill='url(#workwear)' stroke='#192536' stroke-width='.65'/>
+<path d='M10.2 40.6l3.9.2-.1 2.1-3 1-2.3-.5.4-1.3zm7.2-.7 3.6.1 1.5 1.7-.1 1.3-2.2.2-3.1-.7z' fill='#252B2F' stroke='#101820' stroke-width='.4'/>
+<path d='M12 34.6l-.5 4.5m9.3-4-.7 3.2' stroke='#899AB2' stroke-opacity='.7' stroke-width='.6'/>
+"""
+
+LEFT_DOWN = """<path d='M11.3 18.9l-2.9.5-2 3.5-.7 6.8 2.5.6 1.4-5.8 1.6-2.4z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M5.9 29.1l2.5.5-.2 2.4-.8 1-1.4-.5-.4-1.5z' fill='#56626A' stroke='#27353E' stroke-width='.42'/>"""
+LEFT_WAVE = """<path d='M11.2 19.4l-2 .3-2.9-1.8-.7-6-2.9.2.2 7.2 4.2 4.1 3.9-.9z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M2.9 12.5l-.8-2.2.4-2.8.6-.3.3 1.9.6-2 .7.1.4 2.4.7-.6.6.3-.8 3.1z' fill='#68757B' stroke='#27353E' stroke-width='.42'/>"""
+RIGHT_ARM = """<path d='M21.8 19l2.8.7 1.9 4.4 1 5.3-2.7.7-1.5-5.3-1.7-2.7z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M24.9 29.2l2.5-.5.8 2.1-.5 1.7-1.4.4-1-.8z' fill='#56626A' stroke='#27353E' stroke-width='.42'/>"""
+
+LANYARD = """
+<path d='M15.8 4.6L10 19.2m6-14.6 6 14.6' stroke='#26343E' stroke-width='1.65' stroke-linecap='round'/>
+<path d='M15.8 4.6L10 19.2m6-14.6 6 14.6' stroke='#C2CDD2' stroke-width='.65' stroke-linecap='round'/>
+<ellipse cx='15.9' cy='3.2' rx='1.35' ry='2' fill='none' stroke='#D9E2E6' stroke-width='1.05'/>
+"""
+HARNESS = """
+<path d='M10.3 18.9l3.8 8.2-2.8 3.7m10.2-11.9-3.8 8.2 2.9 3.7m-6.5-3.7h3.6' fill='none' stroke='#303840' stroke-width='1.15'/>
+<path d='M15 26.5h2v1.2h-2z' fill='#C7CBD0'/>
+"""
+
+def worker_pose(*, hanging=False, waving=False):
+    # Вкладений viewport обмежує рисунок власним кадром. Монети й бризки
+    # використовують окремі піксельні фігури, тому контур постаті згладжується тут.
+    arm = LEFT_WAVE if waving else LEFT_DOWN
+    legs = FEET_HANG if hanging else FEET_DOWN
+    lanyard = LANYARD if hanging else ''
+    harness = HARNESS if hanging else ''
+    return (f"<svg x='0' y='0' width='{FW}' height='{BODY}' viewBox='0 0 32 44' shape-rendering='geometricPrecision'>"
+            f"{lanyard}{legs}{arm}{RIGHT_ARM}{WORKER_UPPER}{harness}</svg>")
+
 COIN = [".YY.", "YHYy", "YYYy", ".yy."]
 SPLAT = {18: "R..............r", 19: "....yYYYYYYy....", 20: ".rRRRRRRRRRRRRr.", 21: "RRRRrRRRRRRrRRRR"}
 MUSH = ["......yYYy......", ".....RRRRRR.....", "....RRrRRPRR....", "...RRRRRRRrRR...", "..RRrRRPRRRRRR..", "..RRRRRrRRRPRR..",
         "..RrRRRRRRRRRR..", "...RRRPRRrRRR...", "...rRRRRRRRRR...", "....RRRrRRRR....", ".....RRPRRR.....", "......RRRR......", ".......RR......."]
 MUSH_B = MUSH[:7] + ["." + r[:-1] for r in MUSH[7:]]
 DROP, BIT = ["R", "R", "r"], ["Rr", "rR"]
-assert all(len(r) == FW for r in IDLE + WAVE + MUSH + MUSH_B + list(SPLAT.values())) and len(IDLE) == len(WAVE) == BODY
+assert all(len(r) == FW for r in MUSH + MUSH_B + list(SPLAT.values()))
 MOBILE_SCALE = .62                                         # масштаб крана на екранах вужчих за 1024 px
-FRAMES = {'wave': 0, 'idle': 8, 'splat': 9, 'drip': 10, 'mush': 18, 'count': 19}
+FRAMES = {'wave': 0, 'idle': 8, 'splat': 9, 'drip': 10, 'mush': 18, 'hang': 19, 'count': 20}
 
 
 def cells(rows, ox, oy):
@@ -61,8 +112,10 @@ def cells(rows, ox, oy):
 
 def sheet():
     """Кожну позу й частинку описано один раз у <defs>; кадри — посилання <use>. Дзеркальна поза — те саме з scale(-1,1)."""
-    defs = ''.join(f"<g id='{k}'>{cells(rows, 0, 0)}</g>" for k, rows in
-                   (('w', WAVE), ('i', IDLE), ('s', SPLAT), ('m', MUSH), ('n', MUSH_B), ('c', COIN), ('d', DROP), ('b', BIT)))
+    poses = (('w', worker_pose(hanging=True, waving=True)), ('i', worker_pose()), ('h', worker_pose(hanging=True)))
+    effects = (('s', SPLAT), ('m', MUSH), ('n', MUSH_B), ('c', COIN), ('d', DROP), ('b', BIT))
+    defs = WORKER_PAINT + ''.join(f"<g id='{key}'>{pose}</g>" for key, pose in poses)
+    defs += ''.join(f"<g id='{key}'>{cells(rows, 0, 0)}</g>" for key, rows in effects)
 
     def use(ref, x, y=0, mirror=False):
         if mirror:
@@ -87,7 +140,7 @@ def sheet():
         g = FRAMES['drip'] + f
         body += use('m' if (f // 2) % 2 == 0 else 'n', g * FW)
         body += falling((('d', 3, 4, 0), ('b', 2, 9, 3), ('d', 3, 12, 5)), g, f, len(MUSH) + 1)
-    body += use('m', FRAMES['mush'] * FW)
+    body += use('m', FRAMES['mush'] * FW) + use('h', FRAMES['hang'] * FW)
     w = FRAMES['count'] * FW
     return (f"<svg xmlns='http://www.w3.org/2000/svg' width='{w * 3}' height='{FH * 3}' viewBox='0 0 {w} {FH}' shape-rendering='crispEdges'>"
             f"<defs>{defs}</defs>{body}</svg>")
@@ -120,6 +173,7 @@ HOOK = ("<svg xmlns='http://www.w3.org/2000/svg' width='64' height='120' viewBox
 def uri(svg):
     """Мінімальне екранування для url("…") у CSS: лише символи, що ламають URL або рядок."""
     assert '"' not in svg and '%' not in svg
+    svg = ''.join(line.strip() for line in svg.splitlines())
     return 'url("data:image/svg+xml,' + svg.replace('#', '%23').replace('<', '%3C').replace('>', '%3E') + '")'
 
 
@@ -141,7 +195,7 @@ def css_block():
     drops = burst('#C81E1E', [(-26, -10), (-18, -22), (-9, -30), (4, -34), (15, -27), (24, -16), (30, -6), (-32, -3), (10, -14), (-14, -9)])
     rules = f'''{BEGIN}
 /* кран-глибиномір: сталевий канат виходить просто з гусениці прогресу, на ньому гакова підвіска. Гак опускається з прокруткою;
-   унизу сторінки підчіплює 8-бітний вантаж і підіймає його, коли гортаєш назад (махає, губить монети). Клік по вантажу — він
+   унизу сторінки підчіплює будівельника за підвіс і підіймає його, коли гортаєш назад (махає, губить монети). Клік по вантажу — він
    зривається, падає туди, де стояв, і лишається плямою; гак, повернувшись, бере її грудкою. Стан — класи на #gauge
    (web/js/site.js): has-load, is-lifting, is-falling, is-splat, is-mush. Рух вимикається reduced-motion, static і паузою. */
 P .gauge{{--crane-h:{travel};top:calc(var(--nav-h,64px) + 21px);transform:none;height:var(--crane-h);transition:opacity .6s,top .45s var(--ease);clip-path:inset(-8px -420px -190px -420px)}}
@@ -155,7 +209,7 @@ P .gauge::after{{top:calc(100% + 63px);height:{body_h}px;filter:drop-shadow(0 3p
 P .gauge.has-load::after{{display:none}}
 P .gauge.has-load .gauge__float{{cursor:pointer}}
 /* підхоплення: вантаж пружинить на гаку, далі гойдається */
-P .gauge.has-load .gauge__float::after{{top:63px;height:{sh}px;transform-origin:50% -4px;animation:load-catch .5s cubic-bezier(.3,1.7,.5,1) both,load-sway 2.6s ease-in-out .5s infinite alternate}}
+P .gauge.has-load .gauge__float::after{{top:63px;height:{sh}px;background-position-x:{px(FRAMES['hang'])};transform-origin:50% -4px;animation:load-catch .5s cubic-bezier(.3,1.7,.5,1) both,load-sway 2.6s ease-in-out .5s infinite alternate}}
 P .gauge.has-load.is-lifting .gauge__float::after{{animation:load-sway 2.6s ease-in-out infinite alternate,load-wave .72s steps(8) infinite}}
 P .gauge.has-load.is-mush .gauge__float::after{{background-position-x:{px(FRAMES['mush'])}}}
 P .gauge.has-load.is-mush.is-lifting .gauge__float::after{{animation:load-sway 2.6s ease-in-out infinite alternate,mush-drip .72s steps(8) infinite}}
