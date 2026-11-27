@@ -204,7 +204,7 @@ def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced)
     pg.locator('#gauge.has-load.is-mush').wait_for(state='attached', timeout=5000)
     again = pg.evaluate(cls)
     assert 'is-splat' not in again, again
-    assert pg.evaluate(carried + ".backgroundPositionX") == '-832px'      # знаки на нерухомому гаку
+    assert pg.evaluate(carried + ".backgroundPositionX") == '-1216px'      # знаки на нерухомому гаку
     assert pg.evaluate(ground + ".display") == 'none'                      # на землі нічого не лишилось
     if not reduced:
         pg.wait_for_timeout(300)

@@ -52,7 +52,7 @@ def test_sheet_has_one_frame_per_declared_slot_and_nothing_spills_between_frames
             match = re.match(r'translate\((\d+) (\d+)\)', use.get('transform'))
             x, y = int(match[1]) - crane.FW, int(match[2])
         else:
-            x, y = int(use.get('x')), int(use.get('y'))
+            x, y = float(use.get('x')), float(use.get('y'))
         frame = x // crane.FW
         width = max(int(r.get('x')) + int(r.get('width')) for r in defs[ref])
         height = max(int(r.get('y')) + int(r.get('height')) for r in defs[ref])
@@ -66,7 +66,7 @@ def test_css_addresses_only_existing_frames():
     block = crane.css_block()
     step = crane.FW * crane.CELL
     xs = {int(v) for v in re.findall(r'background-position-x:-?(\d+)px', block)} | {0}
-    assert xs == {0, 2 * step, 12 * step, 13 * step, 14 * step, 26 * step, 27 * step}, sorted(xs)
+    assert xs == {0, 2 * step, 12 * step, 13 * step, 14 * step, 38 * step, 39 * step}, sorted(xs)
     assert all(x % step == 0 and x // step <= crane.FRAMES['count'] - 1 for x in xs)
     assert f"{crane.FRAMES['count'] * step}px {crane.FH * crane.CELL}px" in block   # background-size = весь аркуш
 
@@ -87,11 +87,14 @@ def test_palette_is_the_brand_palette_and_no_third_party_character_is_named():
 
 def test_dollar_rain_changes_position_and_fades_across_the_lift_cycle():
     root = ET.fromstring(crane.sheet())
-    particles = [use for use in root.findall(NS + 'use') if use.get('href') in ('#d', '#d-small')]
+    particles = [use for use in root.findall(NS + 'use') if use.get('href') in ('#d', '#d-small', '#d-large')]
     rain = range(crane.FRAMES['rain'], crane.FRAMES['cash'])
-    by_frame = {frame: [use for use in particles if int(use.get('x')) // crane.FW == frame] for frame in rain}
-    assert all(2 <= len(group) <= 3 for group in by_frame.values())
+    by_frame = {frame: [use for use in particles if float(use.get('x')) // crane.FW == frame] for frame in rain}
+    assert len(by_frame) == 24
+    assert all(6 <= len(group) <= 7 for group in by_frame.values())
     assert sum(map(len, by_frame.values())) == len(particles)
-    positions = [tuple((int(use.get('x')) % crane.FW, int(use.get('y'))) for use in group) for group in by_frame.values()]
+    positions = [tuple((float(use.get('x')) % crane.FW, float(use.get('y'))) for use in group) for group in by_frame.values()]
     assert len(set(positions)) == len(rain)
     assert any(0 < float(use.get('opacity')) < 1 for use in particles)
+    green = root.find(f".//{NS}linearGradient[@id='emerald']")
+    assert {stop.get('stop-color') for stop in green} == {'#B2FFD1', '#58F4A1', '#1ECD79'}
