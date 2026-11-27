@@ -5,7 +5,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const { createClock } = require(path.join(__dirname, '..', 'web', 'js', 'clock.js'));
+/* Модуль беремо так, щоб його відсутність була збоєм твердження в кожному тесті, а не збоєм запуску файла:
+   на базі без планувальника тест мусить бути саме червоним (tools/red_on_base.py), а не «не запущеним». */
+let createClock = null;
+try { ({ createClock } = require(path.join(__dirname, '..', 'web', 'js', 'clock.js'))); }
+catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; }
+const need = () => assert.equal(typeof createClock, 'function', 'web/js/clock.js відсутній: єдиного планувальника кадрів немає');
 
 /** керований «браузер»: лічить запити кадру, видає кадр за командою */
 function host() {
@@ -17,6 +22,7 @@ function host() {
 }
 
 test('багато запитів за кадр — один запит кадру в браузера; порядок і спільна мітка часу', () => {
+  need();
   const h = host(), clock = createClock(h), seen = [];
   for (const name of ['belt', 'oil', 'spark', 'glow']) clock.request(t => seen.push([name, t]));
   assert.equal(h.asked, 1);
@@ -28,6 +34,7 @@ test('багато запитів за кадр — один запит кадр
 });
 
 test('запит із середини кадру виконується в наступному кадрі, не в цьому', () => {
+  need();
   const h = host(), clock = createClock(h), seen = [];
   const loop = t => { seen.push(t); if (seen.length < 3) clock.request(loop); };
   clock.request(loop);
@@ -38,6 +45,7 @@ test('запит із середини кадру виконується в на
 });
 
 test('номери ненульові й різні; cancel знімає лише свій запит', () => {
+  need();
   const h = host(), clock = createClock(h), seen = [];
   const a = clock.request(() => seen.push('a')), b = clock.request(() => seen.push('b')), c = clock.request(() => seen.push('c'));
   assert.ok(a && b && c);
@@ -49,6 +57,7 @@ test('номери ненульові й різні; cancel знімає лиш�
 });
 
 test('знято останній запит — кадр у браузера скасовано, і новий запит просить його знову', () => {
+  need();
   const h = host(), clock = createClock(h);
   let ran = 0;
   const id = clock.request(() => ran++);
@@ -62,6 +71,7 @@ test('знято останній запит — кадр у браузера с
 });
 
 test('виняток в одному циклі не гасить решту і не ковтається', () => {
+  need();
   const h = host(), clock = createClock(h), seen = [];
   clock.request(() => seen.push('before'));
   clock.request(() => { throw new Error('boom'); });
@@ -75,6 +85,7 @@ test('виняток в одному циклі не гасить решту і 
 });
 
 test('властивість: випадкові цикли на планувальнику дають ту саму послідовність, що й на «сирому» rAF', () => {
+  need();
   let seed = 20261127;
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 2 ** 32;
   for (let round = 0; round < 200; round++) {
