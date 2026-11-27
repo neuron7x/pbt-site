@@ -2,14 +2,15 @@
 """Кран-глибиномір теми «Сталь»: канат, гакова підвіска, вантаж і його кадри — згенеровано, а не вставлено руками.
 
 Вся графіка — власна, намальована тут: SVG у data-URI всередині web/css/site.css (CSP: img-src data:), без файлів і запитів.
-Піксельний вантаж — оригінальний персонаж у палітрі бренду; чужих спрайтів і торгових марок немає (docs/PROVENANCE.md).
+Будівельник — оригінальний векторний персонаж у палітрі бренду; чужих спрайтів і торгових марок немає (docs/PROVENANCE.md).
 
-Аркуш кадрів 16×44 клітинки, клітинка 2 px (постать 32×44 px):
-  0–7   вантаж махає руками, падають монети (під час підйому)
-  8     вантаж у спокої (стоїть унизу або висить на гаку)
-  9     пляма після падіння
-  10–17 грудка: тече й крапає (під час підйому)
-  18    грудка у спокої
+Кадр 16×44 клітинки, клітинка 2 px (постать 32×44 px):
+  0–11   будівельник махає руками, падають монети
+  12     будівельник стоїть унизу
+  13     знаки долара на землі після падіння
+  14–37  смарагдовий каскад під гаком
+  38     знаки долара на нерухомому гаку
+  39     будівельник висить на гаку
 
   python3 tools/crane.py            — розміри й кількість кадрів
   python3 tools/crane.py --write    — вписати блок між маркерами у web/css/site.css
@@ -23,71 +24,162 @@ CSS = ROOT / 'web' / 'css' / 'site.css'
 BEGIN, END = '/* crane:begin — згенеровано tools/crane.py, руками не правити */', '/* crane:end */'
 P = ':is(:root[data-theme="sky"],:root:not([data-theme]))'
 CELL, FW, BODY, FH = 2, 16, 22, 44                       # px на клітинку; кадр 16×44 клітинки: 22 — постать, 22 — простір падіння частинок
-PAL = {'Y': '#FDC501', 'y': '#C99700', 'H': '#FFE98A', 'S': '#F2B88A', 's': '#D9925F', 'K': '#11161C', 'M': '#4A2A12', 'O': '#F97316',
-       'o': '#C2540C', 'W': '#F2F5F8', 'B': '#1238A8', 'b': '#0C2878', 'G': '#9AA5B1', 'T': '#3A2414', 'R': '#C81E1E', 'r': '#8E1212', 'P': '#E86A6A'}
-# вусатий будівельник у касці й сигнальному жилеті — власний персонаж; три тони на матеріал, як у спрайтах 8-бітних приставок
-IDLE = ["....YYYYYYYY....", "...YHHYYYYYYY...", "..YHYYYYYYYYYY..", ".yyyyyyyyyyyyyy.", "...SSSSSSSSSS...", "..SSKSSSSSSKSS..",
-        "..SSSSSssSSSSS..", "..sMMMMMMMMMMs..", "...SMMSSSSMMS...", "....SSSSSSSS....", "..OOOOOOOOOOOO..", ".OOOWWWWWWWWOOO.",
-        "SOOOOOOooOOOOOOS", "SSOOWWWWWWWWOOSS", "GGOOOOOooOOOOOGG", "..BBBBBBBBBBBB..", "..BBBBBbbBBBBB..", "..BBBBB..BBBBB..",
-        "..BBBB....BBBB..", "..bBBB....BBBb..", ".TTTTT....TTTTT.", ".TTTTT....TTTTT."]
-WAVE = ["....YYYYYYYY....", "...YHHYYYYYYY...", "..YHYYYYYYYYYY..", "Gyyyyyyyyyyyyyy.", "S..SSSSSSSSSS...", "S.SSKSSSSSSKSS..",
-        "O.SSSSSssSSSSS..", "O.sMMMMMMMMMMs..", "OO.SMMSSSSMMS...", ".OO.SSSSSSSS....", ".OOOOOOOOOOOOO..", "..OOWWWWWWWWOOO.",
-        "..OOOOOooOOOOOOS", "..OOWWWWWWWWOOSS", "..OOOOOooOOOOOGG", "..BBBBBBBBBBBB..", "..BBBBBbbBBBBB..", ".BBBBB....BBBBB.",
-        ".BBBB......BBBB.", "bBBB........BBBb", "TTTT........TTTT", "TTTT........TTTT"]
+PAL = {'Y': '#FDC501', 'y': '#C99700', 'H': '#FFE98A', 'B': '#1238A8'}
+# Власний рисунок у координатах видимого кадру 32×44 px. Тіні на тканині,
+# металеві пряжки й світловідбивні смуги залишаються читабельними при масштабі 0,62.
+WORKER_PAINT = f"""
+<linearGradient id='helmet' x2='.85' y2='1'><stop stop-color='#FFF0A8'/><stop offset='.46' stop-color='{PAL['Y']}'/><stop offset='1' stop-color='#A9610A'/></linearGradient>
+<linearGradient id='face' x2='.82' y2='.85'><stop stop-color='#FAD3AB'/><stop offset='.57' stop-color='#CE936B'/><stop offset='1' stop-color='#754932'/></linearGradient>
+<linearGradient id='vest' x2='1' y2='.75'><stop stop-color='#FFB257'/><stop offset='.52' stop-color='#E87929'/><stop offset='1' stop-color='#9F4219'/></linearGradient>
+<linearGradient id='workwear' x2='1' y2='.15'><stop stop-color='#64768C'/><stop offset='.48' stop-color='{PAL['B']}'/><stop offset='1' stop-color='#142235'/></linearGradient>
+"""
+
+WORKER_UPPER = """
+<path d='M13.1 15.1h5.5l.5 3.5H12.6z' fill='url(#face)'/>
+<path d='M10.8 19l2.6-1.8 2.6 1.9 2.8-2 3.6 2 1.2 9.7-2 2.6-10.5-.1-2.2-2z' fill='url(#vest)' stroke='#5D3B29' stroke-width='.55'/>
+<path d='M14 17.7l2 1.4 2-1.4-.6 4.1-1.4 2-1.2-2z' fill='#304256'/>
+<path d='M11.5 19.2l1.2 9.3m8.2-9.2l-.8 9.2M10.4 27.4l12.4.1' fill='none' stroke='#E3E7E0' stroke-width='1.05'/>
+<path d='M16 23.3l.2 6.5m2.5-6.7h2.4m-10 2.7h2.4' fill='none' stroke='#7D411F' stroke-width='.5'/>
+<path d='M12 10.2l7.9-.2.1 2.4-.7 2.9-1.6 1.5-2.6.2-2.4-1.5-1-2.8z' fill='url(#face)' stroke='#6D472F' stroke-width='.45'/>
+<path d='M13.5 12.5h.7m3.6-.1h.8m-4.5 2.7l1.9-.6 1.9.5' fill='none' stroke='#432D26' stroke-width='.65' stroke-linecap='round'/>
+<path d='M11.2 10a5 5 0 0 1 9.9-.1l1.4.6-.1.8-12.8.1-.2-.7z' fill='url(#helmet)' stroke='#694717' stroke-width='.5'/>
+<path d='M12 9.3a4.5 4.5 0 0 1 3.2-2.8m1.2-.3 1 3.8' fill='none' stroke='#FFF1AB' stroke-width='.55' stroke-linecap='round'/>
+"""
+
+FEET_DOWN = """
+<path d='M10.8 30.2l10.6.1.7 5.1.2 5.4-3.7.2-1.8-6.6-.8-.1-1.9 6.9-3.7-.2.1-6.2z' fill='url(#workwear)' stroke='#192536' stroke-width='.65'/>
+<path d='M11 40.1h3.6l.1 2.4-.9.9-5.4-.1.1-1.2zm7.4.1 3.6-.2 2 1.8.1 1.4-5.6.1-.5-.8z' fill='#252B2F' stroke='#101820' stroke-width='.4'/>
+<path d='M11.5 35.1l-.3 3.7m9.6-3.4.5 3.5' stroke='#899AB2' stroke-opacity='.7' stroke-width='.6'/>
+"""
+
+FEET_HANG = """
+<path d='M10.8 30.2l10.6.1.8 5.2-1.2 5.4-3.5-.2.5-5.7-1.9-.8-1.6 2-.5 5.4-3.7-.2.3-6.2z' fill='url(#workwear)' stroke='#192536' stroke-width='.65'/>
+<path d='M10.2 40.6l3.9.2-.1 2.1-3 1-2.3-.5.4-1.3zm7.2-.7 3.6.1 1.5 1.7-.1 1.3-2.2.2-3.1-.7z' fill='#252B2F' stroke='#101820' stroke-width='.4'/>
+<path d='M12 34.6l-.5 4.5m9.3-4-.7 3.2' stroke='#899AB2' stroke-opacity='.7' stroke-width='.6'/>
+"""
+
+LEFT_DOWN = """<path d='M11.3 18.9l-2.9.5-2 3.5-.7 6.8 2.5.6 1.4-5.8 1.6-2.4z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M5.9 29.1l2.5.5-.2 2.4-.8 1-1.4-.5-.4-1.5z' fill='#56626A' stroke='#27353E' stroke-width='.42'/>"""
+LEFT_WAVE = """<path d='M11.2 19.4l-2 .3-2.9-1.8-.7-6-2.9.2.2 7.2 4.2 4.1 3.9-.9z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M2.9 12.5l-.8-2.2.4-2.8.6-.3.3 1.9.6-2 .7.1.4 2.4.7-.6.6.3-.8 3.1z' fill='#68757B' stroke='#27353E' stroke-width='.42'/>"""
+LEFT_REACH = """<path d='M11.3 19l-2.3-.2-3.8 3.1-3.1-2.4-1.4 2.1 4.5 3.5 5.5-2.5z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M2.3 19.6l-.3-1.4-1.3-.9-.5.5.7 1.1-.5.8.4 1.8z' fill='#68757B' stroke='#27353E' stroke-width='.42'/>"""
+LEFT_FLICK = """<path d='M11.2 19.4l-2 .3-2.6-3.3 1.1-5.8-2.7-.6-1.4 7.1 3.5 6.3 3.9-.9z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M5.1 10.6l-.5-1.8L6 6.3l.6.1-.2 1.8 1.1-1.6.6.3-.6 2.1.9-.2.4.5-1.5 2.2z' fill='#68757B' stroke='#27353E' stroke-width='.42'/>"""
+RIGHT_ARM = """<path d='M21.8 19l2.8.7 1.9 4.4 1 5.3-2.7.7-1.5-5.3-1.7-2.7z' fill='url(#workwear)' stroke='#192536' stroke-width='.55'/>
+<path d='M24.9 29.2l2.5-.5.8 2.1-.5 1.7-1.4.4-1-.8z' fill='#56626A' stroke='#27353E' stroke-width='.42'/>"""
+
+LANYARD = """
+<path d='M15.8 4.6L10 19.2m6-14.6 6 14.6' stroke='#26343E' stroke-width='1.65' stroke-linecap='round'/>
+<path d='M15.8 4.6L10 19.2m6-14.6 6 14.6' stroke='#C2CDD2' stroke-width='.65' stroke-linecap='round'/>
+<ellipse cx='15.9' cy='3.2' rx='1.35' ry='2' fill='none' stroke='#D9E2E6' stroke-width='1.05'/>
+"""
+HARNESS = """
+<path d='M10.3 18.9l3.8 8.2-2.8 3.7m10.2-11.9-3.8 8.2 2.9 3.7m-6.5-3.7h3.6' fill='none' stroke='#303840' stroke-width='1.15'/>
+<path d='M15 26.5h2v1.2h-2z' fill='#C7CBD0'/>
+"""
+
+def worker_pose(*, hanging=False, arm='arm-down'):
+    # Вкладений viewport обмежує згладжений рисунок власним кадром.
+    lower = 'feet-hang' if hanging else 'feet-down'
+    lanyard = "<use href='#lanyard'/>" if hanging else ''
+    harness = "<use href='#harness'/>" if hanging else ''
+    return (f"<svg x='0' y='0' width='{FW}' height='{BODY}' viewBox='0 0 32 44' shape-rendering='geometricPrecision'>"
+            f"{lanyard}<use href='#{lower}'/><use href='#{arm}'/><use href='#right-arm'/><use href='#upper'/>{harness}</svg>")
+
+
+# Спільний контур на падінні, підвісі та в каскаді, з тонким темним краєм для світлого фону.
+DOLLAR_ART = """
+<linearGradient id='emerald' x1='0' y1='0' x2='.25' y2='1'>
+  <stop stop-color='#B2FFD1'/>
+  <stop offset='.44' stop-color='#58F4A1'/>
+  <stop offset='1' stop-color='#1ECD79'/>
+</linearGradient>
+<path id='dollar' d='M6.45 3.15C5.93 2.41 5.09 2.05 4.03 2.05c-1.4 0-2.31.73-2.31 1.76 0 1.09.96 1.58 2.38 1.96 1.56.41 2.31.94 2.31 2.04 0 1.24-1.03 2.16-2.54 2.16-1.09 0-2.03-.44-2.69-1.19M4.03 1.02v10.1' fill='none' stroke-linecap='round' stroke-linejoin='round'/>
+"""
 COIN = [".YY.", "YHYy", "YYYy", ".yy."]
-SPLAT = {18: "R..............r", 19: "....yYYYYYYy....", 20: ".rRRRRRRRRRRRRr.", 21: "RRRRrRRRRRRrRRRR"}
-MUSH = ["......yYYy......", ".....RRRRRR.....", "....RRrRRPRR....", "...RRRRRRRrRR...", "..RRrRRPRRRRRR..", "..RRRRRrRRRPRR..",
-        "..RrRRRRRRRRRR..", "...RRRPRRrRRR...", "...rRRRRRRRRR...", "....RRRrRRRR....", ".....RRPRRR.....", "......RRRR......", ".......RR......."]
-MUSH_B = MUSH[:7] + ["." + r[:-1] for r in MUSH[7:]]
-DROP, BIT = ["R", "R", "r"], ["Rr", "rR"]
-assert all(len(r) == FW for r in IDLE + WAVE + MUSH + MUSH_B + list(SPLAT.values())) and len(IDLE) == len(WAVE) == BODY
-MOBILE_SCALE = .62                                         # масштаб крана на екранах вужчих за 1024 px
-FRAMES = {'wave': 0, 'idle': 8, 'splat': 9, 'drip': 10, 'mush': 18, 'count': 19}
+WAVE_POSES = ('h', 'reach', 'wave', 'flick', 'wave', 'reach')
+WAVE_STEPS = 2 * len(WAVE_POSES)
+RAIN_STEPS = 24
+MOBILE_SCALE = .62
+FRAMES = {'wave': 0, 'idle': WAVE_STEPS, 'land': WAVE_STEPS + 1, 'rain': WAVE_STEPS + 2,
+          'cash': WAVE_STEPS + RAIN_STEPS + 2, 'hang': WAVE_STEPS + RAIN_STEPS + 3,
+          'count': WAVE_STEPS + RAIN_STEPS + 4}
+# Розмір, смуга, фаза, поперечний дрейф і видимість кожного знака під гаком.
+RAIN_PARTICLES = (
+    ('d', 3.1, 0, -1.6, .94),
+    ('d-small', 11.5, 3, 1.2, .72),
+    ('d-large', 5.8, 7, -.8, 1),
+    ('d-small', 2, 10, -1.1, .62),
+    ('d', 9.9, 14, 1.9, .88),
+    ('d-small', 2.6, 17, -1.6, .76),
+    ('d', 6.9, 21, -1.2, .85),
+)
 
 
-def cells(rows, ox, oy):
-    """Рядки клітинок → <rect> із серіями однакового кольору."""
-    out = ''
-    for y, row in (rows.items() if isinstance(rows, dict) else enumerate(rows)):
-        x = 0
-        while x < len(row):
-            ch, x0 = row[x], x
-            while x < len(row) and row[x] == ch:
-                x += 1
-            if ch != '.':
-                out += f"<rect x='{ox + x0}' y='{oy + y}' width='{x - x0}' height='1' fill='{PAL[ch]}'/>"
-    return out
+def dollar(x, y, width=4, height=6, opacity=1):
+    return (f"<svg x='{x}' y='{y}' width='{width}' height='{height}' viewBox='0 0 8 12' opacity='{opacity}' shape-rendering='geometricPrecision'>"
+            "<use href='#dollar' stroke='#064434' stroke-opacity='.76' stroke-width='2.05'/>"
+            "<use href='#dollar' stroke='url(#emerald)' stroke-width='1.25'/></svg>")
+
+
+def impact_dollars():
+    marks = ''.join(dollar(*mark) for mark in (
+        (1, 17, 7, 10, .64), (11, 8, 8, 12, .81), (22, 0, 10, 15, .95),
+        (32, 14, 7, 10, .68), (39, 4, 8, 12, .84), (46, 19, 6, 9, .55),
+    ))
+    return f"<svg xmlns='http://www.w3.org/2000/svg' width='54' height='30' viewBox='0 0 54 30'><defs>{DOLLAR_ART}</defs>{marks}</svg>"
+
+
+def coin_cells():
+    return ''.join(f"<rect x='{x}' y='{y}' width='1' height='1' fill='{PAL[colour]}'/>"
+                   for y, row in enumerate(COIN) for x, colour in enumerate(row) if colour != '.')
 
 
 def sheet():
-    """Кожну позу й частинку описано один раз у <defs>; кадри — посилання <use>. Дзеркальна поза — те саме з scale(-1,1)."""
-    defs = ''.join(f"<g id='{k}'>{cells(rows, 0, 0)}</g>" for k, rows in
-                   (('w', WAVE), ('i', IDLE), ('s', SPLAT), ('m', MUSH), ('n', MUSH_B), ('c', COIN), ('d', DROP), ('b', BIT)))
+    """Складені SVG-пози й частинки як посилання на спільні фігури."""
+    worker_parts = {
+        'upper': WORKER_UPPER, 'feet-down': FEET_DOWN, 'feet-hang': FEET_HANG,
+        'arm-down': LEFT_DOWN, 'arm-reach': LEFT_REACH, 'arm-wave': LEFT_WAVE,
+        'arm-flick': LEFT_FLICK, 'right-arm': RIGHT_ARM, 'lanyard': LANYARD, 'harness': HARNESS,
+    }
+    figures = {
+        'i': worker_pose(), 'h': worker_pose(hanging=True),
+        'reach': worker_pose(hanging=True, arm='arm-reach'), 'wave': worker_pose(hanging=True, arm='arm-wave'),
+        'flick': worker_pose(hanging=True, arm='arm-flick'),
+        'land': ''.join(dollar(*mark) for mark in (
+            (0, 17, 3, 5, .58), (3, 15, 4, 6, .83), (7, 14, 5, 8, 1),
+            (12, 17, 4, 5, .77), (12, 12, 3, 5, .6),
+        )),
+        'cash': dollar(5, 1, 5, 8) + dollar(10, 5, 3, 5, .72),
+        'c': coin_cells(), 'd': dollar(0, 0), 'd-small': dollar(0, 0, 3, 5), 'd-large': dollar(0, 0, 5, 8),
+    }
+    defs = WORKER_PAINT + DOLLAR_ART + ''.join(f"<g id='{key}'>{shape}</g>" for key, shape in (worker_parts | figures).items())
 
-    def use(ref, x, y=0, mirror=False):
-        if mirror:
-            return f"<use href='#{ref}' transform='translate({x + FW} {y}) scale(-1 1)'/>"
-        return f"<use href='#{ref}' x='{x}'" + (f" y='{y}'" if y else '') + "/>"
-
-    def falling(parts, frame, f, start):
-        """Частинки під вантажем: зсув 3 клітинки на кадр, цикл 8 кадрів; що вийшло за кадр — не малюємо."""
-        out = ''
-        for ref, height, cx, phase in parts:
-            cy = start + ((f + phase) % 8) * 3
-            if cy + height <= FH:
-                out += use(ref, frame * FW + cx, cy)
-        return out
+    def use(ref, x, y=0, *, mirror=False, opacity=1):
+        placement = f"transform='translate({x + FW} {y}) scale(-1 1)'" if mirror else f"x='{x}' y='{y}'"
+        return f"<use href='#{ref}' {placement} opacity='{opacity}'/>"
 
     body = ''
-    for f in range(8):
-        body += use('w', f * FW, mirror=(f // 2) % 2 == 1)
-        body += falling((('c', 4, 2, 0), ('c', 4, 10, 4)), f, f, BODY + 1)
-    body += use('i', FRAMES['idle'] * FW) + use('s', FRAMES['splat'] * FW)
-    for f in range(8):
-        g = FRAMES['drip'] + f
-        body += use('m' if (f // 2) % 2 == 0 else 'n', g * FW)
-        body += falling((('d', 3, 4, 0), ('b', 2, 9, 3), ('d', 3, 12, 5)), g, f, len(MUSH) + 1)
-    body += use('m', FRAMES['mush'] * FW)
+    for f, pose in enumerate(WAVE_POSES * 2):
+        body += use(pose, f * FW, mirror=f >= len(WAVE_POSES))
+        for x, phase in ((2, 0), (10, WAVE_STEPS // 2)):
+            y = BODY + 1 + ((f + phase) % WAVE_STEPS) * 2
+            if y + 4 <= FH:
+                body += use('c', f * FW + x, y)
+    body += use('i', FRAMES['idle'] * FW) + use('land', FRAMES['land'] * FW)
+    for f in range(RAIN_STEPS):
+        x = (FRAMES['rain'] + f) * FW
+        body += use('cash', x)
+        for ref, lane, phase, drift, brightness in RAIN_PARTICLES:
+            age = (f + phase) % RAIN_STEPS
+            if age:
+                progress = age / RAIN_STEPS
+                column = lane + drift * progress
+                row = 9 + 27 * progress ** 1.18
+                fade = min(1, age / 4, (RAIN_STEPS - age) / 7)
+                body += use(ref, round(x + column, 2), round(row, 2), opacity=round(fade * brightness, 2))
+    body += use('cash', FRAMES['cash'] * FW) + use('h', FRAMES['hang'] * FW)
     w = FRAMES['count'] * FW
     return (f"<svg xmlns='http://www.w3.org/2000/svg' width='{w * 3}' height='{FH * 3}' viewBox='0 0 {w} {FH}' shape-rendering='crispEdges'>"
             f"<defs>{defs}</defs>{body}</svg>")
@@ -120,16 +212,12 @@ HOOK = ("<svg xmlns='http://www.w3.org/2000/svg' width='64' height='120' viewBox
 def uri(svg):
     """Мінімальне екранування для url("…") у CSS: лише символи, що ламають URL або рядок."""
     assert '"' not in svg and '%' not in svg
+    svg = ''.join(line.strip() for line in svg.splitlines())
     return 'url("data:image/svg+xml,' + svg.replace('#', '%23').replace('<', '%3C').replace('>', '%3E') + '")'
 
 
 def px(frame):
     return f'-{frame * FW * CELL}px' if frame else '0'
-
-
-def burst(colour, pts):
-    """Частинки удару: одна клітинка 2 px і її тіні в точках (x, y)."""
-    return ','.join(f'{x}px {y}px 0 {colour}' for x, y in pts)
 
 
 def css_block():
@@ -138,11 +226,10 @@ def css_block():
     sw, sh = FRAMES['count'] * FW * CELL, FH * CELL
     mobile = MOBILE_SCALE
     fw, body_h = FW * CELL, BODY * CELL
-    drops = burst('#C81E1E', [(-26, -10), (-18, -22), (-9, -30), (4, -34), (15, -27), (24, -16), (30, -6), (-32, -3), (10, -14), (-14, -9)])
     rules = f'''{BEGIN}
 /* кран-глибиномір: сталевий канат виходить просто з гусениці прогресу, на ньому гакова підвіска. Гак опускається з прокруткою;
-   унизу сторінки підчіплює 8-бітний вантаж і підіймає його, коли гортаєш назад (махає, губить монети). Клік по вантажу — він
-   зривається, падає туди, де стояв, і лишається плямою; гак, повернувшись, бере її грудкою. Стан — класи на #gauge
+   унизу сторінки підчіплює будівельника за підвіс і підіймає його, коли гортаєш назад (махає, губить монети). Клік по вантажу — він
+   падає, лишаючи смарагдові знаки долара. Під час повторного підйому вони сиплються з гака. Стан — класи на #gauge
    (web/js/site.js): has-load, is-lifting, is-falling, is-splat, is-mush. Рух вимикається reduced-motion, static і паузою. */
 P .gauge{{--crane-h:{travel};top:calc(var(--nav-h,64px) + 21px);transform:none;height:var(--crane-h);transition:opacity .6s,top .45s var(--ease);clip-path:inset(-8px -420px -190px -420px)}}
 P .track.is-up ~ .gauge{{top:21px}}
@@ -155,30 +242,30 @@ P .gauge::after{{top:calc(100% + 63px);height:{body_h}px;filter:drop-shadow(0 3p
 P .gauge.has-load::after{{display:none}}
 P .gauge.has-load .gauge__float{{cursor:pointer}}
 /* підхоплення: вантаж пружинить на гаку, далі гойдається */
-P .gauge.has-load .gauge__float::after{{top:63px;height:{sh}px;transform-origin:50% -4px;animation:load-catch .5s cubic-bezier(.3,1.7,.5,1) both,load-sway 2.6s ease-in-out .5s infinite alternate}}
-P .gauge.has-load.is-lifting .gauge__float::after{{animation:load-sway 2.6s ease-in-out infinite alternate,load-wave .72s steps(8) infinite}}
-P .gauge.has-load.is-mush .gauge__float::after{{background-position-x:{px(FRAMES['mush'])}}}
-P .gauge.has-load.is-mush.is-lifting .gauge__float::after{{animation:load-sway 2.6s ease-in-out infinite alternate,mush-drip .72s steps(8) infinite}}
+P .gauge.has-load .gauge__float::after{{top:63px;height:{sh}px;background-position-x:{px(FRAMES['hang'])};transform-origin:50% -4px;animation:load-catch .5s cubic-bezier(.3,1.7,.5,1) both,load-sway 2.6s ease-in-out .5s infinite alternate}}
+P .gauge.has-load.is-lifting .gauge__float::after{{animation:load-sway 2.6s ease-in-out infinite alternate,load-wave .64s steps({WAVE_STEPS}) infinite}}
+P .gauge.has-load.is-mush .gauge__float::after{{background-position-x:{px(FRAMES['cash'])}}}
+P .gauge.has-load.is-mush.is-lifting .gauge__float::after{{animation:load-sway 2.6s ease-in-out infinite alternate,dollar-rain .64s steps({RAIN_STEPS}) infinite}}
 @keyframes load-catch{{from{{transform:translateY(7px) scale(1.18,.78)}}to{{transform:none}}}}
 @keyframes load-sway{{from{{transform:rotate(-4deg)}}to{{transform:rotate(4deg)}}}}
-@keyframes load-wave{{from{{background-position-x:{px(FRAMES['wave'])}}}to{{background-position-x:{px(FRAMES['wave'] + 8)}}}}}
-@keyframes mush-drip{{from{{background-position-x:{px(FRAMES['drip'])}}}to{{background-position-x:{px(FRAMES['drip'] + 8)}}}}}
+@keyframes load-wave{{from{{background-position-x:{px(FRAMES['wave'])}}}to{{background-position-x:{px(FRAMES['idle'])}}}}}
+@keyframes dollar-rain{{from{{background-position-x:{px(FRAMES['rain'])}}}to{{background-position-x:{px(FRAMES['cash'])}}}}}
 /* падіння: прискорення й оберт; тривалість задає JS (∝ √висоти) */
 P .gauge.is-falling::after{{background-position-x:{px(2)};animation:load-drop var(--drop-t,.7s) cubic-bezier(.5,0,1,.6) both}}
-P .gauge.is-mush.is-falling::after{{background-position-x:{px(FRAMES['mush'])}}}
+P .gauge.is-mush.is-falling::after{{background-position-x:{px(FRAMES['cash'])}}}
 @keyframes load-drop{{from{{transform:translateY(var(--drop,0px)) rotate(0deg)}}to{{transform:translateY(0) rotate(80deg)}}}}
-/* удар: пляма, поштовх усього крана, кільце пилу й бризки. Шар ефектів — <output class="gauge__m">, підпис якого прибрано */
-P .gauge.is-splat::after{{background-position-x:{px(FRAMES['splat'])}}}
+/* приземлення: знаки долара, коротке кільце й поштовх крана. Шар ефектів — <output class="gauge__m">, підпис якого прибрано */
+P .gauge.is-splat::after{{background-position-x:{px(FRAMES['land'])}}}
 P .gauge.is-splat{{animation:crane-jolt .3s cubic-bezier(.3,0,.2,1)}}
 P .gauge__m{{display:block;left:50%;top:calc(100% + {63 + body_h}px);width:0;height:0;margin:0 0 0 -3px;padding:0;background:none;font-size:0;transform:none;pointer-events:none}}
 P .gauge__m::before,P .gauge__m::after{{content:"";position:absolute;opacity:0}}
 P .gauge__m::before{{left:-30px;top:-5px;width:60px;height:10px;border-radius:50%;border:1.5px solid rgba(221,227,234,.9)}}
-P .gauge__m::after{{left:-1px;top:-2px;width:2px;height:2px;background:#C81E1E;box-shadow:{drops}}}
+P .gauge__m::after{{left:-27px;top:-27px;width:54px;height:30px;background:{uri(impact_dollars())} center/contain no-repeat;transform-origin:50% 100%}}
 P .gauge.is-splat .gauge__m::before{{animation:impact-ring .5s cubic-bezier(.16,1,.3,1)}}
 P .gauge.is-splat .gauge__m::after{{animation:impact-burst .6s cubic-bezier(.16,1,.3,1)}}
 @keyframes crane-jolt{{0%{{transform:translateY(0)}}30%{{transform:translateY(3px)}}60%{{transform:translateY(-1px)}}100%{{transform:translateY(0)}}}}
 @keyframes impact-ring{{from{{opacity:.9;transform:scale(.15)}}to{{opacity:0;transform:scale(1)}}}}
-@keyframes impact-burst{{0%{{opacity:1;transform:scale(.15)}}70%{{opacity:1}}100%{{opacity:0;transform:translateY(6px) scale(1)}}}}
+@keyframes impact-burst{{0%{{opacity:0;transform:scale(.35)}}24%{{opacity:.95}}70%{{opacity:.8;transform:translateY(-9px) scale(1)}}100%{{opacity:0;transform:translateY(1px) scale(1)}}}}
 [data-quality=static]P .gauge.has-load .gauge__float::after,[data-quality=static]P .gauge.is-splat,[data-quality=static]P .gauge.is-splat .gauge__m::before,[data-quality=static]P .gauge.is-splat .gauge__m::after{{animation:none}}
 @media (max-height:640px){{P .gauge::after,P .gauge.has-load .gauge__float::after,P .gauge__m{{display:none}}}}
 /* телефон і планшет: той самий кран у масштабі {mobile}, впритул до правого краю. Хід рахується так, щоб вантаж стояв над нижньою

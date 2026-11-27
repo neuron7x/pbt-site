@@ -30,7 +30,11 @@ def test_check_fails_when_css_drifts_from_the_generator(tmp_path):
 
 
 def test_every_embedded_svg_is_well_formed_and_self_contained():
-    for name, svg in (('rope', crane.ROPE), ('hook', crane.HOOK), ('sheet', crane.sheet())):
+    effect = re.search(r'\.gauge__m::after\{[^}]*background:(url\("data:image/svg\+xml,[^"]+"\))', crane.css_block())
+    assert effect is not None, "Після падіння знаки мають бути вбудованим SVG"
+    assert effect[1] == crane.uri(crane.impact_dollars())
+    for name, svg in (('rope', crane.ROPE), ('hook', crane.HOOK), ('sheet', crane.sheet()), ('impact', crane.impact_dollars())):
+        assert '\n' not in crane.uri(svg) and '\r' not in crane.uri(svg), name
         root = ET.fromstring(svg)
         assert root.tag == NS + 'svg', name
         ids = {e.get('id') for e in root.iter() if e.get('id')}
@@ -43,17 +47,21 @@ def test_every_embedded_svg_is_well_formed_and_self_contained():
 def test_sheet_has_one_frame_per_declared_slot_and_nothing_spills_between_frames():
     root = ET.fromstring(crane.sheet())
     assert root.get('viewBox') == f"0 0 {crane.FRAMES['count'] * crane.FW} {crane.FH}"
-    defs = {g.get('id'): g for g in root.find(NS + 'defs')}
-    width = {k: max(int(r.get('x')) + int(r.get('width')) for r in g) for k, g in defs.items()}
+    defs = {g.get('id'): g for g in root.find(NS + 'defs') if g.tag == NS + 'g'}
+    assert 'h' in defs and defs['h'].find(NS + 'svg') is not None, "Окремий векторний кадр на гаку"
     occupied = set()
-    for use in root.iter(NS + 'use'):
+    for use in root.findall(NS + 'use'):
         ref = use.get('href')[1:]
         if use.get('transform'):
-            x = int(re.match(r'translate\((\d+) ', use.get('transform')).group(1)) - crane.FW
+            match = re.match(r'translate\((\d+) (\d+)\)', use.get('transform'))
+            x, y = int(match[1]) - crane.FW, int(match[2])
         else:
-            x = int(use.get('x'))
+            x, y = float(use.get('x')), float(use.get('y', '0'))
         frame = x // crane.FW
-        assert x + width[ref] <= (frame + 1) * crane.FW, (ref, x)                # частинка не залазить у сусідній кадр
+        width = max(int(r.get('x')) + int(r.get('width')) for r in defs[ref])
+        height = max(int(r.get('y')) + int(r.get('height')) for r in defs[ref])
+        assert x + width <= (frame + 1) * crane.FW, (ref, x)
+        assert y + height <= crane.FH, (ref, y)
         occupied.add(frame)
     assert occupied == set(range(crane.FRAMES['count']))                         # порожніх кадрів немає
 
@@ -62,7 +70,7 @@ def test_css_addresses_only_existing_frames():
     block = crane.css_block()
     step = crane.FW * crane.CELL
     xs = {int(v) for v in re.findall(r'background-position-x:-?(\d+)px', block)} | {0}
-    assert xs == {0, 2 * step, 8 * step, 9 * step, 10 * step, 18 * step}, sorted(xs)
+    assert xs == {0, 2 * step, 12 * step, 13 * step, 14 * step, 38 * step, 39 * step}, sorted(xs)
     assert all(x % step == 0 and x // step <= crane.FRAMES['count'] - 1 for x in xs)
     assert f"{crane.FRAMES['count'] * step}px {crane.FH * crane.CELL}px" in block   # background-size = весь аркуш
 
@@ -79,3 +87,19 @@ def test_palette_is_the_brand_palette_and_no_third_party_character_is_named():
     assert crane.PAL['Y'] == '#FDC501' and crane.PAL['B'] == '#1238A8'
     source = (ROOT / 'tools' / 'crane.py').read_text(encoding='utf-8').lower()
     assert 'mario' not in source and 'nintendo' not in source and 'маріо' not in source
+
+
+def test_dollar_rain_changes_position_and_fades_across_the_lift_cycle():
+    root = ET.fromstring(crane.sheet())
+    green = root.find(f".//{NS}linearGradient[@id='emerald']")
+    assert green is not None, 'Каскад має смарагдовий градієнт'
+    assert {stop.get('stop-color') for stop in green} == {'#B2FFD1', '#58F4A1', '#1ECD79'}
+    particles = [use for use in root.findall(NS + 'use') if use.get('href') in ('#d', '#d-small', '#d-large')]
+    rain = range(crane.FRAMES['rain'], crane.FRAMES['cash'])
+    by_frame = {frame: [use for use in particles if float(use.get('x')) // crane.FW == frame] for frame in rain}
+    assert len(by_frame) == 24
+    assert all(6 <= len(group) <= 7 for group in by_frame.values())
+    assert sum(map(len, by_frame.values())) == len(particles)
+    positions = [tuple((float(use.get('x')) % crane.FW, float(use.get('y'))) for use in group) for group in by_frame.values()]
+    assert len(set(positions)) == len(rain)
+    assert any(0 < float(use.get('opacity')) < 1 for use in particles)

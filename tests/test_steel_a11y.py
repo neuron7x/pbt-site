@@ -170,7 +170,7 @@ def _hook_load_point(pg):
 
 @pytest.mark.parametrize('reduced', [False, True])
 def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced):
-    """Клік по вантажу: відчіпляється, падає туди, де стояв, лишається плямою; гак, повернувшись униз, бере її грудкою; цикл повторюється."""
+    """Клік по вантажу: відчіпляється, падає туди, де стояв, лишає знаки долара; гак піднімає їх, а під час руху вони сиплються."""
     pg = page_factory(1440, 900, reduced=reduced)
     pg.locator('[data-theme-choice="sky"]').click()
     cls = "document.getElementById('gauge').className"
@@ -192,28 +192,28 @@ def test_clicked_load_drops_to_the_ground_and_stays_there(page_factory, reduced)
     pg.locator('#gauge.is-splat').wait_for(state='attached', timeout=5000)
     end = pg.evaluate(cls)
     assert 'is-falling' not in end and 'has-load' not in end, end
-    assert pg.evaluate(ground + ".backgroundPositionX") == '-288px'      # кадр плями
+    assert pg.evaluate(ground + ".backgroundPositionX") == '-416px'      # знаки на землі
     fx = "getComputedStyle(document.querySelector('.gauge__m'), '%s').animationName"
-    expected = ('none', 'none', 'none') if reduced else ('crane-jolt', 'impact-ring', 'impact-burst')   # удар: поштовх, кільце пилу, бризки
+    expected = ('none', 'none', 'none') if reduced else ('crane-jolt', 'impact-ring', 'impact-burst')   # удар: поштовх, кільце, знаки долара
     assert (pg.evaluate("getComputedStyle(document.getElementById('gauge')).animationName"), pg.evaluate(fx % '::before'), pg.evaluate(fx % '::after')) == expected
     assert pg.evaluate(ground + ".display") == 'block'
     assert pg.evaluate("getComputedStyle(document.querySelector('.gauge__float'), '::after').content") == 'none'   # гак порожній
-    # гак повертається по пляму й бере її вже грудкою
+    # гак повертається по знаки долара
     carried = "getComputedStyle(document.querySelector('.gauge__float'), '::after')"
     pg.evaluate("window.scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
     pg.locator('#gauge.has-load.is-mush').wait_for(state='attached', timeout=5000)
     again = pg.evaluate(cls)
     assert 'is-splat' not in again, again
-    assert pg.evaluate(carried + ".backgroundPositionX") == '-576px'      # кадр грудки у спокої
+    assert pg.evaluate(carried + ".backgroundPositionX") == '-1216px'      # знаки на нерухомому гаку
     assert pg.evaluate(ground + ".display") == 'none'                      # на землі нічого не лишилось
     if not reduced:
         pg.wait_for_timeout(300)
         pg.mouse.move(700, 450)
         pg.mouse.wheel(0, -600)
         pg.wait_for_timeout(250)
-        assert 'mush-drip' in pg.evaluate(carried + ".animationName")      # під час підйому тече й крапає
+        assert 'dollar-rain' in pg.evaluate(carried + ".animationName")
         assert 'load-wave' not in pg.evaluate(carried + ".animationName")
-    # грудку теж можна скинути: цикл замкнений
+    # знаки теж можна скинути: цикл замкнений
     pg.evaluate("window.scrollTo({top: (document.documentElement.scrollHeight - innerHeight) * 0.4, behavior: 'instant'})")
     pg.wait_for_timeout(900)
     pg.mouse.click(*_hook_load_point(pg))
