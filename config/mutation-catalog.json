@@ -248,6 +248,81 @@
    "note": "Одне місце з телефоном жорстко прописане: зміна номера в джерелі його не досягає."
   },
   {
+   "id": "M-CRM-body-ascii-escaped",
+   "task": "NET-03.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        body = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()\n",
+     "replace": "        body = json.dumps({'id': lead_id, **data}, ensure_ascii=True).encode()\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_crm_contract_bytes.py::test_a_fixed_lead_reaches_the_crm_as_exactly_these_bytes"
+   ],
+   "note": "Кирилиця в тілі заявки екранується \\u-послідовностями: байти на дроті інші."
+  },
+  {
+   "id": "M-CRM-body-compact-separators",
+   "task": "NET-03.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        body = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()\n",
+     "replace": "        body = json.dumps({'id': lead_id, **data}, ensure_ascii=False, separators=(',', ':')).encode()\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_crm_contract_bytes.py::test_a_fixed_lead_reaches_the_crm_as_exactly_these_bytes"
+   ],
+   "note": "Тіло заявки серіалізовано без пробілів: байти на дроті інші, хоч JSON той самий."
+  },
+  {
+   "id": "M-CRM-body-id-moved-last",
+   "task": "NET-03.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "        body = json.dumps({'id': lead_id, **data}, ensure_ascii=False).encode()\n",
+     "replace": "        body = json.dumps({**data, 'id': lead_id}, ensure_ascii=False).encode()\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_crm_contract_bytes.py::test_a_minimal_lead_keeps_the_same_fields_and_order"
+   ],
+   "note": "Поле id переїхало в кінець тіла: порядок ключів змінено."
+  },
+  {
+   "id": "M-CRM-signature-header-renamed",
+   "task": "NET-03.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "'X-PBT-Signature': signature}",
+     "replace": "'X-PBT-Sign': signature}"
+    }
+   ],
+   "oracle": [
+    "tests/test_crm_contract_bytes.py::test_a_fixed_lead_reaches_the_crm_as_exactly_these_bytes"
+   ],
+   "note": "Підпис їде в заголовку з іншою назвою: CRM його не знайде."
+  },
+  {
+   "id": "M-CRM-signature-not-sha256",
+   "task": "NET-03.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), body, hashlib.sha256)",
+     "replace": "hmac.new(ENV('LEAD_WEBHOOK_SECRET').encode(), body, hashlib.sha512)"
+    }
+   ],
+   "oracle": [
+    "tests/test_crm_contract_bytes.py::test_a_retry_repeats_the_same_id_body_and_signature"
+   ],
+   "note": "Підпис рахується іншою геш-функцією."
+  },
+  {
    "id": "M-DATA-catalog-carries-price",
    "task": "WEB-07.T",
    "edits": [
