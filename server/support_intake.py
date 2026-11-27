@@ -11,6 +11,11 @@ import secrets
 import time
 from dataclasses import dataclass, field
 
+if __package__:
+    from .support_evidence import Issue, Observation, revise, same
+else:
+    from support_evidence import Issue, Observation, revise, same
+
 MAX_MEMORY = 12_000
 _MEMORY_TTL = 2 * 60 * 60
 
@@ -61,6 +66,21 @@ PRIORITIES = {
     "bull": ("place", "area"), "load": ("place", "quantity"),
     "road": ("place", "area"), "crush": ("place", "quantity"),
 }
+REASONS = {
+    "mass": "Маса визначає, які конфігурації техніки варто розглядати.",
+    "reach": "Допустиме навантаження залежить від вильоту.",
+    "access": "Від під’їзду залежить спосіб роботи на об’єкті.",
+    "from": "Точка завантаження потрібна для оцінки маршруту.",
+    "to": "Пункт призначення потрібен для оцінки маршруту.",
+    "depth": "Глибина впливає на підбір техніки.",
+}
+_TASK_FIRST = re.compile(r"\b(?:підбер\w*|який|котрий)\b.*\b(?:авто)?кран\w*\b", re.I)
+_EXPLICIT = re.compile(r"\b(?:виправ\w*|уточнен\w*|підтвердж\w*|точно)\b|^\s*ні[,!]|\bзамість\b|\bтепер\s+(?:до|в|у)\b", re.I)
+_TENTATIVE = re.compile(r"\b(?:приблизно|орієнтовно|можливо|мабуть|десь|близько|може|на око|не точно)\b|[≈~]", re.I)
+_UNKNOWN = re.compile(r"\b(?:невідом\w*|не зна\w*|не мірял\w*|потрібно уточнити)\b", re.I)
+_OPTIONS = re.compile(r"\s*[,;]?\s*(?:(?:а\s+)?може(?:ливо)?|або|чи|до|[-–—])\s*", re.I)
+_FIELDS_WITH_UNITS = {"mass", "reach", "length", "width", "depth", "quantity", "area"}
+_CONFIRMATION_QUESTION = "Яке значення можете підтвердити?"
 EXPLANATIONS = {
     "crane": "Для підбору крана потрібні маса вантажу, виліт стріли й умови майданчика.",
     "trans": "Для підбору трала спочатку звіримо маршрут і масу вантажу.",
@@ -72,7 +92,7 @@ EXPLANATIONS = {
 _NEW = re.compile(r"\b(?:тепер інше|інша задача|інше завдання|нова задача|нов[аи]й об[’'ʼ]єкт|ще одна заявка)\b", re.I)
 _SKIP = re.compile(r"^(?:поки\s+)?(?:не знаю|невідомо|треба уточнити|не мірял\w*|без поняття)[.! ]*$", re.I)
 _NEGATED = re.compile(r"\b(?:не потріб\w*|не треб\w*|не хочу|не замов\w*)\b", re.I)
-_CORRECTION = re.compile(r"\bа\s+саме\b|,\s*а\s+(?!(?:потім|далі|також|ще)\b)|\b(?:уточнення|виправ\w*)\s*[:—-]", re.I)
+_CORRECTION = re.compile(r"\bа\s+саме\b|,\s*а\s+(?!(?:потім|далі|також|ще|може|можливо)\b)|\b(?:уточнення|виправ\w*)\s*[:—-]", re.I)
 _CONFIRM = re.compile(r"^(?:так|саме так|так,?(?: це воно| підходить)|вірно)[.! ]*$", re.I)
 _KNOWN_TOWN = re.compile(r"^(?:полтав|кременч|ки[їє]в|харків|черкас|дніпр|житомир|льв[іо]в)\w{0,8}$", re.I)
 _NOT_BOX = frozenset(("добре", "дякую", "привіт", "поки", "так", "ні", "зрозуміло", "ок"))
@@ -83,7 +103,7 @@ _FROM = re.compile(rf"(?i:\b(?:забрати\s+)?(?:із|зі|з)\s+)({_NAMED_C
 _TO = re.compile(rf"(?i:\b(?:до|у|в)\s+)({_NAMED_CITY})")
 _MASS = re.compile(r"\b\d+(?:[.,]\d+)?\s*(?:тонн?\w*|кг|т\b)", re.I)
 _METERS = r"\d+(?:[.,]\d+)?\s*(?:м\b|см\b|метр\w*)"
-_REACH = re.compile(rf"\b(?:виліт|радіус|відстань)\s*[:—-]?\s*({_METERS})", re.I)
+_REACH = re.compile(rf"\b(?:виліт|радіус|відстань)\s*[:—-]?\s*(?:(?:приблизно|орієнтовно|десь)\s+)?({_METERS})", re.I)
 _VOLUME = re.compile(r"\b\d+(?:[.,]\d+)?\s*(?:м[³3]|куб\w*)", re.I)
 _AREA = re.compile(r"\b\d+(?:[.,]\d+)?\s*(?:м[²2]|га\b|сот\w*)", re.I)
 _FRACTION = re.compile(r"\b(?:фракці\w*\s*[:—-]?\s*)?(\d{1,3}\s*[-–]\s*\d{1,3})(?=\s*(?:мм\b|[,.!?]|$))", re.I)
@@ -107,23 +127,26 @@ class Brief:
     values: dict[str, str] = field(default_factory=dict)
     skipped: set[str] = field(default_factory=set)
     proposal: str | None = None
-
-    def pending(self) -> str | None:
-        if not self.task:
-            return None
-        return next((name for name in PRIORITIES[self.task] if name not in self.values and name not in self.skipped), None)
+    evidence: dict[str, Observation] = field(default_factory=dict)
+    issues: dict[str, Issue] = field(default_factory=dict)
+    turn: int = 0
+    specialist: bool = False
+    focus: str | None = None
 
     def unresolved(self) -> list[str]:
-        return [name for name in PRIORITIES.get(self.task, ()) if name not in self.values]
+        required = PRIORITIES.get(self.task, ())
+        return [name for name in dict.fromkeys((*required, *self.issues)) if name not in self.values]
 
     def view(self, handoff: bool, changes: dict[str, str]) -> dict:
-        pending = self.pending()
-        next_step = {"field": pending, "label": LABELS[pending]} if pending else None
-        if self.proposal and not self.task:
-            next_step = {"field": "confirm_task", "label": "Підтвердити напрям роботи"}
-        return {"stage": "handoff" if handoff else ("clarify" if not self.task or pending else "ready"),
+        step = plan(self)
+        next_step = step.view() if step else None
+        issues = [{"label": LABELS[name], "kind": item.kind, "values": [o.value for o in item.options]}
+                  for name, item in self.issues.items() if name not in self.skipped]
+        issues.extend({"label": LABELS[name], "kind": "unknown", "values": []}
+                      for name in LABELS if name in self.skipped)
+        return {"stage": "handoff" if handoff else ("clarify" if not self.task or step or self.unresolved() else "ready"),
                 "known": self.fields(self.values), "next": next_step if not handoff else None,
-                "corrections": self.fields(changes)}
+                "corrections": self.fields(changes), "issues": issues}
 
     @staticmethod
     def fields(values):
@@ -138,9 +161,53 @@ class Brief:
             place = " → ".join(filter(None, (self.values.get("from"), self.values.get("to"))))
         comment = "\n".join(f"{LABELS[name]} зі слів клієнта: {value}" for name, value in self.values.items()
                             if name not in {"place", "from", "to"})
-        if self.skipped:
-            comment += ("\n" if comment else "") + "Уточнити: " + ", ".join(LABELS[name].lower() for name in LABELS if name in self.skipped)
+        unresolved = self.skipped | self.issues.keys()
+        if unresolved:
+            comment += ("\n" if comment else "") + "Уточнити: " + ", ".join(
+                LABELS[name].lower() for name in LABELS if name in unresolved)
         return {"type": kind, "subject": subject, "place": place, "comment": comment[:1000]}
+
+
+@dataclass(frozen=True)
+class NextStep:
+    field: str
+    label: str
+    question: str
+    reason: str = ""
+
+    def view(self) -> dict[str, str]:
+        result = {"field": self.field, "label": self.label}
+        if self.reason:
+            result["reason"] = self.reason
+        return result
+
+
+def plan(brief: Brief) -> NextStep | None:
+    """Повертає одне уточнення за правилами задачі й станом свідчень."""
+    if not brief.task:
+        if brief.proposal:
+            return NextStep("confirm_task", "Підтвердити напрям роботи", "")
+        return None
+    required = PRIORITIES[brief.task]
+    order = (*required, *(key for key in brief.issues if key not in required))
+    active = [name for name in order if name not in brief.values and name not in brief.skipped]
+    if not active:
+        return None
+    selected = min(active, key=lambda name: (
+        0 if name in brief.issues and brief.issues[name].kind == "conflict"
+        else 1 if name in brief.issues or name == brief.focus else 2,
+        order.index(name),
+    ))
+    label = LABELS[selected]
+    issue = brief.issues.get(selected)
+    if not issue:
+        return NextStep(selected, label, QUESTIONS[selected], REASONS.get(selected, ""))
+    options = " / ".join(entry.value for entry in issue.options)
+    reason = ("Є суперечливі дані, які змінюють чернетку." if issue.kind == "conflict"
+              else "Попередній параметр потребує підтвердження.")
+    preamble = "маю різні дані" if issue.kind == "conflict" else "є попереднє значення"
+    question = f"Для параметра «{label.lower()}» {preamble}: {options}. {_CONFIRMATION_QUESTION}"
+    return NextStep(selected, label, question, reason)
 
 
 class BriefMemory:
@@ -151,7 +218,10 @@ class BriefMemory:
         self._clock = clock
 
     def pack(self, brief: Brief) -> str:
-        raw = json.dumps([int(self._clock()) + _MEMORY_TTL, brief.task, brief.values, sorted(brief.skipped), brief.proposal],
+        raw = json.dumps([2, int(self._clock()) + _MEMORY_TTL, brief.task, brief.values, sorted(brief.skipped),
+                          brief.proposal, {key: item.wire() for key, item in brief.evidence.items()},
+                          {key: item.wire() for key, item in brief.issues.items()},
+                          brief.turn, brief.specialist, brief.focus],
                          ensure_ascii=False, separators=(",", ":")).encode()
         signature = hmac.digest(self._key, raw, hashlib.sha256)
         return base64.urlsafe_b64encode(signature + raw).decode("ascii")
@@ -164,10 +234,13 @@ class BriefMemory:
             signature, raw = signed[:32], signed[32:]
             if not hmac.compare_digest(signature, hmac.digest(self._key, raw, hashlib.sha256)):
                 return None
-            expiry, task, values, skipped, proposal = json.loads(raw)
-            if expiry <= self._clock():
+            version, expiry, task, values, skipped, proposal, evidence, issues, turn, specialist, focus = json.loads(raw)
+            if version != 2 or expiry <= self._clock():
                 return None
-            return Brief(task, values, set(skipped), proposal)
+            return Brief(task, values, set(skipped), proposal,
+                         {name: Observation(*item) for name, item in evidence.items()},
+                         {name: Issue(kind, tuple(Observation(*option) for option in options))
+                          for name, (kind, options) in issues.items()}, turn, specialist, focus)
         except (ValueError, TypeError, binascii.Error):
             return None
 
@@ -215,10 +288,10 @@ def _evidence(task, text, pending, corrected):
     bare_place = re.match(rf"^({_NAMED_CITY})(?=\s*[,.;!?]|$)", text)
     if bare_place and (pending in {"place", "from", "to"} or corrected) and bare_place[1].casefold() not in _NOT_BOX:
         values.setdefault(pending if pending in {"from", "to"} else "place", bare_place[1])
-    elif pending in {"place", "from", "to"}:
+    elif pending in {"place", "from", "to"} or task and task != "trans":
         first_phrase = re.split(r"[,.;!?]", text, maxsplit=1)[0].strip()
         if _KNOWN_TOWN.fullmatch(first_phrase):
-            values[pending] = first_phrase[0].upper() + first_phrase[1:]
+            values[pending if pending in {"from", "to"} else "place"] = first_phrase[0].upper() + first_phrase[1:]
     if when := _DATE.search(text):
         values["when"] = when[0]
     if task:
@@ -253,10 +326,48 @@ def _evidence(task, text, pending, corrected):
     return values
 
 
-def advance(brief: Brief, message: str):
-    """Take one turn while preserving explicitly separated jobs and replacing only observed fields."""
+def _alternatives(field, value, text):
+    if field not in _FIELDS_WITH_UNITS:
+        return [value]
+    if field == "mass" or field == "quantity" and _MASS.fullmatch(value):
+        # Handles two stated units and the shared-unit shorthand “5 або 8 т”.
+        paired = re.search(r"\b(\d+(?:[.,]\d+)?)\s*(?:або|чи|до|[-–—])\s*(" + _MASS.pattern + ")", text, re.I)
+        if paired:
+            unit = re.sub(r"^[\d.,]+\s*", "", paired[2])
+            pair = [f"{paired[1]} {unit}", paired[2]]
+            return [pair[0]] if same(field, *pair) else pair
+        matches = list(_MASS.finditer(text))
+    elif field in {"reach", "length", "width", "depth"}:
+        matches = list(re.finditer(_METERS, text, re.I))
+    else:
+        matches = list((_VOLUME if field == "quantity" else _AREA).finditer(text))
+    for left, right in zip(matches, matches[1:]):
+        if value not in (left[0], right[0]) or not _OPTIONS.fullmatch(text[left.end():right.start()]):
+            continue
+        if not same(field, left[0], right[0]):
+            return [left[0], right[0]]
+    return [value]
+
+
+def _tentative(value, text):
+    for clause in re.split(r"[,;.!?](?!\d)", text):
+        if value in clause:
+            return bool(_TENTATIVE.search(clause))
+    return False
+
+
+def _unknown_fields(task, text):
+    if not task:
+        return set()
+    labels = {**{name: label.lower().replace("’", "[’'ʼ]") for name, label in LABELS.items()},
+              "reach": r"(?:виліт|радіус)", "mass": r"(?:мас[ау]|ваг[ау])"}
+    return {name for name in PRIORITIES[task] if re.search(
+        rf"\b{labels[name]}\s*[:—-]?\s*(?:{_UNKNOWN.pattern})", text, re.I)}
+
+
+def advance(brief: Brief, message: str, source="text"):
+    """Parse one event, then reconcile each observed value with the working state."""
     text, corrected = _scope(message)
-    # Explicit corrections carry facts from the corrected clause, not the rejected clause.
     final = _CORRECTION.split(message)[-1]
     topics = _topics(text)
     explicit_reset = bool(_NEW.search(message))
@@ -268,15 +379,46 @@ def advance(brief: Brief, message: str):
     next_task = topics[0] if topics else (None if explicit_reset else confirmed or brief.task)
     reset = bool(explicit_reset or brief.task and topics and next_task != brief.task)
     prior = Brief() if reset else brief
-    current = Brief(next_task, prior.values.copy(), prior.skipped.copy())
-    pending = prior.pending()
+    current = Brief(next_task, prior.values.copy(), prior.skipped.copy(), evidence=prior.evidence.copy(),
+                    issues=prior.issues.copy(), turn=brief.turn + 1, specialist=prior.specialist,
+                    focus="mass" if next_task == "crane" and _TASK_FIRST.search(message) else prior.focus)
+    prior_step = plan(prior)
+    pending = prior_step.field if prior_step and prior.task else None
+    unknown = _unknown_fields(next_task, final)
     if current.task and pending and _SKIP.fullmatch(message.strip()):
-        current.skipped.add(pending)
-        return current, {}, reset
+        unknown.add(pending)
+    for name in unknown:
+        current.skipped.add(name)
+        current.values.pop(name, None)
+        current.evidence.pop(name, None)
+        current.issues.pop(name, None)
+
     evidence = _evidence(next_task, final, pending, corrected)
     if next_task == "exc" and "trans" in topics:
         evidence["secondary"] = "Вивезення ґрунту після земляних робіт"
-    edits = {key: value for key, value in evidence.items() if key in current.values and current.values[key] != value}
-    current.values.update(evidence)
-    current.skipped.difference_update(evidence)
+    explicit = source == "text" and (corrected or _EXPLICIT.search(message))
+    edits = {}
+    for name, value in evidence.items():
+        if name in unknown:
+            continue
+        observed = tuple(Observation(option, current.turn, source) for option in _alternatives(name, value, final))
+        previous = current.evidence.get(name)
+        if previous is None and name in current.values:
+            previous = Observation(current.values[name], prior.turn)
+        direct_answer = (source == "text" and name == pending and name in current.issues
+                         and final.strip(" .!").casefold() == value.casefold())
+        settled, issue = revise(name, previous, current.issues.get(name), observed,
+                                tentative=source != "text" or _tentative(value, final),
+                                explicit=bool(explicit or direct_answer))
+        current.skipped.discard(name)
+        if issue:
+            current.issues[name] = issue
+            current.values.pop(name, None)
+            current.evidence.pop(name, None)
+        elif settled:
+            if name in current.issues or previous and not same(name, previous.value, settled.value):
+                edits[name] = settled.value
+            current.issues.pop(name, None)
+            current.values[name] = settled.value
+            current.evidence[name] = settled
     return current, edits, reset

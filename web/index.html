@@ -400,6 +400,10 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
         </div>
         <p class="support__note" id="supportBriefEmpty">Тут будуть параметри, які ви назвете в розмові.</p>
         <dl class="support__known" id="supportKnown" aria-label="Зі слів клієнта" hidden></dl>
+        <section class="support__issues" id="supportIssues" aria-labelledby="supportIssuesTitle" aria-live="polite" hidden>
+          <h4 id="supportIssuesTitle">Потребує звірки</h4>
+          <ul id="supportIssueList"></ul>
+        </section>
         <p class="support__next" id="supportNext" aria-live="polite" hidden></p>
       </div>
       <div class="support__draft" id="supportDraft" hidden>

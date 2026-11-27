@@ -33,6 +33,8 @@
   const stage = document.getElementById('supportStage');
   const briefEmpty = document.getElementById('supportBriefEmpty');
   const known = document.getElementById('supportKnown');
+  const issues = document.getElementById('supportIssues');
+  const issueList = document.getElementById('supportIssueList');
   const nextField = document.getElementById('supportNext');
   const draftTitle = document.getElementById('supportDraftTitle');
   const draftStatus = document.getElementById('supportDraftStatus');
@@ -40,7 +42,7 @@
   if (!panel?.showModal || !title || !form || !message || !send || !timeline || !body || !mode || !status || !examples ||
       !clear || !file || !fileZone || !fileName || !removeFile || !consent || !consentGroup || !draft || !draftType ||
       !draftSubject || !draftPlace || !draftComment || !apply || !human || !dialogueView || !briefView || !briefTitle ||
-      !stage || !briefEmpty || !known || !nextField || !draftTitle || !draftStatus || !newDraft) return;
+      !stage || !briefEmpty || !known || !issues || !issueList || !nextField || !draftTitle || !draftStatus || !newDraft) return;
 
   const endpoint = '/api/support';
   const anchors = new Set(['#roboty', '#tekhnika', '#cina', '#materialy', '#geo', '#zapyt']);
@@ -49,6 +51,7 @@
   const audio = new Set(['audio/wav', 'audio/mpeg', 'audio/webm', 'audio/mp4', 'audio/ogg']);
   const stages = new Map([['clarify', 'Уточнюємо деталі'], ['ready', 'Можна звірити чернетку'],
     ['handoff', 'Потрібен диспетчер']]);
+  const issueKinds = new Map([['conflict', 'Суперечливі дані'], ['estimate', 'Орієнтовно'], ['unknown', 'Невідомо']]);
   const fileAliases = new Map([['audio/x-wav', 'audio/wav'], ['audio/x-m4a', 'audio/mp4'],
     ['audio/mp3', 'audio/mpeg'], ['video/webm', 'audio/webm'], ['video/mp4', 'audio/mp4']]);
   const extTypes = new Map([['jpg', 'image/jpeg'], ['jpeg', 'image/jpeg'], ['png', 'image/png'], ['webp', 'image/webp'],
@@ -168,11 +171,41 @@
     return rows;
   }
 
+  /** @param {unknown} items */
+  function showIssues(items) {
+    const unsettled = new Set();
+    if (!issues || !issueList) return unsettled;
+    issueList.replaceChildren();
+    if (Array.isArray(items)) {
+      for (const item of items.slice(0, 12)) {
+        const kind = issueKinds.get(item?.kind);
+        const label = typeof item?.label === 'string' ? item.label.trim().slice(0, 72) : '';
+        if (!kind || !label || unsettled.has(label)) continue;
+        const values = Array.isArray(item.values)
+          ? item.values.slice(0, 3).filter(value => typeof value === 'string').map(value => value.trim().slice(0, 180)).filter(Boolean)
+          : [];
+        const row = document.createElement('li');
+        const heading = document.createElement('strong');
+        heading.textContent = label;
+        const detail = document.createElement('span');
+        detail.textContent = values.length ? `${kind} · ${values.join(' / ')}` : kind;
+        row.append(heading, detail);
+        issueList.append(row);
+        unsettled.add(label);
+      }
+    }
+    issues.hidden = unsettled.size === 0;
+    return unsettled;
+  }
+
   function showBrief(brief) {
     if (!known || !briefEmpty || !nextField || !stage) return;
     const fields = briefRows(brief?.known), changed = briefRows(brief?.corrections);
+    const unsettled = showIssues(brief?.issues);
+    for (const name of unsettled) fields.delete(name);
     const stageLabel = stages.get(brief?.stage) || '';
     const label = typeof brief?.next?.label === 'string' ? brief.next.label.trim().slice(0, 72) : '';
+    const reason = typeof brief?.next?.reason === 'string' ? brief.next.reason.trim().slice(0, 180) : '';
     known.replaceChildren();
     for (const [name, value] of fields) {
       const row = document.createElement('div');
@@ -190,10 +223,16 @@
       known.append(row);
     }
     known.hidden = fields.size === 0;
-    briefEmpty.hidden = fields.size > 0 || !!label || !!stageLabel;
+    briefEmpty.hidden = fields.size > 0 || unsettled.size > 0 || !!label || !!stageLabel;
     stage.textContent = [stageLabel, fields.size ? 'за вашим описом' : ''].filter(Boolean).join(' · ');
     stage.hidden = !stage.textContent;
     nextField.textContent = label ? 'Наступне уточнення · ' + label : '';
+    if (label && reason) {
+      const why = document.createElement('span');
+      why.className = 'support__next-reason';
+      why.textContent = reason;
+      nextField.append(why);
+    }
     nextField.hidden = !label;
     message.placeholder = label ? 'Уточніть: ' + label : defaultHint;
   }
@@ -482,14 +521,7 @@
       memory = typeof turn.memory === 'string' && turn.memory.length <= 12000 ? turn.memory : undefined;
       showBrief(turn.brief);
       const transcript = typeof turn.transcript === 'string' ? turn.transcript.trim() : '';
-      let context = prompt;
-      if (transcript) {
-        const spoken = Array.from(transcript);
-        const written = Array.from(prompt);
-        const writtenLimit = Math.min(written.length, Math.max(500, 999 - spoken.length));
-        context = written.slice(0, writtenLimit).join('') + '\n' + spoken.slice(0, 999 - writtenLimit).join('');
-      }
-      history = [...history, context].slice(-6);
+      history = [...history, prompt].slice(-6);
       entry(prompt, true, 'Ви');
       if (transcript) entry(Array.from(transcript).slice(0, 1000).join(''), true, 'Розшифрування аудіо');
       const itemReply = entry(turn.reply, false, turn.mode === 'model' ? 'Помічник · модель' : 'Помічник');

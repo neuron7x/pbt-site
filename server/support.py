@@ -13,10 +13,10 @@ from pathlib import Path
 from typing import Protocol
 
 if __package__:
-    from .support_intake import EXPLANATIONS, LABELS, MAX_MEMORY, QUESTIONS, TASKS, Brief, BriefMemory, advance
+    from .support_intake import EXPLANATIONS, LABELS, MAX_MEMORY, TASKS, Brief, BriefMemory, advance, plan
     from .support_provider import CONTACT_PATTERN, TRANSCRIPT_MAX, ProviderError, redact_contacts
 else:
-    from support_intake import EXPLANATIONS, LABELS, MAX_MEMORY, QUESTIONS, TASKS, Brief, BriefMemory, advance
+    from support_intake import EXPLANATIONS, LABELS, MAX_MEMORY, TASKS, Brief, BriefMemory, advance, plan
     from support_provider import CONTACT_PATTERN, TRANSCRIPT_MAX, ProviderError, redact_contacts
 
 MAX_BODY = 2_140_000
@@ -178,10 +178,13 @@ class Support:
         history = [_text(item, MESSAGE_MAX) for item in history]
         token = _text(body.get("memory", ""), MAX_MEMORY)
         prior = self._memory.unpack(token)
+        expired = bool(token and prior is None)
         if prior is None:
             prior = Brief()
-            for line in history:
-                prior, _, _ = advance(prior, redact_contacts(line))
+            if not expired:
+                for line in history:
+                    prior, _, _ = advance(prior, redact_contacts(line))
+                    prior.specialist = prior.specialist or bool(DANGER.search(line))
         attachment = _attachment(body.get("attachment"), consent, self.provider)
         if not message and attachment is None:
             raise InputError("empty")
@@ -189,6 +192,10 @@ class Support:
         local = self._local(message, history, facts, prior)
         if attachment is not None:
             local["media"] = {"status": "unprocessed"}
+        if expired:
+            local["brief"]["reset"] = True
+            local["reply"] = "Попередній контекст більше недоступний. Почнімо з цієї репліки. " + local["reply"]
+            return local
         if attachment is None and (local["handoff"] or not consent or self.provider is None):
             return local
         if attachment is not None and local["handoff"]:
@@ -217,7 +224,10 @@ class Support:
                 raise ProviderError()
             if transcript:
                 transcript = redact_contacts(_text(transcript, TRANSCRIPT_MAX))
-                local = self._local(transcript + ("\n" + message if message else ""), history, facts, prior)
+                spoken, _, spoken_reset = advance(prior, transcript, source="transcript")
+                spoken.specialist = spoken.specialist or bool(DANGER.search(transcript))
+                local = self._local(message, history, facts, spoken)
+                local["brief"]["reset"] = local["brief"]["reset"] or spoken_reset
                 if local["handoff"]:
                     return {**local, "transcript": transcript, "media": {"status": "used"}}
             picked = [key for key in dict.fromkeys(ids) if key in TASKS]
@@ -225,7 +235,9 @@ class Support:
                 subject = TASKS[picked[0]][2].lower()
                 proposed = self._memory.unpack(local["memory"]) or Brief()
                 proposed.proposal = picked[0]
+                reset = local["brief"]["reset"]
                 local["brief"] = proposed.view(False, {})
+                local["brief"]["reset"] = reset
                 local["memory"] = self._memory.pack(proposed)
                 local["reply"] = f"Можливий напрям — {subject}. Це відповідає вашій задачі?"
             # Model text is never a customer-facing business statement. It supplies references and a hypothesis.
@@ -247,20 +259,23 @@ class Support:
     def _local(self, message, history, facts, prior):
         working, changes, reset = advance(prior, redact_contacts(message))
         key = working.task
-        next_field = working.pending()
-        question = QUESTIONS.get(next_field, "")
+        step = plan(working)
+        question = step.question if step else ""
+        working.specialist = working.specialist or bool(DANGER.search(message))
         handoff = False
         ids = [key] if key else []
         repeated = len(message.split()) >= 2 and sum(
             item.casefold() == message.casefold() for item in history[-3:]) >= 2
         contact = (CONTACT_QUERY.search(message) or OPERATOR_HANDOFF.search(message)
                    or (HUMAN.search(message) and HUMAN_INTENT.search(message)))
-        if contact or REPEAT.search(message) or repeated:
+        if working.specialist:
+            handoff, ids = True, ["dispatch", "request"]
+            reply = ("Підйом чи роботу в цих умовах має оцінити фахівець на місці за даними об’єкта."
+                     if DANGER.search(message) else
+                     "У цій задачі лишається вимога огляду фахівцем. Диспетчер може продовжити з чернетки.")
+        elif contact or REPEAT.search(message) or repeated:
             handoff, ids = True, ["request"]
             reply = "Диспетчер може продовжити з чернетки. У розділі заявки є також контакт для прямої розмови."
-        elif DANGER.search(message):
-            handoff, ids = True, ["dispatch", "request"]
-            reply = "Підйом чи роботу в цих умовах має оцінити фахівець на місці за даними об’єкта."
         elif PRICE.search(message) or BOOKING.search(message):
             handoff = True
             ids = ["price" if PRICE.search(message) else "dispatch", *ids]
@@ -307,8 +322,8 @@ class Support:
             reply = "Що потрібно зробити на об’єкті? Наприклад, викопати траншею, підняти вантаж або доставити матеріал."
         view = working.view(handoff, changes)
         view["reset"] = reset
-        if handoff and question and (PRICE.search(message) or BOOKING.search(message)):
-            view["next"] = {"field": next_field, "label": LABELS[next_field]}
+        if handoff and not working.specialist and question and (PRICE.search(message) or BOOKING.search(message)):
+            view["next"] = step.view()
         return {"ok": True, "reply": reply, "sources": self._sources(ids, facts),
                 "draft": working.draft(), "handoff": handoff, "mode": "local",
                 "brief": view, "memory": self._memory.pack(working)}

@@ -200,3 +200,91 @@ def test_new_task_cannot_transfer_previous_draft(page_factory, edited):
         assert page.locator("#supportDraftComment").input_value() == "Маса 4 т"
         assert page.locator("#supportApply").is_enabled()
     assert page.locator("#subject").input_value() == ""
+
+
+@pytest.mark.parametrize("viewport", [(1440, 900, False), (390, 844, True)])
+def test_brief_keeps_uncertainty_separate_and_explains_next_question(page_factory, viewport):
+    width, height, mobile = viewport
+    page = page_factory(width, height, mobile=mobile, reduced=True)
+    issues = page.locator("#supportIssues")
+    assert issues.count() == 1
+    responses = iter([
+        {"reply": "Яку масу брати для підбору?", "brief": {
+            "stage": "clarify",
+            "known": [{"label": "Маса", "value": "5 т"}, {"label": "Місто", "value": "Полтава"}],
+            "issues": [
+                {"label": "Маса", "kind": "conflict", "values": ["5 т", "8 т"]},
+                {"label": "Виліт", "kind": "estimate", "values": ["12 м"]},
+                {"label": "Під’їзд", "kind": "unknown", "values": []},
+            ],
+            "next": {"field": "mass", "label": "Маса", "reason": "Від маси залежить підбір крана."},
+        }},
+        {"reply": "Записав, 8 т.", "brief": {
+            "stage": "ready",
+            "known": [{"label": "Маса", "value": "8 т"}],
+        }},
+    ])
+
+    def respond(route):
+        if route.request.method == "GET":
+            route.fulfill(json={"available": True, "mode": "local", "attachments": False})
+        else:
+            route.fulfill(json={"ok": True, "mode": "local", **next(responses)})
+
+    page.route("**/api/support", respond)
+    page.locator("[data-support-open]").first.click()
+    page.locator("#supportMessage").fill("Потрібен кран")
+    page.locator("#supportSend").click()
+    page.get_by_text("Яку масу брати для підбору?").wait_for(state="visible")
+    if mobile:
+        page.get_by_role("button", name="Завдання", exact=True).click()
+    assert "Полтава" in page.locator("#supportKnown").inner_text()
+    assert "Маса" not in page.locator("#supportKnown").inner_text()
+    assert "Суперечливі дані · 5 т / 8 т" in issues.inner_text()
+    assert "Орієнтовно · 12 м" in issues.inner_text()
+    assert "Невідомо" in issues.inner_text()
+    assert "Від маси залежить підбір крана." in page.locator("#supportNext").inner_text()
+    if mobile:
+        page.get_by_role("button", name="Розмова", exact=True).click()
+    page.locator("#supportMessage").fill("Точно 8 т")
+    page.locator("#supportSend").click()
+    page.get_by_text("Записав, 8 т.").wait_for(state="visible")
+    if mobile:
+        page.get_by_role("button", name="Завдання", exact=True).click()
+    assert "8 т" in page.locator("#supportKnown").inner_text()
+    assert not issues.is_visible() and not page.locator("#supportNext").is_visible()
+
+
+def test_visible_audio_transcript_is_not_replayed_as_typed_history(page_factory):
+    page = page_factory(1440, 900, reduced=True)
+    launcher = page.locator("[data-support-open]").first
+    assert launcher.count() == 1
+    posts = []
+
+    def respond(route):
+        if route.request.method == "GET":
+            route.fulfill(json={"available": True, "mode": "model", "provider": "OpenAI", "attachments": True})
+            return
+        posts.append(route.request.post_data_json)
+        response = {"ok": True, "mode": "model", "reply": "Звіряємо параметри."}
+        if len(posts) == 1:
+            response.update(reply="Дані отримано.", transcript="У записі може бути 12 м.",
+                            memory="separate-signed-evidence")
+        route.fulfill(json=response)
+
+    page.route("**/api/support", respond)
+    launcher.click()
+    page.locator("#supportMessage").fill("Додаю аудіо")
+    page.locator("#supportFile").set_input_files(
+        {"name": "recording.wav", "mimeType": "audio/wav", "buffer": b"synthetic"}
+    )
+    page.locator("#supportConsent").check()
+    page.locator("#supportSend").click()
+    page.get_by_text("У записі може бути 12 м.").wait_for(state="visible")
+    page.locator("#supportMessage").fill("Чи бракує даних?")
+    page.locator("#supportSend").click()
+    page.get_by_text("Звіряємо параметри.", exact=True).wait_for(state="visible")
+    assert len(posts) == 2
+    assert posts[1]["message"] == "Чи бракує даних?"
+    assert posts[1]["history"] == ["Додаю аудіо"]
+    assert posts[1]["memory"] == "separate-signed-evidence"

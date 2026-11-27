@@ -128,10 +128,13 @@ def test_voice_note_is_reconciled_with_task_and_in_memory_context():
     provider = FakeProvider(ids=("materials",), transcript="Потрібен щебінь, 12 м³, у Полтаві. " + "Деталі об’єкта. " * 73)
     mime = "audio/ogg"
     data = base64.b64encode(b"OggS" + b"00000000").decode()
-    code, reply = turn(Support(ROOT, provider), "", attachment={"mime": mime, "data": data}, consent=True)
+    service = Support(ROOT, provider)
+    code, reply = turn(service, "", attachment={"mime": mime, "data": data}, consent=True)
     assert code == 200 and reply["mode"] == "model" and reply["transcript"].startswith("Потрібен щебінь")
     assert len(reply["transcript"]) > 1000
-    assert reply["draft"]["place"] == "Полтаві" and "12 м³" in reply["draft"]["comment"]
+    assert reply["draft"]["place"] == "" and "12 м³" not in reply["draft"]["comment"]
+    assert {"label": "Обсяг", "kind": "estimate", "values": ["12 м³"]} in reply["brief"]["issues"]
+    assert service._memory.unpack(reply["memory"]).issues["quantity"].options[0].source == "transcript"
 
 
 @pytest.mark.parametrize("payload", [
