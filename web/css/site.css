@@ -115,9 +115,9 @@
   --t-calc-max: none;
   --t-calc-margin: 0;
   --t-quote-bg: #061230;
-  --t-total-bg: var(--grad-gold);
-  --t-total-color: transparent;
-  --t-total-font: 800 clamp(56px,6vw,100px)/.95 var(--f-d);
+
+
+
   --t-cine-bg: #040A16;
   --t-cine-font: 800 clamp(56px,11vw,196px)/.84 var(--f-d);
   --t-cine-case: uppercase;
@@ -235,9 +235,9 @@
   --t-calc-max: 1170px;
   --t-calc-margin: 0;
   --t-quote-bg: #14202A;
-  --t-total-bg: none;
-  --t-total-color: #FFFFFF;
-  --t-total-font: 600 clamp(48px,5.1vw,82px)/1 var(--f-b);
+
+
+
   --t-cine-bg: #0C131A;
   --t-cine-font: 600 clamp(52px,9vw,132px)/.98 var(--f-b);
   --t-cine-case: none;
@@ -478,18 +478,20 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .unit__status{padding:0 18px 12px;color:var(--ink-2);font-size:13px}
 .unit__status:empty{padding:0}
 .unit__price{font:700 clamp(19px,1.4vw,22px)/1 var(--f-d);color:var(--sky-800);font-variant-numeric:tabular-nums}
-.unit__price small{display:block;font:500 11px/1.2 var(--f-m);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-top:6px}
 .unit__price.is-neg{font:600 15px/1.2 var(--f-b);color:var(--ink-2)}
 .unit .btn{box-shadow:none}
 .unit .btn:hover{box-shadow:var(--sh-gold)}
-.park__note{margin:26px auto 0;text-align:center;color:var(--white);font-size:13px;max-width:70ch}
 
-/* ═══ S04 ЦІНА ═══ */
+/* ═══ S04 КОШТОРИС ═══ */
 .calc{display:grid;gap:0;border-radius:var(--t-calc-radius);overflow:hidden;box-shadow:var(--sh-card);background:var(--white);max-width:var(--t-calc-max);margin:var(--t-calc-margin)}
 @media (min-width:1024px){.calc{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
-.calc__form{padding:clamp(24px,3.4vw,48px);display:grid;gap:24px;align-content:start}
-.calc__selection{display:none}
-@media(max-width:699px){.calc__selection{display:block;color:var(--ink);font-size:13px;line-height:1.45;overflow-wrap:anywhere}}
+.calc__form{padding:clamp(20px,3.4vw,48px);display:grid;gap:18px;align-content:start}
+.brief__machine{display:none}
+@media(max-width:699px){.brief__machine{display:block;color:var(--ink-2);font-size:13px;line-height:1.4;overflow-wrap:anywhere}}
+.brief__flex{display:flex;align-items:flex-start;gap:10px;color:var(--ink-2);font-size:14px;cursor:pointer}
+.brief__flex input{width:18px;height:18px;margin:2px 0 0;flex:none;accent-color:var(--sky-800)}
+.brief__error{color:#B42318;font-size:14px;font-weight:600}
+.calc__form textarea{min-height:74px;resize:vertical}
 .field{display:grid;gap:8px;min-width:0}
 .field label,.field .lab{font:600 13px/1.25 var(--f-b);letter-spacing:.02em;text-transform:none;color:var(--ink-3)}
 .field input,.field select,.field textarea{width:100%;background:var(--sky-50);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--ink);font:400 16px/1.3 var(--f-b);transition:border-color .3s,box-shadow .3s,background .3s}
@@ -499,16 +501,15 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .field .err{display:none;font-size:13px;color:#B42318;font-weight:500}
 .field.is-err input,.field.is-err select,.field.is-err textarea{border-color:#D92D20;box-shadow:0 0 0 4px rgba(217,45,32,.12)}
 .field.is-err .err{display:block}
-.calc__quantities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end}
-.calc__quantities input{font-variant-numeric:tabular-nums}
-.calc__out{padding:clamp(24px,3.4vw,48px);display:grid;gap:18px;align-content:start;background:var(--t-quote-bg);color:var(--white)}
+.calc__out{padding:clamp(20px,3.4vw,48px);display:grid;gap:18px;align-content:start;background:var(--t-quote-bg);color:var(--white)}
+.brief__title{font:700 clamp(26px,3vw,42px)/1.08 var(--f-d);max-width:19ch;text-wrap:balance}
+.brief__terms{display:grid;margin:4px 0 0}
+.brief__terms div{display:grid;gap:5px;padding:15px 0;border-top:1px solid var(--line-w)}
+.brief__terms div:last-child{border-bottom:1px solid var(--line-w)}
+.brief__terms dt{font:700 15px/1.3 var(--f-b)}
+.brief__terms dd{margin:0;color:var(--white);font-size:14px;max-width:38ch}
 .calc__out .eyebrow{justify-content:flex-start;color:var(--white)}
 .calc__out .eyebrow::after{display:none}
-.total{font:var(--t-total-font);letter-spacing:.01em;font-variant-numeric:tabular-nums;background:var(--t-total-bg);-webkit-background-clip:text;background-clip:text;color:var(--t-total-color);-webkit-text-fill-color:var(--t-total-color);text-wrap:nowrap;filter:drop-shadow(0 3px 0 rgba(180,83,9,.55))}
-.total small{font-size:.3em;margin-left:.15em}
-.lines{display:grid;gap:10px;font:400 14px/1.4 var(--f-m);color:#F2F9FF;border-top:1px solid var(--line-w);padding-top:18px}
-.lines div{display:flex;justify-content:space-between;gap:16px}
-.lines b{color:var(--white);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
 .calc__note{font-size:13px;color:var(--white);max-width:60ch}
 .calc__cta{margin-top:6px}
 
@@ -525,8 +526,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .tile__body{padding:22px;display:flex;flex-direction:column;gap:12px}
 .tile__order{align-self:flex-start;margin-top:auto;min-height:44px}
 .tile__body h3{font:600 clamp(17px,1.2vw,20px)/1.22 var(--f-b);letter-spacing:-.01em;text-transform:none}
-.tile__price{font:700 20px/1 var(--f-d);color:var(--sky-800);font-variant-numeric:tabular-nums}
-.tile__price small{font:500 11px/1 var(--f-m);color:var(--ink-3);margin-left:6px;letter-spacing:.06em}
+.tile__price{font:600 15px/1.2 var(--f-b);color:var(--sky-800)}
 .tile__doc{font-size:12.5px;color:var(--ink-3);display:flex;gap:8px;align-items:center}
 .tile__doc::before{content:"";width:9px;height:11px;border:1.5px solid var(--gold);border-radius:2px;flex:none}
 .mats__note{display:grid;gap:8px;margin:28px auto 0;padding:22px 26px;border-radius:16px;background:var(--white);box-shadow:var(--sh-card);max-width:76ch;text-align:center;color:var(--ink-2);font-size:15px}
@@ -1003,9 +1003,7 @@ html:has(#passport[open]){overflow:hidden}
 .geo__leg{margin:0;font:600 12px/1 var(--f-m);letter-spacing:.14em;text-transform:uppercase;color:#FDC501}
 .geo__km{margin:10px 0 0;font:600 15px/1 var(--f-b);color:#A9B0B8}
 .geo__km b{font:800 clamp(44px,5vw,68px)/.9 var(--f-d);color:#FFFFFF;margin-right:6px}
-.geo__cost{margin:16px 0 0;display:grid;gap:6px;font:500 14px/1.35 var(--f-b);color:#ECECE7}
-.geo__cost div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid rgba(236,236,231,.16)}
-.geo__cost dd{margin:0;font-weight:700;color:#FFFFFF;white-space:nowrap}
+.geo__cost{margin:12px 0 0;font:500 14px/1.45 var(--f-b);color:#ECECE7}
 .geo__calc{margin-top:16px}
 .geo__src{margin:14px 0 0;font:400 11.5px/1.45 var(--f-b);color:#A9B0B8}
 @media (prefers-reduced-motion:reduce){.geo__info:not([hidden]){animation:none}}
@@ -1151,7 +1149,6 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn{background:transparent;color:#FDC501;box-shadow:inset 0 0 0 1.5px #FDC501}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit .btn:hover{background:#FDC501;color:#08142A;box-shadow:none}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .chip{font:600 12px/1 var(--f-b);letter-spacing:.05em;text-transform:uppercase;padding:11px 12px}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .park__note{color:#A9B9CF}
 
 /* ЦІНА */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc{box-shadow:0 0 0 1px rgba(8,20,42,.16)}
@@ -1159,14 +1156,13 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#08142A;box-shadow:0 0 0 3px rgba(253,197,1,.65)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field label,:is(:root[data-theme="sky"],:root:not([data-theme])) .field .lab{font:700 11.5px/1.25 var(--f-b);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:48px 48px;border-left:4px solid #FDC501}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .total{filter:none}
 
 /* МАТЕРІАЛИ */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile{box-shadow:inset 0 0 0 1px rgba(8,20,42,.14);position:relative}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile:hover{box-shadow:inset 0 0 0 1px #08142A}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__group{border-radius:0;left:0;top:0;background:#08142A;color:#FFFFFF;font-weight:700}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__body h3{font:800 clamp(18px,1.3vw,21px)/1.1 var(--f-d);text-transform:uppercase;letter-spacing:0}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__price{color:#08142A;font-size:24px}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .tile__price{color:#08142A}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .tile__doc::before{border-radius:0}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .mats__note{border-radius:0;box-shadow:inset 4px 0 0 #FDC501,0 0 0 1px rgba(8,20,42,.12);text-align:left}
 

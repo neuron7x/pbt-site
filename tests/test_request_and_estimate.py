@@ -1,37 +1,69 @@
-"""Точні значення розрахунку й збереження чернетки заявки."""
+"""Валідація підготовки запиту та збереження чернетки заявки."""
+
+import re
 
 import pytest
 from playwright.sync_api import expect
 
 
-def test_exact_estimate_inputs_and_request_handoff(page_factory):
+def test_material_intake_rejects_blank_and_submits_only_from_the_lead(page_factory):
     page = page_factory(390, 844, mobile=True, reduced=True)
-    page.select_option("#cMachine", "e-1")
-    hours = page.locator("#cHoursN")
-    distance = page.locator("#cKmN")
-    order = page.locator("#cOrder")
+    intake = page.locator("#calcForm")
+    kind = intake.locator("#cKind")
+    expect(kind).to_be_visible()
+    machine = intake.locator("#cMachine")
+    if machine.input_value() != "e-1":
+        machine.select_option("e-1")
+    kind.select_option("material")
+    expect(machine).to_be_disabled()
+    expect(machine).to_have_value("")
+    task = intake.locator("#cTask")
+    order = intake.locator("#cOrder")
+    subject = page.locator("#subject")
+    posted = []
+    page.on("request", lambda request: posted.append(request) if request.url.endswith("/api/lead") else None)
 
-    hours.fill("5000")
-    distance.fill("31")
-    expect(page.locator("#cOut")).to_have_attribute("data-total", str(5000 * 1350 + 31 * 100))
-    distance.fill("3000")
-    expect(page.locator("#cOut")).to_have_attribute("data-total", str(5000 * 1350 + 3000 * 100))
-    distance.fill("3001")
-    expect(order).to_be_disabled()
-    expect(page.locator("#cOut")).to_have_attribute("data-total", "")
-
-    page.select_option("#cMachine", "ak-1")
-    expect(distance).to_be_disabled()
-    expect(order).to_be_enabled()
-    expect(order).to_have_attribute("data-calc-km", "")
-    page.select_option("#cMachine", "e-1")
-    expect(order).to_be_disabled()
-
-    distance.fill("31")
+    task.fill("   ")
     order.click()
-    expect(page.locator("#hours")).to_have_value("5000")
-    expect(page.locator("#km")).to_have_value("31")
-    assert page.locator("#calcForm").get_by_role("slider").count() == 0
+    expect(intake.locator("#cError")).to_contain_text(re.compile(r"\S"))
+    expect(subject).to_have_value("")
+    assert not posted
+
+    prefix = "Щебінь 5–20 для дороги. "
+    boundary_task = prefix + "а" * (160 - len(prefix))
+    place = "Решетилівка, склад"
+    date = "2099-04-02"
+    detail = "12 т, розвантаження зліва"
+    task.fill(boundary_task)
+    intake.locator("#cPlace").fill(place)
+    intake.locator("#cDate").fill(date)
+    intake.locator("#cDetail").fill(detail)
+    intake.locator("#cFlexible").check()
+    page.locator("#comment").fill("Під’їзд через шлагбаум")
+    order.click()
+
+    expect(page.locator('#lead input[value="material"]')).to_be_checked()
+    expect(subject).to_have_value(boundary_task)
+    expect(page.locator("#place")).to_have_value(place)
+    expect(page.locator("#date")).to_have_value(date)
+    expect(page.locator("#hours")).to_have_value("")
+    expect(page.locator("#km")).to_have_value("")
+    comment = page.locator("#comment").input_value()
+    assert detail in comment and "Дата гнучка" in comment and "Під’їзд через шлагбаум" in comment
+    assert "Обрана машина" not in comment
+    contact = page.locator("#contact")
+    expect(contact).to_be_focused()
+    assert not posted
+
+    contact.fill("0675550317")
+    with page.expect_response(lambda response: response.url.endswith("/api/lead")) as receipt:
+        page.locator("#send").click()
+    assert receipt.value.status == 201, receipt.value.text()
+    assert len(posted) == 1
+    assert posted[0].post_data_json == {
+        "type": "material", "subject": boundary_task, "hours": "", "km": "", "place": place, "date": date,
+        "name": "", "method": "phone", "contact": "0675550317", "comment": comment, "website": "",
+    }
 
 
 @pytest.mark.parametrize("selector,mobile,open_menu", [

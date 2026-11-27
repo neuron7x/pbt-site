@@ -504,7 +504,6 @@
   const unitPurpose = u => /мульчер/i.test(u.name) ? 'Мульчування порослі.' :
     /дробарк/i.test(u.name) ? 'Дроблення бетону й каменю.' :
       (D.cats.find(c => c.id === u.cat) || {}).lead || 'Підберемо комплектацію під ваше завдання.';
-  const hasHourlyRate = u => u.price && u.unit === 'год';
   function renderPark() {
     const grid = $('#park'), chips = $('#chips');
     const counts = {};
@@ -522,9 +521,9 @@
           : el('p', { class: 'unit__purpose' }, unitPurpose(u))),
       el('div', { class: 'unit__foot' },
         el('div', null,
-          el('p', { class: u.price ? 'unit__price' : 'unit__price is-neg' }, u.price ? [`${fmt(u.price)} `, el('small', null, `грн/${u.unit}`)] : 'договірна'),
-          hasHourlyRate(u) ? el('a', { class: 'unit__estimate', href: '#cina', 'data-estimate-machine': u.id,
-            'aria-label': `Розрахувати зміну: ${u.name}` }, 'Розрахувати') : null),
+          el('p', { class: 'unit__price is-neg' }, 'Договірна'),
+          el('a', { class: 'unit__estimate', href: '#cina', 'data-estimate-machine': u.id,
+            'aria-label': `Запитати кошторис для ${u.name}` }, 'Кошторис')),
         el('button', { class: 'btn btn--sm', type: 'button', 'data-req': u.cat === 'trans' ? 'transport' : 'rent', 'data-subject': u.name }, 'У заявку')),
       el('p', { class: 'unit__status', role: 'status' }))));
     const reveal1 = b => { if (chips.scrollWidth > chips.clientWidth + 1) b.scrollIntoView({ inline: 'center', block: 'nearest', behavior: motion() ? 'smooth' : 'auto' }); };
@@ -605,7 +604,7 @@
       angle.value = '38'; angle.oninput = upd; upd();
     }
     const rows = [['Найменування', u.name], ['Клас', r.cls]].concat((u.specs || []).map(x => [x.k, x.v]))
-      .concat([['Ставка', u.price ? `${fmt(u.price)} грн/${u.unit}` : 'договірна'], ['Ставки станом на', D.priceDate.split('-').reverse().join('.')], ['Аркуш', `${n} з ${total}`], ['Виконавець', 'ПЛЕЙНБУД · Полтава']]);
+      .concat([['Вартість', 'Договірна'], ['Аркуш', `${n} з ${total}`], ['Виконавець', 'ПЛЕЙНБУД · Полтава']]);
     $('#passStamp').replaceChildren(...rows.map(([k, v]) => el('tr', null, el('th', { scope: 'row' }, k), el('td', null, v))));
     const req = $('#passReq'); req.dataset.req = u.cat === 'trans' ? 'transport' : 'rent'; req.dataset.subject = u.name;
     pass.showModal();
@@ -628,91 +627,93 @@
 
   /* ───── КАЛЬКУЛЯТОР ЗМІНИ ───── */
   // Єдина чиста модель: UI читає результат, але не обчислює тариф.
-  const quoteModel = window.PBTQuote;
-  if (!quoteModel || typeof quoteModel.quote !== 'function')
-    throw new Error('Відсутнє ядро кошторису PBTQuote');
+  const briefTasks = {
+    rent: ['Що треба зробити', 'Наприклад, викопати траншею', 'Обсяг і доступ до об’єкта', 'Наприклад, 60 м траншеї, вузький заїзд'],
+    material: ['Який матеріал потрібен', 'Наприклад, гранітний щебінь 5–20 мм', 'Обсяг і умови розвантаження', 'Наприклад, 20 т, самоскид має заїхати у двір'],
+    transport: ['Що та куди потрібно перевезти', 'Наприклад, екскаватор з Полтави до Миргорода', 'Маса, габарити й умови завантаження', 'Наприклад, 22 т, техніка заїжджає на трал самостійно'],
+    other: ['Опишіть завдання', 'Наприклад, підготувати ділянку до будівництва', 'Обсяг, етапи й обмеження', 'Наприклад, корчування, планування, вивезення ґрунту']
+  };
+  const fleetRequestKind = u => u.cat === 'trans' ? 'transport' : 'rent';
 
-  let totalShown = 0, totalAnim = 0;
-  function tweenTotal(out, to) {
-    const from = totalShown, t0 = performance.now(), id = ++totalAnim;
-    const show = v => fill(out, `${fmt(v)}\u00a0`, el('small', null, 'грн'));
-    if (!motion()) { totalShown = to; show(to); return; }
-    const step = t => { if (id !== totalAnim) return; const k = motion() ? ease(clamp((t - t0) / 520, 0, 1)) : 1; totalShown = from + (to - from) * k; show(totalShown); if (k < 1) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  }
-  function renderCalc() {
-    const sel = $('#cMachine'), hoursInput = $('#cHoursN'), distanceInput = $('#cKmN');
-    // Hashed CSP forbids inline handlers; keyboard Enter must not submit this form.
-    $('#calcForm').addEventListener('submit', event => event.preventDefault());
-    const priced = D.fleet.filter(hasHourlyRate);
-    fill(sel, priced.map(u => el('option', { value: u.id }, `${u.name} — ${fmt(u.price)} грн/год`)));
-    sel.disabled = !priced.length;
-    hoursInput.addEventListener('input', calc);
-    distanceInput.addEventListener('input', calc);
-    sel.addEventListener('change', calc);
+  function renderBrief() {
+    const brief = $('#calcForm'), kind = $('#cKind'), machine = $('#cMachine');
+    const task = $('#cTask'), place = $('#cPlace'), date = $('#cDate'), detail = $('#cDetail'), error = $('#cError');
+    let route = null;
+    function syncBrief() {
+      const [taskLabel, taskHint, detailLabel, detailHint] = briefTasks[kind.value];
+      $('#cTaskLabel').textContent = taskLabel;
+      task.placeholder = taskHint;
+      $('#cDetailLabel').textContent = detailLabel;
+      detail.placeholder = detailHint;
+      const units = D.fleet.filter(u => fleetRequestKind(u) === kind.value);
+      $('#cMachineField').hidden = !units.length;
+      machine.disabled = !units.length;
+      const selected = machine.value;
+      fill(machine, el('option', { value: '' }, 'Потрібна порада'), units.map(u => el('option', { value: u.id }, u.name)));
+      machine.value = units.some(u => u.id === selected) ? selected : '';
+      showMachine();
+    }
+    function showMachine() {
+      const summary = $('#cMachineSummary');
+      summary.hidden = !machine.value;
+      summary.textContent = machine.value ? machine.selectedOptions[0].textContent : '';
+    }
+    function openBrief() {
+      navigateTo('#cina');
+      focusRequest(task);
+    }
+    function showError(message) {
+      error.textContent = message;
+      error.hidden = !message;
+    }
+    brief.addEventListener('input', () => showError(''));
+    kind.addEventListener('change', syncBrief);
+    machine.addEventListener('change', showMachine);
+    date.min = kyivToday();
+    date.addEventListener('focus', () => { date.min = kyivToday(); });
     $('#park').addEventListener('click', event => {
       const link = event.target.closest('[data-estimate-machine]');
       if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      const id = link.dataset.estimateMachine;
-      if (!priced.some(unit => unit.id === id)) return;
+      const unit = D.fleet.find(u => u.id === link.dataset.estimateMachine);
+      if (!unit) return;
       event.preventDefault();
-      sel.value = id;
-      calc();
-      $('#cina').scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'start' });
-      sel.focus({ preventScroll: true });
+      kind.value = fleetRequestKind(unit);
+      syncBrief();
+      machine.value = unit.id;
+      showMachine();
+      openBrief();
     });
-    function calc() {
-      const u = priced.find(x => x.id === sel.value) || priced[0];
-      $('#cMachineSummary').textContent = sel.selectedOptions[0]?.textContent || '';
-      const crane = u?.cat === 'crane';
-      distanceInput.disabled = crane;
-      const hours = hoursInput.valueAsNumber, kmv = crane ? 0 : distanceInput.valueAsNumber;
-      const hoursValid = hoursInput.validity.valid;
-      const kmValid = crane || distanceInput.validity.valid;
-      if (!hoursValid || !kmValid) {
-        totalAnim += 1; totalShown = 0;
-        $('#cTotal').textContent = '—';
-        $('#cLines').textContent = !hoursValid ? 'Вкажіть ціле число годин від 1 до 5000.' : 'Вкажіть цілу відстань від 0 до 3000 км.';
-        $('#cOut').dataset.total = ''; $('#cOut').dataset.estimate = 'invalid';
-        $('#cOrder').disabled = true;
+    $('#geoInfo').addEventListener('click', event => {
+      const button = event.target.closest('.geo__calc');
+      if (!button) return;
+      const city = button.dataset.city;
+      const km = button.dataset.km;
+      place.value = city;
+      route = km ? { city, text: `Орієнтир маршруту ${D.routes.from} → ${city}: ${fmt(Number(km))} км` } : null;
+      openBrief();
+    });
+    place.addEventListener('input', () => { route = null; });
+    brief.addEventListener('submit', event => {
+      event.preventDefault();
+      const subject = task.value.trim();
+      const startDate = V.date(date.value);
+      if (subject.length < 2 || startDate === null) {
+        showError(subject.length < 2 ? 'Опишіть завдання кількома словами.' : 'Оберіть сьогоднішню або пізнішу дату.');
+        (subject.length < 2 ? task : date).focus();
         return;
       }
-      const estimate = quoteModel.quote(u, D.trailers, hours, kmv);
-      if (!estimate) {
-        // Невалідна модель скасовує tween і стирає ПОПЕРЕДНЮ суму.
-        // Інакше стара цифра лишалась видимою при коректному fail-closed.
-        totalAnim += 1;
-        totalShown = 0;
-        $('#cTotal').textContent = '—';
-        $('#cLines').textContent = 'Розрахунок тимчасово недоступний. Уточніть вартість подачі.';
-        $('#cOut').dataset.total = '';
-        $('#cOut').dataset.estimate = 'invalid';
-        $('#cOrder').disabled = true;
-        return;
-      }
-      $('#cOrder').disabled = false;
-      const needsTrailer = !crane && kmv > 0;
-      const tr = estimate.trailer, transportKnown = estimate.status === 'complete';
-      const rent = estimate.rental, deliv = estimate.delivery, total = estimate.displayed;
-      tweenTotal($('#cTotal'), total);
-      const line = (label, value) => el('div', null, el('span', null, label), el('b', null, value));
-      const deliveryLine = crane ? line('Подача автокрана', 'уточнюється')
-        : !needsTrailer ? line('Подача тралом', 'не заявлена')
-          : tr ? line(`Подача тралом ${tr.name.replace(/^Трал\s*/, '')}: ${kmv} км × ${tr.rate} грн`, `${fmt(deliv)} грн`)
-            : line('Подача тралом: маса невідома або поза діапазоном', 'уточнюється');
-      fill($('#cLines'), line(`Оренда: ${hours} год × ${fmt(u.price)} грн`, `${fmt(rent)} грн`), deliveryLine,
-        line(transportKnown ? 'Разом, орієнтовно' : 'Оренда без подачі', `${fmt(total)} грн`));
-      $('#cOrder').dataset.subject = `${u.name} — ${hours} год${crane ? '' : `, подача ${kmv} км${transportKnown ? '' : ' (ціну уточнити)'}`}`;
-      $('#cOrder').dataset.calcHours = String(hours);
-      $('#cOrder').dataset.calcKm = crane ? '' : String(kmv);
-      $('#cOut').dataset.total = transportKnown ? String(total) : '';
-      $('#cOut').dataset.estimate = transportKnown ? 'with-delivery' : 'rent-only';
-    }
-    calc(); $('#calcUnavailable').hidden = true;
-    window.PBTcalc = (id, hours, kmv) => {
-      const u = priced.find(x => x.id === id);
-      return quoteModel.legacyTotal(u, D.trailers, hours, kmv);
-    };
+      const city = place.value.trim();
+      const info = [
+        machine.value && `Обрана машина: ${machine.selectedOptions[0].textContent}`,
+        detail.value.trim(),
+        route && route.city === city && route.text,
+        $('#cFlexible').checked && 'Дата гнучка, якщо це зменшить вартість.'
+      ].filter(Boolean).join('\n');
+      showError(transferBrief(kind.value, { subject, place: city, date: startDate }, info));
+    });
+    syncBrief();
+    $('#calcUnavailable').hidden = true;
+    $('#cOrder').disabled = false;
   }
 
   /* ───── МАТЕРІАЛИ, ДОКАЗ, ГЕОГРАФІЯ ───── */
@@ -720,7 +721,7 @@
   function renderMats() {
     fill($('#mats'), el('div', { class: 'tiles' }, D.materials.map((m, i) => el('article', { class: 'tile rv', style: { '--d': `${(i % 4) * 80}ms` } },
       el('figure', null, el('img', { src: m.img, srcset: x2(m.img), alt: m.name, width: 639, height: 396, loading: 'lazy', decoding: 'async' }), el('span', { class: 'tile__group' }, m.group)),
-      el('div', { class: 'tile__body' }, el('h3', null, m.name), el('p', { class: 'tile__price' }, `${fmt(m.price)}\u00a0`, el('small', null, `грн/${m.unit}`)),
+      el('div', { class: 'tile__body' }, el('h3', null, m.name), el('p', { class: 'tile__price' }, 'Договірна ціна'),
         el('p', { class: 'tile__doc' }, `У каталозі: ${m.doc}`), el('button', { class: 'btn btn--sm tile__order', type: 'button', 'data-req': 'material', 'data-subject': m.name }, 'У заявку'))))));
   }
   function renderProof() {
@@ -796,7 +797,7 @@
     } else load();
   }
 
-  /* ───── МАРШРУТИ: область → відстань дорогою → ціна подачі тралом → калькулятор ───── */
+  /* ───── МАРШРУТИ ───── */
   function initRoutes(svg, list, home) {
     const info = $('#geoInfo'), R = D.routes && D.routes.to; if (!info || !R) return;
     const geo = info.closest('.geo');
@@ -808,29 +809,22 @@
       geo.classList.toggle('has-sel', !!r);
       const kids = [];
       if (isHome) {
-        kids.push(el('p', { class: 'geo__leg' }, 'Полтава · база'), el('p', { class: 'geo__km' }, 'від 0 км'),
-          el('p', { class: 'geo__cost' }, 'Можливість і ціну подачі по області уточнюємо за запитом.'));
+        kids.push(el('p', { class: 'geo__leg' }, 'Полтава · база'),
+          el('p', { class: 'geo__cost' }, 'Можливість виїзду та вартість подачі погоджуємо за адресою.'),
+          el('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-city': D.routes.from }, 'Використати місто в запиті'));
       } else if (r) {
-        const t = (D.trailers || []).filter(x => Number.isSafeInteger(x.rate) && x.rate > 0).sort((a, b) => a.maxT - b.maxT);
         kids.push(el('p', { class: 'geo__leg' }, `${D.routes.from} → ${r.city}`),
           el('p', { class: 'geo__km' }, [el('b', null, fmt(r.km)), ' км дорогою']),
-          el('dl', { class: 'geo__cost' }, t.map(x => el('div', null, [el('dt', null, `${x.name}, ${fmt(x.rate)} грн/км`), el('dd', null, `≈ ${fmt(x.rate * r.km)} грн`)]))),
-          el('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-km': String(r.km) }, `Підставити ${r.km} км у калькулятор`));
+          el('p', { class: 'geo__cost' }, 'Орієнтир до міста. Маршрут до об’єкта та вартість подачі погоджуємо за адресою.'),
+          el('button', { class: 'btn btn--sm geo__calc', type: 'button', 'data-city': r.city, 'data-km': String(r.km) }, 'Використати місто в запиті'),
+          el('p', { class: 'geo__src' }, `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}.`));
       }
-      kids.push(el('p', { class: 'geo__src' }, `Відстань: ${D.routes.source}, ${D.routes.date.split('-').reverse().join('.')}. Архівні ставки трала від ${D.priceDate.split('-').reverse().join('.')}. Актуальні умови уточнюються.`));
       info.replaceChildren(...kids);
       info.hidden = false;
     }
     list.addEventListener('click', e => { const b = e.target.closest('.geo__pick'); if (b) pick(b.dataset.ua); });
     svg.addEventListener('mapready', () => { const b = $('.geo__pick[aria-pressed="true"]', list); if (b) pick(b.dataset.ua); });
     svg.addEventListener('click', e => { const p = e.target.closest('.obl'); if (p && p.dataset.ua && (R[p.dataset.ua] || p.dataset.ua === home)) pick(p.dataset.ua); });
-    info.addEventListener('click', e => {
-      const b = e.target.closest('.geo__calc'); if (!b) return;
-      const n = $('#cKmN'), cin = $('#cina'); if (!n || !cin) return;
-      n.value = b.dataset.km; n.dispatchEvent(new Event('input', { bubbles: true }));
-      cin.scrollIntoView({ behavior: motion() ? 'smooth' : 'auto', block: 'start' });
-      (n.disabled ? $('#cMachine') : n).focus({ preventScroll: true });   // автокран їде своїм ходом: подача не тралом — обрати іншу техніку
-    });
   }
 
   /* External links from configuration: https only, parsed by the platform, not by a prefix check. */
@@ -948,28 +942,32 @@
   const form = $('#lead'), done = $('#done'), fallback = $('#fallback'), msg = $('#formMsg');
   const method = $('#method'), contact = $('#contact');
   const offlineLead = !!window.PBT_BUNDLE || location.protocol === 'file:';
-  // Значення калькулятора належать лише вибраній зміні. Ручний ввід має пріоритет.
-  const calcValues = new Map();
+  // Підставлені дані можна замінити вручну або повернути до попередньої чернетки.
+  const draftValues = new Map();
   const hoursByType = new Map();
   const subjectsByType = new Map();
   let currentRequestType = form.querySelector('input[name="type"]:checked')?.value || 'rent';
-  ['subject', 'hours', 'km'].forEach(name => $(`#${name}`).addEventListener('input', () => calcValues.delete(name)));
-  function releaseCalcValues() {
-    calcValues.forEach((saved, name) => {
+  ['subject', 'place', 'date', 'comment'].forEach(name => $(`#${name}`).addEventListener('input', () => draftValues.delete(name)));
+  function releaseDraftValues() {
+    draftValues.forEach((saved, name) => {
       const field = $(`#${name}`);
       if (field.value === saved.automatic) field.value = saved.previous;
     });
-    calcValues.clear();
+    draftValues.clear();
   }
-  function fillCalcValue(name, value) {
-    const field = $(`#${name}`), saved = calcValues.get(name);
-    const previous = saved && field.value === saved.automatic ? saved.previous : field.value;
-    field.value = value;
-    calcValues.set(name, { previous, automatic: value });
+  function draftPrevious(name) {
+    const field = $(`#${name}`), saved = draftValues.get(name);
+    return saved && field.value === saved.automatic ? saved.previous : field.value;
+  }
+  function fillDraftValue(name, value) {
+    if (!value) return;
+    const previous = draftPrevious(name);
+    $(`#${name}`).value = value;
+    draftValues.set(name, { previous, automatic: value });
   }
   function switchRequestType(next) {
     if (!next || next === currentRequestType) return;
-    releaseCalcValues();
+    releaseDraftValues();
     hoursByType.set(currentRequestType, $('#hours').value);
     subjectsByType.set(currentRequestType, $('#subject').value);
     $('#hours').value = hoursByType.get(next) || '';
@@ -986,7 +984,7 @@
   method.addEventListener('change', syncContactMode);
   form.addEventListener('change', e => { if (e.target.name === 'type') switchRequestType(e.target.value); });
   form.addEventListener('reset', () => {
-    calcValues.clear(); hoursByType.clear(); subjectsByType.clear();
+    draftValues.clear(); hoursByType.clear(); subjectsByType.clear();
     queueMicrotask(() => {
       currentRequestType = form.querySelector('input[name="type"]:checked')?.value || 'rent';
       syncContactMode();
@@ -1122,33 +1120,58 @@
     $('#send').focus();
   });
 
+  function navigateTo(hash) {
+    if (location.hash !== hash && /^(https?:|file:)$/.test(location.protocol)) {
+      history.pushState(history.state, '', hash);
+    }
+  }
+  function beginRequest(type, freshBrief = false) {
+    if (done.classList.contains('is-on')) {
+      if (freshBrief) {
+        const identity = [$('#name').value, method.value, contact.value];
+        form.reset();
+        [$('#name').value, method.value, contact.value] = identity;
+      }
+      idemHash = ''; idemKey = null; pendingClear();
+    }
+    done.classList.remove('is-on');
+    fallback.classList.remove('is-on');
+    form.hidden = false;
+    releaseDraftValues();
+    switchRequestType(type);
+    const radio = form.querySelector(`input[name="type"][value="${type}"]`);
+    if (radio) radio.checked = true;
+  }
+  function transferBrief(type, fields, info) {
+    if ($('#send').disabled) return 'Дочекайтеся відповіді на попередню заявку.';
+    const previous = done.classList.contains('is-on') ? '' : draftPrevious('comment').trim();
+    const comment = [info, previous].filter(Boolean).join('\n\n');
+    if (comment.length > $('#comment').maxLength) {
+      return 'Коментар заявки разом із новими деталями задовгий. Скоротіть його у формі заявки.';
+    }
+    beginRequest(type, true);
+    Object.entries({ ...fields, comment }).forEach(([name, value]) => {
+      fillDraftValue(name, value);
+      setErr(name, '');
+    });
+    navigateTo('#zapyt');
+    focusRequest($('#contact'));
+    return '';
+  }
+
   document.addEventListener('click', e => {
     const b = /** @type {HTMLElement} */ (e.target).closest('[data-req], [data-request-nav]'); if (!(b instanceof HTMLElement)) return;
     if (b.tagName === 'A' && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) return;
     e.preventDefault();
-    if (b.getAttribute('href') === '#zapyt' && location.hash !== '#zapyt' && /^(https?:|file:)$/.test(location.protocol)) {
-      history.pushState(history.state, '', '#zapyt');
-    }
+    if (b.getAttribute('href') === '#zapyt') navigateTo('#zapyt');
     if (b.hasAttribute('data-request-nav')) {
       focusRequest(form.hidden ? (done.classList.contains('is-on') ? done : fallback) : $('#subject'));
       return;
     }
-    const t = b.dataset.req, s = b.dataset.subject;
-    // Після підтвердженого успіху CTA означає новий намір; після обриву — безпечний повтор.
-    if (done.classList.contains('is-on')) { idemHash = ''; idemKey = null; pendingClear(); }
-    done.classList.remove('is-on'); fallback.classList.remove('is-on'); form.hidden = false;
-    if (b.id !== 'cOrder') releaseCalcValues();
-    switchRequestType(t);
-    const radio = form.querySelector(`input[name="type"][value="${t}"]`); if (radio) radio.checked = true;
-    if (s) {
-      if (b.id === 'cOrder') fillCalcValue('subject', s);
-      else $('#subject').value = s;
+    beginRequest(b.dataset.req);
+    if (b.dataset.subject) {
+      $('#subject').value = b.dataset.subject;
       setErr('subject', '');
-    }
-    if (b.id === 'cOrder') {
-      fillCalcValue('hours', b.dataset.calcHours || '');
-      fillCalcValue('km', b.dataset.calcKm || '');
-      setErr('hours', ''); setErr('km', '');
     }
     focusRequest($('#subject'));
   });
@@ -1302,7 +1325,7 @@
   function start() {
     profile();
     applyTheme(doc.dataset.theme, false);
-    renderPark(); renderJobs(); renderCalc(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
+    renderPark(); renderJobs(); renderBrief(); renderMats(); renderProof(); renderCine(); renderGeo(); loadBusiness();
     reveal();
     measure(); render();
     /* відео героя — після load і першого простою: до того кадр тримає постер, а 3–5 МБ не конкурують зі шрифтами й скриптами */
