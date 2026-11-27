@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
+import tools.data_build as data_build        # прямий імпорт нового модуля: на базі без нього тести «заблоковані новим модулем»
+
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / 'tools'))
-import data_build  # noqa: E402
 
 SOURCES = ('config/business.json', 'data/catalog.json', 'content/site.json')
 
