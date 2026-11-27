@@ -20,6 +20,7 @@
     "../../web/js/blueprint.js",
     "../../web/js/dom.js",
     "../../web/js/physics.js",
+    "../../web/js/clock.js",
     "../../web/js/site.js"
   ]
 }

@@ -38,7 +38,9 @@ const context = {spark, ctx: null, dots: [{stale: true}], cW: 0, cH: 0, cLast: 0
   getComputedStyle: () => ({display: mode === 'hidden' ? 'none' : 'block'}), devicePixelRatio: 2,
   mobileLayout: () => mode === 'mobile', motion: () => true, quality: () => 'full', heroP: 0,
   heroInView: () => mode !== 'offscreen',
-  document: {hidden: false}, requestAnimationFrame: () => {frames++;}};
+  document: {hidden: false}, requestAnimationFrame: () => {frames++;},
+  // цикл іскор просить кадр через єдиний планувальник (web/js/clock.js); лічимо його запити, а не кадри браузера
+  clock: {request: () => {frames++; return frames;}, cancel: () => {}}};
 vm.runInNewContext(functions.join('\n') + '\n' + wake, context);
 let error = null;
 try {vm.runInNewContext('sparkSize(); sparkWake(); sparkLoop(100);', context);}

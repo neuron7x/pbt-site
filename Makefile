@@ -40,7 +40,7 @@ accept:         ## engineering acceptance from real artifact ZIPs: make accept E
 
 js:             ## статичний аналіз JS: ESLint (recommended + Mozilla no-unsanitized), TypeScript checkJs strict, property-тести ядер
 	cd tools/js && npm ci --ignore-scripts --no-audit --no-fund && npm audit signatures && npm run check
-	node --test tests/quote_engine.test.cjs tests/blueprint_geometry.test.cjs tests/dom_factory.test.cjs tests/motion_physics.test.cjs
+	node --test tests/quote_engine.test.cjs tests/blueprint_geometry.test.cjs tests/dom_factory.test.cjs tests/motion_physics.test.cjs tests/frame_clock.test.cjs
 
 sky:            ## палітра «небо над Полтавою і вода»: блок у site.css мусить відповідати моделі tools/sky.py (fail-closed)
 	$(PY) tools/sky.py --check
