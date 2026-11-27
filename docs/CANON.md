@@ -83,10 +83,11 @@
 | G-6 | Збірка не залежить від локалі, часового поясу й hash seed | `tests/test_reproducibility.py` |
 | G-7 | Медіа не перевищують бюджет ваги; хеші закріплено | `tests/test_media_budget.py`, `tests/test_hero_media_integrity.py` |
 | G-8 | Дані сторінки `web/js/data.js` байт-у-байт дорівнюють виходу `tools/data_build.py` із трьох джерел; невідомий ключ джерела — помилка | `make data`, `tests/test_data_build.py` |
+| G-9 | Реквізити у `web/index.html` (телефон, пошта, адреса, ЄДРПОУ, JSON-LD) дорівнюють виходу `tools/contacts_build.py` із `config/business.json`; копія поза слотом — помилка | `make contacts`, `tests/test_contacts_build.py` |
 
 ## Розділ V. Гейти
 
-1. **Локальний гейт** — `make gate`: `js` → `sky` → `crane` → `data` → `test` → `bundle` → `media-audit`, після чого дерево мусить бути чистим.
+1. **Локальний гейт** — `make gate`: `js` → `sky` → `crane` → `data` → `contacts` → `test` → `bundle` → `media-audit`, після чого дерево мусить бути чистим.
 2. **Незалежний CI** — сім робочих процесів у `.github/workflows/`: якість PR (`pr-quality.yml`), транспорт
    (`runtime-hardening.yml`), 30-хвилинний прогін (`runtime-soak.yml`), вразливості (`security-assurance.yml`), візуальні докази
    (`visual-evidence.yml`), відповідність медіа (`artifact-fit-trial.yml`), закриття доказів (`evidence-closure.yml`).

@@ -143,6 +143,66 @@
    ]
   },
   {
+   "id": "M-CONTACTS-check-ignores-drift",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/contacts_build.py",
+     "find": "        if current != text:\n",
+     "replace": "        if False:\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_contacts_build.py::test_changing_the_phone_in_one_file_changes_every_occurrence"
+   ],
+   "note": "--check завжди зелений: розмітка може відстати від джерела непомітно."
+  },
+  {
+   "id": "M-CONTACTS-copy-outside-slots-passes",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/contacts_build.py",
+     "find": "    if extra:\n",
+     "replace": "    if False:\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_contacts_build.py::test_a_hardcoded_copy_outside_the_slots_fails_closed"
+   ],
+   "note": "Зайве входження чинного номера поза слотом проходить перевірку."
+  },
+  {
+   "id": "M-CONTACTS-json-ld-phone-stale",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/contacts_build.py",
+     "find": "'telephone': phones, ",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_contacts_build.py::test_changing_the_phone_in_one_file_changes_every_occurrence"
+   ],
+   "note": "Телефон у JSON-LD не береться з джерела."
+  },
+  {
+   "id": "M-CONTACTS-phone-hardcoded-in-one-place",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/contacts_build.py",
+     "find": "        ('phone-channel', re.compile(r'(<span>Телефон</span><b>)([^<]*)(?=</b>)'), shown_phone(phone)),",
+     "replace": "        ('phone-channel', re.compile(r'(<span>Телефон</span><b>)([^<]*)(?=</b>)'), '067 555 03 17'),"
+    }
+   ],
+   "oracle": [
+    "tests/test_contacts_build.py::test_changing_the_phone_in_one_file_changes_every_occurrence"
+   ],
+   "note": "Одне місце з телефоном жорстко прописане: зміна номера в джерелі його не досягає."
+  },
+  {
    "id": "M-DATA-check-ignores-drift",
    "task": "WEB-07.T",
    "edits": [

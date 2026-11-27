@@ -23,7 +23,7 @@ def test_every_path_named_in_the_canon_and_bibliography_exists():
 def test_every_make_target_named_in_the_canon_exists():
     makefile = (ROOT / 'Makefile').read_text(encoding='utf-8')
     targets = set(re.findall(r'^([a-z][a-z-]*):', makefile, re.M))
-    named = set(re.findall(r'`make ([a-z-]+)`', CANON)) | set(re.findall(r'`(js|sky|crane|data|test|bundle|media-audit)`', CANON))
+    named = set(re.findall(r'`make ([a-z-]+)`', CANON)) | set(re.findall(r'`(js|sky|crane|data|contacts|test|bundle|media-audit)`', CANON))
     assert {'gate', 'sky', 'crane'} <= named
     assert named <= targets, named - targets
     gate = re.search(r'^gate:([^#\n]*)', makefile, re.M).group(1).split()
@@ -33,7 +33,7 @@ def test_every_make_target_named_in_the_canon_exists():
 
 def test_every_invariant_row_names_a_check_that_exists_and_is_collected():
     rows = re.findall(r'^\| ([DUG]-\d+) \| (.+?) \| (.+?) \|$', CANON, re.M)
-    assert len(rows) == 21, len(rows)
+    assert len(rows) == 22, len(rows)
     assert len({r[0] for r in rows}) == len(rows)
     for ident, _, checks in rows:
         files = re.findall(r'`(tests/test_[a-z0-9_]+\.py)`', checks)

@@ -51,7 +51,10 @@ crane:          ## кран-глибиномір: канат, гак і кадр
 data:           ## web/js/data.js мусить дорівнювати виходу tools/data_build.py із config/business.json, data/catalog.json, content/site.json (fail-closed)
 	$(PY) tools/data_build.py --check
 
-gate: js sky crane data test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
+contacts:       ## реквізити у web/index.html (tel:, пошта, адреса, ЄДРПОУ, JSON-LD) мусять дорівнювати виходу tools/contacts_build.py із config/business.json (fail-closed)
+	$(PY) tools/contacts_build.py --check
+
+gate: js sky crane data contacts test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
 	@status="$$(git status --porcelain)"; test -z "$$status" || { echo "дерево брудне після гейта"; printf '%s\n' "$$status"; exit 1; }; echo "GATE PASS"
 
 clean:
