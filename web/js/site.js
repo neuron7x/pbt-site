@@ -77,19 +77,19 @@
     if (D.videoData || D.heroSD || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
     return innerWidth * (devicePixelRatio || 1) >= 1600;
   }
-  /** @type {WeakMap<HTMLVideoElement, EventListener>} */
+  /** @type {WeakMap<HTMLVideoElement, {position: number, seek: EventListener}>} */
   const pendingVideoSeeks = new WeakMap();
   /** @param {HTMLVideoElement} video @param {number} position */
   function restoreVideoPosition(video, position) {
     const previous = pendingVideoSeeks.get(video);
-    if (previous) video.removeEventListener('loadedmetadata', previous);
+    if (previous) video.removeEventListener('loadedmetadata', previous.seek);
     pendingVideoSeeks.delete(video);
     if (position <= 0) return;
     const seek = () => {
       pendingVideoSeeks.delete(video);
       if (Number.isFinite(video.duration)) video.currentTime = Math.min(position, Math.max(0, video.duration - .05));
     };
-    pendingVideoSeeks.set(video, seek);
+    pendingVideoSeeks.set(video, { position, seek });
     video.addEventListener('loadedmetadata', seek, { once: true });
   }
   /** @param {HTMLVideoElement} video @param {string} name @param {{ tall?: boolean }} [opt] */
@@ -102,7 +102,7 @@
     // Бандл без нового формату лишає доступний кліп або постер.
     if (D.videoData && !D.videoData[n + '.mp4']) return !!video.dataset.ready;
     const replacing = !!video.dataset.ready;
-    const position = video.currentTime;
+    const position = replacing ? (pendingVideoSeeks.get(video)?.position ?? video.currentTime) : 0;
     if (replacing) {
       video.pause();
       video.removeAttribute('src');
@@ -1200,6 +1200,7 @@
     };
     const prof = () => (mobileLayout() && innerHeight > innerWidth ? 'm' : 'w');
     let activeProfile = prof();
+    /** @type {WeakMap<HTMLVideoElement, {position: number}>} */
     const clipRequests = new WeakMap();
     /* Кліпи «Масштабу» у WebM — VP9 Profile 1 (4:4:4): майже ніде не декодується апаратно. W3C Media Capabilities:
        на дотику WebM лише якщо декодування енергоефективне, інакше апаратний H.264 того самого кадру; на ПК — як і досі,
@@ -1218,8 +1219,10 @@
       if (!cineInViewport() || !videoAllowed()) return;
       const p = prof(), n = id + '-' + p;
       if (v.dataset.clip === n) return;
-      const position = v.dataset.clip?.startsWith(id + '-') ? v.currentTime : 0;
-      const request = {};
+      const interruptedPosition = pendingVideoSeeks.get(v)?.position;
+      const loadingPosition = v.readyState === 0 ? clipRequests.get(v)?.position : undefined;
+      const position = v.dataset.clip?.startsWith(id + '-') ? (interruptedPosition ?? loadingPosition ?? v.currentTime) : 0;
+      const request = { position };
       clipRequests.set(v, request);
       v.dataset.clip = n; v.removeAttribute('src'); v.replaceChildren();
       v.poster = C_BASE + n + '.webp';
