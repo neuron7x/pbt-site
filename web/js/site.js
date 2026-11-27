@@ -77,6 +77,21 @@
     if (D.videoData || D.heroSD || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
     return innerWidth * (devicePixelRatio || 1) >= 1600;
   }
+  /** @type {WeakMap<HTMLVideoElement, EventListener>} */
+  const pendingVideoSeeks = new WeakMap();
+  /** @param {HTMLVideoElement} video @param {number} position */
+  function restoreVideoPosition(video, position) {
+    const previous = pendingVideoSeeks.get(video);
+    if (previous) video.removeEventListener('loadedmetadata', previous);
+    pendingVideoSeeks.delete(video);
+    if (position <= 0) return;
+    const seek = () => {
+      pendingVideoSeeks.delete(video);
+      if (Number.isFinite(video.duration)) video.currentTime = Math.min(position, Math.max(0, video.duration - .05));
+    };
+    pendingVideoSeeks.set(video, seek);
+    video.addEventListener('loadedmetadata', seek, { once: true });
+  }
   /** @param {HTMLVideoElement} video @param {string} name @param {{ tall?: boolean }} [opt] */
   function attachVideo(video, name, { tall } = {}) {
     if (!video) return false;
@@ -104,8 +119,8 @@
     video.dataset.ready = '1';
     video.dataset.rendition = n;
     if (replacing) {
+      restoreVideoPosition(video, position);
       video.load();
-      if (position > 0) video.currentTime = position;
     }
     return true;
   }
@@ -1215,8 +1230,8 @@
         if (webm) { const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = CINE_WEBM; v.append(a); }
         const b = document.createElement('source'); b.src = C_BASE + n + '.mp4'; b.type = 'video/mp4'; v.append(b);
         v.dataset.codec = webm ? 'vp9-444' : 'h264';
+        restoreVideoPosition(v, position);
         v.load();
-        if (position > 0) v.currentTime = position;
         // play() з show() міг прийти раніше за джерела (рішення асинхронне) — відтворення відновлюється тут
         if (v.classList.contains('is-on') && inView && videoAllowed()) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
       });
