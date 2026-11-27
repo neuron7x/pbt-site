@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Коректура даних сайту (web/js/data.js і data/catalog.json) — детерміновано й ідемпотентно (повторний запуск нічого не змінює).
+"""Коректура джерел даних сайту (content/site.json і data/catalog.json; web/js/data.js генерується з них) — детерміновано й ідемпотентно (повторний запуск нічого не змінює).
 Норма: правопис 2019, ДСТУ 3582 (скорочення одиниць), типографіка: апостроф ’ (U+2019), нерозривний пробіл між числом
 і одиницею, тире – в діапазонах, марки — у написанні виробника. Дані не вигадуємо: лише форма, не значення.
 Запуск: python3 tools/copyedit.py [--check] — з --check код 1, якщо щось ще не нормалізовано (для тесту)."""
@@ -83,15 +83,14 @@ def fix(d):
 def main():
     check = '--check' in sys.argv
     dirty = []
-    js = ROOT / 'web' / 'js' / 'data.js'
-    s = js.read_text(encoding='utf-8')
-    m = re.search(r'window\.PBT = (\{.*\});', s, re.S)
-    d = json.loads(m.group(1)); before = json.dumps(d, ensure_ascii=False)
+    # джерела даних; web/js/data.js генерується з них (tools/data_build.py) і тут не правиться
+    site = ROOT / 'content' / 'site.json'
+    d = json.loads(site.read_text(encoding='utf-8')); before = json.dumps(d, ensure_ascii=False)
     fix(d)
     if json.dumps(d, ensure_ascii=False) != before:
-        dirty.append('web/js/data.js')
+        dirty.append('content/site.json')
         if not check:
-            js.write_text(s[:m.start(1)] + json.dumps(d, ensure_ascii=False, indent=1) + s[m.end(1):], encoding='utf-8')
+            site.write_text(json.dumps(d, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     cat = ROOT / 'data' / 'catalog.json'
     c = json.loads(cat.read_text(encoding='utf-8')); before = json.dumps(c, ensure_ascii=False)
     fix(c)
@@ -99,6 +98,9 @@ def main():
         dirty.append('data/catalog.json')
         if not check:
             cat.write_text(json.dumps(c, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    if dirty and not check:                              # джерела змінились — згенерований файл мусить піти слідом
+        import subprocess
+        subprocess.run([sys.executable, str(ROOT / 'tools' / 'data_build.py'), '--write'], check=True, stdout=subprocess.DEVNULL)
     print(('не нормалізовано: ' if check else 'змінено: ') + (', '.join(dirty) or '—'))
     sys.exit(1 if check and dirty else 0)
 

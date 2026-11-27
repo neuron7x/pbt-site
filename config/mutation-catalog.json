@@ -143,6 +143,66 @@
    ]
   },
   {
+   "id": "M-DATA-check-ignores-drift",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/data_build.py",
+     "find": "        if current != text:\n",
+     "replace": "        if current != text and not current:\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_build.py::test_check_fails_when_a_source_changes_until_the_file_is_rebuilt"
+   ],
+   "note": "Перевірка зелена, хоча джерело змінилось, а згенерований файл — ні: «три копії правди» повертаються (наказ А4)."
+  },
+  {
+   "id": "M-DATA-publishes-price",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/data_build.py",
+     "find": "    for key in PRICED:\n",
+     "replace": "    for key in ():\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_build.py::test_internal_catalog_price_never_reaches_the_page"
+   ],
+   "note": "Внутрішня ціна позиції з каталогу потрапляє у публічний data.js, хоча на сайті ціна договірна."
+  },
+  {
+   "id": "M-DATA-publishes-private-status",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/data_build.py",
+     "find": "    business = _load(root, 'config/business.json', BUSINESS_KEYS, PRIVATE)",
+     "replace": "    business = _load(root, 'config/business.json', BUSINESS_KEYS + PRIVATE)"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_build.py::test_private_status_note_never_reaches_the_page"
+   ],
+   "note": "Службова нотатка _status із реквізитів потрапляє у публічний data.js."
+  },
+  {
+   "id": "M-DATA-unknown-key-passes",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "tools/data_build.py",
+     "find": "    if unknown or missing:\n",
+     "replace": "    if missing:\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_build.py::test_unknown_or_missing_source_key_is_an_error_and_nothing_is_written"
+   ],
+   "note": "Невідомий ключ джерела мовчки ігнорується: одруківка в назві поля не доходить до сторінки й не ловиться."
+  },
+  {
    "id": "M-DB-01-fk-pragma",
    "task": "DB-01",
    "edits": [

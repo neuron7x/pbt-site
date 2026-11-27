@@ -48,7 +48,10 @@ sky:            ## палітра «небо над Полтавою і вода
 crane:          ## кран-глибиномір: канат, гак і кадри вантажу в site.css мусять відповідати tools/crane.py (fail-closed)
 	$(PY) tools/crane.py --check
 
-gate: js sky crane test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
+data:           ## web/js/data.js мусить дорівнювати виходу tools/data_build.py із config/business.json, data/catalog.json, content/site.json (fail-closed)
+	$(PY) tools/data_build.py --check
+
+gate: js sky crane data test bundle media-audit ## релізний гейт: тести + збірка + бюджет медіа; дерево чисте
 	@status="$$(git status --porcelain)"; test -z "$$status" || { echo "дерево брудне після гейта"; printf '%s\n' "$$status"; exit 1; }; echo "GATE PASS"
 
 clean:
@@ -60,4 +63,4 @@ ops-install:    ## systemd --user: сервіс + сторож здоров'я +
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/ —/'
 
-.PHONY: js sky crane mutation assurance accept run test test-api test-site media stock shots media-audit bundle gate clean ops-install help
+.PHONY: js sky crane data mutation assurance accept run test test-api test-site media stock shots media-audit bundle gate clean ops-install help
