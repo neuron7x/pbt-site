@@ -29,3 +29,10 @@ def test_red_result_keeps_byte_and_codec_evidence():
     assert "dist/artifact-budget-preflight.json" in src
     assert "dist/artifact-budget.json" in src
     assert "if-no-files-found: warn" in src
+
+
+def test_real_media_trial_verifies_the_tracked_inventory_by_digest():
+    src = YML.read_text(encoding='utf-8')
+    assert "['git','ls-files','-z','--','web/media']" in src
+    assert "hashlib.file_digest(handle,'sha256')" in src
+    assert "assert built==inventory" in src

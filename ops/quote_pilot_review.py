@@ -3,7 +3,6 @@
 import json
 import sys
 from fractions import Fraction
-from statistics import median
 
 from ops.quote_pilot import (
     PilotInputError, _bool, _int, _list, _object, _reject_constant, _scope,
@@ -26,6 +25,17 @@ def _offer(raw, path):
     return _scope(offer, path), _time(offer["frozen_at"], f"{path}.frozen_at"), (
         total, net - cost, minutes, seconds,
     )
+
+
+def _median_doubled(values):
+    values = sorted(values)
+    center = len(values) // 2
+    return values[center] + values[(len(values) - 1) // 2]
+
+
+def _decimal_half(doubled):
+    whole, half = divmod(abs(doubled), 2)
+    return f"{'-' if doubled < 0 else ''}{whole}{'.5' if half else ''}"
 
 
 def review(payload):
@@ -106,21 +116,21 @@ def review(payload):
         "pairs": None,
     }
     if fixed:
-        savings = [old[0] - new[0] for old, new in zip(fixed, adaptive)]
-        preparation = [old[3] - new[3] for old, new in zip(fixed, adaptive)]
+        savings = _median_doubled(old[0] - new[0] for old, new in zip(fixed, adaptive))
+        preparation = _median_doubled(old[3] - new[3] for old, new in zip(fixed, adaptive))
         old_rate, new_rate = (
             Fraction(60 * sum(offer[1] for offer in offers), sum(offer[2] for offer in offers))
             for offers in (fixed, adaptive)
         )
         report["pairs"] = {
-            "customer_savings_median_kop": median(savings),
-            "preparation_savings_median_seconds": median(preparation),
+            "customer_savings_median_kop": _decimal_half(savings),
+            "preparation_savings_median_seconds": _decimal_half(preparation),
             "baseline_contribution_kop_per_hour": round(old_rate),
             "adaptive_contribution_kop_per_hour": round(new_rate),
         }
     if len(requests) == _BATCH_SIZE:
         report["status"] = "insufficient_comparable" if len(fixed) < _BATCH_SIZE else "shadow_rejected"
-        if len(fixed) == _BATCH_SIZE and median(savings) > 0 and median(preparation) >= 0 and new_rate >= old_rate:
+        if len(fixed) == _BATCH_SIZE and savings > 0 and preparation >= 0 and new_rate >= old_rate:
             report["status"] = "review_required"
     return report
 

@@ -62,12 +62,28 @@ jobs:
           test -s dist/artifact-budget-preflight.json
           test -s dist/artifact-budget.json
           python - <<'PY'
-          import json,os
+          import hashlib,json,os,subprocess
           from pathlib import Path
           pre=json.loads(Path('dist/artifact-budget-preflight.json').read_text())
           post=json.loads(Path('dist/artifact-budget.json').read_text())
           assert pre['files']==post['files'] and pre['total_bytes']==post['total_bytes']
-          assert post['asset_count']>=132 and post['limit_bytes']==64*1024*1024
+          tracked=subprocess.check_output(['git','ls-files','-z','--','web/media']).split(b'\0')
+          inventory={}
+          for raw in filter(None,tracked):
+              source=Path(os.fsdecode(raw))
+              name=source.relative_to('web').as_posix()
+              if name=='media/video/hero-wide.mp4':
+                  continue
+              if source.suffix not in {'.mp4','.webp','.png','.svg','.jpg'} and source.name!='plainbud-logo.webm':
+                  continue
+              assert source.is_file() and not source.is_symlink(), name
+              with source.open('rb') as handle:
+                  inventory[name]=(source.stat().st_size,hashlib.file_digest(handle,'sha256').hexdigest())
+          built={entry['path']:(entry['bytes'],entry['sha256']) for entry in post['files']}
+          assert {'media/video/hero-wide-720.mp4','media/video/hero-tall.mp4'} <= inventory.keys()
+          assert post['asset_count']==len(built)==len(inventory)+1 and post['limit_bytes']==64*1024*1024
+          assert built.pop('index.html')[0]>0
+          assert built==inventory, 'Copied media differ from the tracked inventory'
           rc=int(os.environ['BUILDER_EXIT'])
           if post['ok']:
               assert rc==0
@@ -76,6 +92,7 @@ jobs:
               assert 'Multifile artifact exceeds' in Path('artifacts/video-fit/builder.log').read_text()
           summary={'source_sha':os.environ['PBT_HEAD_SHA'],'builder_exit':rc,
                    'preflight_bytes':pre['total_bytes'],'cap_bytes':post['limit_bytes'],
+                   'tracked_media_count':len(inventory),
                    'excess_bytes':post['over_budget_bytes'],'unoptimized_fits':post['ok']}
           Path('artifacts/video-fit/source-summary.json').write_text(
               json.dumps(summary,sort_keys=True,indent=2)+'\n')

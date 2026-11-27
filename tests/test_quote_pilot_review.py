@@ -29,8 +29,8 @@ def test_review_requires_thirty_consecutive_pairs_before_recommending():
     assert result["status"] == "review_required"
     assert result["requests"] == result["paired"] == 30
     assert result["pairs"] == {
-        "customer_savings_median_kop": 12000.0,
-        "preparation_savings_median_seconds": 60.0,
+        "customer_savings_median_kop": "12000",
+        "preparation_savings_median_seconds": "60",
         "baseline_contribution_kop_per_hour": 15000,
         "adaptive_contribution_kop_per_hour": 18000,
     }
@@ -88,3 +88,10 @@ def test_review_rejects_frozen_offers_outside_the_case_timeline():
     data["requests"][0]["adaptive"]["frozen_at"] = "2026-11-26T10:00:00+02:00"
     with pytest.raises(PilotInputError, match="час фіксації"):
         review(data)
+
+
+def test_review_preserves_half_kopeck_without_binary_rounding():
+    data = batch(2)
+    for n, row in enumerate(data["requests"]):
+        row["baseline"]["price_total_kop"] = 10**32 + n
+    assert review(data)["pairs"]["customer_savings_median_kop"] == f"{10**32 - 108000}.5"

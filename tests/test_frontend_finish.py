@@ -94,6 +94,7 @@ def test_brief_carries_job_context_and_preserves_customer_details(page_factory):
 
 def test_brief_fields_do_not_leak_into_other_request_types(page_factory):
     page = page_factory(reduced=True)
+    assert page.locator('#cTask').count() == 1
     page.locator('#place').fill('Стара адреса')
     page.locator('#date').fill('2099-06-01')
     page.locator('#comment').fill('Мій коментар')
@@ -118,6 +119,7 @@ def test_brief_fields_do_not_leak_into_other_request_types(page_factory):
 
 def test_manual_quantities_follow_their_request_type(page_factory):
     page = page_factory(reduced=True)
+    assert page.locator('#cTask').count() == 1
     page.locator('#hours').fill('99')
     page.locator('#km').fill('33')
     page.locator('#cTask').fill('Викопати траншею')
@@ -182,6 +184,7 @@ def test_first_generic_request_clears_subject_from_other_type(page_factory):
 
 def test_generic_request_does_not_leave_a_stale_brief_subject(page_factory):
     page = page_factory(reduced=True)
+    assert page.locator('#cTask').count() == 1
     page.locator('#subject').fill('Ручне завдання')
     page.locator('#hours').fill('7')
     page.locator('#km').fill('8')
@@ -198,6 +201,7 @@ def test_generic_request_does_not_leave_a_stale_brief_subject(page_factory):
 
 def test_brief_refuses_comment_overflow_without_editing_the_draft(page_factory):
     page = page_factory(reduced=True)
+    assert page.locator('#cTask').count() == 1
     page.locator('#subject').fill('Моя чернетка')
     personal = 'A' * 990
     page.locator('#comment').fill(personal)
@@ -225,6 +229,7 @@ def test_telegram_contact_has_usable_mobile_keyboard(page_factory):
 
 def test_brief_mobile_exposes_selected_full_machine_name(page_factory):
     page = page_factory(390, 844, mobile=True, reduced=True)
+    assert page.locator('#cTask').count() == 1
     page.locator('#cMachine').select_option('e-2')
     text = page.locator('#cMachine option:checked').inner_text()
     expect(page.locator('#cMachineSummary')).to_have_text(text)
