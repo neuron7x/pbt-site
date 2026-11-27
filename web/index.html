@@ -52,7 +52,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 <header class="nav" id="nav">
   <a class="brand" href="#top" aria-label="ПЛЕЙНБУД оренда спецтехніки — на початок сторінки"><img class="brand__logo" src="media/logo/plainbud-logo-nav.webp" width="153" height="31" alt="" aria-hidden="true"><img class="brand__ink" src="media/logo/plainbud-logo-nav-ink.webp" width="153" height="31" alt="" aria-hidden="true"><span class="brand__name"><span>оренда спецтехніки</span></span></a>
   <nav class="nav__links" aria-label="Розділи">
-    <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Ціна</a><a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a>
+    <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Кошторис</a><a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a>
   </nav>
   <a class="nav__phone" href="tel:+380675550317" data-phone>067 555 03 17</a>
   <a class="btn btn--sm nav__cta" href="#zapyt" data-req="rent">Викликати техніку</a>
@@ -68,7 +68,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <button class="menu__close" id="menuClose" type="button" aria-label="Закрити меню"><span aria-hidden="true">×</span></button>
   <p class="menu__heading" aria-hidden="true" data-brand>ПЛЕЙНБУД</p>
   <nav aria-label="Мобільне меню">
-    <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Ціна</a>
+    <a href="#roboty">Роботи</a><a href="#tekhnika">Техніка</a><a href="#cina">Кошторис</a>
     <a href="#materialy">Матеріали</a><a href="#dokaz">Кадри</a><a href="#geo">Де працюємо</a><a href="#zapyt" data-request-nav>Заявка</a>
   </nav>
   <div class="menu__foot"><a href="tel:+380675550317" data-phone>067 555 03 17</a><span data-phone2 hidden></span><a href="mailto:plainbud@gmail.com" data-email>plainbud@gmail.com</a><span data-address>36022, м. Полтава, вул. Небесної сотні, буд. 69 Б</span></div>
@@ -79,7 +79,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <div class="gauge__scale" aria-hidden="true"><i style="top:0"></i><i style="top:8.33%"></i><i style="top:16.66%"></i><i style="top:25%"></i><i style="top:33.33%"></i><i style="top:41.66%"></i><i style="top:50%"></i><i style="top:58.33%"></i><i style="top:66.66%"></i><i style="top:75%"></i><i style="top:83.33%"></i><i style="top:91.66%"></i><i style="top:100%"></i></div>
   <i class="gauge__float" aria-hidden="true"></i>
   <ol class="gauge__stops">
-    <li><a href="#top">Старт</a></li><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Ціна</a></li>
+    <li><a href="#top">Старт</a></li><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Кошторис</a></li>
     <li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Географія</a></li><li><a href="#zapyt" data-request-nav>Заявка</a></li>
   </ol>
   <output class="gauge__m" aria-live="off">0,0 м</output>
@@ -100,7 +100,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <div class="logo-hero" role="img" aria-label="ПЛЕЙНБУД"><img class="logo-hero__img" src="media/logo/plainbud-logo.webp" width="960" height="352" alt="" fetchpriority="high" decoding="async"><video class="logo-hero__anim" id="logoAnim" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video></div>
       <h1 id="heroTitle"><span class="line"><span class="w" style="transition-delay:.45s">Спецтехніка</span></span> <span class="line" style="display:block"><span class="w" style="transition-delay:.52s">для</span> <span class="w" style="transition-delay:.59s">складних</span> <span class="w" style="transition-delay:.66s">робіт</span></span></h1>
       <p class="hero__lead">Амфібії, крани, трали. З оператором і пальним.</p>
-      <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Порахувати зміну</a></div>
+      <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Отримати кошторис</a></div>
       <ul class="hero__stats" aria-label="Коротко про каталог">
         <li><b data-count="32">32</b><span>позиції</span></li>
         <li><b data-count="120" data-suffix=" т">120 т</b><span>кран</span></li>
@@ -154,38 +154,59 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <div class="wrap">
     <div class="sec-head rv">
       <p class="eyebrow">Техніка</p><h2>32 позиції <span>у 8 категоріях</span></h2>
-      <p class="lead">Оберіть техніку під своє завдання. Ставки з каталогу від 03.10.2026 наведено для орієнтиру. Наявність техніки й актуальну ціну підтверджуємо за запитом.</p>
+      <p class="lead">Оберіть техніку для об’єкта або опишіть роботу, щоб ми підібрали машину. Наявність і вартість погоджуємо для кожного замовлення.</p>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Категорії техніки"></div>
     <div class="park" id="park" aria-live="polite"><p class="content-fallback">Каталог тимчасово недоступний. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p></div>
-    <p class="park__note">Погодинні ставки наведено для оренди, ставки за кілометр — для перевезень.</p>
   </div>
 </section>
 
-<!-- ═══ S04 ЦІНА ЗМІНИ ═══ -->
+<!-- ═══ S04 КОШТОРИС ═══ -->
 <section class="sec on-light alt s-cost" id="cina">
   <svg class="wave" viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path fill="#FFFFFF" d="M0,40 C240,0 480,90 720,60 C960,30 1200,10 1440,60 L1440,90 L0,90 Z"/></svg>
   <div class="wrap">
     <div class="sec-head rv">
-      <p class="eyebrow">Ціна</p><h2>Скільки коштує <span>зміна</span></h2>
-      <p class="lead">Оберіть машину, години роботи й відстань подачі. Калькулятор використовує історичні ставки, а трал добирає за масою машини.</p>
+      <h2>Кошторис <span>під ваш об’єкт</span></h2>
+      <p class="lead">Опишіть завдання. Підберемо техніку, обсяг і спосіб подачі, а вартість погодимо з вами.</p>
     </div>
     <div class="calc rv rv--scale">
-      <form class="calc__form" id="calcForm" aria-label="Калькулятор зміни">
-        <div class="field"><label for="cMachine">Машина</label><select id="cMachine" name="machine" disabled></select><p class="calc__selection" id="cMachineSummary" aria-hidden="true"></p></div>
-        <div class="calc__quantities">
-          <div class="field"><label for="cHoursN">Годин роботи</label><input type="number" id="cHoursN" min="1" max="5000" step="1" value="8" inputmode="numeric" required></div>
-          <div class="field"><label for="cKmN">Подача в один бік, км</label><input type="number" id="cKmN" min="0" max="3000" step="1" value="30" inputmode="numeric" required></div>
+      <form class="calc__form" id="calcForm" aria-label="Запит на кошторис">
+        <div class="field">
+          <label for="cKind">Що потрібно</label>
+          <select id="cKind"><option value="rent">Робота спецтехніки</option><option value="material">Сипучі матеріали</option><option value="transport">Перевезення</option><option value="other">Комплексне або інше завдання</option></select>
         </div>
+        <div class="field" id="cMachineField" hidden>
+          <label for="cMachine">Машина, якщо вже обрали</label>
+          <select id="cMachine" disabled></select>
+          <p class="brief__machine" id="cMachineSummary" aria-hidden="true" hidden></p>
+        </div>
+        <div class="field">
+          <label for="cTask" id="cTaskLabel">Що треба зробити</label>
+          <input id="cTask" required minlength="2" maxlength="160" placeholder="Наприклад, викопати траншею">
+        </div>
+        <div class="grid2">
+          <div class="field"><label for="cPlace">Місто або адреса</label><input id="cPlace" maxlength="160" placeholder="Полтава або адреса об’єкта"></div>
+          <div class="field"><label for="cDate">Бажана дата</label><input type="date" id="cDate"></div>
+        </div>
+        <div class="field">
+          <label for="cDetail" id="cDetailLabel">Обсяг і доступ до об’єкта</label>
+          <textarea id="cDetail" maxlength="360" rows="2" placeholder="Наприклад, 60 м траншеї, вузький заїзд"></textarea>
+        </div>
+        <label class="brief__flex"><input id="cFlexible" type="checkbox"><span>Можу обрати іншу дату, якщо це зменшить вартість</span></label>
+        <p class="brief__error" id="cError" role="alert" hidden></p>
+        <p class="content-fallback" id="calcUnavailable">Форма кошторису недоступна. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p>
+        <div class="calc__cta"><button class="btn" type="submit" id="cOrder" disabled>Перейти до заявки</button></div>
       </form>
-      <div class="calc__out" id="cOut" aria-live="polite">
-        <p class="eyebrow">Орієнтовна вартість</p>
-        <p class="total" id="cTotal">—</p>
-        <div class="lines" id="cLines"></div>
-        <p class="calc__note">Розрахунок за архівними ставками від 03.10.2026. Актуальну ціну, мінімальну зміну, простій, нічну роботу та ПДВ уточнюємо за запитом.</p>
-        <p class="content-fallback" id="calcUnavailable">Розрахунок тимчасово недоступний. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p>
-        <p class="calc__cta"><button class="btn" type="button" id="cOrder" data-req="rent" disabled>Додати до заявки</button></p>
-      </div>
+      <aside class="calc__out" id="cOut" aria-labelledby="quoteTitle">
+        <p class="eyebrow">Вартість договірна</p>
+        <h3 class="brief__title" id="quoteTitle">Що погодимо в кошторисі</h3>
+        <dl class="brief__terms">
+          <div><dt>Обсяг</dt><dd>Склад робіт, тривалість, кількість матеріалів або рейсів.</dd></div>
+          <div><dt>Логістика</dt><dd>Подача техніки, маршрут та умови під’їзду.</dd></div>
+          <div><dt>Умови</dt><dd>Підсумкова сума та витрати, які погоджуються окремо.</dd></div>
+        </dl>
+        <p class="calc__note">Якщо гнучка дата, інша машина або спільний рейс дозволять зменшити витрати, запропонуємо доступний варіант.</p>
+      </aside>
     </div>
   </div>
 </section>
@@ -196,7 +217,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   <div class="wrap">
     <div class="sec-head rv">
       <p class="eyebrow">Матеріали</p><h2>Сипучі матеріали <span>для об’єкта</span></h2>
-      <p class="lead">Пісок, гранітний щебінь, відсів, ЩПС і бут. Ціни наведено за каталогом від 03.10.2026. Наявність, доставку й документи партії уточнюємо за запитом.</p>
+      <p class="lead">Пісок, гранітний щебінь, відсів, ЩПС і бут. Погодимо вартість з урахуванням фракції, обсягу й доставки. Документи перевіримо для конкретної партії.</p>
     </div>
     <div class="mats" id="mats"><p class="content-fallback">Каталог матеріалів тимчасово недоступний. <a href="tel:+380675550317" data-phone-action>Зателефонуйте диспетчеру.</a></p></div>
     <div class="mats__note rv"><b>Документи партії</b><span>Вкажіть, які документи потрібні для об’єкта. Перелік і наявність підтверджуємо для конкретної партії.</span></div>
@@ -262,7 +283,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
         <p class="act__note" id="requestDeliveryNote">Якщо зв’язок обірветься під час надсилання, повторне натискання не створить дубліката заявки.</p>
         <div class="request-faq">
           <details><summary>Не знаю, яка техніка потрібна</summary><p>Опишіть завдання у формі: що потрібно зробити, де розташований об’єкт і чи є під’їзд. Техніку доберемо під час розмови.</p></details>
-          <details><summary>Що враховано в калькуляторі?</summary><p>Погодинну оренду й розрахункову подачу тралом за архівними ставками від 03.10.2026. Мінімальну зміну, простій, нічну роботу, ПДВ та подачу автокрана уточнюємо окремо.</p></details>
+          <details><summary>Від чого залежить вартість?</summary><p>Кошторис залежить від обсягу, машини, умов під’їзду, маршруту та дати. До підтвердження виїзду погодимо суму, що в неї входить і які умови можуть змінити розрахунок.</p></details>
           <details><summary>Як замовити матеріали?</summary><p>Натисніть «У заявку» біля потрібного матеріалу. Вкажіть обсяг і адресу доставки; наявність, документи партії та вартість підтверджує диспетчер.</p></details>
         </div>
       </aside>
@@ -310,7 +331,7 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div><a class="brand" href="#top" aria-label="ПЛЕЙНБУД оренда спецтехніки — на початок сторінки"><img class="brand__logo" src="media/logo/plainbud-logo-nav.webp" width="153" height="31" alt="" aria-hidden="true"><span class="brand__name"><span>оренда спецтехніки</span></span></a><p style="margin-top:16px"><span data-legal>ТОВ «ПЛЕЙНБУД»</span><br><span class="num" data-edrpou>ЄДРПОУ 45318076</span><br><span data-address>36022, м. Полтава, вул. Небесної сотні, буд. 69 Б</span></p></div>
     <div><h4>Зв’язок</h4><ul><li><a class="num" href="tel:+380675550317" data-phone>067 555 03 17</a></li><li data-phone2-row hidden><span class="num" data-phone2></span></li><li><a href="mailto:plainbud@gmail.com" data-email>plainbud@gmail.com</a></li><li data-hours>Графік роботи уточнюється</li></ul><ul data-social hidden></ul></div>
     <div><h4>Реквізити</h4><ul class="foot__requisites"><li data-director-row>Директор<br><span data-director>Любашевський Дмитро Васильович</span></li><li data-bank-name-row><span data-bank-name>АТ «А-БАНК»</span></li><li data-bank-iban-row>IBAN<br><span class="num" data-bank-iban>UA393077700000026008411259048</span></li></ul></div>
-    <div><h4>Розділи</h4><ul><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Ціна зміни</a></li><li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Де працюємо</a></li><li><a href="#zapyt" data-request-nav>Заявка</a></li></ul></div>
+    <div><h4>Розділи</h4><ul><li><a href="#roboty">Роботи</a></li><li><a href="#tekhnika">Техніка</a></li><li><a href="#cina">Кошторис</a></li><li><a href="#materialy">Матеріали</a></li><li><a href="#dokaz">Кадри</a></li><li><a href="#geo">Де працюємо</a></li><li><a href="#zapyt" data-request-nav>Заявка</a></li></ul></div>
   </div>
   <div class="foot__credits" id="cineCredits"></div>
   <div class="foot__legal">
@@ -340,7 +361,6 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 </dialog>
 <script src="js/data.js"></script>
 <script src="js/cine.js"></script>
-<script src="js/quote.js"></script>
 <script src="js/dom.js"></script>
 <script src="js/physics.js"></script>
 <script src="js/site.js"></script>

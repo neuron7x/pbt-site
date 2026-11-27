@@ -29,7 +29,6 @@ fonts = re.sub(r'url\(\.\./fonts/([^)]+)\)', lambda m: 'url(' + data_uri('fonts/
 css = (WEB / 'css' / 'site.css').read_text(encoding='utf-8')
 STYLES = (('css/fonts.css', fonts), ('css/site.css', css))
 data = re.sub(r'"(media/[^"]+\.(?:webp|png|svg))"', lambda m: '"' + data_uri(m.group(1)) + '"', (WEB / 'js' / 'data.js').read_text(encoding='utf-8'))
-quote = (WEB / 'js' / 'quote.js').read_text(encoding='utf-8')
 geo_map = (WEB / 'media' / 'map' / 'oblasts.json').read_text(encoding='utf-8').strip()
 blueprint = (WEB / 'js' / 'blueprint.js').read_text(encoding='utf-8')
 dom = (WEB / 'js' / 'dom.js').read_text(encoding='utf-8')
@@ -47,7 +46,7 @@ def assemble(videos):
     cmap = ',\n'.join(f'"{i}": "{data_uri("media/cine/" + i + "-w.webp")}"' for i in CINE_IDS)
     d = data + '\nwindow.PBT.geoMap = ' + geo_map + ';' + '\nwindow.PBT.videoData = {' + vmap + '};\nwindow.PBT.cinePosters = {' + cmap + '};\nwindow.PBT_BUNDLE = true;\n'
     h = inline_css(html, STYLES)
-    h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/dom.js"></script>', '<script>' + dom + '</script>').replace('<script src="js/physics.js"></script>', '<script>' + physics + '</script>').replace('<script src="js/site.js"></script>', '<script>' + blueprint + '</script><script>' + site + '</script>')
+    h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/dom.js"></script>', '<script>' + dom + '</script>').replace('<script src="js/physics.js"></script>', '<script>' + physics + '</script>').replace('<script src="js/site.js"></script>', '<script>' + blueprint + '</script><script>' + site + '</script>')
     return h
 
 
@@ -78,7 +77,7 @@ shutil.rmtree(MULTI, ignore_errors=True)
 d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.geoMap = ' + geo_map + ';' + '\nwindow.PBT.mp4Only = true;\nwindow.PBT.heroSD = true;\nwindow.PBT_BUNDLE = true;\n'
 h = (WEB / 'index.html').read_text(encoding='utf-8')
 h = inline_css(h, STYLES)
-h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/quote.js"></script>', '<script>' + quote + '</script>').replace('<script src="js/dom.js"></script>', '<script>' + dom + '</script>').replace('<script src="js/physics.js"></script>', '<script>' + physics + '</script>').replace('<script src="js/site.js"></script>', '<script>' + blueprint + '</script><script>' + site + '</script>')
+h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/dom.js"></script>', '<script>' + dom + '</script>').replace('<script src="js/physics.js"></script>', '<script>' + physics + '</script>').replace('<script src="js/site.js"></script>', '<script>' + blueprint + '</script><script>' + site + '</script>')
 h = re.sub(r'<link rel="preload"[^>]*>\n?', '', h)
 mhead = re.search(r'<head>(.*?)</head>', h, re.S).group(1)
 mbody = re.search(r'<body[^>]*>(.*?)</body>', h, re.S).group(1)

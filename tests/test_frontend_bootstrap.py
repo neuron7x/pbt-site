@@ -14,7 +14,10 @@ def test_single_element_query_never_has_array_iteration():
 def test_frontend_bootstrap_initializes_all_public_controls(page_factory):
     page = page_factory(reduced=True)
     assert page.evaluate("typeof window.PBTv") == "function"
-    assert page.evaluate("typeof window.PBTcalc") == "function"
+    assert page.evaluate("typeof window.PBTcalc") == "undefined"
+    assert page.locator("#cOrder").is_enabled()
+    assert page.locator("#cMachine").is_enabled()
+    assert page.locator("#cKind option").count() == 4
     assert page.locator("#park .unit").count() == 32
     assert page.locator("#chips .chip").count() == 9
     assert page.locator("#cine .cine__ch").count() == 6

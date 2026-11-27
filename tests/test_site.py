@@ -35,42 +35,33 @@ def test_fleet_renders_every_unit_and_chips_filter(page_factory):
     assert pg.locator('#park .unit:not([hidden])').count() == 32
 
 
-def test_calculator_matches_price_list(page_factory):
-    pg = page_factory()
-    priced = [u for u in DATA['fleet'] if u['price'] and u['unit'] == 'год']
-    u = next(x for x in priced if x['id'] == 'e-1')                      # JCB JS220LC, 22 т → трал 40 т (100 грн/км)
-    pg.select_option('#cMachine', u['id'])
-    pg.fill('#cHoursN', '10'); pg.dispatch_event('#cHoursN', 'input')
-    pg.fill('#cKmN', '20'); pg.dispatch_event('#cKmN', 'input')
-    expected = 10 * u['price'] + 20 * 100
-    assert pg.evaluate('document.getElementById("cOut").dataset.total') == str(expected)
-    pg.wait_for_function(f'() => document.getElementById("cTotal").textContent.replace(/\\D/g, "") === "{expected}"', timeout=4000)   # сума дотвінюється за 520 мс
-    assert pg.evaluate(f'window.PBTcalc("{u["id"]}", 10, 20)') == expected
-    crane = next(x for x in priced if x['cat'] == 'crane')               # автокран їде сам: подача не рахується за км
-    pg.select_option('#cMachine', crane['id'])
-    assert pg.evaluate('document.getElementById("cKmN").disabled') is True
-    assert pg.evaluate(f'window.PBTcalc("{crane["id"]}", 10, 20)') == 10 * crane['price']
-    heavy = next(x for x in priced if x['id'] == 'e-3')                 # DOOSAN DX300, 31 т → також трал 40 т
-    assert pg.evaluate(f'window.PBTcalc("{heavy["id"]}", 1, 10)') == heavy['price'] + 10 * 100
+def test_brief_updates_the_existing_lead_without_network(page_factory):
+    pg = page_factory(reduced=True)
+    pending = []
+    pg.on("request", lambda request: pending.append(request) if request.method == "POST" else None)
+    assert pg.locator("#cTask").count() == 1
+    pg.locator("#cTask").fill("Викопати траншею")
+    pg.locator("#cPlace").fill("Полтава")
+    pg.locator("#cOrder").click()
+    assert pg.locator("#subject").input_value().startswith("Викопати траншею")
+    assert pg.locator("#place").input_value() == "Полтава"
+    assert not pending
 
 
 def test_calculator_enter_does_not_navigate_or_execute_csp_blocked_handler(page_factory):
     """With hashed script CSP, Enter must never trigger a default GET form navigation."""
     pg = page_factory(reduced=True)
+    assert pg.locator("#cTask").count() == 1
     before = pg.url
-    pg.locator("#cHoursN").fill("12")
-    pg.locator("#cHoursN").press("Enter")
-    # Real submit-event cancellation is the invariant: implicit Enter may
-    # not submit when multiple number inputs are present in the form.
+    pg.locator("#cTask").fill("Викопати траншею")
+    pg.locator("#cTask").press("Enter")
+    assert pg.locator("#subject").input_value().startswith("Викопати траншею")
     prevented = pg.evaluate("""() => {
       const event = new Event('submit', {bubbles: true, cancelable: true});
       document.getElementById('calcForm').dispatchEvent(event);
       return event.defaultPrevented;
     }""")
-    assert prevented, "calculator submit listener must block navigation under hashed CSP"
-    pg.wait_for_timeout(150)
-    assert pg.url == before
-    assert pg.locator("#cHoursN").input_value() == "12"
+    assert prevented and pg.url.split('#')[0] == before.split('#')[0]
     assert not [e for e in pg.errors if "Refused to execute inline event handler" in e]
 
 

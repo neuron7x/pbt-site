@@ -3,7 +3,7 @@
 Інваріанти:
 - на кресленні немає вигаданих чисел: кожне число у підписах (крім живого вильоту) є в характеристиках каталогу;
 - виліт рахується як r = L·cos θ, h = L·sin θ від довжини стріли з каталогу;
-- ціна подачі в панелі маршруту = км × ставка тралу (та сама модель, що й калькулятор);
+- панель маршруту показує дорожню відстань і передає її в заявку як орієнтир;
 - паспорт — модальний діалог: фокус усередині, Esc закриває й повертає фокус, axe без порушень.
 """
 import math
@@ -81,7 +81,8 @@ def test_passport_is_a_modal_sheet_with_catalog_specs(page_factory, theme):
     stamp = dict(state['stamp'])
     for s in unit['specs']:
         assert stamp[s['k']] == s['v'], (s, stamp)
-    assert stamp['Ставка'] == '1 500 грн/год', stamp
+    assert stamp.get('Вартість') == 'Договірна', stamp
+    assert not re.search(r'\bгрн\b|₴', ' '.join(stamp.values()), re.IGNORECASE), stamp
     pg.keyboard.press('Escape')
     pg.wait_for_timeout(200)
     assert not pg.evaluate("document.getElementById('passport').open")
@@ -159,46 +160,57 @@ def test_xray_draws_on_hover_only_for_fine_pointer(page_factory):
     assert mob.evaluate("document.querySelector('.unit[data-id=\"b-3\"] .unit__bp').childElementCount") == 0
 
 
-def test_route_panel_prices_delivery_like_the_calculator(page_factory):
-    pg = page_factory(1440, 900)
+def test_route_panel_keeps_center_distance_distinct_from_confirmed_delivery(page_factory):
+    from playwright.sync_api import expect
+
+    pg = page_factory(1440, 900, reduced=True)
     pg.evaluate("document.getElementById('geo').scrollIntoView({behavior:'instant'})")
-    pg.locator('#geoMap svg[data-ready="1"]').wait_for(state='attached')   # контури карти — ліниві дані
-    D = _data(pg)
-    served = [r for r in D['regions'] if r != 'Полтавська']
-    assert set(served) == set(D['routes']['to']), 'кожна область виїзду має дорожню відстань'
-    assert re.fullmatch(r'\d{4}-\d{2}-\d{2}', D['routes']['date']) and 'OpenStreetMap' in D['routes']['source']
+    pg.locator('#geoMap svg[data-ready="1"]').wait_for(state='attached')
+    data = _data(pg)
+    routes = data['routes']
+    served = [region for region in data['regions'] if region != 'Полтавська']
+    assert set(served) == set(routes['to']), 'кожна область виїзду має дорожню відстань'
+    assert re.fullmatch(r'\d{4}-\d{2}-\d{2}', routes['date']) and 'OpenStreetMap' in routes['source']
+
+    panel = pg.locator('#geoInfo')
     for region in served:
-        km = D['routes']['to'][region]['km']
+        route = routes['to'][region]
+        km = route['km']
         assert 50 <= km <= 700, (region, km)
-        pg.locator(f'.geo__pick[data-ua="{region}"]').click()
-        assert pg.locator(f'.geo__pick[data-ua="{region}"]').get_attribute('aria-pressed') == 'true'
-        assert re.sub(r'\s', '', pg.locator('#geoInfo .geo__km b').text_content()) == str(km)
-        costs = [re.sub(r'\s', '', c) for c in pg.locator('#geoInfo .geo__cost dd').all_text_contents()]
-        assert costs == [f"≈{t['rate'] * km}грн" for t in sorted(D['trailers'], key=lambda t: t['maxT'])], costs
-        assert pg.evaluate(f"document.querySelector('.route.is-sel').dataset.ua") == region
-    # та сама модель, що й калькулятор: доставка з PBTQuote для 22-тонного екскаватора = рядок «Трал 40 т» панелі
-    e1 = next(u for u in D['fleet'] if u['id'] == 'e-1')
-    for region, r in D['routes']['to'].items():
-        q = pg.evaluate(f"PBTQuote.quote(PBT.fleet.find(u => u.id === 'e-1'), PBT.trailers, 1, {r['km']})")
-        pg.locator(f'.geo__pick[data-ua="{region}"]').click()
-        row = re.sub(r'\s', '', pg.locator('#geoInfo .geo__cost div').first.text_content())
-        assert q['status'] == 'complete' and row.endswith(f"≈{q['delivery']}грн"), (region, q, row)
-        assert q['trailer']['name'] in pg.locator('#geoInfo .geo__cost dt').first.text_content().replace('\u00a0', ' ')
-    assert e1['specs'][0]['k'] == 'Маса'
+        button = pg.locator(f'.geo__pick[data-ua="{region}"]')
+        button.click()
+        expect(button).to_have_attribute('aria-pressed', 'true')
+        expect(panel).to_contain_text(route['city'])
+        expect(panel.locator('.geo__km')).to_contain_text(re.compile(rf'\b{km}\s*км(?:\s|$)'))
+        expect(panel).not_to_contain_text(re.compile(r'грн|₴', re.IGNORECASE))
+        expect(pg.locator('.route.is-sel')).to_have_attribute('data-ua', region)
+
+    route = routes['to']['Київська']
     pg.locator('.geo__pick[data-ua="Київська"]').click()
-    pg.locator('.geo__calc').click()
-    pg.wait_for_timeout(800)
-    assert pg.locator('#cKmN').input_value() == str(D['routes']['to']['Київська']['km'])
-    assert pg.evaluate('document.activeElement.id') == 'cKmN'
-    assert pg.get_attribute('#cOrder', 'data-calc-km') == str(D['routes']['to']['Київська']['km'])
-    # автокран: подача не тралом — фокус на вибір машини, а не «нічого не сталось»
-    crane = pg.evaluate("[...document.querySelectorAll('#cMachine option')].findIndex(o => /Автокран/.test(o.textContent))")
-    pg.select_option('#cMachine', index=crane)
-    pg.evaluate("document.getElementById('geo').scrollIntoView({behavior:'instant'})")
-    pg.locator('.geo__pick[data-ua="Житомирська"]').click()
-    pg.locator('.geo__calc').click()
-    pg.wait_for_timeout(800)
-    assert pg.evaluate('document.activeElement.id') == 'cMachine'
+    panel.locator('.geo__calc').click()
+    expect(pg.locator('#cPlace')).to_have_value(route['city'])
+    expect(pg.locator('#cTask')).to_be_focused()
+    pg.locator('#cTask').fill('Підготувати майданчик')
+    pg.locator('#cOrder').click()
+    comment = pg.locator('#comment')
+    expect(pg.locator('#place')).to_have_value(route['city'])
+    expect(pg.locator('#km')).to_have_value('')
+    expect(comment).to_have_value(re.compile(rf'Орієнтир маршруту.*{route["city"]}.*{route["km"]}\s*км'))
+
+    panel.locator('.geo__calc').click()
+    pg.locator('#cPlace').fill('Бровари, виїзд з об’їзної')
+    pg.locator('#cOrder').click()
+    expect(pg.locator('#place')).to_have_value('Бровари, виїзд з об’їзної')
+    expect(pg.locator('#km')).to_have_value('')
+    expect(comment).not_to_have_value(re.compile(r'Орієнтир маршруту'))
+
+    pg.locator('.geo__pick[data-ua="Полтавська"]').click()
+    panel.locator('.geo__calc').click()
+    expect(pg.locator('#cPlace')).to_have_value(routes['from'])
+    pg.locator('#cOrder').click()
+    expect(pg.locator('#place')).to_have_value(routes['from'])
+    expect(pg.locator('#km')).to_have_value('')
+    expect(comment).not_to_have_value(re.compile(r'Орієнтир маршруту'))
 
 
 def test_passport_close_stays_reachable_and_page_does_not_scroll_under_it(page_factory):

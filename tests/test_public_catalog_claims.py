@@ -1,16 +1,13 @@
-"""Публічна копія відрізняє архівний каталог від підтверджених умов."""
-from datetime import date
+"""Каталог пояснює параметри й запит ціни без публікації старих ставок."""
 import re
 
 from playwright.sync_api import expect
 
 
-def test_catalog_counts_and_estimates_keep_their_source_scope(page_factory):
+def test_catalog_preserves_counts_and_discloses_contractual_pricing(page_factory):
     page = page_factory(reduced=True)
-    data = page.evaluate(
-        "({positions: PBT.fleet.length, categories: PBT.cats.length, rates: PBT.priceDate})"
-    )
-    archive_date = date.fromisoformat(data["rates"]).strftime("%d.%m.%Y")
+    data = page.evaluate("({positions: PBT.fleet.length, categories: PBT.cats.length, hasRates: Object.prototype.hasOwnProperty.call(PBT, 'priceDate')})")
+    assert data["hasRates"] is False
 
     expect(page.locator(".hero__stats li").first).to_have_text(
         re.compile(rf'{data["positions"]}\s*позиції')
@@ -19,18 +16,15 @@ def test_catalog_counts_and_estimates_keep_their_source_scope(page_factory):
         re.compile(rf'{data["positions"]} позиції\s*у {data["categories"]} категоріях')
     )
     expect(page.locator("#dokaz .fact").first).to_contain_text("позиції каталогу")
-
-    for selector in ("#tekhnika .sec-head .lead", "#cina .calc__note", "#materialy .sec-head .lead"):
-        expect(page.locator(selector)).to_contain_text(archive_date)
-    expect(page.locator("#cina .calc__note")).to_contain_text("архівними ставками")
     expect(page.locator("#materialy .tile__doc").first).to_contain_text("У каталозі:")
     expect(page.locator("#materialy .mats__note")).to_contain_text("для конкретної партії")
-    expect(page.locator("#cOrder")).to_have_text("Додати до заявки")
+    assert not re.search(r"\d[\d\s.,]*грн", page.locator("main").inner_text(), re.IGNORECASE)
 
 
-def test_route_estimate_is_labelled_historical(page_factory):
+def test_route_preserves_reference_distance_without_publishable_tariff(page_factory):
     page = page_factory(reduced=True)
     page.locator('#geoList [data-ua="Харківська"]').click()
-    archive_date = date.fromisoformat(page.evaluate("PBT.priceDate")).strftime("%d.%m.%Y")
-    expect(page.locator("#geoInfo .geo__src")).to_contain_text(f"Архівні ставки трала від {archive_date}")
-    expect(page.locator("#geoInfo .geo__src")).to_contain_text("Актуальні умови уточнюються")
+    panel = page.locator("#geoInfo")
+    expected = page.evaluate("PBT.routes.to['Харківська'].km")
+    expect(panel).to_contain_text(f"{expected} км")
+    assert "грн" not in panel.inner_text().lower()

@@ -1,4 +1,4 @@
-"""Chromium/WebKit parity over the same quote kernel and theme runtime.
+"""Chromium/WebKit parity over the same request form and theme runtime.
 
 No new prices, network fixtures or snapshots: assert identical business
 contracts across both real browser engines, including persistent theme state.
@@ -11,27 +11,28 @@ import pytest
 
 def parity_rows(page):
     return page.evaluate("""() => {
-          const D = window.PBT, Q = window.PBTQuote;
-          if (!D || !Q || typeof window.PBTcalc !== 'function') return null;
-          return D.fleet.filter(u => Number.isSafeInteger(u.price) && u.price > 0 && u.unit === 'год')
-            .flatMap(u => [0, 20, 40].map(km => {
-              const q = Q.quote(u, D.trailers, 10, km);
-              const expected = q === null ? null :
-                q.status === 'complete' ? q.total :
-                u.cat === 'crane' ? q.rental : null;
-              return {id: u.id, km, expected, actual: window.PBTcalc(u.id, 10, km)};
-            }));
+          const D = window.PBT;
+          const kind = document.querySelector('#cKind');
+          const task = document.querySelector('#cTask');
+          if (!D || !kind || !task || document.querySelector('#calcUnavailable')?.hidden !== true) return null;
+          return {
+            kinds: [...kind.options].filter(option => option.value).map(option => option.value),
+            taskRequired: task.required,
+            taskLimit: task.maxLength,
+            hasRates: D.fleet.some(item => Object.prototype.hasOwnProperty.call(item, 'price')),
+          };
         }""")
 
 
 def assert_parity_rows(engine, rows, diagnostics=None):
-    if not rows or len(rows) < 24:
+    if rows is None:
         raise AssertionError(
             'Недостатньо даних для перевірки браузера: ' +
             json.dumps({'engine': engine, 'rows': rows, 'diagnostics': diagnostics},
                        ensure_ascii=False, indent=2)
         )
-    assert all(row['expected'] == row['actual'] for row in rows), (engine, rows)
+    assert set(rows['kinds']) == {'rent', 'material', 'transport', 'other'}, (engine, rows)
+    assert rows['taskRequired'] and rows['taskLimit'] == 160 and not rows['hasRates'], (engine, rows)
 
 
 def wait_dom_within(page, deadline):
@@ -41,7 +42,7 @@ def wait_dom_within(page, deadline):
 
 
 @pytest.mark.parametrize('engine', ('chromium', 'webkit'))
-def test_quote_kernel_and_theme_parity_across_browser_engines(pw, server, engine):
+def test_intake_and_theme_parity_across_browser_engines(pw, server, engine):
     browser = getattr(pw, engine).launch()
     context = browser.new_context(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
     page = context.new_page()
