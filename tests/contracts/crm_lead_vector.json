@@ -1,0 +1,24 @@
+{
+ "_": "Золотий вектор контракту заявки між сайтом ПЛЕЙНБУД і PBT CRM (AGENTS.md §1). Сайт мусить надіслати рівно це тіло з рівно цим підписом; CRM мусить прийняти його на /api/v1/site/leads. Секрет — тестовий рядок, не бойовий. Тіло — UTF-8 рядок body; підпис — HMAC-SHA256(secret, body) у шістнадцятковому вигляді.",
+ "path": "/api/v1/site/leads",
+ "method": "POST",
+ "content_type": "application/json",
+ "signature_header": "X-PBT-Signature",
+ "secret": "test-secret",
+ "form": {
+  "type": "rent",
+  "subject": "Екскаватор JCB JS220LC",
+  "method": "phone",
+  "contact": "067 123 45 67",
+  "hours": "16",
+  "place": "Полтава, вул. Соборності",
+  "name": "Олена",
+  "comment": "Потрібен ківш 1,2 м³ — «вузький»",
+  "date": "2099-01-15"
+ },
+ "lead_id": 1,
+ "body": "{\"id\": 1, \"type\": \"rent\", \"subject\": \"Екскаватор JCB JS220LC\", \"hours\": 16, \"km\": null, \"place\": \"Полтава, вул. Соборності\", \"date\": \"2099-01-15\", \"name\": \"Олена\", \"method\": \"phone\", \"contact\": \"+380671234567\", \"comment\": \"Потрібен ківш 1,2 м³ — «вузький»\"}",
+ "body_bytes": 317,
+ "body_sha256": "014269105ec1625751d33ff373108acc7b14560c8f0d3cfb8cab5ba5c929fc74",
+ "signature": "ffad891e5290945a8ec4ab29ba39131b9daff09eda55c02b5266276e77808fc9"
+}
