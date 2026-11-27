@@ -369,19 +369,22 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
   </div>
 </dialog>
 <!-- live-support:start -->
-<dialog class="support" id="supportPanel" aria-labelledby="supportTitle">
+<dialog class="support" id="supportPanel" aria-labelledby="supportTitle" data-view="dialogue">
   <header class="support__head">
     <div>
-      <p class="support__identity"><span aria-hidden="true"></span> Цифровий помічник ПЛЕЙНБУД</p>
-      <h2 id="supportTitle" tabindex="-1">Розберімо ваше завдання</h2>
-      <p class="support__sub">Техніка, матеріали або перевезення під ваш об’єкт.</p>
+      <p class="support__identity">ПЛЕЙНБУД · цифровий помічник</p>
+      <h2 id="supportTitle" tabindex="-1">Розбір робіт</h2>
     </div>
     <form method="dialog" class="support__close"><button type="submit" aria-label="Закрити помічника">×</button></form>
+    <div class="support__views" aria-label="Частини робочої панелі" role="group">
+      <button type="button" id="supportDialogueView" aria-controls="supportConversation" aria-pressed="true">Розмова</button>
+      <button type="button" id="supportBriefView" aria-controls="supportWorkspace" aria-pressed="false">Завдання</button>
+    </div>
   </header>
   <div class="support__body" id="supportBody">
-    <div class="support__conversation">
+    <div class="support__conversation" id="supportConversation">
       <div class="support__timeline" id="supportTimeline" role="log" aria-label="Розмова" aria-live="polite" aria-relevant="additions">
-        <div class="support__message support__message--agent"><p>Що потрібно зробити на об’єкті? Почніть із завдання й населеного пункту, якщо він уже відомий.</p></div>
+        <div class="support__message support__message--agent"><p>Що потрібно зробити на об’єкті? Опишіть роботу своїми словами.</p></div>
       </div>
       <div class="support__examples" id="supportExamples" aria-label="Приклади запитів" hidden>
         <button type="button" data-support-prompt="Потрібно очистити водойму від мулу.">Очистити водойму</button>
@@ -389,9 +392,20 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
         <button type="button" data-support-prompt="Треба перевезти негабаритну техніку.">Перевезти техніку</button>
       </div>
     </div>
-    <aside class="support__workspace" aria-label="Чернетка й контакти">
+    <aside class="support__workspace" id="supportWorkspace" aria-label="Параметри й чернетка завдання">
+      <div class="support__brief">
+        <div class="support__brief-head">
+          <h3 id="supportBriefTitle" tabindex="-1">Параметри завдання</h3>
+          <p class="support__stage" id="supportStage" hidden></p>
+        </div>
+        <p class="support__note" id="supportBriefEmpty">Тут будуть параметри, які ви назвете в розмові.</p>
+        <dl class="support__known" id="supportKnown" aria-label="Зі слів клієнта" hidden></dl>
+        <p class="support__next" id="supportNext" aria-live="polite" hidden></p>
+      </div>
       <div class="support__draft" id="supportDraft" hidden>
-        <p class="support__meta">Чернетка заявки</p>
+        <h3 class="support__meta" id="supportDraftTitle">Чернетка заявки</h3>
+        <p class="support__note" id="supportDraftStatus" aria-live="polite" hidden></p>
+        <button class="support__switch" id="supportNewDraft" type="button" hidden>Відкрити нову чернетку</button>
         <label for="supportDraftType">Що потрібно</label>
         <select id="supportDraftType">
           <option value="rent">Робота спецтехніки</option>
@@ -413,8 +427,9 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       </div>
     </aside>
   </div>
+  <p class="support__status" id="supportStatus" role="status" hidden></p>
   <form class="support__compose" id="supportForm" autocomplete="off">
-    <label for="supportMessage">Ваше завдання</label>
+    <label for="supportMessage" id="supportPromptLabel">Ваше повідомлення</label>
     <div class="support__entry">
       <textarea id="supportMessage" rows="2" maxlength="1000" placeholder="Наприклад, викопати траншею в Полтаві" disabled></textarea>
       <button class="support__send" id="supportSend" type="submit" disabled aria-label="Надіслати в розмову">Надіслати</button>
@@ -431,7 +446,6 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <label class="support__consent" id="supportConsentGroup" hidden><input id="supportConsent" type="checkbox"> Дозволяю передати OpenAI повідомлення, недавні репліки й вибраний файл для цієї відповіді.</label>
     <p class="support__note" id="supportFileName" hidden></p>
     <p class="support__note" id="supportNotice">Номер телефону та документи в чаті не потрібні. Розмова доступна, поки відкрита ця сторінка.</p>
-    <p class="support__status" id="supportStatus" role="status" hidden></p>
   </form>
 </dialog>
 <!-- live-support:end -->

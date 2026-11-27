@@ -1156,7 +1156,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {'ok': False, 'error': 'framing'})
         service = support_service()
         n = int(lengths[0])
-        max_body = service.max_body if service.provider else MAX_BODY * 4
+        max_body = service.max_body if service.provider else MAX_BODY * 6
         if not 0 < n <= max_body:
             return self.send_json(413, {'ok': False, 'error': 'size'})
         if not _support_slots.acquire(blocking=False):
