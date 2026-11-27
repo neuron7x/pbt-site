@@ -15,6 +15,10 @@
 .support-launch--hero { display: inline-flex; align-items: center; margin-block-start: .65rem; background: #0b172a; }
 .support-launch--form { width: 100%; margin-block-end: .65rem; text-align: left; }
 
+@media (max-height: 360px) and (orientation: landscape) {
+  .support-launch--hero { display: none; }
+}
+
 .support {
   --support-bg: #0d1623;
   --support-panel: #131f2f;

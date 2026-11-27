@@ -100,6 +100,15 @@ def test_support_does_not_close_when_all_lead_fields_are_already_filled(page_fac
     assert page.locator("#subject").input_value() == "Моя техніка"
 
 
+def test_short_landscape_preserves_chat_access_from_lead_section(page_factory):
+    page = page_factory(568, 320, mobile=True, reduced=True)
+    expect(page.locator(".support-launch--hero")).to_be_hidden()
+    launch = page.locator(".support-launch--form")
+    expect(launch).to_be_visible()
+    launch.click()
+    expect(page.locator("#supportPanel")).to_be_visible()
+
+
 def test_long_desktop_conversation_scrolls_independently_of_draft(page_factory):
     page = page_factory(1440, 900, reduced=True)
     launcher = page.locator("[data-support-open]").first
