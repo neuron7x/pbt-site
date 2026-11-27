@@ -18,6 +18,21 @@
    "note": "У app.py знову власна копія словника видів: два джерела можуть розійтися."
   },
   {
+   "id": "M-A1-app-imports-ambient-domain",
+   "task": "ADV-05.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "    _domain_spec.loader.exec_module(_domain)\n",
+     "replace": "    import domain as _domain\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_server_domain_module.py::test_path_loaded_server_retains_the_installed_domain"
+   ],
+   "note": "Завантаження app.py за шляхом бере загальний модуль domain замість домену зі своєї інсталяції."
+  },
+  {
    "id": "M-A1-domain-side-effect-on-import",
    "task": "ADV-05.T",
    "edits": [

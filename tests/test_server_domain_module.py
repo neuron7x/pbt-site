@@ -47,8 +47,26 @@ def test_importing_the_domain_in_an_empty_directory_creates_nothing(tmp_path):
 def test_the_server_uses_the_domain_module_and_keeps_no_copy():
     source = (ROOT / 'server/app.py').read_text(encoding='utf-8')
     tree = ast.parse(source)
-    imported = {alias.name for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.module == 'domain' for alias in node.names}
-    assert imported == set(NAMES)
     defined = {node.name for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef))}
-    defined |= {target.id for node in tree.body if isinstance(node, ast.Assign) for target in node.targets if isinstance(target, ast.Name)}
-    assert not defined & set(NAMES), defined & set(NAMES)                                           # другої копії в app.py немає
+    assert not defined & set(NAMES)
+    for name in NAMES:
+        bindings = [node.value for node in tree.body if isinstance(node, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        assert len(bindings) == 1 and ast.unparse(bindings[0]) == f'_domain.{name}', name
+
+
+def test_path_loaded_server_retains_the_installed_domain(tmp_path):
+    code = """
+import json, runpy, sys, types
+from pathlib import Path
+sys.modules['domain'] = types.ModuleType('domain')
+before = sys.path.copy()
+app = runpy.run_path(sys.argv[1])
+source = Path(app['validate'].__code__.co_filename).resolve()
+print(json.dumps([source == Path(sys.argv[1]).with_name('domain.py'), before == sys.path]))
+"""
+    env = {'PBT_DATA_DIR': str(tmp_path), 'DELIVERY_WORKER': '0'}
+    run = subprocess.run([sys.executable, '-B', '-c', code, str(ROOT / 'server/app.py')],
+                         env=env, capture_output=True, text=True, timeout=20)
+    assert run.returncode == 0, run.stderr
+    assert json.loads(run.stdout) == [True, True]

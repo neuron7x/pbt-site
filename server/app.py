@@ -11,9 +11,34 @@ from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if __package__:
+    from . import domain as _domain
+else:
+    # Entrypoint і завантаження за шляхом беруть домен з тієї самої інсталяції.
+    _domain_spec = spec_from_file_location('_pbt_lead_domain', ROOT / 'server' / 'domain.py')
+    if _domain_spec is None or _domain_spec.loader is None:
+        raise ImportError('Cannot load the installed lead domain')
+    _domain = module_from_spec(_domain_spec)
+    _domain_spec.loader.exec_module(_domain)
+
+CTRL = _domain.CTRL
+KYIV = _domain.KYIV
+METHODS = _domain.METHODS
+MSG = _domain.MSG
+MSG_SUBJECT = _domain.MSG_SUBJECT
+TYPES = _domain.TYPES
+_contact = _domain._contact
+_date = _domain._date
+_int = _domain._int
+clean = _domain.clean
+date_allowed = _domain.date_allowed
+kyiv_date = _domain.kyiv_date
+validate = _domain.validate
+
 WEB = ROOT / 'web'
 # Каталог стану (журнал, сіль IP, база за замовчуванням): PBT_DATA_DIR з оточення процесу, інакше <repo>/data як і раніше.
 # Береться ДО .env навмисно: шлях до стану — властивість розгортання (systemd/тести), а не файла в робочому дереві.
@@ -305,13 +330,6 @@ def rate_commit(ip, *buckets):
             raise RuntimeError('quota identity was not reserved before durable write')
         for b in buckets:
             _hits[(ip, b)] = [t for t in _hits.get((ip, b), []) if now - t < LIMITS[b][1]] + [now]
-
-
-# ─── валідація: server/domain.py (чисті функції, без I/O; наказ А1, крок 1) ───
-_HERE = str(Path(__file__).resolve().parent)
-if _HERE not in sys.path:                 # модулі сервера лежать поруч: і для `python server/app.py`, і для завантаження за шляхом
-    sys.path.insert(0, _HERE)
-from domain import CTRL, KYIV, METHODS, MSG, MSG_SUBJECT, TYPES, _contact, _date, _int, clean, date_allowed, kyiv_date, validate  # noqa: E402,F401 — імена лишаються доступними як app.<ім'я>
 
 
 # ─── продакшн-адаптери: сталий outbox (SQLite) ───────────
