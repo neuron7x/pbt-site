@@ -434,7 +434,7 @@
     gOut.value = (p === 0 ? '0,0' : '−' + (p * 6).toFixed(1).replace('.', ',')) + ' м';
     gauge.classList.toggle('is-on', y > 80);
     if (p >= .985 && !gauge.classList.contains('is-falling')) {   // гак дійшов до низу — вантаж підчеплено й далі їде з гаком
-      if (gauge.classList.contains('is-splat')) { gauge.classList.remove('is-splat'); gauge.classList.add('is-mush'); }   // після падіння гак бере вже грудку
+      if (gauge.classList.contains('is-splat')) { gauge.classList.remove('is-splat'); gauge.classList.add('is-mush'); }   // після падіння гак підбирає знаки долара
       gauge.classList.add('has-load');
     }
     if (motion() && p < gaugeP - .0004 && gauge.classList.contains('has-load')) {   // підйом: вантаж махає й губить монети, поки гак іде вгору
