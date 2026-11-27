@@ -3,21 +3,6 @@
  "note": "Each fault is a stated unsafe behavior; the oracle must fail on it. A survivor blocks acceptance.",
  "mutants": [
   {
-   "id": "M-A1-app-keeps-own-types",
-   "task": "ADV-05.T",
-   "edits": [
-    {
-     "file": "server/app.py",
-     "find": "MAX_BODY = 8 * 1024\n",
-     "replace": "MAX_BODY = 8 * 1024\nTYPES = {'rent', 'material', 'transport', 'other'}\n"
-    }
-   ],
-   "oracle": [
-    "tests/test_server_domain_module.py::test_the_server_uses_the_domain_module_and_keeps_no_copy"
-   ],
-   "note": "У app.py знову власна копія словника видів: два джерела можуть розійтися."
-  },
-  {
    "id": "M-A1-app-imports-ambient-domain",
    "task": "ADV-05.T",
    "edits": [
@@ -31,6 +16,21 @@
     "tests/test_server_domain_module.py::test_path_loaded_server_retains_the_installed_domain"
    ],
    "note": "Завантаження app.py за шляхом бере загальний модуль domain замість домену зі своєї інсталяції."
+  },
+  {
+   "id": "M-A1-app-keeps-own-types",
+   "task": "ADV-05.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "MAX_BODY = 8 * 1024\n",
+     "replace": "MAX_BODY = 8 * 1024\nTYPES = {'rent', 'material', 'transport', 'other'}\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_server_domain_module.py::test_the_server_uses_the_domain_module_and_keeps_no_copy"
+   ],
+   "note": "У app.py знову власна копія словника видів: два джерела можуть розійтися."
   },
   {
    "id": "M-A1-domain-side-effect-on-import",
