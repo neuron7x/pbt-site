@@ -143,6 +143,51 @@
    ]
   },
   {
+   "id": "M-CONTACTS-browser-drops-email-channel",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "    if (email) ch.push({ k: 'Електронна пошта', v: email, href: `mailto:${email}` });\n",
+     "replace": ""
+    }
+   ],
+   "oracle": [
+    "tests/test_contacts_paths_agree.py::test_build_time_markup_and_browser_substitution_give_the_same_contacts"
+   ],
+   "note": "Скрипт прибирає канал пошти, який є в розмітці зі збірки."
+  },
+  {
+   "id": "M-CONTACTS-browser-formats-phone-differently",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "'$1 $2 $3 $4');",
+     "replace": "'($1) $2-$3-$4');"
+    }
+   ],
+   "oracle": [
+    "tests/test_contacts_paths_agree.py::test_build_time_markup_and_browser_substitution_give_the_same_contacts"
+   ],
+   "note": "Скрипт показує телефон в іншому форматі, ніж збірка: номер «стрибає» після завантаження."
+  },
+  {
+   "id": "M-CONTACTS-browser-labels-edrpou-differently",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "b.edrpou ? `ЄДРПОУ ${b.edrpou}` : ''",
+     "replace": "b.edrpou ? `Код ${b.edrpou}` : ''"
+    }
+   ],
+   "oracle": [
+    "tests/test_contacts_paths_agree.py::test_build_time_markup_and_browser_substitution_give_the_same_contacts"
+   ],
+   "note": "Скрипт підписує ЄДРПОУ інакше, ніж збірка."
+  },
+  {
    "id": "M-CONTACTS-check-ignores-drift",
    "task": "WEB-07.T",
    "edits": [
