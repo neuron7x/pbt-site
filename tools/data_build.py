@@ -3,7 +3,7 @@
 
 Джерела (кожне — єдине місце для своїх фактів):
   config/business.json  — реквізити фірми; службовий ключ `_status` назовні не йде;
-  data/catalog.json     — категорії, парк, матеріали; внутрішнє поле `price` позиції назовні не йде (ціна на сайті договірна);
+  data/catalog.json     — категорії, парк, матеріали; поля `price` немає: ціну під заявку визначає керівник фірми; вписане — назовні не йде;
   content/site.json     — решта даних інтерфейсу: роботи, кадри, області, маршрути, тека відео.
 
 Схема закрита: невідомий або відсутній ключ верхнього рівня в будь-якому джерелі — помилка, файл не записується.
@@ -27,7 +27,7 @@ PRIVATE = ('_status',)                                     # службові н
 BUSINESS_KEYS = ('brand', 'legalName', 'edrpou', 'city', 'region', 'address', 'url', 'logo', 'contacts', 'responsiblePerson', 'hours',
                  'regions', 'director', 'bank')
 CATALOG_KEYS = ('cats', 'fleet', 'materials')
-ITEM_PRIVATE = ('price',)                                  # внутрішня ціна позиції: є в каталозі, на сторінку не йде (рішення acb1b22)
+ITEM_PRIVATE = ('price',)                                  # другий бар'єр: ціни в каталозі немає, а вписана — на сторінку не йде (acb1b22)
 PRICED = ('fleet', 'materials')
 SITE_KEYS = ('jobs', 'proof', 'regions', 'routes', 'video')
 ORDER = ('business', 'cats', 'fleet', 'materials', 'jobs', 'proof', 'regions', 'routes', 'video')
