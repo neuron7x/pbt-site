@@ -7,7 +7,7 @@
 import base64, json, mimetypes, re
 from pathlib import Path
 
-from bundle_contract import emit_fragment, fit_video_budget, inline_css
+from bundle_contract import emit_fragment, fit_video_budget, inline_css, offline_source
 from artifact_budget import audit_artifact, enforce_artifact_budget, _save_report
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,9 +24,7 @@ def data_uri(rel):
     return f'data:{mt};base64,' + base64.b64encode(p.read_bytes()).decode()
 
 
-# The support conversation needs the live same-origin API. Offline builds retain the lead form.
-source_html = re.sub(r'[ \t]*<!-- live-support:start -->.*?<!-- live-support:end -->\n?',
-                     '', (WEB / 'index.html').read_text(encoding='utf-8'), flags=re.S)
+source_html = offline_source((WEB / 'index.html').read_text(encoding='utf-8'))
 html = source_html
 fonts = re.sub(r'url\(\.\./fonts/([^)]+)\)', lambda m: 'url(' + data_uri('fonts/' + m.group(1)) + ')', (WEB / 'css' / 'fonts.css').read_text(encoding='utf-8'))
 css = (WEB / 'css' / 'site.css').read_text(encoding='utf-8')

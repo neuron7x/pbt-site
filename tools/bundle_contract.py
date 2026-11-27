@@ -5,6 +5,12 @@ from html import escape
 import re
 
 
+def offline_source(html: str) -> str:
+    """Вилучає розмітку чату, який потребує живого API."""
+    return re.sub(r'[ \t]*<!-- live-support:start -->.*?<!-- live-support:end -->\n?',
+                  '', html, flags=re.S)
+
+
 def fit_video_budget(assemble: Callable[[list[str]], str], candidates: list[str],
                      limit: int) -> tuple[str, list[str]]:
     """Drop lowest-priority clips until the UTF-8 page fits, including its posters."""

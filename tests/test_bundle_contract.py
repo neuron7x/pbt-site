@@ -9,7 +9,7 @@ import subprocess
 
 import pytest
 
-from tools.bundle_contract import emit_fragment, fit_video_budget, inline_css
+from tools.bundle_contract import emit_fragment, fit_video_budget, inline_css, offline_source
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / "web"
@@ -73,7 +73,10 @@ def test_actual_offline_input_embeds_single_canonical_dual_theme_stylesheet():
         (path, (WEB / path).read_text(encoding="utf-8"))
         for path in ("css/fonts.css", "css/site.css")
     )
-    html = inline_css(source, styles)
+    html = inline_css(offline_source(source), styles)
+    assert 'id="supportPanel"' in source and 'id="supportPanel"' not in html
+    assert 'data-support-open' not in html and 'js/support.js' not in html
+    assert 'css/support.css' not in html
     assert "css/precision.css" not in html
     assert ':root[data-theme="precision"]' in html
     assert ':root[data-theme="sky"]' in html
@@ -90,7 +93,7 @@ def test_inline_builder_uses_shared_contract_for_both_outputs():
         for node in ast.walk(ast.parse(code))
         if isinstance(node, ast.ImportFrom) and node.module == "bundle_contract"
     ]
-    assert any({"emit_fragment", "inline_css"} <= names for names in imports)
+    assert any({"emit_fragment", "inline_css", "offline_source"} <= names for names in imports)
     assert code.count("inline_css(") == 2  # однофайлова й багатофайлова
     assert code.count("emit_fragment(") == 2  # обидва артефакти: prepaint перед CSS
 
