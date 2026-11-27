@@ -203,6 +203,21 @@
    "note": "Одне місце з телефоном жорстко прописане: зміна номера в джерелі його не досягає."
   },
   {
+   "id": "M-DATA-catalog-carries-price",
+   "task": "WEB-07.T",
+   "edits": [
+    {
+     "file": "data/catalog.json",
+     "find": "   \"id\": \"e-1\",\n",
+     "replace": "   \"id\": \"e-1\",\n   \"price\": 1,\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_data_build.py::test_catalog_and_page_carry_no_price"
+   ],
+   "note": "У каталозі знову з’являється число ціни, хоча ціну під заявку визначає керівник фірми."
+  },
+  {
    "id": "M-DATA-check-ignores-drift",
    "task": "WEB-07.T",
    "edits": [
@@ -228,7 +243,7 @@
     }
    ],
    "oracle": [
-    "tests/test_data_build.py::test_internal_catalog_price_never_reaches_the_page"
+    "tests/test_data_build.py::test_a_price_slipped_back_into_the_catalog_still_never_reaches_the_page"
    ],
    "note": "Внутрішня ціна позиції з каталогу потрапляє у публічний data.js, хоча на сайті ціна договірна."
   },
