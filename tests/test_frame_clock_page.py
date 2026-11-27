@@ -38,7 +38,8 @@ def test_decorative_loops_share_one_frame_request(browser, server):
         pg.on('pageerror', lambda e: errors.append(str(e)))
         pg.goto(server['base'] + '/', wait_until='networkidle')
         assert pg.evaluate("document.documentElement.dataset.quality") == 'full'
-        assert pg.evaluate("typeof window.PBTClock.createClock") == 'function'
+        # без планувальника це має бути збій твердження, а не виняток браузера (tools/red_on_base.py зараховує лише твердження)
+        assert pg.evaluate("typeof (window.PBTClock && window.PBTClock.createClock)") == 'function'
         pg.wait_for_timeout(2600)                                   # поява героя й лічильники чисел завершились
         before = pg.evaluate("""({tx: getComputedStyle(document.getElementById('track')).getPropertyValue('--tx'),
                                   glow: document.getElementById('glow').style.transform})""")
