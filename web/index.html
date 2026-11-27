@@ -38,6 +38,9 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
 </script>
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/site.css">
+<!-- live-support:start -->
+<link rel="stylesheet" href="css/support.css">
+<!-- live-support:end -->
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"LocalBusiness","name":"ТОВ «ПЛЕЙНБУД»","alternateName":"PLAINBUD","telephone":["+380675550317"],"email":"plainbud@gmail.com","identifier":{"@type":"PropertyValue","propertyID":"ЄДРПОУ","value":"45318076"},"address":{"@type":"PostalAddress","streetAddress":"вул. Небесної сотні, буд. 69 Б","addressLocality":"Полтава","postalCode":"36022","addressCountry":"UA"},"areaServed":["Полтавська область","Черкаська область","Дніпропетровська область","Харківська область","Запорізька область","Київська область","Кіровоградська область","Чернігівська область","Житомирська область"],"makesOffer":{"@type":"Offer","itemOffered":{"@type":"Service","name":"Оренда спецтехніки з оператором"}}}
 </script>
@@ -101,6 +104,9 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
       <h1 id="heroTitle"><span class="line"><span class="w" style="transition-delay:.45s">Спецтехніка</span></span> <span class="line" style="display:block"><span class="w" style="transition-delay:.52s">для</span> <span class="w" style="transition-delay:.59s">складних</span> <span class="w" style="transition-delay:.66s">робіт</span></span></h1>
       <p class="hero__lead">Амфібії, крани, трали. З оператором і пальним.</p>
       <div class="row"><a class="btn" href="#zapyt" data-req="rent">Викликати техніку</a><a class="btn btn--ghost" href="#cina">Отримати кошторис</a></div>
+      <!-- live-support:start -->
+      <button class="support-launch support-launch--hero" type="button" data-support-open aria-haspopup="dialog" aria-controls="supportPanel" hidden><span aria-hidden="true">↗</span> Обговорити завдання</button>
+      <!-- live-support:end -->
       <ul class="hero__stats" aria-label="Коротко про каталог">
         <li><b data-count="32">32</b><span>позиції</span></li>
         <li><b data-count="120" data-suffix=" т">120 т</b><span>кран</span></li>
@@ -276,6 +282,9 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     </ol>
     <div class="act">
       <aside class="act__aside rv">
+        <!-- live-support:start -->
+        <button class="support-launch support-launch--form" type="button" data-support-open aria-haspopup="dialog" aria-controls="supportPanel" hidden><span aria-hidden="true">↗</span> Допоможіть скласти заявку</button>
+        <!-- live-support:end -->
         <div class="channels" id="channels">
           <a href="tel:+380675550317"><span>Телефон</span><b>067 555 03 17</b></a>
           <a href="mailto:plainbud@gmail.com"><span>Електронна пошта</span><b>plainbud@gmail.com</b></a>
@@ -359,11 +368,81 @@ var font=document.getElementById('themeFontPreload');if(font)font.href='fonts/'+
     <div class="pass__act"><button class="btn" type="button" id="passReq" data-req="rent">У заявку</button><button class="btn btn--ghost" type="button" id="passPrint">Друкувати паспорт</button></div>
   </div>
 </dialog>
+<!-- live-support:start -->
+<dialog class="support" id="supportPanel" aria-labelledby="supportTitle">
+  <header class="support__head">
+    <div>
+      <p class="support__identity"><span aria-hidden="true"></span> Цифровий помічник ПЛЕЙНБУД</p>
+      <h2 id="supportTitle" tabindex="-1">Розберімо ваше завдання</h2>
+      <p class="support__sub">Техніка, матеріали або перевезення під ваш об’єкт.</p>
+    </div>
+    <form method="dialog" class="support__close"><button type="submit" aria-label="Закрити помічника">×</button></form>
+  </header>
+  <div class="support__body" id="supportBody">
+    <div class="support__conversation">
+      <div class="support__timeline" id="supportTimeline" role="log" aria-label="Розмова" aria-live="polite" aria-relevant="additions">
+        <div class="support__message support__message--agent"><p>Що потрібно зробити на об’єкті? Почніть із завдання й населеного пункту, якщо він уже відомий.</p></div>
+      </div>
+      <div class="support__examples" id="supportExamples" aria-label="Приклади запитів" hidden>
+        <button type="button" data-support-prompt="Потрібно очистити водойму від мулу.">Очистити водойму</button>
+        <button type="button" data-support-prompt="Хочу замовити щебінь із доставкою.">Замовити щебінь</button>
+        <button type="button" data-support-prompt="Треба перевезти негабаритну техніку.">Перевезти техніку</button>
+      </div>
+    </div>
+    <aside class="support__workspace" aria-label="Чернетка й контакти">
+      <div class="support__draft" id="supportDraft" hidden>
+        <p class="support__meta">Чернетка заявки</p>
+        <label for="supportDraftType">Що потрібно</label>
+        <select id="supportDraftType">
+          <option value="rent">Робота спецтехніки</option>
+          <option value="material">Сипучі матеріали</option>
+          <option value="transport">Перевезення</option>
+          <option value="other">Інше завдання</option>
+        </select>
+        <label for="supportDraftSubject">Завдання</label>
+        <input id="supportDraftSubject" maxlength="160" autocomplete="off">
+        <label for="supportDraftPlace">Об’єкт</label>
+        <input id="supportDraftPlace" maxlength="160" autocomplete="off">
+        <label for="supportDraftComment">Деталі</label>
+        <textarea id="supportDraftComment" rows="3" maxlength="1000" autocomplete="off"></textarea>
+        <button class="support__apply" id="supportApply" type="button">Перенести до форми</button>
+        <p class="support__note">Контакт і надсилання залишаються у формі заявки.</p>
+      </div>
+      <div class="support__contact">
+        <p class="support__note" id="supportMode">Перевіряю доступність помічника…</p>
+      </div>
+    </aside>
+  </div>
+  <form class="support__compose" id="supportForm" autocomplete="off">
+    <label for="supportMessage">Ваше завдання</label>
+    <div class="support__entry">
+      <textarea id="supportMessage" rows="2" maxlength="1000" placeholder="Наприклад, викопати траншею в Полтаві" disabled></textarea>
+      <button class="support__send" id="supportSend" type="submit" disabled aria-label="Надіслати в розмову">Надіслати</button>
+    </div>
+    <div class="support__extras">
+      <div class="support__attachments" id="supportAttachments" hidden>
+        <label class="support__attach" for="supportFile">Додати фото або аудіо</label>
+        <input type="file" id="supportFile" accept="image/jpeg,image/png,image/webp,audio/wav,audio/mpeg,audio/webm,audio/mp4,audio/ogg,.wav,.mp3,.webm,.m4a,.mp4,.ogg">
+        <button id="supportRemoveFile" type="button" hidden>Прибрати файл</button>
+      </div>
+      <button class="support__clear" id="supportClear" type="button" hidden>Нова розмова</button>
+      <a href="#zapyt" id="supportHuman">Контакти диспетчера</a>
+    </div>
+    <label class="support__consent" id="supportConsentGroup" hidden><input id="supportConsent" type="checkbox"> Дозволяю передати OpenAI повідомлення, недавні репліки й вибраний файл для цієї відповіді.</label>
+    <p class="support__note" id="supportFileName" hidden></p>
+    <p class="support__note" id="supportNotice">Номер телефону та документи в чаті не потрібні. Розмова доступна, поки відкрита ця сторінка.</p>
+    <p class="support__status" id="supportStatus" role="status" hidden></p>
+  </form>
+</dialog>
+<!-- live-support:end -->
 <script src="js/data.js"></script>
 <script src="js/cine.js"></script>
 <script src="js/dom.js"></script>
 <script src="js/physics.js"></script>
 <script src="js/clock.js"></script>
 <script src="js/site.js"></script>
+<!-- live-support:start -->
+<script src="js/support.js"></script>
+<!-- live-support:end -->
 </body>
 </html>

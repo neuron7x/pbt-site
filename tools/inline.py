@@ -24,7 +24,10 @@ def data_uri(rel):
     return f'data:{mt};base64,' + base64.b64encode(p.read_bytes()).decode()
 
 
-html = (WEB / 'index.html').read_text(encoding='utf-8')
+# The support conversation needs the live same-origin API. Offline builds retain the lead form.
+source_html = re.sub(r'[ \t]*<!-- live-support:start -->.*?<!-- live-support:end -->\n?',
+                     '', (WEB / 'index.html').read_text(encoding='utf-8'), flags=re.S)
+html = source_html
 fonts = re.sub(r'url\(\.\./fonts/([^)]+)\)', lambda m: 'url(' + data_uri('fonts/' + m.group(1)) + ')', (WEB / 'css' / 'fonts.css').read_text(encoding='utf-8'))
 css = (WEB / 'css' / 'site.css').read_text(encoding='utf-8')
 STYLES = (('css/fonts.css', fonts), ('css/site.css', css))
@@ -76,7 +79,7 @@ MULTI = DIST / 'artifact'
 ARTIFACT_OMIT = frozenset({'media/video/hero-wide.mp4'})
 shutil.rmtree(MULTI, ignore_errors=True)
 d = (WEB / 'js' / 'data.js').read_text(encoding='utf-8') + '\nwindow.PBT.geoMap = ' + geo_map + ';' + '\nwindow.PBT.mp4Only = true;\nwindow.PBT.heroSD = true;\nwindow.PBT_BUNDLE = true;\n'
-h = (WEB / 'index.html').read_text(encoding='utf-8')
+h = source_html
 h = inline_css(h, STYLES)
 h = h.replace('<script src="js/data.js"></script>', '<script>' + d + '</script>').replace('<script src="js/cine.js"></script>', '<script>' + cine + '</script>').replace('<script src="js/dom.js"></script>', '<script>' + dom + '</script>').replace('<script src="js/physics.js"></script>', '<script>' + physics + '</script>').replace('<script src="js/clock.js"></script>', '<script>' + clock + '</script>').replace('<script src="js/site.js"></script>', '<script>' + blueprint + '</script><script>' + site + '</script>')
 h = re.sub(r'<link rel="preload"[^>]*>\n?', '', h)

@@ -189,7 +189,7 @@ if _guard_state == 'held':
 
 # ─── rate limit на IP: усі запити (захист від перебору) і прийняті заявки ───
 _hits, _hits_lock = {}, threading.RLock()
-# One identity per client, independently of its three quota buckets; insertion order = least recently seen first.
+# One identity per client, independently of its quota buckets; insertion order = least recently seen first.
 _active_ips = {}
 RATE_IP_CAP = int(ENV('RATE_IP_CAP') or 8192)
 if RATE_IP_CAP < 1:
@@ -202,7 +202,7 @@ if RATE_OVERFLOW_CAP < 1:
     raise ValueError('RATE_OVERFLOW_CAP must be positive')
 _overflow = {}
 LIMITS = {'any': (int(ENV('RATE_ANY_10MIN') or 60), 600), 'lead': (int(ENV('RATE_LEAD_10MIN') or 5), 600),
-          'lead_day': (int(ENV('RATE_LEAD_DAY') or 30), 86400)}
+          'lead_day': (int(ENV('RATE_LEAD_DAY') or 30), 86400), 'support': (18, 600)}
 _BUCKETS = tuple(LIMITS)
 
 
@@ -721,6 +721,32 @@ def public_brand_name():
     return name if isinstance(name, str) and name.strip() else 'Сайт'
 
 
+_support_instance = None
+_support_init_lock = threading.Lock()
+_support_slots = threading.BoundedSemaphore(3)
+
+
+def support_service():
+    global _support_instance
+    with _support_init_lock:
+        if _support_instance is None:
+            if __name__ == '__main__':
+                from support import Support
+                from support_provider import OpenAIProvider
+            else:
+                from server.support import Support
+                from server.support_provider import OpenAIProvider
+            _support_instance = Support(ROOT, OpenAIProvider.from_env())
+        return _support_instance
+
+
+def _unique_support_keys(pairs):
+    obj = dict(pairs)
+    if len(obj) != len(pairs):
+        raise ValueError('duplicate support key')
+    return obj
+
+
 # ─── HTTP ────────────────────────────────────────────────
 def _inline_script_hashes():
     """S5: CSP без 'unsafe-inline' для скриптів — дозволено лише точні вбудовані скрипти сторінок (sha256)."""
@@ -1074,6 +1100,8 @@ class Handler(SimpleHTTPRequestHandler):
         return True
 
     def do_GET(self):
+        if self.path.split('?')[0] == '/api/support':
+            return self.send_json(200, support_service().status())
         if self.path.split('?')[0] == '/api/config':
             return self.send_json(200, public_config())
         if self.path.split('?')[0] == '/api/health':
@@ -1083,7 +1111,7 @@ class Handler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_HEAD(self):
-        if self.path.split('?')[0] in ('/api/config', '/api/health'):
+        if self.path.split('?')[0] in ('/api/config', '/api/health', '/api/support'):
             return self.do_GET()
         if self.serve_gzip():
             return
@@ -1115,7 +1143,54 @@ class Handler(SimpleHTTPRequestHandler):
         own = {f'http://{host}', f'https://{host}'}
         return origin in own or origin in allowed
 
+    def post_support(self):
+        # Окремий бюджет від заявок. Перед відмовою на недочитаному запиті закриваємо з'єднання.
+        self.close_connection = True
+        if not self.origin_ok():
+            return self.send_json(403, {'ok': False, 'error': 'origin'})
+        if len(self.headers.get_all('Content-Type') or []) != 1 or self.headers.get_content_type() != 'application/json':
+            return self.send_json(415, {'ok': False, 'error': 'content_type'})
+        lengths = self.headers.get_all('Content-Length') or []
+        if (self.headers.get('Transfer-Encoding') is not None or len(lengths) != 1
+                or not re.fullmatch(r'[0-9]{1,10}', lengths[0].strip())):
+            return self.send_json(400, {'ok': False, 'error': 'framing'})
+        service = support_service()
+        n = int(lengths[0])
+        max_body = service.max_body if service.provider else MAX_BODY * 4
+        if not 0 < n <= max_body:
+            return self.send_json(413, {'ok': False, 'error': 'size'})
+        if not _support_slots.acquire(blocking=False):
+            return self.send_json(503, {'ok': False, 'error': 'busy'})
+        try:
+            if not rate_ok(self.client_ip(), 'support'):
+                return self.send_json(429, {'ok': False, 'error': 'rate'})
+            self._body_deadline = time.monotonic() + self.body_timeout
+            try:
+                raw = self.rfile.read(n)
+            except TimeoutError:
+                return self.send_json(408, {'ok': False, 'error': 'request_timeout'})
+            except OSError:
+                return self.send_json(400, {'ok': False, 'error': 'json'})
+            finally:
+                self._body_deadline = None
+                try:
+                    self.connection.settimeout(self.timeout)
+                except OSError:
+                    pass
+            if len(raw) != n:
+                return self.send_json(400, {'ok': False, 'error': 'json'})
+            try:
+                body = json.loads(raw.decode('utf-8'), object_pairs_hook=_unique_support_keys)
+            except (ValueError, RecursionError):
+                return self.send_json(400, {'ok': False, 'error': 'json'})
+            code, answer = service.reply(body)
+            return self.send_json(code, answer)
+        finally:
+            _support_slots.release()
+
     def do_POST(self):
+        if self.path.split('?')[0] == '/api/support':
+            return self.post_support()
         if self.path.split('?')[0] != '/api/lead':
             return self.send_json(404, {'ok': False, 'error': 'not_found'})
         ip = self.client_ip()

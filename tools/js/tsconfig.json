@@ -21,6 +21,7 @@
     "../../web/js/dom.js",
     "../../web/js/physics.js",
     "../../web/js/clock.js",
-    "../../web/js/site.js"
+    "../../web/js/site.js",
+    "../../web/js/support.js"
   ]
 }
