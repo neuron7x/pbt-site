@@ -31,6 +31,73 @@ def next_field(data):
     return item["field"] if item else None
 
 
+@pytest.mark.parametrize(("message", "factor"), [
+    ("Скільки коштує автокран у Полтаві?", "виліт стріли"),
+    ("Скільки коштує трал з Полтави до Києва?", "точки завантаження й доставки"),
+    ("Скільки коштує щебінь у Полтаві?", "фракцію"),
+    ("Скільки коштує траншея в Полтаві?", "ширину"),
+])
+def test_quote_explains_what_to_compare_and_offers_a_draft(message, factor):
+    result = Dialogue().say(message)
+    assert "Кошторис готує диспетчер" in result["reply"] and factor in result["reply"]
+    assert result["brief"]["offer"] == "quote"
+    assert result["brief"]["next"]["can_skip"] is True
+
+
+def test_budget_objection_does_not_change_scope_or_invent_a_discount():
+    d = Dialogue()
+    previous = d.say("Кран у Полтаві, 5 т, виліт 12 м")
+    result = d.say("Дорого. Є дешевший варіант?")
+    assert "які параметри можна змінити" in result["reply"]
+    assert "знижк" not in result["reply"] and "грн" not in result["reply"]
+    assert result["draft"] == previous["draft"]
+    assert result["brief"]["offer"] == "quote"
+
+
+def test_quote_and_skip_never_override_specialist_contact_or_conflict():
+    safety = Dialogue().say("Скільки коштує автокран біля ЛЕП у Полтаві?")
+    contact = Dialogue().say("Дайте телефон диспетчера. Скільки коштує автокран?")
+    for answer in (safety, contact):
+        assert answer["handoff"] and answer["brief"]["next"] is None
+        assert "offer" not in answer["brief"]
+    d = Dialogue()
+    d.say("Кран у Полтаві, 5 т, виліт 12 м")
+    conflict = d.say("8 т. Скільки коштує?")
+    assert next_field(conflict) == "mass"
+    assert "can_skip" not in conflict["brief"]["next"]
+    assert "offer" not in conflict["brief"]
+
+
+def test_price_without_task_asks_one_qualifying_question():
+    d = Dialogue()
+    result = d.say("Яка ціна?")
+    assert "Що потрібно зробити на об’єкті?" in result["reply"]
+    assert result["draft"] is None and "offer" not in result["brief"]
+    assert d.say("Автокран у Полтаві")["brief"]["offer"] == "quote"
+
+
+def test_quote_intent_survives_skips_but_stops_on_deferral_or_new_task():
+    d = Dialogue()
+    d.say("Скільки коштує автокран у Полтаві?")
+    skipped = d.say("Поки не знаю")
+    assert next_field(skipped) == "reach" and skipped["brief"]["offer"] == "quote"
+    deferred = d.say("Кошторис не потрібен, просто цікавлюся")
+    assert "offer" not in deferred["brief"] and deferred["brief"]["next"] is None
+    assert "offer" not in d.say("12 м")["brief"]
+    assert d.say("Скільки коштує?")["brief"]["offer"] == "quote"
+    assert "offer" not in d.say("Інша задача: треба щебінь")["brief"]
+
+
+def test_three_skips_still_advance_independent_fields_for_a_quote():
+    d = Dialogue()
+    assert next_field(d.say("Скільки коштує викопати траншею?")) == "place"
+    unknown = "Поки не знаю"
+    for count, field in enumerate(("length", "width", "depth", None)):
+        turn = d.say(unknown, history=[unknown] * count)
+        assert next_field(turn) == field and turn["brief"]["offer"] == "quote"
+    assert "Уточнити: об’єкт, довжина, ширина, глибина" in turn["draft"]["comment"]
+
+
 def test_crane_uses_pending_slot_for_short_reply_and_remembers_working_state():
     d = Dialogue()
     assert next_field(d.say("Потрібен автокран")) == "place"

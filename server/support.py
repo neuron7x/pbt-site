@@ -62,6 +62,17 @@ HUMAN_INTENT = re.compile(r"\b(?:поклич|дайте|дай|з'єднай|з
 OPERATOR_HANDOFF = re.compile(r"живого\s+оператора|реальн\w+\s+оператора|\b(?:поклич|з'єднай|з’єднай|підключ|дайте|дай)\w*\s+(?:мені\s+)?оператора\b", re.I)
 CONTACT_QUERY = re.compile(r"\b(?:як\s+(?:із вами\s+|з вами\s+)?зв[’'ʼ]язатися|ваш\s+(?:номер|телефон)|ваша\s+пошта|де\s+контакти)\b", re.I)
 PRICE = re.compile(r"\bцін(?:а|и|у|ою|і|ах|ам)\b|скільки кошту|сколько сто|прайс|тариф|вартіст|кошторис|\bгрн\b", re.I)
+BUDGET = re.compile(r"\b(?:дорого|задорого|дешевше|дешевш\w*|бюджетн\w*)\b|"
+                    r"\bне вклада\w*\s+(?:у|в)\s+бюджет\b", re.I)
+DEFER_QUOTE = re.compile(r"\b(?:просто цікавлюся|поки (?:лише|просто) дивлюся|"
+                         r"кошторис не потрібен|не (?:треба|потрібен) кошторис)\b", re.I)
+QUOTE_FACTORS = {
+    "crane": "масу, виліт стріли та місце роботи",
+    "trans": "точки завантаження й доставки та масу вантажу",
+    "materials": "фракцію, обсяг і місце доставки",
+    "exc": "довжину, ширину та глибину виїмки й чи потрібне вивезення ґрунту",
+    "amph": "площу робіт і можливість під’їзду з берега",
+}
 BOOKING = re.compile(r"брон\w*|наявн\w*|вільн\w*|свобод\w*|\b(?:буде|є)\s+.{0,20}\b(?:завтра|сьогодні)\b|(?:статус|де\s+моя|що\s+з\s+моєю)\s+заяв", re.I)
 DANGER = re.compile(r"безпек|безпечн|вантажопідйом|можна підняти|чи підніме|выдержит|строп|електроліні|леп\b|обвал|аварі|травм", re.I)
 COVERAGE = re.compile(r"географ|виїжджає|виїжджа|обслуговуєте|працюєте.{0,20}\b(?:у|в|по)\b|област\w*.*працю", re.I)
@@ -263,8 +274,12 @@ class Support:
         question = step.question if step else ""
         working.specialist = working.specialist or bool(DANGER.search(message))
         handoff = False
+        asks_detail = False
+        discusses_task = False
+        has_conflict = any(issue.kind == "conflict" for issue in working.issues.values())
         ids = [key] if key else []
-        repeated = len(message.split()) >= 2 and sum(
+        skipped_detail = bool(working.skipped - prior.skipped)
+        repeated = not skipped_detail and len(message.split()) >= 2 and sum(
             item.casefold() == message.casefold() for item in history[-3:]) >= 2
         contact = (CONTACT_QUERY.search(message) or OPERATOR_HANDOFF.search(message)
                    or (HUMAN.search(message) and HUMAN_INTENT.search(message)))
@@ -276,16 +291,35 @@ class Support:
         elif contact or REPEAT.search(message) or repeated:
             handoff, ids = True, ["request"]
             reply = "Диспетчер може продовжити з чернетки. У розділі заявки є також контакт для прямої розмови."
-        elif PRICE.search(message) or BOOKING.search(message):
+        elif DEFER_QUOTE.search(message):
+            working.quote_requested = False
+            reply = "Можемо просто обговорити умови. Якщо є питання про роботи чи доставку, відповім."
+        elif (budget := BUDGET.search(message)) or PRICE.search(message):
             handoff = True
-            ids = ["price" if PRICE.search(message) else "dispatch", *ids]
-            reply = facts[ids[0]].text
-            if question:
-                reply += " " + question
+            discusses_task = True
+            working.quote_requested = True
+            ids = ["price", *ids]
+            parts = [facts["price"].text]
+            if key:
+                if factors := QUOTE_FACTORS.get(key):
+                    parts.append(f"Щоб порівняти пропозиції, звірте {factors}.")
+                if budget:
+                    parts.append("Якщо бюджет обмежений, зазначте, які параметри можна змінити й що має залишитися.")
+                if not has_conflict:
+                    parts.append("У запит на кошторис перенесу вже названі деталі.")
+            asks_detail = bool(question)
+            parts.append(question or ("Що потрібно зробити на об’єкті?" if not key else ""))
+            reply = " ".join(filter(None, parts))
+        elif BOOKING.search(message):
+            handoff = True
+            ids = ["dispatch", *ids]
+            asks_detail = bool(question)
+            reply = " ".join(filter(None, (facts["dispatch"].text, question)))
         elif COVERAGE.search(message) and "geo" in facts:
             ids = ["geo"]
             reply = facts["geo"].text
         elif key and key in facts:
+            discusses_task = True
             parts = []
             if reset:
                 parts.append("Починаю окрему чернетку для цієї задачі.")
@@ -302,7 +336,8 @@ class Support:
             if "secondary" in working.values and "secondary" not in prior.values:
                 parts.append("У чернетці врахував також вивезення ґрунту.")
             if question:
-                if working.skipped != prior.skipped:
+                asks_detail = True
+                if skipped_detail:
                     parts.append("Цей параметр лишу для уточнення диспетчером.")
                 parts.append(question)
             elif working.unresolved():
@@ -322,8 +357,11 @@ class Support:
             reply = "Що потрібно зробити на об’єкті? Наприклад, викопати траншею, підняти вантаж або доставити матеріал."
         view = working.view(handoff, changes)
         view["reset"] = reset
-        if handoff and not working.specialist and question and (PRICE.search(message) or BOOKING.search(message)):
-            view["next"] = step.view()
+        view["next"] = step.view() if step and asks_detail else None
+        if view["next"] and step.field not in working.issues:
+            view["next"]["can_skip"] = True
+        if discusses_task and key and working.quote_requested and not has_conflict:
+            view["offer"] = "quote"
         return {"ok": True, "reply": reply, "sources": self._sources(ids, facts),
                 "draft": working.draft(), "handoff": handoff, "mode": "local",
                 "brief": view, "memory": self._memory.pack(working)}

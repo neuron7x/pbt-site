@@ -132,6 +132,7 @@ class Brief:
     turn: int = 0
     specialist: bool = False
     focus: str | None = None
+    quote_requested: bool = False
 
     def unresolved(self) -> list[str]:
         required = PRIORITIES.get(self.task, ())
@@ -218,10 +219,10 @@ class BriefMemory:
         self._clock = clock
 
     def pack(self, brief: Brief) -> str:
-        raw = json.dumps([2, int(self._clock()) + _MEMORY_TTL, brief.task, brief.values, sorted(brief.skipped),
+        raw = json.dumps([3, int(self._clock()) + _MEMORY_TTL, brief.task, brief.values, sorted(brief.skipped),
                           brief.proposal, {key: item.wire() for key, item in brief.evidence.items()},
                           {key: item.wire() for key, item in brief.issues.items()},
-                          brief.turn, brief.specialist, brief.focus],
+                          brief.turn, brief.specialist, brief.focus, brief.quote_requested],
                          ensure_ascii=False, separators=(",", ":")).encode()
         signature = hmac.digest(self._key, raw, hashlib.sha256)
         return base64.urlsafe_b64encode(signature + raw).decode("ascii")
@@ -234,13 +235,16 @@ class BriefMemory:
             signature, raw = signed[:32], signed[32:]
             if not hmac.compare_digest(signature, hmac.digest(self._key, raw, hashlib.sha256)):
                 return None
-            version, expiry, task, values, skipped, proposal, evidence, issues, turn, specialist, focus = json.loads(raw)
-            if version != 2 or expiry <= self._clock():
+            fields = json.loads(raw)
+            if isinstance(fields, list) and len(fields) == 11 and fields[0] == 2:
+                fields = [3, *fields[1:], False]
+            version, expiry, task, values, skipped, proposal, evidence, issues, turn, specialist, focus, quote = fields
+            if version != 3 or expiry <= self._clock() or not isinstance(quote, bool):
                 return None
             return Brief(task, values, set(skipped), proposal,
                          {name: Observation(*item) for name, item in evidence.items()},
                          {name: Issue(kind, tuple(Observation(*option) for option in options))
-                          for name, (kind, options) in issues.items()}, turn, specialist, focus)
+                          for name, (kind, options) in issues.items()}, turn, specialist, focus, quote)
         except (ValueError, TypeError, binascii.Error):
             return None
 
@@ -381,7 +385,8 @@ def advance(brief: Brief, message: str, source="text"):
     prior = Brief() if reset else brief
     current = Brief(next_task, prior.values.copy(), prior.skipped.copy(), evidence=prior.evidence.copy(),
                     issues=prior.issues.copy(), turn=brief.turn + 1, specialist=prior.specialist,
-                    focus="mass" if next_task == "crane" and _TASK_FIRST.search(message) else prior.focus)
+                    focus="mass" if next_task == "crane" and _TASK_FIRST.search(message) else prior.focus,
+                    quote_requested=prior.quote_requested)
     prior_step = plan(prior)
     pending = prior_step.field if prior_step and prior.task else None
     unknown = _unknown_fields(next_task, final)

@@ -127,7 +127,8 @@
 .support__sources { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .7rem; font-size: .83rem; }
 .support__sources a, .support__extras > a { display: inline-flex; align-items: center; min-height: 36px; }
 .support__examples { display: flex; gap: .45rem; flex-wrap: wrap; margin-block-start: .7rem; }
-.support__draft-review { justify-self: start; margin-block-start: .1rem; }
+.support__actions { display: flex; flex-wrap: wrap; gap: .45rem; margin-block-start: .1rem; }
+.support button.support__quote { border-color: #ffe28a; color: #ffe28a; }
 
 .support__brief { display: grid; gap: .7rem; }
 .support__brief-head, .support__known > div { display: grid; gap: .25rem; }

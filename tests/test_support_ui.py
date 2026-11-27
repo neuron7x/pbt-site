@@ -1,5 +1,6 @@
 """Інтерфейс допомоги проходить до чинної форми без надсилання заявки."""
 import pytest
+from playwright.sync_api import expect
 
 
 @pytest.mark.parametrize("viewport", [(1440, 900, False), (390, 844, True)])
@@ -26,6 +27,60 @@ def test_support_workspace_transfers_an_editable_draft_without_sending(page_fact
     assert not page.locator("#supportPanel").is_visible()
     assert page.locator("#subject").input_value() == "Роботи на водоймі"
     assert page.locator("#place").input_value() == "Полтава"
+    assert not lead_requests
+
+
+@pytest.mark.parametrize("viewport", [(1440, 900, False), (390, 844, True)])
+def test_price_request_offers_quote_review_and_skips_unknown_without_sending_lead(page_factory, viewport):
+    width, height, mobile = viewport
+    page = page_factory(width, height, mobile=mobile, reduced=True)
+    lead_requests = []
+
+    def watch_lead(request):
+        if request.method == "POST" and request.url.endswith("/api/lead"):
+            lead_requests.append(request.url)
+
+    def support_turn(response):
+        return response.request.method == "POST" and response.url.endswith("/api/support")
+
+    page.on("request", watch_lead)
+    page.locator("[data-support-open]").first.click()
+    message = page.locator("#supportMessage")
+    message.fill("Скільки коштує автокран у Полтаві?")
+    with page.expect_response(support_turn) as sent:
+        page.locator("#supportSend").click()
+    assert sent.value.json()["brief"]["next"]["field"] == "mass"
+    first_turn = page.locator(".support__message--agent").nth(1)
+    skip = first_turn.get_by_role("button", name="Поки не знаю", exact=True)
+    review = first_turn.get_by_role("button", name="Звірити запит на кошторис", exact=True)
+    expect(review).to_be_enabled(timeout=3000)
+    review.click()
+    expect(page.locator("#supportDraft")).to_be_visible()
+    expect(page.locator("#supportDraftSubject")).to_have_value("Підйом вантажу")
+    if mobile:
+        page.get_by_role("button", name="Розмова", exact=True).click()
+
+    message.fill("Ще пишу")
+    expect(skip).to_be_disabled()
+    expect(message).to_have_value("Ще пишу")
+    message.clear()
+    expect(skip).to_be_enabled()
+    with page.expect_response(support_turn) as sent:
+        skip.click()
+    assert sent.value.request.post_data_json["message"] == "Поки не знаю"
+    answer = sent.value.json()
+    assert answer["brief"]["next"]["field"] == "reach"
+    assert "Уточнити: маса" in answer["draft"]["comment"]
+    expect(skip).to_have_count(0)
+    expect(review).to_have_count(0)
+    page.locator(".support__message--agent").last.get_by_role(
+        "button", name="Звірити запит на кошторис", exact=True,
+    ).click()
+    expect(page.locator("#supportDraftComment")).to_have_value(answer["draft"]["comment"])
+    page.locator("#supportApply").click()
+    expect(page.locator("#supportPanel")).not_to_be_visible()
+    expect(page.locator("#subject")).to_have_value("Підйом вантажу")
+    expect(page.locator("#comment")).to_have_value(answer["draft"]["comment"])
     assert not lead_requests
 
 

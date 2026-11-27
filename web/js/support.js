@@ -104,6 +104,10 @@
     consent.disabled = !!active;
     apply.disabled = !!active || draftStale;
     if (newDraft) newDraft.disabled = !!active;
+    const skip = timeline.querySelector('.support__skip');
+    if (skip instanceof HTMLButtonElement) {
+      skip.disabled = !ready || !!active || !!message.value.trim() || !!file.files?.length;
+    }
     form.setAttribute('aria-busy', String(!!active));
   }
 
@@ -526,28 +530,48 @@
       if (transcript) entry(Array.from(transcript).slice(0, 1000).join(''), true, 'Розшифрування аудіо');
       const itemReply = entry(turn.reply, false, turn.mode === 'model' ? 'Помічник · модель' : 'Помічник');
       showSources(itemReply, turn.sources);
-      if (turn.handoff === true) {
+      showDraft(turn.draft, turn.brief?.reset === true);
+      const quote = turn.brief?.offer === 'quote' && !!turn.draft && !draft.hidden && !draftStale;
+      if (turn.handoff === true && !quote) {
         const next = document.createElement('a');
         next.href = '#zapyt';
         next.textContent = 'До диспетчера';
         next.addEventListener('click', () => leave('#zapyt', false));
         itemReply.append(next);
       }
-      showDraft(turn.draft, turn.brief?.reset === true);
-      timeline.querySelector('.support__draft-review')?.remove();
+      timeline.querySelector('.support__actions')?.remove();
+      const actions = document.createElement('div');
+      actions.className = 'support__actions';
+      if (turn.brief?.next?.can_skip === true && turn.media?.status !== 'unprocessed') {
+        const skip = document.createElement('button');
+        skip.className = 'support__skip';
+        skip.type = 'button';
+        skip.textContent = 'Поки не знаю';
+        skip.addEventListener('click', () => {
+          if (skip.disabled) return;
+          message.value = 'Поки не знаю';
+          sync();
+          message.focus();
+          form.requestSubmit(send);
+        });
+        actions.append(skip);
+      }
       if (turn.draft && !draft.hidden) {
         const review = document.createElement('button');
         review.className = 'support__draft-review';
         review.type = 'button';
-        review.textContent = draftStale ? 'Перейти до завдання' : 'Переглянути чернетку';
+        review.textContent = draftStale ? 'Перейти до завдання'
+          : quote ? 'Звірити запит на кошторис' : 'Переглянути чернетку';
+        if (quote) review.classList.add('support__quote');
         review.addEventListener('click', () => {
           setView('brief');
           const target = draftStale && !newDraft.hidden ? newDraft : draftSubject;
           target.focus({ preventScroll: true });
           draft.scrollIntoView({ block: 'start' });
         });
-        itemReply.append(review);
+        actions.append(review);
       }
+      if (actions.childElementCount) itemReply.append(actions);
       clear.hidden = false;
       examples.hidden = true;
       message.value = '';
