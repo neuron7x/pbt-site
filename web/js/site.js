@@ -77,14 +77,37 @@
     if (D.videoData || D.heroSD || c.saveData || /(^|-)2g$|^3g$/.test(c.effectiveType || '')) return false;   // однофайлова збірка несе лише 720
     return innerWidth * (devicePixelRatio || 1) >= 1600;
   }
+  /** @type {WeakMap<HTMLVideoElement, {position: number, seek: EventListener}>} */
+  const pendingVideoSeeks = new WeakMap();
+  /** @param {HTMLVideoElement} video @param {number} position */
+  function restoreVideoPosition(video, position) {
+    const previous = pendingVideoSeeks.get(video);
+    if (previous) video.removeEventListener('loadedmetadata', previous.seek);
+    pendingVideoSeeks.delete(video);
+    if (position <= 0) return;
+    const seek = () => {
+      pendingVideoSeeks.delete(video);
+      if (Number.isFinite(video.duration)) video.currentTime = Math.min(position, Math.max(0, video.duration - .05));
+    };
+    pendingVideoSeeks.set(video, { position, seek });
+    video.addEventListener('loadedmetadata', seek, { once: true });
+  }
   /** @param {HTMLVideoElement} video @param {string} name @param {{ tall?: boolean }} [opt] */
   function attachVideo(video, name, { tall } = {}) {
     if (!video) return false;
-    if (video.dataset.ready) return true;
-    let n = tall && mobileLayout() ? name.replace('-wide', '-tall') : name;
+    if (!tall && video.dataset.ready) return true;
+    let n = tall && mobileLayout() && innerHeight > innerWidth ? name.replace('-wide', '-tall') : name;
     if (n === 'hero-wide' && !heroHD()) n = 'hero-wide-720';          // 1920 — лише коли екран його покаже й мережа витягне
-    // Budget-omitted standalone clips keep their posters without requesting absent files.
-    if (D.videoData && !D.videoData[n + '.mp4']) return false;
+    if (video.dataset.rendition === n) return true;
+    // Бандл без нового формату лишає доступний кліп або постер.
+    if (D.videoData && !D.videoData[n + '.mp4']) return !!video.dataset.ready;
+    const replacing = !!video.dataset.ready;
+    const position = replacing ? (pendingVideoSeeks.get(video)?.position ?? video.currentTime) : 0;
+    if (replacing) {
+      video.pause();
+      video.removeAttribute('src');
+      video.replaceChildren();
+    }
     video.muted = true; video.loop = true; video.playsInline = true; video.setAttribute('muted', ''); video.preload = 'none';
     if (D.videoData || D.mp4Only || !document.createElement('video').canPlayType('video/webm; codecs="vp9"')) {
       video.src = vsrc(n, 'mp4');
@@ -94,6 +117,11 @@
       video.append(s1, s2);
     }
     video.dataset.ready = '1';
+    video.dataset.rendition = n;
+    if (replacing) {
+      restoreVideoPosition(video, position);
+      video.load();
+    }
     return true;
   }
   const visibleCards = new Set();
@@ -442,8 +470,14 @@
   }
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(render); } };
   addEventListener('scroll', onScroll, { passive: true });
-  let rT;
-  addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (!mobileLayout() && !menu.hidden) openMenu(false, false); profile(); measure(); render(); }, 120); });
+  let rT, syncCineProfile = () => {};
+  addEventListener('resize', () => {
+    clearTimeout(rT);
+    rT = setTimeout(() => {
+      if (!mobileLayout() && !menu.hidden) openMenu(false, false);
+      profile(); measure(); render(); syncCineProfile();
+    }, 120);
+  });
 
   /* ───── ПОЯВА СЕКЦІЙ, ЛІЧИЛЬНИКИ, МАРШРУТИ ───── */
   const rio = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
@@ -1165,6 +1199,9 @@
       return bounds.bottom > 0 && bounds.top < innerHeight;
     };
     const prof = () => (mobileLayout() && innerHeight > innerWidth ? 'm' : 'w');
+    let activeProfile = prof();
+    /** @type {WeakMap<HTMLVideoElement, {position: number}>} */
+    const clipRequests = new WeakMap();
     /* Кліпи «Масштабу» у WebM — VP9 Profile 1 (4:4:4): майже ніде не декодується апаратно. W3C Media Capabilities:
        на дотику WebM лише якщо декодування енергоефективне, інакше апаратний H.264 того самого кадру; на ПК — як і досі,
        якщо плавно. canPlayType('vp9') без профілю відповідав «так» і на телефонах, що потім декодували 4:4:4 програмно. */
@@ -1182,15 +1219,21 @@
       if (!cineInViewport() || !videoAllowed()) return;
       const p = prof(), n = id + '-' + p;
       if (v.dataset.clip === n) return;
+      const interruptedPosition = pendingVideoSeeks.get(v)?.position;
+      const loadingPosition = v.readyState === 0 ? clipRequests.get(v)?.position : undefined;
+      const position = v.dataset.clip?.startsWith(id + '-') ? (interruptedPosition ?? loadingPosition ?? v.currentTime) : 0;
+      const request = { position };
+      clipRequests.set(v, request);
       v.dataset.clip = n; v.removeAttribute('src'); v.replaceChildren();
       v.poster = C_BASE + n + '.webp';
       webmFor(p).then(webm => {
-        if (v.dataset.clip !== n) return;                                  // кадр уже змінився, поки браузер відповідав
+        if (clipRequests.get(v) !== request || v.dataset.clip !== n) return;  // кадр змінився, поки браузер відповідав
         if (!cineInViewport() || !videoAllowed()) { delete v.dataset.clip; return; }
         v.replaceChildren();
         if (webm) { const a = document.createElement('source'); a.src = C_BASE + n + '.webm'; a.type = CINE_WEBM; v.append(a); }
         const b = document.createElement('source'); b.src = C_BASE + n + '.mp4'; b.type = 'video/mp4'; v.append(b);
         v.dataset.codec = webm ? 'vp9-444' : 'h264';
+        restoreVideoPosition(v, position);
         v.load();
         // play() з show() міг прийти раніше за джерела (рішення асинхронне) — відтворення відновлюється тут
         if (v.classList.contains('is-on') && inView && videoAllowed()) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
@@ -1241,6 +1284,12 @@
       }
     }
     mediaSync.add(syncCine);
+    syncCineProfile = () => {
+      const nextProfile = prof();
+      if (nextProfile === activeProfile) return;
+      activeProfile = nextProfile;
+      syncCine();
+    };
     const cio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) show(Number(/** @type {HTMLElement} */ (e.target).dataset.i)); }), { rootMargin: '-45% 0px -45% 0px' });
     items.forEach(node => cio.observe(node));
     new IntersectionObserver(es => es.forEach(e => {
@@ -1285,11 +1334,16 @@
           if (pending || !hVideo.paused) hVideo.pause();
           return;
         }
-        if (pending || retry || tries >= 8 || !hVideo.paused) return;
+        if (pending) return;
+        const previousRendition = hVideo.dataset.rendition;
         if (!attachVideo(hVideo, 'hero-wide', { tall: true })) return;
+        if (previousRendition !== hVideo.dataset.rendition) {
+          clearTimeout(retry); retry = 0; tries = 0;
+        }
+        if (retry || tries >= 8 || !hVideo.paused) return;
         hVideo.preload = 'auto';
         pending = true;
-        Promise.resolve(hVideo.play()).then(() => { pending = false; tries = 0; }, () => {
+        Promise.resolve(hVideo.play()).then(() => { pending = false; tries = 0; go(); }, () => {
           pending = false;
           if (!videoAllowed() || !heroInView()) return;
           if (++tries < 8) retry = setTimeout(() => { retry = 0; go(); }, 200 * tries);
