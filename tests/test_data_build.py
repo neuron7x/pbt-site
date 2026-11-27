@@ -64,13 +64,25 @@ def test_private_status_note_never_reaches_the_page():
     assert '_status' not in _page(ROOT / 'web/js/data.js')['business']
 
 
-def test_internal_catalog_price_never_reaches_the_page():
+def test_catalog_and_page_carry_no_price():
+    """Ціну під заявку визначає керівник фірми; числа ціни немає ні в каталозі-джерелі, ні на сторінці."""
     catalog = json.loads((ROOT / 'data/catalog.json').read_text(encoding='utf-8'))
-    priced = [i for i in catalog['fleet'] + catalog['materials'] if i.get('price') is not None]
-    assert len(priced) >= 20, 'у каталозі є внутрішні ціни — інакше тест нічого не перевіряє'
+    items = catalog['fleet'] + catalog['materials']
+    assert len(items) >= 20, 'каталог не порожній — інакше тест нічого не перевіряє'
+    assert [i['id'] for i in items if 'price' in i] == []
     page = _page(ROOT / 'web/js/data.js')
     assert all('price' not in item for item in page['fleet'] + page['materials'])
     assert '"price"' not in data_build.build(ROOT)
+
+
+def test_a_price_slipped_back_into_the_catalog_still_never_reaches_the_page(tmp_path):
+    """Другий бар'єр (ITEM_PRIVATE): якщо ціну знову впишуть у каталог, сторінка її однаково не отримає."""
+    tree = _tree(tmp_path)
+    source = tree / 'data/catalog.json'
+    catalog = json.loads(source.read_text(encoding='utf-8'))
+    catalog['fleet'][0]['price'] = 1
+    source.write_text(json.dumps(catalog, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+    assert '"price"' not in data_build.build(tree)
 
 
 def test_check_fails_when_a_source_changes_until_the_file_is_rebuilt(tmp_path):
