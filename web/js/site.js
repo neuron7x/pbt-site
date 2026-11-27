@@ -56,6 +56,8 @@
   const finePointer = matchMedia('(pointer:fine)').matches;
   const fmt = n => Math.round(n).toLocaleString('uk-UA');
   const { el, fill, attrOk } = window.PBTDom;          // web/js/dom.js
+  /* єдиний планувальник кадрів: іскри героя, гусениця, масло й курсорне світло ділять один запит кадру (web/js/clock.js) */
+  const clock = window.PBTClock.createClock({ raf: cb => requestAnimationFrame(cb), caf: id => cancelAnimationFrame(id) });
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const seg = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
   const ease = t => (t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -264,10 +266,10 @@
   /* цикл іскор засинає, коли герой поза кадром або вкладка прихована (раніше rAF крутився вічно: Lighthouse devtools 09.10
      — сторінка не ставала «тихою»); прокидає його sparkWake() зі скролу й visibilitychange */
   let sparkOn = false;
-  const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroInView() && !document.hidden) { sparkOn = true; requestAnimationFrame(sparkLoop); } };
+  const sparkWake = () => { if (!sparkOn && ctx && motion() && quality() === 'full' && heroInView() && !document.hidden) { sparkOn = true; clock.request(sparkLoop); } };
   function sparkLoop(t) {
     if (!ctx || getComputedStyle(spark).display === 'none' || quality() !== 'full' || !motion() || !heroInView() || document.hidden) { sparkOn = false; return; }
-    requestAnimationFrame(sparkLoop);
+    clock.request(sparkLoop);
     if (t - cLast < 33) return;
     cLast = t;
     ctx.clearRect(0, 0, cW, cH);
@@ -321,18 +323,18 @@
     track.style.setProperty('--tx', `${(-(beltTx % PHYS.pitch)).toFixed(2)}px`);
     track.style.setProperty('--rot', `${(beltTx / 144 * 360 % 360).toFixed(1)}deg`);   // зуби входять у проміжки траків
     if (beltPos === target) { beltRaf = 0; beltV = 0; beltT = 0; sm = 0; }   // ланцюг став — краплі більше не їдуть, змаз зник
-    else beltRaf = requestAnimationFrame(beltStep);
+    else beltRaf = clock.request(beltStep);
     if (sm !== beltSmear && (sm === 0 || Math.abs(sm - beltSmear) > .005)) { beltSmear = sm; track.style.setProperty('--smear', sm.toFixed(3)); }
   }
   function trackRender(p) {
     if (!track) return;
     track.style.setProperty('--tp', p.toFixed(4));
     if (!motion()) {
-      cancelAnimationFrame(beltRaf);
+      clock.cancel(beltRaf);
       beltRaf = 0; beltT = 0; beltV = 0; beltPos = scrollY;
       if (beltSmear) { beltSmear = 0; track.style.setProperty('--smear', '0'); }
     } else if (!beltRaf && beltPos !== scrollY) {
-      beltRaf = requestAnimationFrame(beltStep);
+      beltRaf = clock.request(beltStep);
     }
     oilFeed(p);
   }
@@ -356,7 +358,7 @@
         phase: 0, t: 0, bead: 270 + Math.random() * 300, vy: 0, vx: 0, rem: 1, life: 0 });
     }
     if (oilAcc > 3) oilAcc = 0;
-    if (!oilRaf && drops.length) { oilT = 0; oilRaf = requestAnimationFrame(oilStep); }
+    if (!oilRaf && drops.length) { oilT = 0; oilRaf = clock.request(oilStep); }
   }
   let oilT = 0;
   function oilBody(c, x, y, r, h) {
@@ -396,7 +398,7 @@
       }
     }
     c.globalAlpha = 1;
-    oilRaf = drops.length ? requestAnimationFrame(oilStep) : (c.clearRect(0, 0, oilW, oilH), 0);
+    oilRaf = drops.length ? clock.request(oilStep) : (c.clearRect(0, 0, oilW, oilH), 0);
   }
   function trackStations() {
     if (!trackStops) return;
@@ -1188,8 +1190,8 @@
     addEventListener('pointermove', e => { if (!motion()) return; tx = e.clientX; ty = e.clientY; if (!on || !glow.classList.contains('is-on')) { on = true; glow.classList.add('is-on'); } }, { passive: true });
     let run = false;                                   // цикл живе, лише поки світло доганяє курсор
     const loop = () => { if (!motion()) { run = false; on = false; return; } gx += (tx - gx) * .12; gy += (ty - gy) * .12; glow.style.transform = `translate3d(${gx.toFixed(1)}px,${gy.toFixed(1)}px,0)`;
-      if (Math.abs(tx - gx) + Math.abs(ty - gy) > .5) requestAnimationFrame(loop); else run = false; };
-    addEventListener('pointermove', () => { if (motion() && !run) { run = true; requestAnimationFrame(loop); } }, { passive: true });
+      if (Math.abs(tx - gx) + Math.abs(ty - gy) > .5) clock.request(loop); else run = false; };
+    addEventListener('pointermove', () => { if (motion() && !run) { run = true; clock.request(loop); } }, { passive: true });
   }
 
   /* ───── МАСШТАБ: кіно-сцена з ілюстративної зйомки (window.PBT_CINE ← config/stock.json) ───── */

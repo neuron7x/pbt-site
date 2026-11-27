@@ -7,6 +7,7 @@ interface Window {
   PBTBlueprint?: any;
   PBTDom: any;
   PBTPhysics: any;
+  PBTClock: any;
   PBTcalc?: any;
   PBTv?: any;
 }

@@ -665,6 +665,21 @@
    "note": "Сторінка не користується texStep: чиста функція правильна, а ланцюг на екрані строботить (аудит п.47)."
   },
   {
+   "id": "M-MOTION-belt-own-frame",
+   "task": "MOTION-46",
+   "edits": [
+    {
+     "file": "web/js/site.js",
+     "find": "    else beltRaf = clock.request(beltStep);",
+     "replace": "    else beltRaf = requestAnimationFrame(beltStep);"
+    }
+   ],
+   "oracle": [
+    "tests/test_frame_clock_page.py::test_decorative_loops_share_one_frame_request"
+   ],
+   "note": "Гусениця знову просить власний кадр повз планувальник: модуль правильний, а сторінка ним не користується."
+  },
+  {
    "id": "M-MOTION-belt-per-frame",
    "task": "MOTION-46",
    "edits": [
@@ -680,6 +695,23 @@
     "tests/motion_physics.test.cjs"
    ],
    "note": "Згладжування ланцюга покадрово: τ залежить від частоти кадрів (аудит п.46)."
+  },
+  {
+   "id": "M-MOTION-clock-not-coalesced",
+   "task": "MOTION-46",
+   "edits": [
+    {
+     "file": "web/js/clock.js",
+     "find": "        if (!armed) { armed = true; handle = env.raf(frame); }",
+     "replace": "        armed = true; handle = env.raf(frame);"
+    }
+   ],
+   "oracle": [
+    "node",
+    "--test",
+    "tests/frame_clock.test.cjs"
+   ],
+   "note": "Планувальник просить у браузера кадр на кожен запит: циклів стільки ж, скільки було, єдиного кадру немає (аудит п.46, А3-core)."
   },
   {
    "id": "M-MOTION-form-focus-ignored",
