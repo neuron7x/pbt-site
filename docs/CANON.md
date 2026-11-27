@@ -39,7 +39,7 @@
 |---|---|---|
 | Сервер | `server/app.py` | Python stdlib: статика, `/api/lead`, `/api/config`, `/api/health`, SQLite, черга доставки з HMAC |
 | Інтерфейс | `web/index.html`, `web/css/site.css`, `web/js/site.js` | Статика без фреймворку; дві теми одним набором токенів |
-| Генератори | `tools/sky.py`, `tools/crane.py`, `tools/media.py`, `tools/inline.py` | Палітра, графіка крана, відео, однофайлова збірка |
+| Генератори | `tools/sky.py`, `tools/crane.py`, `tools/data_build.py`, `tools/media.py`, `tools/inline.py` | Палітра, графіка крана, дані сторінки, відео, однофайлова збірка |
 | Докази | `assurance/ledger.json`, `assurance/case.json`, `tools/assurance_check.py` | 48 зобов'язань, 10 тверджень доказової справи |
 | Експлуатація | `ops/README.md`, `ops/backup.py`, `ops/restore.py`, `ops/readiness.py` | Резервні копії, відновлення, готовність |
 | Перевірки | `tests/`, `Makefile`, `.github/workflows/pr-quality.yml` | Локальний гейт і незалежний CI |
@@ -82,10 +82,11 @@
 | G-5 | Канат доходить від гусениці до гака в кожній точці прокрутки | `tests/test_steel_a11y.py` |
 | G-6 | Збірка не залежить від локалі, часового поясу й hash seed | `tests/test_reproducibility.py` |
 | G-7 | Медіа не перевищують бюджет ваги; хеші закріплено | `tests/test_media_budget.py`, `tests/test_hero_media_integrity.py` |
+| G-8 | Дані сторінки `web/js/data.js` байт-у-байт дорівнюють виходу `tools/data_build.py` із трьох джерел; невідомий ключ джерела — помилка | `make data`, `tests/test_data_build.py` |
 
 ## Розділ V. Гейти
 
-1. **Локальний гейт** — `make gate`: `js` → `sky` → `crane` → `test` → `bundle` → `media-audit`, після чого дерево мусить бути чистим.
+1. **Локальний гейт** — `make gate`: `js` → `sky` → `crane` → `data` → `test` → `bundle` → `media-audit`, після чого дерево мусить бути чистим.
 2. **Незалежний CI** — сім робочих процесів у `.github/workflows/`: якість PR (`pr-quality.yml`), транспорт
    (`runtime-hardening.yml`), 30-хвилинний прогін (`runtime-soak.yml`), вразливості (`security-assurance.yml`), візуальні докази
    (`visual-evidence.yml`), відповідність медіа (`artifact-fit-trial.yml`), закриття доказів (`evidence-closure.yml`).

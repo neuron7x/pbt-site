@@ -39,6 +39,7 @@ make bundle         # dist/pbt-site.html (один файл, без сервер
 web/        index.html · 404.html · css/ (fonts, site) · js/ (data, site) · fonts/ · media/ (video, park, mat, logo, map)
 server/     app.py — статика, /api/config, /api/health, /api/lead
 config/     business.json · env.template
+content/    site.json (дані інтерфейсу поза каталогом; web/js/data.js генерується: tools/data_build.py)
 data/       catalog.json (парк і матеріали з публічного прайсу) · leads.db (створюється сервером)
 tests/      test_api · test_leads · test_hardening · test_site · contracts/lead_vectors.json · vendor/axe.min.js
 tools/      media.py · shots.py · inline.py
