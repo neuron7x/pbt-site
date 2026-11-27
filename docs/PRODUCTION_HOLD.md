@@ -16,7 +16,7 @@ python3 tools/assurance_check.py --require production --target-sha "$PROOF_SHA" 
 
 | ID | Missing fact | Who | Blocks | Closes when |
 |---|---|---|---|---|
-| B1 | Approved, effective-dated tariffs (site prices date from 03.10.2026; 1C differs) | Owner | OPS-06, WEB-07 | Signed snapshot with date; validator run against it |
+| B1 | Approved, effective-dated tariff evidence (archive dated 03.10.2026; 1C differs; the website uses contractual prices) | Owner | OPS-06, WEB-07 | Signed snapshot with date; validator run against it |
 | B2 | VAT, minimum shift, idle, crane and dispatch policy | Owner | OPS-06, WEB-07 | Written decision |
 | B3 | Live delivery channel and credentials; authorized live test | Owner | NET-04, DB-08 | Signed receiver receipt naming real lead IDs. In `ops/readiness.py --receiver-receipt`, require `transport_ack=PASS` and `receiver_persistence=PASS`. The aggregate remains false while business processing is unobserved |
 | B4 | Domain, DNS, TLS, proxy chain | Owner | NET-02, OPS-07, WEB-06 | Independent DNS and TLS check; canonical and OG URLs set then, not before |

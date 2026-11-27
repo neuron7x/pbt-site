@@ -267,3 +267,28 @@ def test_initial_deep_link_and_reload_reach_section(page_factory):
     page.reload(wait_until='networkidle')
     page.wait_for_function("""() => { const r = document.querySelector('#cina').getBoundingClientRect();
        return r.top >= 0 && r.top < innerHeight / 2; }""", timeout=5000)
+
+
+def test_completed_brief_reuses_identity_with_a_fresh_job(page_factory):
+    page = page_factory(reduced=True)
+    assert page.locator("#cTask").count() == 1
+    page.locator("#cTask").fill("Підготувати котлован")
+    page.locator("#cPlace").fill("Полтава")
+    page.locator("#cDetail").fill("Старі деталі")
+    page.locator("#cOrder").click()
+    page.locator("#name").fill("Олена")
+    page.locator("#contact").fill("097 000 00 11")
+    page.locator("#send").click()
+    expect(page.locator("#done")).to_have_class("done is-on")
+
+    page.locator("#cKind").select_option("material")
+    page.locator("#cTask").fill("Щебінь для під’їзду")
+    page.locator("#cPlace").fill("")
+    page.locator("#cDetail").fill("")
+    page.locator("#cOrder").click()
+    expect(page.locator("#lead input[value='material']")).to_be_checked()
+    expect(page.locator("#subject")).to_have_value("Щебінь для під’їзду")
+    expect(page.locator("#place")).to_have_value("")
+    expect(page.locator("#comment")).to_have_value("")
+    expect(page.locator("#name")).to_have_value("Олена")
+    expect(page.locator("#contact")).to_have_value("097 000 00 11")

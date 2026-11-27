@@ -276,12 +276,15 @@ def test_hero_lead_contrast_on_every_montage_frame(page_factory, w, h, mobile, t
 
 @pytest.mark.parametrize('w', [320, 390])
 def test_eyebrows_stay_on_one_line_on_phones(page_factory, w):
-    """Було: на 390 px «Полтава · 9 областей · 24/7» переносилось («24/7» окремим рядком), на 320 — і «Орієнтовна вартість»."""
+    """Перевірити всі видимі надзаголовки, включно з умовою договірної ціни."""
     pg = page_factory(w, 800, mobile=True)
     r = pg.evaluate("""() => [...document.querySelectorAll('.eyebrow')].filter(e => e.offsetParent).map(e => {
         const b = e.getBoundingClientRect(), fs = parseFloat(getComputedStyle(e).fontSize);
         return {t: e.textContent.trim(), lines: Math.round(b.height / fs), inside: b.left >= -0.5 && b.right <= innerWidth + 0.5} })""")
-    assert len(r) >= 8, r
+    assert sorted(row['t'] for row in r) == sorted((
+        'Полтава · 9 областей', 'Роботи', 'Техніка', 'Вартість договірна',
+        'Матеріали', 'Де працюємо', 'Заявка',
+    )), r
     bad = [x for x in r if x['lines'] > 1 or not x['inside']]
     assert not bad, bad
 

@@ -1125,9 +1125,13 @@
       history.pushState(history.state, '', hash);
     }
   }
-  function beginRequest(type) {
+  function beginRequest(type, freshBrief = false) {
     if (done.classList.contains('is-on')) {
-      form.reset();
+      if (freshBrief) {
+        const identity = [$('#name').value, method.value, contact.value];
+        form.reset();
+        [$('#name').value, method.value, contact.value] = identity;
+      }
       idemHash = ''; idemKey = null; pendingClear();
     }
     done.classList.remove('is-on');
@@ -1145,7 +1149,7 @@
     if (comment.length > $('#comment').maxLength) {
       return 'Коментар заявки разом із новими деталями задовгий. Скоротіть його у формі заявки.';
     }
-    beginRequest(type);
+    beginRequest(type, true);
     Object.entries({ ...fields, comment }).forEach(([name, value]) => {
       fillDraftValue(name, value);
       setErr(name, '');
