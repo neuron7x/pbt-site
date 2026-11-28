@@ -3,6 +3,66 @@
  "note": "Each fault is a stated unsafe behavior; the oracle must fail on it. A survivor blocks acceptance.",
  "mutants": [
   {
+   "id": "M-A1-app-imports-ambient-domain",
+   "task": "ADV-05.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "    _domain_spec.loader.exec_module(_domain)\n",
+     "replace": "    import domain as _domain\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_server_domain_module.py::test_path_loaded_server_retains_the_installed_domain"
+   ],
+   "note": "Завантаження app.py за шляхом бере загальний модуль domain замість домену зі своєї інсталяції."
+  },
+  {
+   "id": "M-A1-app-keeps-own-types",
+   "task": "ADV-05.T",
+   "edits": [
+    {
+     "file": "server/app.py",
+     "find": "MAX_BODY = 8 * 1024\n",
+     "replace": "MAX_BODY = 8 * 1024\nTYPES = {'rent', 'material', 'transport', 'other'}\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_server_domain_module.py::test_the_server_uses_the_domain_module_and_keeps_no_copy"
+   ],
+   "note": "У app.py знову власна копія словника видів: два джерела можуть розійтися."
+  },
+  {
+   "id": "M-A1-domain-side-effect-on-import",
+   "task": "ADV-05.T",
+   "edits": [
+    {
+     "file": "server/domain.py",
+     "find": "KYIV = ZoneInfo('Europe/Kyiv')\n",
+     "replace": "KYIV = ZoneInfo('Europe/Kyiv')\n__import__('pathlib').Path('data').mkdir(exist_ok=True)\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_server_domain_module.py::test_importing_the_domain_in_an_empty_directory_creates_nothing"
+   ],
+   "note": "Імпорт модуля домену створює теку: побічний ефект на імпорті."
+  },
+  {
+   "id": "M-A1-domain-touches-the-world",
+   "task": "ADV-05.T",
+   "edits": [
+    {
+     "file": "server/domain.py",
+     "find": "import re\nimport unicodedata\n",
+     "replace": "import os\nimport re\nimport unicodedata\n"
+    }
+   ],
+   "oracle": [
+    "tests/test_server_domain_module.py::test_domain_module_imports_nothing_that_can_touch_the_world"
+   ],
+   "note": "Чистий модуль домену тягне os: відкрито шлях до оточення й файлів."
+  },
+  {
    "id": "M-ACCEPT-external-file",
    "task": "OPS-08.T",
    "edits": [
@@ -105,7 +165,7 @@
    "task": "ADV-05",
    "edits": [
     {
-     "file": "server/app.py",
+     "file": "server/domain.py",
      "find": ".astimezone(KYIV).date()",
      "replace": ".astimezone().date()"
     }

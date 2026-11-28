@@ -17,8 +17,10 @@ APP = Path(__file__).resolve().parents[1] / "server" / "app.py"
 @pytest.mark.parametrize("scenario", ["fresh", "legacy", "external_db"])
 def test_accepted_leads_logs_and_database_are_private_under_umask_022(tmp_path, scenario):
     site = tmp_path / "isolated-site"
-    (site / "server").mkdir(parents=True)
-    shutil.copyfile(APP, site / "server" / "app.py")
+    installed = site / "server"
+    installed.mkdir(parents=True)
+    for module in APP.parent.glob("*.py"):
+        shutil.copyfile(module, installed / module.name)
     data = site / "data"
     database = site / "external.db" if scenario == "external_db" else data / "leads.db"
     if scenario != "fresh":
@@ -36,7 +38,7 @@ def test_accepted_leads_logs_and_database_are_private_under_umask_022(tmp_path, 
         env.pop(name, None)
     env.update({
         "LEAD_DB": str(database),
-        "PBT_PROBE_APP": str(site / "server" / "app.py"),
+        "PBT_PROBE_APP": str(installed / APP.name),
         "PBT_PROBE_DATA": str(data),
         "MIGRATE_BOOT_ATTEMPTS": "1",
         "DELIVERY_WORKER": "0",

@@ -29,6 +29,10 @@ def test_system_candidate_starts_with_state_outside_read_only_install(tmp_path):
     app = source / 'server/app.py'
     app.parent.mkdir(parents=True)
     shutil.copyfile(ROOT / 'server/app.py', app)
+    for sibling in sorted((ROOT / 'server').glob('*.py')):          # сервер — кілька модулів поруч, а не один файл
+        if sibling.name != 'app.py':
+            shutil.copyfile(sibling, app.parent / sibling.name)
+            (app.parent / sibling.name).chmod(0o444)
     app.chmod(0o444)
     app.parent.chmod(0o555)
     source.chmod(0o555)
