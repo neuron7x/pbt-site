@@ -407,3 +407,34 @@ def test_hero_content_fits_between_nav_and_bottom(page_factory, w, h, mobile):
       return {nav: g('#nav').bottom, top: g('#heroCenter .eyebrow').top, bottom: g('.hero__stats').bottom, limit: hv ? g('.hero__hint').top : innerHeight - 6, rows: new Set(st).size}; })()""")
     assert r['top'] >= r['nav'] + 6 and r['bottom'] <= r['limit'] - 6, r
     assert r['rows'] == 1, r
+
+
+# Design-polish regression: a background shorthand must never erase the
+# custom dropdown chevron; validation must survive the sky cascade.
+@pytest.mark.parametrize('theme', ['sky', 'precision'])
+@pytest.mark.parametrize('w,h,mobile', [(1440, 900, False), (390, 844, True)])
+def test_form_dropdown_affordance_and_focus(page_factory, theme, w, h, mobile):
+    pg = page_factory(w, h, mobile=mobile, reduced=True,
+                      init_script=f"localStorage.setItem('pbt-theme', '{theme}')")
+    assert pg.locator('html').get_attribute('data-theme') == theme
+    for selector in ('#cKind', '#method'):
+        field = pg.locator(selector)
+        assert field.evaluate("(el) => getComputedStyle(el).backgroundImage") != 'none'
+        field.focus()
+        assert field.evaluate("(el) => getComputedStyle(el).backgroundImage") != 'none'
+    pg.emulate_media(forced_colors='active', reduced_motion='reduce')
+    select = pg.locator('#method')
+    assert select.evaluate("(el) => getComputedStyle(el).appearance") == 'auto'
+
+
+def test_sky_form_boundary_and_error_state(page_factory):
+    pg = page_factory(reduced=True)
+    contact = pg.locator('#contact')
+    assert contact.evaluate("(el) => getComputedStyle(el).borderTopColor") == 'rgb(96, 123, 154)'
+    pg.fill('#contact', '12345')
+    pg.fill('#hours', '0')
+    pg.click('#send')
+    assert contact.get_attribute('aria-invalid') == 'true'
+    assert contact.evaluate("(el) => getComputedStyle(el).borderTopColor") == 'rgb(180, 35, 24)'
+    contact.focus()
+    assert contact.evaluate("(el) => getComputedStyle(el).borderTopColor") == 'rgb(180, 35, 24)'
