@@ -495,7 +495,7 @@ h3{font-weight:var(--t-h3-weight);font-size:clamp(20px,1.5vw,24px);line-height:1
 .field{display:grid;gap:8px;min-width:0}
 .field label,.field .lab{font:600 13px/1.25 var(--f-b);letter-spacing:.02em;text-transform:none;color:var(--ink-3)}
 .field input,.field select,.field textarea{width:100%;background:var(--sky-50);border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;color:var(--ink);font:400 16px/1.3 var(--f-b);transition:border-color .3s,box-shadow .3s,background .3s}
-.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--sky-700);box-shadow:0 0 0 4px rgba(26,135,245,.18);background:var(--white)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--sky-700);box-shadow:0 0 0 4px rgba(26,135,245,.18);background-color:var(--white)}
 .field input::placeholder,.field textarea::placeholder{color:#50667A;opacity:1}
 .field select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 22px) 50%,calc(100% - 16px) 50%;background-size:6px 6px;background-repeat:no-repeat;padding-right:44px}
 .field .err{display:none;font-size:13px;color:#B42318;font-weight:500}
@@ -1152,7 +1152,7 @@ html:has(#passport[open]){overflow:hidden}
 
 /* ЦІНА */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc{box-shadow:0 0 0 1px rgba(8,20,42,.16)}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{border-radius:0;background:#F3F7FC;border:1.5px solid rgba(8,20,42,.2)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{border-radius:0;background-color:#F3F7FC;border:1.5px solid rgba(8,20,42,.2)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field input:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select:focus,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea:focus{border-color:#08142A;box-shadow:0 0 0 3px rgba(253,197,1,.65)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .field label,:is(:root[data-theme="sky"],:root:not([data-theme])) .field .lab{font:700 11.5px/1.25 var(--f-b);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:48px 48px;border-left:4px solid #FDC501}
@@ -1290,7 +1290,7 @@ html:has(#passport[open]){overflow:hidden}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .on-light h2 span{background:linear-gradient(90deg,#1740B8 0%,#1D4ED8 50%,#2563EB 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 @media (forced-colors:active){:is(:root[data-theme="sky"],:root:not([data-theme])) .on-light h2 span{background:none;-webkit-text-fill-color:currentColor}}
 /* поверхні: лід замість білого, ніч замість чорного */
-:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{background:#F8FBFF;border-color:rgba(29,78,216,.3)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{background-color:#F8FBFF;border-color:rgba(29,78,216,.3)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .calc__out{background-color:#061230;background-image:var(--a-grain),radial-gradient(80% 60% at 100% 0%,rgba(59,143,245,.34),rgba(59,143,245,0) 70%),linear-gradient(rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,200,255,.04) 1px,transparent 1px),linear-gradient(170deg,#0D3384 0%,#071A4A 48%,#020716 100%);background-size:180px 180px,100% 100%,48px 48px,48px 48px,100% 100%;box-shadow:inset 0 1px 0 rgba(124,200,255,.5)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background-color:#081A42;background-image:linear-gradient(112deg,rgba(160,210,255,0) 42%,rgba(160,210,255,.16) 50%,rgba(160,210,255,0) 58%),radial-gradient(120% 55% at 50% 0%,rgba(46,107,255,.3),rgba(46,107,255,0) 62%),linear-gradient(180deg,#102C6E 0%,#081A42 52%,#050F2A 100%);background-size:260% 100%,100% 100%,100% 100%;background-position:130% 0,center,center;background-repeat:no-repeat;box-shadow:inset 0 0 0 1px rgba(124,200,255,.16),inset 0 1px 0 rgba(160,210,255,.55),inset 0 -1px 0 rgba(2,7,22,.9),0 30px 60px -40px rgba(46,107,255,.6);transition:box-shadow .5s cubic-bezier(.16,1,.3,1),background-position 1.1s cubic-bezier(.16,1,.3,1)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit:hover,:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:focus-within{background-position:-40% 0,center,center;box-shadow:inset 0 0 0 1px rgba(143,208,255,.65),inset 0 1px 0 #FFFFFF,inset 0 -1px 0 rgba(2,7,22,.9),0 34px 70px -34px rgba(46,107,255,.95)}
@@ -1449,7 +1449,7 @@ html:has(#passport[open]){overflow:hidden}
 /* поверхні з води: шлях світла у воді задає роль (tools/sky.py, закон Бугера–Ламберта) */
 :is(:root[data-theme="sky"],:root:not([data-theme])) .job,:is(:root[data-theme="sky"],:root:not([data-theme])) .calc,:is(:root[data-theme="sky"],:root:not([data-theme])) .form,:is(:root[data-theme="sky"],:root:not([data-theme])) .done,:is(:root[data-theme="sky"],:root:not([data-theme])) .fallback,:is(:root[data-theme="sky"],:root:not([data-theme])) .tile,:is(:root[data-theme="sky"],:root:not([data-theme])) .mats__note,:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li,:is(:root[data-theme="sky"],:root:not([data-theme])) .geo__base{background-color:var(--w-ice-2);background-image:linear-gradient(165deg,var(--w-ice) 0%,var(--w-ice-2) 100%)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .geo__list li.home{background-image:none}
-:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{background:var(--w-ice-0)}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field input,:is(:root[data-theme="sky"],:root:not([data-theme])) .field select,:is(:root[data-theme="sky"],:root:not([data-theme])) .field textarea{background-color:var(--w-ice-0);border-color:#607B9A}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .seg{background:var(--w-pool)}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit{background-color:var(--w-abyss);background-image:linear-gradient(112deg,rgba(160,210,255,0) 42%,rgba(160,210,255,.16) 50%,rgba(160,210,255,0) 58%),linear-gradient(180deg,var(--w-deep) 0%,var(--w-abyss) 100%);background-size:260% 100%,100% 100%;background-position:130% 0,center}
 :is(:root[data-theme="sky"],:root:not([data-theme])) .unit:hover,:is(:root[data-theme="sky"],:root:not([data-theme])) .unit:focus-within{background-position:-40% 0,center}
@@ -1466,3 +1466,13 @@ html:has(#passport[open]){overflow:hidden}
 }
 @keyframes sec-num{0%{transform:translateY(34%);opacity:.05}45%,55%{opacity:.2}100%{transform:translateY(-34%);opacity:.05}}
 [data-quality=static] .sec-head::after,[data-motion=paused] .sec-head::after{animation:none!important}
+
+/* Form finish: preserve the select arrow, distinguish validation from focus.
+   Slate-blue border exceeds 3:1 on the existing sRGB ice surfaces.
+   Generated palette, motion, media and layout geometry stay untouched. */
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field.is-err :is(input,select,textarea)[aria-invalid=true]{border-color:#B42318}
+:is(:root[data-theme="sky"],:root:not([data-theme])) .field.is-err :is(input,select,textarea)[aria-invalid=true]:not(:focus){box-shadow:0 0 0 3px rgba(180,35,24,.12)}
+@media (forced-colors:active){
+  .field select{appearance:auto;-webkit-appearance:auto;background-image:none}
+  .field :is(input,select,textarea):focus-visible{outline:2px solid Highlight;outline-offset:2px}
+}
